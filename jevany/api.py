@@ -212,7 +212,9 @@ def to_answers(probs: list[list[float]], meta: list[dict]) -> dict[str, Any]:
     out = {}
     for p, m in zip(probs, meta):
         if m["type"] == "noul":
-            out[m["id"]] = {"type": "noul", "noul": r2(p[1])}
+            # Keep the native probability. Two-decimal rounding materially
+            # changes Brier/ECE and makes local and HTTP evaluation disagree.
+            out[m["id"]] = {"type": "noul", "noul": float(p[1])}
         elif m["type"] == "choice":
             dist = {k: float(v) for k, v in zip(m["keys"], p)}
             out[m["id"]] = {"type": "choice", "choice": m["keys"][max(range(len(p)), key=lambda i: p[i])], "confidence": r2(choice_confidence(p)), "probabilities": dist}

@@ -60,7 +60,7 @@ def encode(tok, rec, max_state=MAX_STATE, max_branch=MAX_BRANCH, strict=False, o
     S = [tok.convert_tokens_to_ids(SPECIAL[0])] + state_tokens[: max_state - 1]
     ids, seg, pos, opt = list(S), [0] * len(S), list(range(len(S))), [OPT_NONE] * len(S)
     q_id, o_id, c_id, d_id = (tok.convert_tokens_to_ids(t) for t in SPECIAL[1:])
-    decide_idx, opt_idx = [], []
+    decide_idx, opt_idx, query_span_idx, opt_span_idx = [], [], [], []
     for k, q in enumerate(rec["questions"], start=1):
         instr = [q_id] + user_tokens(tok, q["instr"])
         spans = [[o_id] + user_tokens(tok, o) + [c_id] for o in q["options"]]
@@ -74,12 +74,18 @@ def encode(tok, rec, max_state=MAX_STATE, max_branch=MAX_BRANCH, strict=False, o
             br_pos = list(range(p0, p0 + len(instr))) + [p0 + len(instr) + i for sp in spans for i in range(len(sp))] + [p0 + len(instr) + longest]
         else:
             br_pos = list(range(p0, p0 + len(br)))
-        ends, cursor = [], len(instr)
+        ends, option_spans, cursor = [], [], len(instr)
         for sp in spans:
-            cursor += len(sp); ends.append(cursor - 1)
+            content_start = base + cursor + 1
+            cursor += len(sp)
+            close = base + cursor - 1
+            ends.append(cursor - 1)
+            option_spans.append((content_start, close))
         ids += br; seg += [k] * len(br); pos += br_pos; opt += br_opt
         decide_idx.append(base + len(br) - 1); opt_idx.append([base + e for e in ends])
+        query_span_idx.append((base, base + len(instr))); opt_span_idx.append(option_spans)
     return {"ids": ids, "seg": seg, "pos": pos, "opt": opt, "option_isolation": option_isolation, "decide_idx": decide_idx, "opt_idx": opt_idx,
+            "query_span_idx": query_span_idx, "opt_span_idx": opt_span_idx,
             "labels": [q["label"] for q in rec["questions"]], "state_truncated": len(state_tokens) + 1 > max_state}
 
 
@@ -133,20 +139,24 @@ def encode_multimodal(processor, rec, max_state=MAX_STATE, max_branch=MAX_BRANCH
     text_state_len = len(user_tokens(tok, rec["state"])) + 1
     if strict and text_state_len > max_state:
         raise ValueError(f"multimodal text state exceeds {max_state} tokens: {text_state_len}")
-    opt_idx, seg = [], [0] * state_len
+    opt_idx, query_span_idx, opt_span_idx, seg = [], [], [], [0] * state_len
     for index, (start, end, question) in enumerate(zip(question_starts, decide_idx, rec["questions"]), start=1):
+        starts = [position for position in range(start, end) if ids[position] == tok.convert_tokens_to_ids(SPECIAL[2])]
         ends = [position for position in range(start, end) if ids[position] == close_id]
-        if len(ends) != len(question["options"]):
+        if len(starts) != len(question["options"]) or len(ends) != len(question["options"]):
             raise ValueError("multimodal option delimiter layout mismatch")
         if end - start + 1 + state_len > max_branch:
             raise ValueError(f"multimodal branch exceeds {max_branch} tokens")
         opt_idx.append(ends)
+        query_span_idx.append((start, starts[0]))
+        opt_span_idx.append([(option_start + 1, option_end) for option_start, option_end in zip(starts, ends)])
         seg.extend([index] * (end - start + 1))
     if len(seg) != len(ids):
         raise ValueError("multimodal branch layout mismatch")
     mm = {key: value.cpu() for key, value in batch.items() if key not in ("input_ids", "attention_mask")}
     return {"ids": ids, "seg": seg, "pos": list(range(len(ids))), "opt": [OPT_NONE] * len(ids),
             "option_isolation": False, "decide_idx": decide_idx, "opt_idx": opt_idx,
+            "query_span_idx": query_span_idx, "opt_span_idx": opt_span_idx,
             "labels": [q["label"] for q in rec["questions"]], "state_truncated": False,
             "multimodal": True, "mm": mm}
 
@@ -203,33 +213,86 @@ def rows_of(enc):
     architecture: the row contains exactly the tokens question k may attend to, in the same positions."""
     seg = enc["seg"]; Ls = seg.count(0)
     rows, start = [], Ls
-    for k, (d, oi) in enumerate(zip(enc["decide_idx"], enc["opt_idx"]), start=1):
+    for k, (d, oi, query_span, option_spans) in enumerate(zip(
+            enc["decide_idx"], enc["opt_idx"], enc["query_span_idx"], enc["opt_span_idx"]), start=1):
         end = d + 1                                    # <decide> is the last token of its branch
         if seg[start] != k or seg[end - 1] != k: raise ValueError("branch layout mismatch")
-        rows.append({"ids": enc["ids"][start:end], "pos": enc["pos"][start:end], "decide": d - start, "opts": [o - start for o in oi]})
+        rows.append({
+            "ids": enc["ids"][start:end], "pos": enc["pos"][start:end],
+            "decide": d - start, "opts": [o - start for o in oi],
+            "query_span": (query_span[0] - start, query_span[1] - start),
+            "option_spans": [(left - start, right - start) for left, right in option_spans],
+        })
         start = end
     return enc["ids"][:Ls], enc["pos"][:Ls], rows
 
 
 class PointerHead(nn.Module):
-    def __init__(self, d, dp=256):
+    def __init__(self, d, dp=256, residual_dim=0, head_type=None):
         """dp = pointer dimension (head capacity knob)."""
         super().__init__()
+        head_type = head_type or ("residual" if residual_dim else "linear")
+        if head_type not in {"linear", "mlp", "residual"}:
+            raise ValueError(f"unknown pointer head type: {head_type}")
+        if head_type == "linear" and residual_dim:
+            raise ValueError("linear pointer head cannot have a residual dimension")
+        if head_type in {"mlp", "residual"} and residual_dim <= 0:
+            raise ValueError(f"{head_type} pointer head requires a positive hidden dimension")
+        self.head_type = head_type
         self.q, self.k = nn.Linear(d, dp), nn.Linear(d, dp)
         self.scale = 1 / math.sqrt(dp)
+        self.residual = None
+        if head_type in {"mlp", "residual"}:
+            self.residual = nn.Sequential(
+                nn.Linear(dp, residual_dim), nn.GELU(), nn.Linear(residual_dim, 1),
+            )
+            if head_type == "residual":
+                nn.init.zeros_(self.residual[-1].weight)
+                nn.init.zeros_(self.residual[-1].bias)
         # calibration: logits are divided by this at inference (eval mode) only. 1.0 = raw. A checkpoint carries the value fitted on
         # its in-distribution development rows (scripts/calibrate_checkpoint.py -> head.pt["temperature"]); training always sees T=1 so
         # a fitted value stays meaningful, and the argmax is unchanged by construction.
         self.temperature = 1.0
 
-    def forward(self, h_decide, h_opts):  # [d], [K,d] -> logits [K]
-        z = (self.k(h_opts) @ self.q(h_decide)) * self.scale
+    def project(self, h_decide, h_opts):
+        return self.q(h_decide), self.k(h_opts)
+
+    def score_projected(self, query, options):
+        interaction = options * query.unsqueeze(0)
+        z = (options @ query) * self.scale
+        if self.head_type == "mlp":
+            z = self.residual(interaction).squeeze(-1)
+        elif self.head_type == "residual":
+            z = z + self.residual(interaction).squeeze(-1)
+        return z
+
+    def forward(self, h_decide, h_opts, return_features=False):  # [d], [K,d] -> logits [K]
+        query, options = self.project(h_decide, h_opts)
+        z = self.score_projected(query, options)
+        if return_features:
+            return z, query, options
         return z if self.training or self.temperature == 1.0 else z / self.temperature
 
 
+def seeded_pointer_head(d, dp=256, residual_dim=0, head_type=None, seed=None):
+    """Build a pointer head without coupling its initialization to LoRA rank.
+
+    PEFT consumes a rank-dependent number of random values while constructing an
+    adapter.  A separate RNG stream keeps the initial pointer weights identical
+    in otherwise matched base-start rank experiments.
+    """
+    if seed is None:
+        return PointerHead(d, dp=dp, residual_dim=residual_dim, head_type=head_type)
+    with torch.random.fork_rng(devices=[]):
+        torch.manual_seed(seed)
+        return PointerHead(d, dp=dp, residual_dim=residual_dim, head_type=head_type)
+
+
 class DecisionModel(nn.Module):
-    def __init__(self, name, tok, device, lora=None, revision=None, attn=None, head_dim=256, option_isolation=False,
-                 special_embeddings=False, lora_targets="all", dtype=torch.float32, multimodal=False):
+    def __init__(self, name, tok, device, lora=None, revision=None, attn=None, head_dim=256, head_residual_dim=0,
+                 head_type=None, head_seed=None, query_readout="decide", option_readout="close", option_isolation=False,
+                 special_embeddings=False, lora_targets="all", lora_dropout=0.05,
+                 dtype=torch.float32, multimodal=False):
         super().__init__()
         # backbone only (no vocab head): we never generate text.
         # eager on MPS/CPU (known-good with our float 4D mask); SDPA on CUDA (accepts arbitrary additive masks).
@@ -260,9 +323,18 @@ class DecisionModel(nn.Module):
             if self.hybrid and lora_targets in ("all", "attn"):
                 # Gated DeltaNet projections (transformers 5 names, verified on Qwen3_5TextModel); the mixer's out_proj too
                 targets = targets + ["in_proj_qkv", "in_proj_z", "in_proj_a", "in_proj_b", "out_proj"]
-            cfg = LoraConfig(task_type="FEATURE_EXTRACTION", r=lora, lora_alpha=2 * lora, lora_dropout=0.05, target_modules=targets, **extra)
+            cfg = LoraConfig(task_type="FEATURE_EXTRACTION", r=lora, lora_alpha=2 * lora,
+                             lora_dropout=lora_dropout, target_modules=targets, **extra)
             self.set_language_model(get_peft_model(self.lm, cfg))
-        self.head = PointerHead(self.lm.config.hidden_size, dp=head_dim)
+        if query_readout not in {"decide", "question_mean"}:
+            raise ValueError(f"unknown query readout: {query_readout}")
+        if option_readout not in {"close", "span_mean"}:
+            raise ValueError(f"unknown option readout: {option_readout}")
+        self.query_readout, self.option_readout = query_readout, option_readout
+        self.head = seeded_pointer_head(
+            self.lm.config.hidden_size, dp=head_dim,
+            residual_dim=head_residual_dim, head_type=head_type, seed=head_seed,
+        )
         self.device = device
         self.to(device)
 
@@ -313,10 +385,33 @@ class DecisionModel(nn.Module):
         mask = branch_mask_batch([e["seg"] for e in encs], self.device, dtype=lm_dtype, opts=[e["opt"] for e in encs] if isolate else None, length=ids.shape[1])
         return self.lm(input_ids=ids, position_ids=pos, attention_mask=mask).last_hidden_state.float()   # head stays fp32
 
-    def _readout(self, h, enc):
-        return [self.head(h[d], h[torch.tensor(oi, device=self.device)]) for d, oi in zip(enc["decide_idx"], enc["opt_idx"])]
+    @staticmethod
+    def _mean_or_fallback(h, span, fallback):
+        start, end = span
+        return h[start:end].mean(0) if end > start else h[fallback]
 
-    def forward_rows_batch(self, encs):
+    def _question_readout(self, h, decide, options, query_span, option_spans, return_features=False):
+        """Extract label-blind question/option vectors and score them.
+
+        ``question_mean`` includes the ``<q>`` delimiter. ``span_mean`` excludes
+        ``<opt>`` and ``</opt>``; an empty option falls back to ``</opt>``.
+        """
+        query = h[decide] if self.query_readout == "decide" else self._mean_or_fallback(h, query_span, decide)
+        if self.option_readout == "close":
+            candidates = h[torch.tensor(options, device=self.device)]
+        else:
+            candidates = torch.stack([
+                self._mean_or_fallback(h, span, fallback)
+                for span, fallback in zip(option_spans, options)
+            ])
+        return self.head(query, candidates, return_features=return_features)
+
+    def _readout(self, h, enc, return_features=False):
+        return [self._question_readout(h, d, oi, query_span, option_spans, return_features)
+                for d, oi, query_span, option_spans in zip(
+                    enc["decide_idx"], enc["opt_idx"], enc["query_span_idx"], enc["opt_span_idx"])]
+
+    def forward_rows_batch(self, encs, return_features=False):
         """Row form: every question of every record is one causal row = state tokens + its branch tokens, right-padded
         into a single batch. Returns the same nested logits as forward_batch. Exact isolation by construction (rows are
         independent); the state is recomputed per row (Q x state tokens), which training accepts; serving uses the
@@ -325,45 +420,69 @@ class DecisionModel(nn.Module):
         for b, e in enumerate(encs):
             S, Sp, brs = rows_of(e)
             for r in brs:
-                rows.append((S + r["ids"], Sp + r["pos"])); readouts.append((b, len(S) + r["decide"], [len(S) + o for o in r["opts"]]))
+                rows.append((S + r["ids"], Sp + r["pos"]))
+                readouts.append((
+                    b, len(S) + r["decide"], [len(S) + o for o in r["opts"]],
+                    tuple(len(S) + value for value in r["query_span"]),
+                    [tuple(len(S) + value for value in span) for span in r["option_spans"]],
+                ))
         ids, pos, att = self._pad_rows(rows)
         h = self.lm(input_ids=ids, position_ids=pos, attention_mask=att).last_hidden_state.float()
         out = [[] for _ in encs]
-        for i, (b, d, oi) in enumerate(readouts):
-            out[b].append(self.head(h[i, d], h[i, torch.tensor(oi, device=self.device)]))
+        for i, (b, d, oi, query_span, option_spans) in enumerate(readouts):
+            out[b].append(self._question_readout(
+                h[i], d, oi, query_span, option_spans, return_features,
+            ))
         return out
 
     def forward(self, enc):
         """Returns list of logits tensors, one per question."""
         return self.forward_batch([enc])[0]
 
-    def forward_multimodal(self, enc):
+    def forward_multimodal(self, enc, return_features=False):
         if self.mm is None:
             raise ValueError("multimodal encoding requires a multimodal checkpoint")
         kwargs = {key: value.to(self.device) for key, value in enc["mm"].items()}
         ids = torch.tensor([enc["ids"]], device=self.device)
         attention = torch.ones_like(ids)
         hidden = self.mm(input_ids=ids, attention_mask=attention, **kwargs).last_hidden_state[0].float()
-        return self._readout(hidden, enc)
+        return self._readout(hidden, enc, return_features=return_features)
 
-    def forward_batch(self, encs):
+    def forward_batch(self, encs, return_features=False):
         """List (per record) of lists (per question) of logits, from one padded forward pass. Hybrid backbones take the
         row form; attention-only ones use the packed block-causal mask."""
+        if self.hybrid and not self.training:
+            # Score each text record through the same full-row call whether the surrounding batch is text-only or
+            # mixed-media. This keeps evaluation independent of batch composition and readout choice.
+            return [self.forward_multimodal(enc, return_features=return_features) if enc.get("multimodal")
+                    else self.forward_rows_batch([enc], return_features=return_features)[0] for enc in encs]
         if any(enc.get("multimodal") for enc in encs):
-            return [self.forward_multimodal(enc) if enc.get("multimodal") else self.forward_rows_batch([enc])[0] for enc in encs]
-        if self.hybrid: return self.forward_rows_batch(encs)
+            return [self.forward_multimodal(enc, return_features=return_features) if enc.get("multimodal")
+                    else self.forward_rows_batch([enc], return_features=return_features)[0] for enc in encs]
+        if self.hybrid: return self.forward_rows_batch(encs, return_features=return_features)
         hs = self.hidden_batch(encs)
-        return [self._readout(hs[b], e) for b, e in enumerate(encs)]
+        return [self._readout(hs[b], e, return_features=return_features) for b, e in enumerate(encs)]
 
     @torch.no_grad()
     def probs(self, enc):
         return [F.softmax(z, -1).cpu() for z in self.forward(enc)]
 
-    # --- state-prefix reuse (serving): the state is encoded once, question branches attend to its cached keys/values.
-    # Exact by construction: branch tokens never attend to each other across questions (block-causal mask) and the state
-    # never sees the branches (causal), so the state's hidden states and KV are identical with or without the branches.
+    def supports_prefix_cache(self):
+        """Whether serving may use the state-prefix cache for this readout."""
+        # Qwen3.5/3.8 hybrid recurrent state is path-dependent in BF16. A
+        # 144-question audit found up to 0.0368 probability drift between the
+        # full-row and cached paths, so hybrid checkpoints always use full rows.
+        return (not self.hybrid and self.query_readout == "decide"
+                and self.option_readout == "close")
 
-    def _branch_rows_from_prefix(self, enc, cache):
+    def _require_prefix_cache_support(self):
+        if not self.supports_prefix_cache():
+            raise RuntimeError("this model/readout requires full-row inference")
+
+    # --- state-prefix reuse (serving): attention-only default readouts retain
+    # caching. Hybrid checkpoints use the full-row path above.
+
+    def _branch_rows_from_prefix(self, enc, cache, return_features=False):
         """Hybrid serving: replicate the cached state once per question and run the branches as causal rows (exactly the
         forward_rows_batch layout, minus the recomputed state). Works on a copy: the caller's prefix stays pristine."""
         S, Sp, rows = rows_of(enc); Q = len(rows)
@@ -371,7 +490,12 @@ class DecisionModel(nn.Module):
         ids, pos, att = self._pad_rows([(r["ids"], r["pos"]) for r in rows])
         att = torch.cat([torch.ones((Q, len(S)), dtype=torch.long, device=self.device), att], 1)   # the cached state tokens are all real
         h = self.lm(input_ids=ids, position_ids=pos, attention_mask=att, past_key_values=cache, use_cache=True).last_hidden_state.float()
-        return [F.softmax(self.head(h[i, r["decide"]], h[i, torch.tensor(r["opts"], device=self.device)]), -1).cpu() for i, r in enumerate(rows)]
+        outputs = [self._question_readout(
+            h[i], r["decide"], r["opts"], r["query_span"], r["option_spans"], return_features,
+        ) for i, r in enumerate(rows)]
+        if return_features:
+            return outputs
+        return [F.softmax(logits, -1).cpu() for logits in outputs]
 
     @torch.no_grad()
     def prefix(self, enc):
@@ -386,6 +510,7 @@ class DecisionModel(nn.Module):
     def probs_and_prefix(self, enc):
         """One full pass that also returns the state prefix (KV cropped to the state, state hidden states): a cache miss
         costs a single forward pass, not two."""
+        self._require_prefix_cache_support()
         Ls = enc["seg"].count(0)
         if self.hybrid:
             # recurrent layers cannot be cropped back to the state, so a hybrid miss is a state pass (kept as the prefix)
@@ -404,6 +529,7 @@ class DecisionModel(nn.Module):
     def probs_with_prefix(self, enc, prefix):
         """probs() for a record whose state tokens equal the cached prefix's; only the branches run. The cache is cropped
         back to the state afterwards so it can be reused."""
+        self._require_prefix_cache_support()
         Ls, cache, h_state = prefix
         if enc["seg"].count(0) != Ls: raise ValueError("prefix does not match this record's state")
         if self.hybrid:

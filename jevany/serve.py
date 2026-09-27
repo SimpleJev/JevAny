@@ -7,7 +7,7 @@ Run: uv run --extra serve python -m jevany.serve --run runs/rlcr --port 8008
 TypeSafe-compatible: POST /v1/systemone and GET /v1/models (no auth). JEVANY_PREFIX_CACHE /
 JEVANY_PREFIX_MIN_TOKENS size the state-prefix cache; JEVANY_DATE_FACTS=1 enables deterministic date preprocessing.
 """
-import argparse, os, threading, time
+import argparse, hashlib, os, re, subprocess, threading, time
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 from fastapi import FastAPI, HTTPException
@@ -32,6 +32,33 @@ if min(MEDIA_MAX_BYTES, MEDIA_TOTAL_BYTES, MEDIA_MAX_PIXELS, MEDIA_MAX_VIDEO_FRA
 if MEDIA_TOTAL_BYTES < MEDIA_MAX_BYTES:
     raise ValueError("JEVANY_MEDIA_TOTAL_BYTES must be at least JEVANY_MEDIA_MAX_BYTES")
 
+COMMIT_RE = re.compile(r"[0-9a-f]{40}")
+
+
+def _digest(path):
+    path = Path(path)
+    value = hashlib.sha256()
+    with path.open("rb") as stream:
+        for block in iter(lambda: stream.read(8 << 20), b""):
+            value.update(block)
+    return value.hexdigest()
+
+
+def _source_revision():
+    root = Path(__file__).resolve().parents[1]
+    try:
+        return subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=root, check=True,
+            capture_output=True, text=True,
+        ).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        return None
+
+
+def _public_base_name(base):
+    value = str(base)
+    return Path(value).name if Path(value).is_absolute() else value
+
 
 @dataclass
 class Server:
@@ -40,14 +67,17 @@ class Server:
     tok: object
     model: object
     device: str
+    model_id: str = "jevany-27b"
+    model_aliases: tuple[str, ...] = ("jevany-latest",)
+    strict_model_id: bool = False
+    provenance: dict = field(default_factory=dict)
     lock: threading.Lock = field(default_factory=threading.Lock)
     prefix_cache: dict = field(default_factory=dict)   # (state token ids, option_isolation) -> prefix, in LRU order
     prefix_hits: int = 0
     prefix_misses: int = 0
 
     def probs(self, rec):
-        """One forward pass. The state prefix (tokens up to the first question) is cached across requests, so a repeated
-        state only pays for its question branches. Exact: the state's activations do not depend on the branches."""
+        """Score one request, using the state-prefix cache only for the default decide/close readout."""
         try:
             enc = self.model.encode(self.tok, rec, max_state=INFER_MAX_STATE,
                                     max_branch=INFER_MAX_BRANCH, strict=True)
@@ -58,7 +88,8 @@ class Server:
         cache, hit = self.prefix_cache, False
         with self.lock:
             sync(self.device); t = time.time()
-            eligible = PREFIX_CACHE_SIZE and Ls >= PREFIX_MIN_TOKENS and not enc.get("multimodal")
+            eligible = (PREFIX_CACHE_SIZE and Ls >= PREFIX_MIN_TOKENS
+                        and not enc.get("multimodal") and self.model.supports_prefix_cache())
             if eligible and key in cache:
                 prefix = cache.pop(key)                            # pop + reinsert = LRU order
                 ps = self.model.probs_with_prefix(enc, prefix); cache[key] = prefix
@@ -75,10 +106,15 @@ class Server:
 
     def answer(self, req):
         """The /v1/systemone response body for one request."""
+        if self.strict_model_id and req.model not in {self.model_id, *self.model_aliases}:
+            raise HTTPException(404, f"unknown model {req.model!r}")
         rec, meta = to_record(prepare(req))
         ps, m = self.probs(rec)
         answers = to_answers(ps, meta)
-        return {"model": req.model, "answers": answers, "usage": {"input_tokens": m["tokens"], "output_tokens": output_tokens(self.tok, answers)}, "latency_ms": m["latency_ms"]}
+        return {"model": self.model_id, "answers": answers,
+                "inference_temperature": self.model.head.temperature,
+                "usage": {"input_tokens": m["tokens"], "output_tokens": output_tokens(self.tok, answers)},
+                "latency_ms": m["latency_ms"]}
 
 
 def _validate_media_file(item, path):
@@ -168,8 +204,14 @@ def systemone(req: SystemOneRequest):
 @app.get("/v1/models")
 def models():
     s = server()
-    return {"models": [{"id": "jevany-27b", "aliases": ["jevany-latest"], "run": s.checkpoint.requested, "base": s.checkpoint.meta.base,
+    model_id = getattr(s, "model_id", "jevany-27b")
+    aliases = getattr(s, "model_aliases", ("jevany-latest",))
+    run_label = model_id if getattr(s, "strict_model_id", False) else s.checkpoint.requested
+    return {"models": [{"id": model_id, "aliases": list(aliases), "run": run_label,
+                        "base": _public_base_name(s.checkpoint.meta.base),
                         "lora": s.checkpoint.meta.lora, "device": s.device, "temperature": s.model.head.temperature,
+                        "strict_model_id": getattr(s, "strict_model_id", False),
+                        "provenance": getattr(s, "provenance", {}),
                         "limits": {"state_tokens": INFER_MAX_STATE, "branch_tokens": INFER_MAX_BRANCH,
                                    "packed_tokens": INFER_MAX_PACKED,
                                    "media_enabled": bool(MEDIA_ROOT),
@@ -187,7 +229,18 @@ def main():
     ap.add_argument("--fallback", default="runs/sft")
     ap.add_argument("--device", choices=["cpu", "mps", "cuda"], default=None)
     ap.add_argument("--port", type=int, default=8008)
+    ap.add_argument("--model-id", default=os.environ.get("JEVANY_MODEL_ID", "jevany-27b"))
+    ap.add_argument("--model-alias", action="append", default=None)
+    ap.add_argument("--strict-model-id", action="store_true",
+                    default=os.environ.get("JEVANY_STRICT_MODEL_ID", "0") == "1")
+    ap.add_argument("--code-revision", default=os.environ.get("JEVANY_CODE_REVISION"))
     a = ap.parse_args()
+    actual_revision = _source_revision()
+    if a.strict_model_id:
+        if not a.model_id or not COMMIT_RE.fullmatch(a.code_revision or ""):
+            ap.error("strict model identity requires --model-id and a full 40-character --code-revision")
+        if actual_revision != a.code_revision:
+            ap.error(f"--code-revision {a.code_revision!r} does not match source revision {actual_revision!r}")
     run = a.run if is_hub_id(a.run) or os.path.exists(f"{a.run}/head.pt") else a.fallback
     if run != a.run: print(f"{a.run} not found, falling back to {run}")
     dev = a.device or default_device()
@@ -195,7 +248,43 @@ def main():
     if dev == "mps" and opts.attn is None: opts = replace(opts, attn="sdpa")   # serving default on Apple GPUs (parity measured)
     ck = Checkpoint(run)
     tok, model = ck.load(dev, opts)
-    app.state.server = Server(ck, tok, model, dev)
+    artifact_hashes = {}
+    for name in ("head.pt", "adapter_model.safetensors", "adapter_config.json"):
+        path = ck.file(name)
+        if path.is_file():
+            artifact_hashes[name] = _digest(path)
+    base_path = Path(opts.base_load_path) if opts.base_load_path else None
+    base_artifacts = {}
+    if base_path:
+        for name in ("config.json", "model.safetensors.index.json", "tokenizer.json",
+                     "tokenizer_config.json", "processor_config.json"):
+            path = base_path / name
+            if path.is_file():
+                base_artifacts[name] = _digest(path)
+    source_root = Path(__file__).resolve().parents[1]
+    source_artifacts = {
+        str(path.relative_to(source_root)): _digest(path)
+        for path in (Path(__file__), source_root / "jevany/api.py",
+                     source_root / "jevany/checkpoint.py", source_root / "jevany/model.py")
+    }
+    provenance = {
+        "checkpoint_source": "hub" if is_hub_id(ck.requested) else "local",
+        "checkpoint_artifacts_sha256": artifact_hashes,
+        "base_artifacts_sha256": base_artifacts,
+        "source_artifacts_sha256": source_artifacts,
+        "base_revision": ck.meta.base_revision,
+        "head_type": ck.meta.head_type,
+        "head_dim": ck.meta.head_dim,
+        "head_residual_dim": ck.meta.head_residual_dim,
+        "query_readout": ck.meta.query_readout,
+        "option_readout": ck.meta.option_readout,
+        "weights_dtype": ck.meta.weights_dtype,
+        "code_revision": a.code_revision or actual_revision,
+    }
+    aliases = tuple(a.model_alias or ([] if a.strict_model_id else ["jevany-latest"]))
+    app.state.server = Server(ck, tok, model, dev, model_id=a.model_id,
+                              model_aliases=aliases, strict_model_id=a.strict_model_id,
+                              provenance=provenance)
     print(f"serving {ck.requested} ({ck.path}) on {dev} :{a.port}")   # /v1/models reports the run as given, not the resolved cache path
     import uvicorn
     uvicorn.run(app, host="127.0.0.1", port=a.port)

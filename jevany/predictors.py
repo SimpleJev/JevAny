@@ -85,6 +85,7 @@ class RemotePredictor:
     def __init__(self, base_url, model="jevany-27b", api_key="local", timeout=120, retries=3):
         self.base_url, self.model, self.api_key, self.timeout, self.retries = base_url.rstrip("/"), model, api_key, timeout, retries
         self.served_model = None
+        self.temperature = None
 
     def __call__(self, record):
         payload = json.dumps({**api_request(record), "model": self.model}).encode()
@@ -108,4 +109,18 @@ class RemotePredictor:
             a = body["answers"][qid]
             if q["type"] == "noul": probs[qid] = {"true": float(a["noul"]), "false": 1 - float(a["noul"])}
             else: probs[qid] = {str(k): float(v) for k, v in a["probabilities"].items()}
-        return {"probabilities": probs, "latency_ms": latency, "input_tokens": (body.get("usage") or {}).get("input_tokens")}
+        result = {"probabilities": probs, "latency_ms": latency,
+                  "input_tokens": (body.get("usage") or {}).get("input_tokens")}
+        if "logits" in body:
+            temperature = float(body.get("inference_temperature", 1.0))
+            if not math.isfinite(temperature) or temperature <= 0:
+                raise ValueError("remote inference temperature must be finite and positive")
+            if self.temperature is not None and temperature != self.temperature:
+                raise ValueError("remote inference temperature changed during evaluation")
+            self.temperature = temperature
+            result["logits"] = {
+                qid: {str(key): float(value) for key, value in values.items()}
+                for qid, values in body["logits"].items()
+            }
+            result["inference_temperature"] = temperature
+        return result
