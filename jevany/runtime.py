@@ -57,6 +57,8 @@ class DecisionRuntime:
                 "id": self.model_id, "aliases": self.aliases,
                 "run": self.checkpoint.requested, "base": self.checkpoint.meta.base,
                 "lora": self.checkpoint.meta.lora, "device": self.device,
+                "device_map": getattr(self.model, "device_map", None),
+                "devices": getattr(self.model, "devices", [self.device]),
                 "temperature": self.model.temperature,
                 "decision_mode": self.checkpoint.meta.decision_mode,
                 "backbone_adapter": self.model.backbone_adapter,
@@ -159,7 +161,8 @@ class JevModel(DecisionClient):
     ) -> "JevModel":
         """Load a local run or Hugging Face adapter ID (optionally ``owner/repo@revision``).
 
-        The full backbone must fit on the selected device. ``dtype`` accepts
+        The full backbone must fit on the selected device unless ``options.device_map``
+        (or JEVANY_DEVICE_MAP) splits it over the visible GPUs. ``dtype`` accepts
         fp32, fp16 or bf16; omission uses the checkpoint/environment settings.
         Files used by native media requests are trusted local paths.
         """

@@ -38,6 +38,7 @@ def main(argv: list[str] | None = None) -> None:
 
 def decide_main(argv: list[str]) -> None:
     from dataclasses import fields
+    from .checkpoint import add_placement_arguments, load_options_from_args
     from .client import JevClient
     from .inference import InferenceOptions, add_inference_arguments, inference_options_from_args
 
@@ -49,6 +50,7 @@ def decide_main(argv: list[str]) -> None:
     parser.add_argument("--device", choices=["cpu", "mps", "cuda"])
     parser.add_argument("--dtype", choices=["fp32", "fp16", "bf16"])
     parser.add_argument("--model-name", help="identity for a locally loaded checkpoint")
+    add_placement_arguments(parser)
     add_inference_arguments(parser)
     args = parser.parse_args(argv)
     content = sys.stdin.read() if args.request == "-" else Path(args.request).read_text(encoding="utf-8")
@@ -58,12 +60,13 @@ def decide_main(argv: list[str]) -> None:
         from .runtime import JevModel
         client = JevModel.from_pretrained(
             args.checkpoint, device=args.device, dtype=args.dtype, model_name=args.model_name,
-            inference_options=inference_options_from_args(args),
+            options=load_options_from_args(args), inference_options=inference_options_from_args(args),
         )
     else:
         if (args.device or args.dtype or args.model_name is not None
+                or args.device_map is not None or args.max_memory_gib is not None
                 or any(getattr(args, item.name) is not None for item in fields(InferenceOptions))):
-            parser.error("device, dtype, model-name and inference limit options require --checkpoint")
+            parser.error("device, dtype, placement, model-name and inference limit options require --checkpoint")
         client = JevClient(args.base_url)
     print(json.dumps(client(request), indent=2, ensure_ascii=False))
 

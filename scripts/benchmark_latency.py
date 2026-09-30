@@ -128,6 +128,8 @@ def main(argv=None):
             "torch": torch.__version__, "cuda": torch.version.cuda,
             "gpu": torch.cuda.get_device_name() if args.device == "cuda" else None,
             "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
+            "gpus": torch.cuda.device_count() if args.device == "cuda" else 0,
+            "devices": getattr(predictor.model, "devices", None),
             "tf32": torch.backends.cuda.matmul.allow_tf32,
             "flash_sdp": torch.backends.cuda.flash_sdp_enabled(),
             "mem_efficient_sdp": torch.backends.cuda.mem_efficient_sdp_enabled(),
@@ -137,6 +139,7 @@ def main(argv=None):
             "merge": options.merge, "attn": options.attn,
             "lora_scale": options.lora_scale, "temperature": options.temperature,
             "merge_bf16": options.merge_bf16, "compile_mode": options.compile_mode,
+            "device_map": options.device_map, "max_memory_gib": options.max_memory_gib,
         },
     )
     target.parent.mkdir(parents=True, exist_ok=True)

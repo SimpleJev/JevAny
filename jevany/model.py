@@ -1,7 +1,7 @@
 # Modified for JevAny by Tianxin Wei, 2026.
 # Derived from Kev by Jared Palmer under Apache-2.0. See NOTICE.
 """Decision model with a shared causal backbone and pointer or LM-token readout."""
-import copy, math, os, re
+import copy, inspect, math, os, re
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -287,7 +287,7 @@ class DecisionModel(nn.Module):
                  head_residual_dim=0, option_isolation=False, special_embeddings=False,
                  lora_targets="all", lora_dropout=0.05, dtype=torch.float32, multimodal=False,
                  backbone_adapter="auto", branch_mode="auto", lora_target_modules="",
-                 decision_mode="pointer", verbalizers=None):
+                 decision_mode="pointer", verbalizers=None, device_map=None, max_memory_gib=None):
         super().__init__()
         if decision_mode not in {"pointer", "lm_token"}:
             raise ValueError(f"unknown decision mode: {decision_mode}")
@@ -301,7 +301,22 @@ class DecisionModel(nn.Module):
         attn = attn or ("sdpa" if str(device).startswith("cuda") else "eager")
         # Use fp32 for exact evaluation or bf16 to reduce accelerator memory.
         self.multimodal = multimodal
-        self.lm, self.mm = self.adapter.load_model(name, revision=revision, dtype=dtype, attn=attn)
+        placement = self._placement(device, device_map, max_memory_gib)
+        if placement and "placement" not in inspect.signature(self.adapter.load_model).parameters:
+            raise ValueError(f"backbone adapter {self.backbone_adapter!r} does not support device_map")
+        self.lm, self.mm = self.adapter.load_model(name, revision=revision, dtype=dtype, attn=attn,
+                                                   **({"placement": placement} if placement else {}))
+        if placement:
+            # Accelerate returns the top-level model's output on the input device, but the backbone is a submodule
+            # (and PEFT wraps it later), so bring its hidden states back to `device` for the readout. Registered on
+            # the raw backbone, the hook survives PEFT wrapping and merge_and_unload().
+            home = torch.device(device)
+            def hidden_to_device(module, args, output):
+                hidden = getattr(output, "last_hidden_state", None)
+                if hidden is not None and hidden.device != home:
+                    output.last_hidden_state = hidden.to(home)
+                return output
+            self.lm.register_forward_hook(hidden_to_device)
         added_token_ids = prepare_embeddings(self.lm, tokenizer)
         for module in self.adapter.frozen_modules(self.mm):
             module.requires_grad_(False)
@@ -346,7 +361,30 @@ class DecisionModel(nn.Module):
         self.verbalizer_ids = verbalizer_token_ids(tokenizer, self.verbalizers) if self.verbalizers else []
         self.temperature = 1.0
         self.device = device
-        self.to(device)
+        self.device_map = device_map
+        if device_map is None:
+            self.to(device)
+        elif self.head is not None:
+            self.head.to(device)   # the backbone (and a frozen LM head) keep Accelerate's placement
+
+    @staticmethod
+    def _placement(device, device_map, max_memory_gib):
+        """from_pretrained() arguments that split the backbone over the visible GPUs, or None for one device."""
+        if device_map is None:
+            if max_memory_gib is not None:
+                raise ValueError("max_memory_gib requires device_map")
+            return None
+        if not str(device).startswith("cuda"):
+            raise ValueError("device_map shards over CUDA devices; use device='cuda'")
+        placement = {"device_map": device_map}
+        if max_memory_gib is not None:
+            placement["max_memory"] = {index: f"{max_memory_gib}GiB" for index in range(torch.cuda.device_count())}
+        return placement
+
+    @property
+    def devices(self) -> list[str]:
+        """Devices holding this model's parameters: one unless device_map sharded the backbone."""
+        return sorted({str(parameter.device) for parameter in self.parameters()})
 
     @property
     def inference_capabilities(self) -> InferenceCapabilities:
@@ -356,6 +394,9 @@ class DecisionModel(nn.Module):
         # Changing sequence shapes in a cached pass amplified BF16 rounding on
         # real Llama/Qwen checkpoints. Keep prefix reuse on validated FP32 paths.
         if self.lm.dtype != torch.float32:
+            capabilities = replace(capabilities, prefix_cache=False)
+        # Cached states are spread over the shards' devices; reuse there is not validated.
+        if self.device_map is not None:
             capabilities = replace(capabilities, prefix_cache=False)
         if not self.multimodal and capabilities.media_types:
             capabilities = replace(capabilities, media_types=(), max_media_questions=None)
@@ -423,7 +464,7 @@ class DecisionModel(nn.Module):
     def _question_readout(self, h, decide, options):
         query = h[decide]
         if self.decision_mode == "lm_token":
-            logits = F.linear(query.to(self.lm_head.weight.dtype), self.lm_head.weight).float()
+            logits = F.linear(query.to(self.lm_head.weight.device, self.lm_head.weight.dtype), self.lm_head.weight).float()
             if self.training:
                 return logits
             candidates = torch.tensor(self.verbalizer_ids[:len(options)], device=logits.device)

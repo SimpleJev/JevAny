@@ -6,7 +6,7 @@ from pathlib import Path
 import torch
 
 from jevany.benchmark import evaluate_records
-from jevany.checkpoint import LoadOptions
+from jevany.checkpoint import LoadOptions, add_placement_arguments
 from jevany.predictors import LocalPredictor
 from jevany.suite import digest, load_split, read_manifest, write_json
 
@@ -38,13 +38,14 @@ def main():
                         help="checksum-verified jevbench-public-v1.4.2.2 suite")
     parser.add_argument("--out", required=True)
     parser.add_argument("--attn", choices=("eager", "sdpa"), default=None)
+    add_placement_arguments(parser)
     args = parser.parse_args()
 
     suite = Path(args.suite)
     records, manifest = load_records(suite)
     predictor = LocalPredictor(args.run, "cuda", LoadOptions(
         dtype=torch.bfloat16, merge=False, temperature=None, base_load_path=args.base,
-        attn=args.attn,
+        attn=args.attn, device_map=args.device_map, max_memory_gib=args.max_memory_gib,
     ), max_packed=16_384)
     report, rows = evaluate_records(records, predictor, args.out)
     tiers = {}

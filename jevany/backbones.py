@@ -153,11 +153,13 @@ class BackboneAdapter:
         return prepare_tokenizer(AutoTokenizer.from_pretrained(name, revision=revision, fix_mistral_regex=True))
 
     def load_model(self, name: str, *, revision: str | None, dtype: torch.dtype,
-                   attn: str) -> tuple[PreTrainedModel, PreTrainedModel | None]:
+                   attn: str, placement: dict | None = None) -> tuple[PreTrainedModel, PreTrainedModel | None]:
+        """Load the backbone. ``placement`` holds ``device_map``/``max_memory`` for ``from_pretrained`` when the
+        caller shards the model over several GPUs; adapters that cannot shard may omit the parameter."""
         config = AutoConfig.from_pretrained(name, revision=revision)
         if config.is_encoder_decoder:
             raise ValueError("the text adapter requires a decoder-only text base; select a suitable backbone_adapter")
-        kwargs = frozen_weight_options(config.to_dict())
+        kwargs = {**frozen_weight_options(config.to_dict()), **(placement or {})}
         if getattr(config, "text_config", None) is not None:
             native = AutoModel.from_pretrained(name, revision=revision, dtype=dtype,
                                                 attn_implementation=attn, **kwargs)
@@ -292,10 +294,10 @@ class VisionAdapter(BackboneAdapter):
         return processor
 
     def load_model(self, name: str, *, revision: str | None, dtype: torch.dtype,
-                   attn: str) -> tuple[PreTrainedModel, PreTrainedModel | None]:
+                   attn: str, placement: dict | None = None) -> tuple[PreTrainedModel, PreTrainedModel | None]:
         config, _ = PretrainedConfig.get_config_dict(name, revision=revision)
         model = AutoModel.from_pretrained(name, revision=revision, dtype=dtype, attn_implementation=attn,
-                                          **frozen_weight_options(config))
+                                          **frozen_weight_options(config), **(placement or {}))
         model.requires_grad_(False)
         self._output_embeddings = model.get_output_embeddings()
         if not self.language_model_path:

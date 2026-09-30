@@ -277,10 +277,38 @@ Use `owner/repo@revision` to pin an adapter. For offline deployment, prepopulate
 the Hugging Face cache and set `HF_HUB_OFFLINE=1`. `JEVANY_BASE_LOAD_PATH` can point
 to a local base mirror while retaining the checkpoint's canonical provenance.
 
-The runtime loads one full backbone on one device.
+By default the runtime loads one full backbone on one device.
 CPU/MPS are available for backbones that fit, including smaller models you train.
-Quantization and model sharding are
-not implemented. BF16-trained checkpoints retain their recorded loading behavior.
+Quantization is not implemented. BF16-trained checkpoints retain their recorded
+loading behavior.
+
+### Several GPUs
+
+When a base does not fit on one card, `device_map` splits its layers over every
+visible GPU with Accelerate:
+
+```bash
+CUDA_VISIBLE_DEVICES=0,1 jevany serve --checkpoint SimpleJev/JevAny-Qwen3.8-27B-LoRA \
+  --device cuda --device-map auto --max-memory-gib 31
+```
+
+Python callers pass `LoadOptions(device_map="auto", max_memory_gib=31)`; the
+command-line tools also read `JEVANY_DEVICE_MAP` and `JEVANY_MAX_MEMORY_GIB`.
+`device_map` accepts Accelerate's `auto`, `balanced`, `balanced_low_0` and
+`sequential` strategies. `max_memory_gib` caps the weights placed on each GPU;
+leave headroom for the activations of long requests.
+
+This is pipeline placement, not tensor parallelism: layers still run one after
+another, so it adds memory rather than throughput. The readout head stays on
+`device` and hidden states return there before it. Sharded models always run
+complete forward passes (no prefix cache). `describe()` and `GET /v1/models`
+report `device_map` and the `devices` holding parameters.
+
+Splitting changes where tensors live, not the arithmetic: JevAny-Qwen3.5-4B
+forced onto two GPUs gave the same per-question probabilities as one GPU on all
+231 JevBench questions. On 3×A100-40GB (`--max-memory-gib 22`), the step 22,160
+JevAny-Qwen3.8-27B release scored 85.66% on Transfer (published for that step:
+85.76%) with a 240 ms median forward pass.
 
 ## Native media and limits
 

@@ -10,10 +10,11 @@ This is the one place that knows the layout of `head.pt` and how a checkpoint be
     ck.meta.temperature                             # the calibration the checkpoint carries
 """
 import json
+import math
 import os
 import re
 from importlib import metadata as importlib_metadata
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 import torch
@@ -55,6 +56,10 @@ def _check_compile_runtime():
                 f"torch.compile is disabled: torch requires {requirement}, but Triton {installed} is installed"
             )
         return
+
+
+# Accelerate placement strategies accepted for LoadOptions.device_map.
+DEVICE_MAPS = ("auto", "balanced", "balanced_low_0", "sequential")
 
 
 def is_hub_id(run):
@@ -137,6 +142,11 @@ class LoadOptions:
                  optional node-local mirror for base-model I/O. Checkpoint metadata still names the canonical base.
     merge_bf16   allow the faster but slightly approximate merge of a LoRA adapter into BF16 base weights.
     compile_mode opt into torch.compile. ``reduce-overhead`` also enables CUDA Graphs for compatible graph segments.
+    device_map   None = the whole model on one device. An Accelerate placement strategy (DEVICE_MAPS) splits the
+                 backbone's layers over every visible GPU, for bases larger than one card; layers still run one after
+                 another, so this adds memory, not speed. The readout head stays on the requested device.
+    max_memory_gib
+                 per-GPU weight budget for device_map; leave room for activations on long requests.
     """
     dtype: torch.dtype | None = None
     merge: bool = True
@@ -146,21 +156,47 @@ class LoadOptions:
     base_load_path: str | None = None
     merge_bf16: bool = False
     compile_mode: str | None = None
+    device_map: str | None = None
+    max_memory_gib: float | None = None
 
     def __post_init__(self):
         if self.compile_mode not in (None, *COMPILE_MODES):
             raise ValueError(f"compile_mode must be one of {sorted(COMPILE_MODES)}")
+        if self.device_map is not None and self.device_map not in DEVICE_MAPS:
+            raise ValueError(f"device_map must be one of {', '.join(DEVICE_MAPS)}")
+        if self.max_memory_gib is not None:
+            if self.device_map is None:
+                raise ValueError("max_memory_gib requires device_map")
+            if not (math.isfinite(self.max_memory_gib) and self.max_memory_gib > 0):
+                raise ValueError("max_memory_gib must be finite and positive")
 
     @classmethod
     def from_env(cls, env=os.environ):
-        """Read checkpoint loading and optional inference acceleration settings."""
+        """Read checkpoint loading, placement and optional inference acceleration settings."""
         return cls(dtype={"bf16": torch.bfloat16, "fp16": torch.float16}.get(env.get("JEVANY_DTYPE", "")),
                    merge=env.get("JEVANY_MERGE", "1") != "0", attn=env.get("JEVANY_ATTN") or None,
                    lora_scale=float(env.get("JEVANY_LORA_SCALE", "1")),
                    temperature=float(env["JEVANY_TEMPERATURE"]) if env.get("JEVANY_TEMPERATURE") else None,
                    base_load_path=env.get("JEVANY_BASE_LOAD_PATH") or None,
                    merge_bf16=env.get("JEVANY_MERGE_BF16", "0") == "1",
-                   compile_mode=_compile_mode(env.get("JEVANY_COMPILE")))
+                   compile_mode=_compile_mode(env.get("JEVANY_COMPILE")),
+                   device_map=env.get("JEVANY_DEVICE_MAP") or None,
+                   max_memory_gib=float(env["JEVANY_MAX_MEMORY_GIB"]) if env.get("JEVANY_MAX_MEMORY_GIB") else None)
+
+
+def add_placement_arguments(parser):
+    """--device-map / --max-memory-gib for the command-line tools; explicit flags override the environment."""
+    parser.add_argument("--device-map", choices=DEVICE_MAPS, default=None,
+                        help="split the backbone over all visible GPUs (Accelerate); overrides JEVANY_DEVICE_MAP")
+    parser.add_argument("--max-memory-gib", type=float, default=None,
+                        help="per-GPU weight budget with --device-map; overrides JEVANY_MAX_MEMORY_GIB")
+
+
+def load_options_from_args(args, env=os.environ):
+    """LoadOptions from the environment with explicit placement flags applied; None when neither is set."""
+    overrides = {name: getattr(args, name) for name in ("device_map", "max_memory_gib")
+                 if getattr(args, name, None) is not None}
+    return replace(LoadOptions.from_env(env), **overrides) if overrides else None
 
 
 class Checkpoint:
@@ -221,7 +257,8 @@ class Checkpoint:
                           attn=opts.attn, multimodal=meta.multimodal,
                           backbone_adapter=adapter_name, branch_mode=meta.branch_mode,
                           lora_target_modules=explicit_targets,
-                          decision_mode=meta.decision_mode, verbalizers=meta.verbalizers or None)
+                          decision_mode=meta.decision_mode, verbalizers=meta.verbalizers or None,
+                          device_map=opts.device_map, max_memory_gib=opts.max_memory_gib)
         self.warm_start(m, meta)
         if opts.lora_scale != 1:
             for module in m.lm.modules():

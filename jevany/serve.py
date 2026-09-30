@@ -14,7 +14,7 @@ from fastapi import APIRouter, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from .api import SystemOneRequest, with_date_facts
-from .checkpoint import LoadOptions
+from .checkpoint import LoadOptions, add_placement_arguments, load_options_from_args
 from .inference import InferenceOptions, add_inference_arguments, inference_options_from_args
 from .runtime import DEFAULT_CHECKPOINT, DecisionRuntime, JevModel
 DATE_FACTS = os.environ.get("JEVANY_DATE_FACTS", "0") == "1"
@@ -185,12 +185,13 @@ def main(argv=None):
     ap.add_argument("--model-name", help="identity reported in every response; defaults to the checkpoint name")
     ap.add_argument("--device", choices=["cpu", "mps", "cuda"], default=None)
     ap.add_argument("--dtype", choices=["fp32", "fp16", "bf16"])
+    add_placement_arguments(ap)
     add_inference_arguments(ap)
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=8008)
     a = ap.parse_args(argv)
     application = create_app(a.run, device=a.device, dtype=a.dtype, model_name=a.model_name,
-                             inference_options=inference_options_from_args(a))
+                             options=load_options_from_args(a), inference_options=inference_options_from_args(a))
     import uvicorn
     uvicorn.run(application, host=a.host, port=a.port)
 
