@@ -469,3 +469,23 @@ def test_launcher_sets_communicator_default_and_keeps_explicit_override(tmp_path
     payload = json.loads(result.stdout.splitlines()[-1])
     assert payload["nonblocking"] == (override or "0")
     assert payload["args"][-4:] == ["jevany", "train", "--base", "example/base"]
+
+
+def test_linear_attention_kernel_report(monkeypatch):
+    from jevany import backbones
+    attempted = []
+
+    def fake_import(name):
+        attempted.append(name)
+        if name == "fla":
+            return object()
+        raise OSError("undefined symbol")   # a wheel built for another torch fails to import, not only to resolve
+
+    backbones.linear_attention_kernels.cache_clear()
+    monkeypatch.setattr(backbones.importlib, "import_module", fake_import)
+    try:
+        assert backbones.linear_attention_kernels() == {"flash_linear_attention": True, "causal_conv1d": False}
+        backbones.linear_attention_kernels()
+        assert attempted == ["fla", "causal_conv1d"]
+    finally:
+        backbones.linear_attention_kernels.cache_clear()

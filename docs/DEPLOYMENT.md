@@ -155,14 +155,26 @@ it automatically and otherwise uses its slower PyTorch implementation.
 find a latency benefit from it.
 
 ```bash
-python -m pip install flash-linear-attention causal-conv1d
+python -m pip install -e '.[local,fast]'   # flash-linear-attention
+# causal-conv1d picks a prebuilt wheel for the torch it builds against; disable
+# build isolation so that is the installed torch (and set
+# CAUSAL_CONV1D_SKIP_CUDA_BUILD=TRUE on machines without nvcc).
+python -m pip install --no-build-isolation causal-conv1d
 ```
+
+A wheel built for another torch fails to import, and Transformers then falls
+back to the PyTorch path with only a log warning. `describe()` and `GET /v1/models` report
+`acceleration.linear_attention_kernels` for hybrid backbones (`null` otherwise),
+so a deployment can confirm which path it runs.
 
 On an H200 with a BF16 Qwen3.5-4B backbone, batch size 1 and SDPA, FLA reduced
 long-request GPU p90 from 82.81 ms to 47.62 ms. Short-request p90 changed from
 51.35 ms to 47.88 ms. Adding `causal-conv1d` to FLA added about 1 ms in that
 prefill-only test. SDPA was about 2% faster than eager. These are warmed GPU
-forward measurements, not HTTP latency.
+forward measurements, not HTTP latency. On an A100-40GB, FLA with causal-conv1d
+kept JevAny-Qwen3.5-4B's development-suite accuracy within one question and
+reduced median Transfer latency from 105 ms to 94 ms and JevBench p90 from
+475 ms to 282 ms.
 
 The exact BF16 path keeps LoRA weights separate. For latency-sensitive serving,
 merge them into the BF16 backbone at load time:

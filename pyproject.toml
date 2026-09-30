@@ -40,6 +40,8 @@ local = [
 ]
 
 serve = ["jevany[local]", "fastapi>=0.115", "uvicorn>=0.30"]
+# Fused Triton kernels for gated-DeltaNet layers (Qwen3.5/3.8). Linux + CUDA; see docs/DEPLOYMENT.md.
+fast = ["flash-linear-attention>=0.5"]
 train = ["jevany[local]", "datasets>=3.0", "wandb>=0.19"]
 multimodal = ["av>=14,<19", "pillow>=10", "torchvision>=0.21,<0.30"]
 bedrock = ["boto3>=1.40"]

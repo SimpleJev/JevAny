@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from .api import SystemOneRequest, output_tokens, to_answers, to_record, validate_response
+from .backbones import linear_attention_kernels
 from .checkpoint import Checkpoint, LoadOptions
 from .client import DecisionClient
 from .device import default_device, sync
@@ -63,9 +64,14 @@ class DecisionRuntime:
                 "decision_mode": self.checkpoint.meta.decision_mode,
                 "backbone_adapter": self.model.backbone_adapter,
                 "branch_mode": self.model.branch_mode,
-                "acceleration": getattr(self.model, "inference_acceleration", {
-                    "compile_mode": None, "lora_merged": False, "approximate_bf16_merge": False,
-                }),
+                "acceleration": {
+                    **getattr(self.model, "inference_acceleration", {
+                        "compile_mode": None, "lora_merged": False, "approximate_bf16_merge": False,
+                    }),
+                    # Fused gated-DeltaNet kernels; None when the backbone has no such layers.
+                    "linear_attention_kernels": (linear_attention_kernels()
+                                                 if getattr(self.model, "hybrid", False) else None),
+                },
                 "capabilities": asdict(capabilities), "limits": self.limits,
                 "prefix_cache": {
                     "enabled": self.inference_options.prefix_cache_size > 0 and capabilities.prefix_cache,
