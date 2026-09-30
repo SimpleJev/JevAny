@@ -401,3 +401,82 @@ def test_native_media_checkpoint_python_http_parity(tmp_path, family, monkeypatc
         invalid = http.post("/v1/systemone", json=body)
         assert invalid.status_code == 422
         assert "at most 1 question" in invalid.json()["detail"]
+
+
+def _varied_requests(request_body):
+    return [request_body.model_copy(update={"state": "state " * (4 + 3 * index)}) for index in range(8)]
+
+
+@pytest.mark.parametrize("family", ["llama", "qwen35"])
+def test_request_batching_matches_serial_scoring(tmp_path, request_body, family):
+    import time
+    checkpoint = make_checkpoint(tmp_path, family)
+    serial = JevModel.from_pretrained(checkpoint, device="cpu", inference_options=InferenceOptions())
+    requests = _varied_requests(request_body)
+    expected = [serial(request) for request in requests]
+    assert serial.describe()["batching"] == {"enabled": False, "max_batch_size": 1, "batches": 0, "batched_requests": 0}
+
+    batched = JevModel.from_pretrained(checkpoint, device="cpu",
+                                       inference_options=InferenceOptions(max_batch_size=8, prefix_cache_size=0))
+    runtime = batched.runtime
+    runtime.model_lock.acquire()   # hold the model so every request queues before the first forward
+    with ThreadPoolExecutor(len(requests)) as pool:
+        try:
+            futures = [pool.submit(batched, request) for request in requests]
+            deadline = time.monotonic() + 30
+            while len(runtime.pending) < len(requests) and time.monotonic() < deadline:
+                time.sleep(0.01)
+            queued = len(runtime.pending)
+        finally:
+            runtime.model_lock.release()
+        actual = [future.result(timeout=60) for future in futures]
+    assert queued == len(requests)
+    for left, right in zip(actual, expected):
+        assert_answers_close(left["answers"], right["answers"])
+        assert left["usage"] == right["usage"]
+    stats = batched.describe()["batching"]
+    assert stats["batched_requests"] == len(requests) and stats["batches"] < len(requests)
+    alone = batched(requests[0])   # an idle runtime scores one request alone
+    assert_answers_close(alone["answers"], expected[0]["answers"])
+    with TestClient(create_app(model=batched)) as http:
+        response = http.post("/v1/systemone", json=requests[1].model_dump())
+        assert response.status_code == 200
+        assert_answers_close(response.json()["answers"], expected[1]["answers"])
+        assert http.post("/v1/systemone", json=requests[1].model_dump() | {"questions": {}}).status_code == 422
+
+
+def test_request_batching_isolates_failures_and_respects_token_budget(checkpoint, request_body, monkeypatch):
+    local = JevModel.from_pretrained(checkpoint, device="cpu",
+                                     inference_options=InferenceOptions(max_batch_size=8, prefix_cache_size=0))
+    runtime = local.runtime
+    record = to_record(request_body)[0]
+    admitted = [runtime._admit(record) for _ in range(3)]
+    from jevany.runtime import _Pending, _padded_tokens
+    tokens = _padded_tokens([admitted[0][1]], runtime.model.branch_mode)
+    runtime.inference_options = replace(runtime.inference_options, max_packed_tokens=2 * tokens)
+    runtime.pending.extend(_Pending(item) for item in admitted)
+    assert len(runtime._take_batch()) == 2 and len(runtime.pending) == 1
+    runtime.pending.clear()
+
+    slots = [_Pending(item) for item in admitted]
+    original = runtime.model.probs
+    broken = id(slots[1].admitted[1])
+    single_forward = runtime.model.forward_batch
+    def forward_batch(encodings):
+        if len(encodings) > 1:
+            raise RuntimeError("batch")
+        return single_forward(encodings)
+    monkeypatch.setattr(runtime.model, "forward_batch", forward_batch)
+    def probs(encoding):
+        if id(encoding) == broken:
+            raise ValueError("bad request")
+        return original(encoding)
+    monkeypatch.setattr(runtime.model, "probs", probs)
+    with runtime.model_lock:
+        runtime._run_batch(slots)
+    assert all(slot.done for slot in slots)
+    assert slots[0].error is None and slots[2].error is None and slots[0].result[0] == slots[2].result[0]
+    assert isinstance(slots[1].error, ValueError)
+    assert runtime.batching and local.describe()["batching"]["enabled"]
+    monkeypatch.setattr(runtime.model, "multimodal", True)
+    assert not runtime.batching and not local.describe()["batching"]["enabled"]
