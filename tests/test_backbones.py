@@ -489,3 +489,58 @@ def test_linear_attention_kernel_report(monkeypatch):
         assert attempted == ["fla", "causal_conv1d"]
     finally:
         backbones.linear_attention_kernels.cache_clear()
+
+
+@pytest.mark.parametrize("objective", ["sft", "rlcr"])
+def test_resumed_training_matches_uninterrupted_run(tmp_path, objective):
+    from safetensors.torch import load_file
+    from jevany.train import TRAINER_STATE, main
+    base = tmp_path / "base"
+    make_base(base, "llama")
+    data = tmp_path / "train.jsonl"
+    data.write_text("".join(json.dumps({"state": "state " * (2 + index), "questions": {
+        "q": {"type": "choice", "instructions": "choose", "criteria": {"yes": None, "no": None, "other": None},
+              "label": ["yes", "no", "other"][index % 3]},
+    }}) + "\n" for index in range(5)))
+    args = ["--base", str(base), "--data", str(data), "--device", "cpu", "--lora", "2", "--head-dim", "8",
+            "--epochs", "2", "--batch", "1", "--accum", "2", "--seed", "3", "--lr", "0.01"]
+    if objective == "rlcr":
+        args += ["--rlcr", "--rlcr-group-size", "4"]
+    plain = main(args + ["--out", str(tmp_path / "plain")])
+    assert not (plain / "checkpoints").exists()
+    full = main(args + ["--out", str(tmp_path / "full"), "--save-state-every-steps", "1"])
+
+    def weights(run):
+        return load_file(run / "adapter_model.safetensors"), torch.load(run / "head.pt", weights_only=False)["head"]
+
+    expected_adapter, expected_head = weights(full)
+    for left, right in zip(weights(plain), (expected_adapter, expected_head)):
+        assert left.keys() == right.keys() and all(torch.equal(left[k], right[k]) for k in left)
+    states = sorted((full / "checkpoints").glob("step-*"))
+    assert [path.name for path in states] == [f"step-{index:06d}" for index in range(1, 6)]
+    expected_metrics = json.loads((full / "training_metrics.json").read_text())
+    for state in states:
+        assert (state / TRAINER_STATE).is_file() and (state / "rng-rank000.pt").is_file()
+        resumed = main(args + ["--out", str(tmp_path / f"resumed-{state.name}"), "--resume-from", str(state)])
+        adapter, head = weights(resumed)
+        assert adapter.keys() == expected_adapter.keys()
+        for key in adapter:
+            assert torch.equal(adapter[key], expected_adapter[key]), (state.name, key)
+        for key in head:
+            assert torch.equal(head[key], expected_head[key]), (state.name, key)
+        metrics = json.loads((resumed / "training_metrics.json").read_text())
+        for key in ("optimizer_steps", "records_seen", "forward_tokens"):
+            assert metrics[key] == expected_metrics[key], (state.name, key)
+        assert json.loads((resumed / "training_config.json").read_text())["resumed_from"]["path"] == str(state)
+    changed_lr = [value if value != "0.01" else "0.02" for value in args]
+    with pytest.raises(ValueError, match="settings differ.*lr"):
+        main(changed_lr + ["--out", str(tmp_path / "bad"), "--resume-from", str(states[0])])
+    with pytest.raises(SystemExit):
+        main(args + ["--out", str(tmp_path / "missing"), "--resume-from", str(tmp_path)])
+    import shutil
+    incomplete = tmp_path / "incomplete"
+    shutil.copytree(states[0], incomplete)
+    (incomplete / "rng-rank000.pt").unlink()
+    with pytest.raises(ValueError, match="incomplete checkpoint"):
+        main(args + ["--out", str(tmp_path / "from-incomplete"), "--resume-from", str(incomplete)])
+    assert not list((full / "checkpoints").glob("*/*.partial"))

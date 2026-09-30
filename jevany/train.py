@@ -7,7 +7,7 @@
 
 Batch size is small (variable-length records with custom masks) and gradients are accumulated over --accum micro-batches.
 """
-import argparse, contextlib, inspect, json, math, os, random, resource, sys, time
+import argparse, contextlib, inspect, json, math, os, random, resource, shutil, sys, time
 from collections import Counter
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -303,6 +303,36 @@ def batch_loss(model, a, batch, dev, autocast, distributed_forward=None, rlcr_si
 
 # --- run --------------------------------------------------------------------------------------------------------------
 
+TRAINER_STATE = "trainer_state.pt"
+# Settings that may differ between an interrupted run and its resumption.
+RESUME_FREE_ARGS = frozenset({"out", "resume_from", "config", "dry_run", "save_state_every_steps",
+                              "wandb_project", "wandb_name", "wandb_group", "wandb_entity", "wandb_mode"})
+
+
+def rng_state_file(rank):
+    return f"rng-rank{rank:03d}.pt"
+
+
+def capture_rng():
+    return {"torch": torch.get_rng_state(),
+            "cuda": torch.cuda.get_rng_state_all() if torch.cuda.is_available() else None,
+            "mps": torch.mps.get_rng_state() if torch.backends.mps.is_available() else None}
+
+
+def restore_rng(state):
+    torch.set_rng_state(state["torch"])
+    if state["cuda"] is not None:
+        torch.cuda.set_rng_state_all(state["cuda"])
+    if state.get("mps") is not None:
+        torch.mps.set_rng_state(state["mps"])
+
+
+def resume_mismatches(saved_args, args):
+    """Settings that would change the resumed trajectory."""
+    current = vars(args)
+    return sorted(key for key in set(saved_args) | set(current)
+                  if key not in RESUME_FREE_ARGS and saved_args.get(key) != current.get(key))
+
 def parse_args(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", help="flat TOML recipe; CLI flags override recipe values")
@@ -367,6 +397,12 @@ def parse_args(argv=None):
     ap.add_argument("--eval_suite", default="", help="suite to score during training; defaults to --suite")
     ap.add_argument("--eval_transfer_suite", default="", help="optional out-of-domain suite whose development split is scored with the fitted temperature")
     ap.add_argument("--checkpoint_every_steps", type=int, default=0, help="save a model checkpoint after evaluations at this step interval; 0 saves only the final model")
+    ap.add_argument("--save_state_every_steps", type=int, default=0,
+                    help="save a resumable checkpoint (weights plus optimizer, scheduler, data position and RNG) "
+                         "under checkpoints/ at this optimizer-step interval; 0 disables")
+    ap.add_argument("--resume_from", default="",
+                    help="continue an interrupted run from a checkpoints/step-* directory written with "
+                         "--save_state_every_steps; pass the same settings and a new --out")
     ap.add_argument("--early_stop_patience", type=int, default=0, help="stop after this many consecutive periodic evaluations without improvement; 0 disables")
     ap.add_argument("--early_stop_metric", choices=("development_acc", "development_nll", "transfer_acc", "transfer_nll"), default="development_acc")
     ap.add_argument("--early_stop_min_delta", type=float, default=0.0)
@@ -392,7 +428,7 @@ def parse_args(argv=None):
     if a.replay and not (a.data and a.suite):
         ap.error("--replay needs both --data and --suite")
     if min(a.max_steps, a.eval_every_steps, a.eval_records, a.checkpoint_every_steps,
-           a.early_stop_patience, a.early_stop_min_delta) < 0:
+           a.early_stop_patience, a.early_stop_min_delta, a.save_state_every_steps) < 0:
         ap.error("step, evaluation, checkpoint and early-stop values must be nonnegative")
     if not math.isfinite(a.early_stop_min_delta):
         ap.error("--early_stop_min_delta must be finite")
@@ -418,6 +454,8 @@ def parse_args(argv=None):
         ap.error("augmentation probabilities must be in [0, 1]; none/distractor probabilities must sum to at most 1")
     if not a.data and not a.suite:
         ap.error("pass --data or --suite, directly or in --config")
+    if a.resume_from and not (Path(a.resume_from) / TRAINER_STATE).is_file():
+        ap.error(f"--resume_from needs a directory containing {TRAINER_STATE}")
     if Path(a.out).exists() and int(os.environ.get("RANK", "0")) == 0:
         ap.error("refusing to overwrite an existing run")
     return a
@@ -656,6 +694,23 @@ def main(argv=None):
         init_source = initial_checkpoint.warm_start(model, meta)
         if main_process:
             print(f"delta: warm start from {init_source['resolved']}: {init_source['adapter_tensors']} adapter tensors and the pointer head loaded", flush=True)
+    resume = None
+    if a.resume_from:
+        resume = torch.load(Path(a.resume_from) / TRAINER_STATE, map_location="cpu", weights_only=False)
+        mismatched = resume_mismatches(resume["args"], a)
+        if mismatched:
+            raise ValueError(f"--resume_from {a.resume_from}: settings differ from the interrupted run: {mismatched}")
+        if resume["world_size"] != world_size:
+            raise ValueError(f"--resume_from {a.resume_from}: saved with world_size={resume['world_size']}, "
+                             f"launched with {world_size}")
+        missing_rng = [rng_state_file(r) for r in range(world_size)
+                       if not (Path(a.resume_from) / rng_state_file(r)).is_file()]
+        if missing_rng:
+            raise ValueError(f"--resume_from {a.resume_from}: incomplete checkpoint, missing {missing_rng}")
+        Checkpoint(a.resume_from).warm_start(model, meta)
+        init_source = resume["init_source"]
+        if main_process:
+            print(f"resume: optimizer step {resume['step']} from {a.resume_from}", flush=True)
     if main_process:
         print(f"device={dev} world_size={world_size} trainable params={sum(p.numel() for p in model.trainable_parameters())/1e6:.1f}M", flush=True)
 
@@ -670,6 +725,7 @@ def main(argv=None):
     if main_process:
         write_json(out_dir / "training_config.json", {"args": vars(a), "suite_sha256": suite_hash, "base_revision": revision,
                    "init_source": init_source, "holdout": holdout,
+                   **({"resumed_from": {"path": a.resume_from, "optimizer_step": resume["step"]}} if resume else {}),
                    "distributed": {"world_size": world_size, "global_effective_batch": global_batch,
                                    "per_rank_records": per_rank_records, "padding_records_per_epoch": padding_per_epoch}})
         print(f"{len(reqs)} training requests (holdout={holdout}), questions by type "
@@ -687,6 +743,9 @@ def main(argv=None):
         groups.append({"params": head_params, "lr": a.head_lr or a.lr})
     opt = torch.optim.AdamW(groups, lr=a.lr, weight_decay=a.weight_decay)
     sched = learning_rate_schedule(opt, [group["lr"] for group in groups], steps)
+    if resume:
+        opt.load_state_dict(resume["optimizer"])
+        sched.load_state_dict(resume["scheduler"])
     distributed_forward = None
     if distributed:
         device_index = torch.cuda.current_device()
@@ -698,6 +757,24 @@ def main(argv=None):
     best_eval_metric = best_eval_step = None
     stale_evals = 0
     early_stopped = False
+    start_epoch = start_microbatch = 0
+    if resume:
+        restore_rng(torch.load(Path(a.resume_from) / rng_state_file(rank), weights_only=False))
+        loop = resume["loop"]
+        step, seen, tokens_seen, peak_mem = loop["step"], loop["seen"], loop["tokens_seen"], loop["peak_mem"]
+        run = Counter(loop["run"])
+        last_eval_step, best_eval_metric = loop["last_eval_step"], loop["best_eval_metric"]
+        best_eval_step, stale_evals = loop["best_eval_step"], loop["stale_evals"]
+        start_epoch, start_microbatch = loop["epoch"], loop["next_microbatch"]
+        t0 -= loop["wall_seconds"]
+        if best_eval_step is not None and main_process:
+            # Early stopping may select a checkpoint written before the interruption.
+            name = f"step-{best_eval_step:06d}"
+            source = Path(a.resume_from).parent / name
+            if source.is_dir() and not (out_dir / "checkpoints" / name).exists():
+                shutil.copytree(source, out_dir / "checkpoints" / name)
+        if distributed:
+            dist.barrier()
 
     def save_checkpoint(directory, checkpoint_step):
         directory = Path(directory)
@@ -775,12 +852,45 @@ def main(argv=None):
         last_eval_step = step
         return stop
 
-    if evaluation_due(0, steps, a.eval_every_steps, a.eval_before_start):
+    def save_training_state(epoch, next_microbatch):
+        """Write weights (unless an evaluation checkpoint exists) plus everything needed to resume."""
+        directory = out_dir / "checkpoints" / f"step-{step:06d}"
+        exists = [directory.is_dir()]
+        if distributed:
+            dist.broadcast_object_list(exists, src=0)
+        if not exists[0]:
+            save_checkpoint(directory, step)
+        if next_microbatch == micro_per_epoch:
+            epoch, next_microbatch = epoch + 1, 0
+        torch.save(capture_rng(), directory / rng_state_file(rank))
+        if distributed:
+            dist.barrier()   # every rank's RNG file exists before the state file marks the checkpoint resumable
+        if main_process:
+            partial = directory / (TRAINER_STATE + ".partial")
+            torch.save({
+                "args": vars(a), "world_size": world_size, "step": step, "init_source": init_source,
+                "optimizer": opt.state_dict(), "scheduler": sched.state_dict(),
+                "loop": {"step": step, "epoch": epoch, "next_microbatch": next_microbatch,
+                         "seen": seen, "tokens_seen": tokens_seen, "peak_mem": peak_mem, "run": dict(run),
+                         "last_eval_step": last_eval_step, "best_eval_metric": best_eval_metric,
+                         "best_eval_step": best_eval_step, "stale_evals": stale_evals,
+                         "wall_seconds": time.time() - t0},
+            }, partial)
+            os.replace(partial, directory / TRAINER_STATE)
+            print(f"resumable state step {step}: {directory}", flush=True)
+        if distributed:
+            dist.barrier()
+
+    if not resume and evaluation_due(0, steps, a.eval_every_steps, a.eval_before_start):
         run_evaluation()
     for ep in range(a.epochs):
         rng.shuffle(reqs)
+        if ep < start_epoch:
+            continue
         epoch_reqs, _ = distributed_slice(reqs, rank, world_size)
         for mb in range(micro_per_epoch):
+            if ep == start_epoch and mb < start_microbatch:
+                continue
             chunk = epoch_reqs[mb * a.batch : (mb + 1) * a.batch]
             batch = encode_batch(model, tok, a, chunk, ep)
             sync_now = (mb + 1) % a.accum == 0 or mb + 1 == micro_per_epoch
@@ -833,6 +943,8 @@ def main(argv=None):
                             print(f"early stop at step {step}: {a.early_stop_metric} did not improve for "
                                   f"{stale_evals} evaluations", flush=True)
                         break
+                if a.save_state_every_steps and step % a.save_state_every_steps == 0 and step < steps:
+                    save_training_state(ep, mb + 1)
                 if step >= steps:
                     break
         if step >= steps or early_stopped:
