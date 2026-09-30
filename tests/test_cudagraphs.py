@@ -17,6 +17,8 @@ def test_cuda_graph_option_from_env():
     assert not LoadOptions.from_env({"JEVANY_CUDA_GRAPHS": "0"}).cuda_graphs
     with pytest.raises(ValueError, match="enable one"):
         LoadOptions(cuda_graphs=True, compile_mode="reduce-overhead")
+    with pytest.raises(ValueError, match="one GPU"):
+        LoadOptions(cuda_graphs=True, device_map="auto")
     with pytest.raises(ValueError, match="positive integer"):
         LoadOptions(cuda_graph_max_tokens=0)
 

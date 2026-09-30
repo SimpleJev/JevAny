@@ -99,22 +99,40 @@ def test_adapter_without_placement_is_rejected(tmp_path, monkeypatch):
 
 
 @pytest.mark.skipif(torch.cuda.device_count() < 2, reason="needs two CUDA devices")
+def test_disk_offloaded_adapter_is_rejected(tmp_path):
+    base = tmp_path / "base"
+    make_base(base, "qwen35", legacy=True)
+    tokenizer = load_tokenizer(base)
+    reference = DecisionModel(base, tokenizer, "cuda", lora=2, head_dim=8)
+    size = sum(parameter.numel() * parameter.element_size() for parameter in reference.lm.parameters())
+    with pytest.raises(ValueError, match="offloaded adapter or readout weights"):
+        DecisionModel(base, tokenizer, "cuda", lora=2, head_dim=8, device_map="sequential",
+                      max_memory_gib=0.6 * size / 2**30)
+
+
+@pytest.mark.skipif(torch.cuda.device_count() < 2, reason="needs two CUDA devices")
 @pytest.mark.parametrize("family,decision_mode", [("qwen35", "pointer"), ("llama", "pointer"),
                                                   ("gpt2", "lm_token")])
 def test_sharded_forward_matches_single_device(tmp_path, family, decision_mode):
+    from peft import get_peft_model_state_dict, set_peft_model_state_dict
+
     base = tmp_path / "base"
     make_base(base, family, legacy=decision_mode == "lm_token")
     tokenizer = load_tokenizer(base)
     verbalizers = ["yes", "no"] if decision_mode == "lm_token" else None
     common = dict(lora=2, head_dim=8, decision_mode=decision_mode, verbalizers=verbalizers)
+    torch.manual_seed(0)
     single = DecisionModel(base, tokenizer, "cuda", **common).eval()
-    # A budget of ~60% of the weights per GPU forces Accelerate to use both cards.
+    adapter_state = {name: value.detach().cpu() for name, value in get_peft_model_state_dict(single.lm).items()}
+    # A budget of ~90% of the weights per GPU forces two-card placement without
+    # introducing disk-offloaded meta tensors in these two-layer fixtures.
     size = sum(p.numel() * p.element_size() for p in single.lm.parameters())
+    torch.manual_seed(0)
     sharded = DecisionModel(base, tokenizer, "cuda", device_map="sequential",
-                            max_memory_gib=0.6 * size / 2**30, **common).eval()
+                            max_memory_gib=0.9 * size / 2**30, **common).eval()
+    set_peft_model_state_dict(sharded.lm, adapter_state)
     if single.head is not None:
         sharded.head.load_state_dict(single.head.state_dict())
-    sharded.lm.load_state_dict(single.lm.state_dict())
     assert len(sharded.devices) >= 2
     assert not sharded.inference_capabilities.prefix_cache
     encoded = single.encode(tokenizer, RECORD)

@@ -353,6 +353,16 @@ class DecisionModel(nn.Module):
             self.lm_head = self.lm.get_input_embeddings()
         if self.lm_head is not None:
             self.lm_head.requires_grad_(False)
+        if placement:
+            offloaded_adapters = [
+                name for name, parameter in self.lm.named_parameters()
+                if parameter.requires_grad and parameter.device.type == "meta"
+            ]
+            offloaded_readout = self.lm_head is not None and self.lm_head.weight.device.type == "meta"
+            if offloaded_adapters or offloaded_readout:
+                raise ValueError(
+                    "device_map offloaded adapter or readout weights; increase max_memory_gib so they stay on GPUs"
+                )
         self.head = (PointerHead(self.lm.get_input_embeddings().weight.shape[1], dp=head_dim,
                                  residual_dim=head_residual_dim)
                      if decision_mode == "pointer" else None)

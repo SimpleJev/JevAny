@@ -169,7 +169,9 @@ back to the PyTorch path with only a log warning. `describe()` and `GET /v1/mode
 report whether the two optional packages import under
 `acceleration.linear_attention_kernels` for hybrid backbones (`null` otherwise).
 Use a profiler to prove which kernels execute; package availability alone is not
-that proof.
+that proof. Keep CUDA-only `causal-conv1d` out of CPU serving and test
+environments; Transformers may select the installed extension even for CPU
+inputs.
 
 On an H200 with a BF16 Qwen3.5-4B backbone, batch size 1 and SDPA, FLA reduced
 long-request GPU p90 from 82.81 ms to 47.62 ms. Short-request p90 changed from
@@ -356,7 +358,10 @@ Python callers pass `LoadOptions(device_map="auto", max_memory_gib=31)`; the
 command-line tools also read `JEVANY_DEVICE_MAP` and `JEVANY_MAX_MEMORY_GIB`.
 `device_map` accepts Accelerate's `auto`, `balanced`, `balanced_low_0` and
 `sequential` strategies. `max_memory_gib` caps the weights placed on each GPU;
-leave headroom for the activations of long requests.
+leave headroom for the activations of long requests. JevAny rejects placements
+that spill adapter or direct-token readout weights to disk because those weights
+cannot be restored safely after Accelerate dispatch. Increase `max_memory_gib`
+or expose another GPU instead.
 
 This is pipeline placement, not tensor parallelism: layers still run one after
 another, so it adds memory rather than throughput. The readout head stays on
