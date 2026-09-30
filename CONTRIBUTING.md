@@ -42,6 +42,13 @@ Keep JSON request/response compatibility when changing inference. Add labels onl
 to training records and keep them out of model-facing inputs. Data converters
 should record source revisions and preserve evaluation separation.
 
+For another model family, extend `BackboneAdapter` and select it with
+`--backbone-adapter module:Class`. Its `forward(model, **inputs)` hook serves text,
+native media and prefix reuse; return `last_hidden_state` in the native dtype and
+`past_key_values` when caching is explicitly requested. Ordinary scoring disables
+caching. Declare packed-mask and prefix-cache support separately, and validate
+training, checkpoint reload and serving before enabling either capability.
+
 The code is organized around user entry points:
 
 | Location | Responsibility |
