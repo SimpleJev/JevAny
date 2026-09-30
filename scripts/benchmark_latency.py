@@ -85,11 +85,15 @@ def main(argv=None):
     parser.add_argument("--device", choices=("cpu", "cuda", "mps"), default="cuda")
     parser.add_argument("--modality", choices=("all", "text", "image", "video"), default="text")
     parser.add_argument("--records", type=int, default=256, help="first N eligible records; 0 = all")
+    parser.add_argument("--max-packed", type=int, default=16_384,
+                        help="maximum encoded tokens accepted by the local predictor")
     parser.add_argument("--warmup", type=int, default=16)
     parser.add_argument("--repeats", type=int, default=3)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--cuda-graphs", action="store_true",
                         help="replay captured CUDA graphs (LoadOptions.cuda_graphs; also JEVANY_CUDA_GRAPHS=1)")
+    parser.add_argument("--cuda-graph-max-tokens", type=int,
+                        help="largest captured row; longer rows run eagerly (default 2048)")
     parser.add_argument("--serving-kernels", action="store_true",
                         help="keep PyTorch's fused SDPA kernels as `jevany serve` does, instead of the math kernel "
                              "LocalPredictor selects for fp32-exact evaluation")
@@ -115,9 +119,13 @@ def main(argv=None):
     if len(set(identities)) != len(identities):
         parser.error("latency panel contains duplicate record IDs")
     options = LoadOptions.from_env()
-    if args.cuda_graphs:
-        options = replace(options, cuda_graphs=True)
-    predictor = LocalPredictor(args.run, args.device, options, exact_kernels=not args.serving_kernels)
+    if args.cuda_graphs or args.cuda_graph_max_tokens is not None:
+        options = replace(options, cuda_graphs=True,
+                          cuda_graph_max_tokens=(args.cuda_graph_max_tokens
+                                                 if args.cuda_graph_max_tokens is not None
+                                                 else options.cuda_graph_max_tokens))
+    predictor = LocalPredictor(args.run, args.device, options, max_packed=args.max_packed,
+                               exact_kernels=not args.serving_kernels)
     report = measure(records, predictor, args.device, args.warmup, args.repeats, args.seed)
     report.update(
         checkpoint=args.run, base_loading=predictor.base_loading,
@@ -148,6 +156,7 @@ def main(argv=None):
             "lora_scale": options.lora_scale, "temperature": options.temperature,
             "merge_bf16": options.merge_bf16, "compile_mode": options.compile_mode,
             "device_map": options.device_map, "max_memory_gib": options.max_memory_gib,
+            "cuda_graph_max_tokens": options.cuda_graph_max_tokens,
         },
         cuda_graphs=getattr(predictor.model, "inference_acceleration", {}).get("cuda_graphs"),
     )

@@ -12,15 +12,18 @@ cuda = pytest.mark.skipif(not torch.cuda.is_available(), reason="needs CUDA")
 
 def test_cuda_graph_option_from_env():
     assert not LoadOptions.from_env({}).cuda_graphs
-    assert LoadOptions.from_env({"JEVANY_CUDA_GRAPHS": "1"}).cuda_graphs
+    configured = LoadOptions.from_env({"JEVANY_CUDA_GRAPHS": "1", "JEVANY_CUDA_GRAPH_MAX_TOKENS": "1024"})
+    assert configured.cuda_graphs and configured.cuda_graph_max_tokens == 1024
     assert not LoadOptions.from_env({"JEVANY_CUDA_GRAPHS": "0"}).cuda_graphs
     with pytest.raises(ValueError, match="enable one"):
         LoadOptions(cuda_graphs=True, compile_mode="reduce-overhead")
+    with pytest.raises(ValueError, match="positive integer"):
+        LoadOptions(cuda_graph_max_tokens=0)
 
 
 def test_cuda_graphs_require_one_cuda_device(tmp_path):
     base = tmp_path / "base"
-    make_base(base, "qwen35")
+    make_base(base, "qwen35", legacy=True)
     model = DecisionModel(base, load_tokenizer(base), "cpu", lora=2, head_dim=8)
     assert model.branch_mode == "rows"
     with pytest.raises(ValueError, match="one CUDA device"):
@@ -33,6 +36,15 @@ def test_cuda_graphs_reject_packed_backbones(tmp_path):
     model = DecisionModel(base, load_tokenizer(base), "cpu", lora=2, head_dim=8)
     assert model.branch_mode == "packed"
     with pytest.raises(ValueError, match="row-mode"):
+        RowGraphs(model)
+
+
+def test_cuda_graphs_reject_trainable_token_embeddings(tmp_path):
+    base = tmp_path / "base"
+    make_base(base, "qwen35")
+    model = DecisionModel(base, load_tokenizer(base), "cpu", lora=2, head_dim=8)
+    assert model.special_embeddings
+    with pytest.raises(ValueError, match="trainable token embeddings"):
         RowGraphs(model)
 
 
@@ -57,7 +69,7 @@ ONE_QUESTION = {**RECORD, "questions": RECORD["questions"][:1]}
 ])
 def test_graph_replay_matches_eager(tmp_path, family, dtype, decision_mode):
     base = tmp_path / "base"
-    make_base(base, family, legacy=decision_mode == "lm_token")
+    make_base(base, family, legacy=True)
     tokenizer = load_tokenizer(base)
     torch.manual_seed(0)
     model = DecisionModel(base, tokenizer, "cuda", lora=2, head_dim=8, dtype=dtype, decision_mode=decision_mode,
@@ -76,7 +88,7 @@ def test_graph_replay_matches_eager(tmp_path, family, dtype, decision_mode):
 @cuda
 def test_multi_question_and_long_rows_run_eagerly(tmp_path):
     base = tmp_path / "base"
-    make_base(base, "qwen35")
+    make_base(base, "qwen35", legacy=True)
     tokenizer = load_tokenizer(base)
     model = DecisionModel(base, tokenizer, "cuda", lora=2, head_dim=8).eval()
     several, one = model.encode(tokenizer, RECORD), model.encode(tokenizer, ONE_QUESTION)
@@ -92,15 +104,16 @@ def test_multi_question_and_long_rows_run_eagerly(tmp_path):
 def test_checkpoint_option_captures_and_runtime_reports(tmp_path):
     from jevany import Choice, JevModel, SystemOneRequest
     from test_serving import make_checkpoint
-    checkpoint = make_checkpoint(tmp_path, "qwen35")
+    checkpoint = make_checkpoint(tmp_path, "qwen35", legacy=True)
     eager = JevModel.from_pretrained(checkpoint, device="cuda")
-    graphs = JevModel.from_pretrained(checkpoint, device="cuda", options=LoadOptions(cuda_graphs=True))
+    graphs = JevModel.from_pretrained(
+        checkpoint, device="cuda", options=LoadOptions(cuda_graphs=True, cuda_graph_max_tokens=192))
     request = SystemOneRequest(state="state " * 20, questions={
         "choice": Choice(instructions="choose", criteria={"a": None, "b": None})})
     expected, actual = eager(request), graphs(request)
     assert actual["answers"]["choice"]["probabilities"] == pytest.approx(
         expected["answers"]["choice"]["probabilities"], abs=1e-5)
     stats = graphs.describe()["acceleration"]["cuda_graphs"]
-    assert stats["buckets"] == [128, 192, 256, 320, 384, 448, 512]   # capped at the 512-token window
+    assert stats["buckets"] == [128, 192]
     assert (stats["graph_calls"], stats["eager_calls"]) == (1, 0)
     assert eager.describe()["acceleration"]["cuda_graphs"] is None

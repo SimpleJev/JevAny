@@ -150,6 +150,9 @@ class LoadOptions:
     cuda_graphs  capture one CUDA graph per padded row length after loading (jevany.cudagraphs) and replay them at
                  inference. Row-mode backbones on one CUDA device only; capture adds tens of seconds to loading.
                  Probabilities are not bit-identical to the eager path.
+    cuda_graph_max_tokens
+                 largest captured row. Longer rows use eager inference. The conservative default avoids padding
+                 regressions on long requests; raise it only after measuring the target model and workload.
     """
     dtype: torch.dtype | None = None
     merge: bool = True
@@ -162,6 +165,7 @@ class LoadOptions:
     device_map: str | None = None
     max_memory_gib: float | None = None
     cuda_graphs: bool = False
+    cuda_graph_max_tokens: int = 2048
 
     def __post_init__(self):
         if self.compile_mode not in (None, *COMPILE_MODES):
@@ -175,6 +179,10 @@ class LoadOptions:
                 raise ValueError("max_memory_gib must be finite and positive")
         if self.cuda_graphs and self.compile_mode:
             raise ValueError("cuda_graphs and compile_mode are alternative graph captures; enable one")
+        if self.cuda_graphs and self.device_map is not None:
+            raise ValueError("cuda_graphs require the whole model on one GPU; disable device_map")
+        if type(self.cuda_graph_max_tokens) is not int or self.cuda_graph_max_tokens < 1:
+            raise ValueError("cuda_graph_max_tokens must be a positive integer")
 
     @classmethod
     def from_env(cls, env=os.environ):
@@ -188,7 +196,8 @@ class LoadOptions:
                    compile_mode=_compile_mode(env.get("JEVANY_COMPILE")),
                    device_map=env.get("JEVANY_DEVICE_MAP") or None,
                    max_memory_gib=float(env["JEVANY_MAX_MEMORY_GIB"]) if env.get("JEVANY_MAX_MEMORY_GIB") else None,
-                   cuda_graphs=env.get("JEVANY_CUDA_GRAPHS", "0") == "1")
+                   cuda_graphs=env.get("JEVANY_CUDA_GRAPHS", "0") == "1",
+                   cuda_graph_max_tokens=int(env.get("JEVANY_CUDA_GRAPH_MAX_TOKENS", "2048")))
 
 
 def add_placement_arguments(parser):
@@ -292,7 +301,7 @@ class Checkpoint:
         graphs = None
         if opts.cuda_graphs:
             from .cudagraphs import RowGraphs
-            graphs = m.cuda_graphs = RowGraphs(m).capture()
+            graphs = m.cuda_graphs = RowGraphs(m, max_tokens=opts.cuda_graph_max_tokens).capture()
         m.inference_acceleration["cuda_graphs"] = graphs.stats if graphs is not None else None
         return tok, m
 

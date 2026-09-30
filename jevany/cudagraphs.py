@@ -27,15 +27,19 @@ class RowGraphs:
     """Captured row forwards for one DecisionModel. Construct, then ``capture()``; the model consults
     ``forward_rows_batch`` before its eager path and ``stats`` reports lengths, capture time and call counts."""
 
-    def __init__(self, model, lengths=LENGTHS):
+    def __init__(self, model, lengths=LENGTHS, max_tokens=None):
         if model.branch_mode != "rows":
             raise ValueError("CUDA graphs cover row-mode backbones; this model runs packed branches")
+        if model.special_embeddings:
+            raise ValueError("CUDA graphs do not support adapters with trainable token embeddings")
         devices = {parameter.device for parameter in model.parameters()}
         if len(devices) != 1 or next(iter(devices)).type != "cuda":
             raise ValueError("CUDA graphs need the whole model on one CUDA device")
         self.model, self.device = model, next(iter(devices))
         self.window = model.inference_capabilities.context_window
-        self.lengths = tuple(n for n in sorted(set(lengths)) if self.window is None or n <= self.window)
+        limit = min(value for value in (self.window, max_tokens) if value is not None) \
+            if self.window is not None or max_tokens is not None else None
+        self.lengths = tuple(n for n in sorted(set(lengths)) if limit is None or n <= limit)
         if not self.lengths:
             raise ValueError("no CUDA-graph length fits the backbone's context window")
         self.graphs = {}

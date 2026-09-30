@@ -143,10 +143,11 @@ exact checkpoint path unless their report says otherwise.
 | Control | Values | 4B recommendation | 27B recommendation | What it changes |
 |---|---|---|---|---|
 | `--dtype` / `JEVANY_DTYPE` | `fp32`, `fp16`, `bf16` | `bf16` | `bf16` | Backbone arithmetic and memory use |
-| `JEVANY_MERGE_BF16` | `0`, `1` | Usually unnecessary | `1` for serving | Permits an approximate BF16 LoRA merge |
+| `JEVANY_MERGE_BF16` | `0`, `1` | `1` for serving | `1` for serving | Permits an approximate BF16 LoRA merge |
 | `JEVANY_ATTN` | `sdpa`, `eager` | `sdpa` | `sdpa` | Backend for the full-attention layers |
-| `JEVANY_COMPILE` | `0`, `default`, `reduce-overhead`, `max-autotune`, `max-autotune-no-cudagraphs` | `reduce-overhead` only for a persistent service with recurring shapes | `0` | Optional `torch.compile`; `reduce-overhead` may capture compatible graph segments |
-| `JEVANY_CUDA_GRAPHS` / `--cuda-graphs` | `0`, `1` | `1` for single-GPU serving | Untested | Replays whole-backbone CUDA graphs for single-question requests; excludes `JEVANY_COMPILE` |
+| `JEVANY_COMPILE` | `0`, `default`, `reduce-overhead`, `max-autotune`, `max-autotune-no-cudagraphs` | `0` when direct graphs are enabled | `0` | Optional `torch.compile`; it cannot be combined with direct CUDA Graphs |
+| `JEVANY_CUDA_GRAPHS` / `--cuda-graphs` | `0`, `1` | `1` for single-question serving | `1` for single-question serving | Replays whole-backbone CUDA graphs on one GPU |
+| `JEVANY_CUDA_GRAPH_MAX_TOKENS` / `--cuda-graph-max-tokens` | positive integer | `2048` | `2048` | Longer rows stay on eager inference instead of being padded into a slower graph |
 
 Qwen3.5 and Qwen3.8 mix full-attention layers with Gated DeltaNet layers.
 `JEVANY_ATTN` controls only the full-attention layers. Install
@@ -164,9 +165,11 @@ python -m pip install --no-build-isolation causal-conv1d
 ```
 
 A wheel built for another torch fails to import, and Transformers then falls
-back to the PyTorch path with only a log warning. `describe()` and `GET /v1/models` report
-`acceleration.linear_attention_kernels` for hybrid backbones (`null` otherwise),
-so a deployment can confirm which path it runs.
+back to the PyTorch path with only a log warning. `describe()` and `GET /v1/models`
+report whether the two optional packages import under
+`acceleration.linear_attention_kernels` for hybrid backbones (`null` otherwise).
+Use a profiler to prove which kernels execute; package availability alone is not
+that proof.
 
 On an H200 with a BF16 Qwen3.5-4B backbone, batch size 1 and SDPA, FLA reduced
 long-request GPU p90 from 82.81 ms to 47.62 ms. Short-request p90 changed from
@@ -214,22 +217,25 @@ the measurement excluded tokenization, transfers and HTTP work.
 
 `--cuda-graphs` (`JEVANY_CUDA_GRAPHS=1`, `LoadOptions(cuda_graphs=True)`) exposes
 this direct capture for serving. When the model loads it records the complete
-backbone forward once per padded length (24 lengths from 128 to 16,384 tokens,
-capped at the context window, one shared memory pool) and replays the smallest
-that fits each single-question request:
+backbone forward once per padded length, using one shared memory pool, and
+replays the smallest bucket that fits each single-question request. Capture is
+limited to 2,048 tokens by default because padding longer requests erased the
+latency gain in the H200 tests:
 
 ```bash
-jevany serve --checkpoint SimpleJev/JevAny-Qwen3.5-4B-LoRA --device cuda --cuda-graphs
+jevany serve --checkpoint SimpleJev/JevAny-Qwen3.5-4B-LoRA --device cuda \
+  --dtype bf16 --cuda-graphs --cuda-graph-max-tokens 2048
 ```
 
 It applies to row-mode backbones (Qwen3.5/3.8, Gemma and the other hybrid or
 sliding-window families) with the whole model on one CUDA device. Requests are
 right-padded; every layer of these backbones is causal, so padding never reaches
-a real token. Capture adds roughly 25-30 seconds to loading and nothing is
-compiled afterwards. Multi-question requests and rows longer than the largest
-length run eagerly. `describe()` reports the lengths, capture time and how many
-calls replayed or ran eagerly under `acceleration.cuda_graphs`. It cannot be
-combined with `JEVANY_COMPILE`.
+a real token. Multi-question requests and rows above the configured limit run
+eagerly. Checkpoints with trainable token embeddings are rejected before capture
+because their PEFT embedding adapter allocates tensors during each forward.
+`describe()` reports the lengths, capture time and how many calls replayed or ran
+eagerly under `acceleration.cuda_graphs`. Direct graphs cannot be combined with
+`JEVANY_COMPILE`.
 
 Padded shapes select different kernels, so probabilities are close to, not
 identical with, the eager path. On an A100-40GB with FLA and causal-conv1d
@@ -237,16 +243,30 @@ installed and SDPA, over every request of the development suites, median
 forward latency on Transfer fell from 92 ms to 25 ms for JevAny-Qwen3.5-4B
 (accuracy 78.78% before, 78.87% after; JevBench 181/231 both), from 95 ms to
 26 ms for the Direct-Token model and from 98 ms to 32 ms for JevAny-Gemma-4B.
-`scripts/benchmark_latency.py` accepts `--cuda-graphs`, and `--serving-kernels`
-to time with the fused SDPA kernels `jevany serve` uses rather than the math
-kernel pinned for fp32-exact evaluation.
+The same 231-request JevBench development panel was also measured on one H200
+with BF16 merged LoRA, SDPA and FLA. With the 2,048-token capture limit, direct
+graphs reduced 4B end-to-end median latency from 60.29 ms to 9.70 ms and mean
+latency from 60.18 ms to 22.10 ms. Its p95 fell from 75.75 ms to 70.18 ms. For
+27B, median latency fell from 113.54 ms to 30.53 ms and mean latency from
+138.49 ms to 81.20 ms; p95 was effectively unchanged at 279.17 versus 281.52
+ms. Capture took 6.27 seconds for 4B and 9.88 seconds for 27B. On the matched
+BF16-merged paths, 4B changed from 187 to 185 correct answers with three argmax
+changes, while 27B stayed at 207 with no argmax changes. Maximum probability
+changes were 0.0160 and 0.0146 respectively. These serving measurements do not
+replace the exact benchmark scores reported by the model cards.
 
-For a latency-oriented 27B deployment, keep compilation off:
+`scripts/benchmark_latency.py` accepts `--cuda-graphs`,
+`--cuda-graph-max-tokens`, `--max-packed` and `--serving-kernels`. The last
+option keeps the fused SDPA kernels used by `jevany serve` instead of selecting
+the math kernel used for fp32-exact evaluation.
+
+For a latency-oriented 27B deployment, keep compilation off and cap direct
+graphs at 2,048 tokens:
 
 ```bash
 JEVANY_MERGE_BF16=1 JEVANY_ATTN=sdpa JEVANY_COMPILE=0 \
   jevany serve --checkpoint SimpleJev/JevAny-Qwen3.8-27B-LoRA \
-  --device cuda --dtype bf16
+  --device cuda --dtype bf16 --cuda-graphs --cuda-graph-max-tokens 2048
 ```
 
 ## A lightweight HTTP client

@@ -52,6 +52,8 @@ def decide_main(argv: list[str]) -> None:
     parser.add_argument("--model-name", help="identity for a locally loaded checkpoint")
     add_placement_arguments(parser)
     parser.add_argument("--cuda-graphs", action="store_true", help="capture CUDA graphs for the local checkpoint")
+    parser.add_argument("--cuda-graph-max-tokens", type=int,
+                        help="largest captured row; longer rows run eagerly (default 2048)")
     add_inference_arguments(parser)
     args = parser.parse_args(argv)
     content = sys.stdin.read() if args.request == "-" else Path(args.request).read_text(encoding="utf-8")
@@ -62,16 +64,21 @@ def decide_main(argv: list[str]) -> None:
         from .checkpoint import LoadOptions
         from .runtime import JevModel
         options = load_options_from_args(args)
-        if args.cuda_graphs:
-            options = replace(options or LoadOptions.from_env(), cuda_graphs=True)
+        if args.cuda_graphs or args.cuda_graph_max_tokens is not None:
+            options = options or LoadOptions.from_env()
+            options = replace(options, cuda_graphs=True,
+                              cuda_graph_max_tokens=(args.cuda_graph_max_tokens
+                                                     if args.cuda_graph_max_tokens is not None
+                                                     else options.cuda_graph_max_tokens))
         client = JevModel.from_pretrained(
             args.checkpoint, device=args.device, dtype=args.dtype, model_name=args.model_name,
-            options=options, inference_options=inference_options_from_args(args),
+            options=options,
+            inference_options=inference_options_from_args(args),
         )
     else:
         if (args.device or args.dtype or args.model_name is not None
-                or args.device_map is not None or args.max_memory_gib is not None
-                or args.cuda_graphs
+                or args.device_map is not None or args.max_memory_gib is not None or args.cuda_graphs
+                or args.cuda_graph_max_tokens is not None
                 or any(getattr(args, item.name) is not None for item in fields(InferenceOptions))):
             parser.error("device, dtype, placement, model-name, cuda-graphs and inference limit options require "
                          "--checkpoint")

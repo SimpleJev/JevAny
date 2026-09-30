@@ -27,17 +27,17 @@ def single_thread():
     torch.set_num_threads(previous)
 
 
-def make_checkpoint(root, family="llama", adapter="auto"):
+def make_checkpoint(root, family="llama", adapter="auto", legacy=False):
     torch.manual_seed(43)
     base, checkpoint = root / "base", root / "checkpoint"
-    make_base(base, family)
+    make_base(base, family, legacy=legacy)
     tokenizer = load_tokenizer(base)
     model = DecisionModel(base, tokenizer, "cpu", lora=2, head_dim=8, backbone_adapter=adapter)
     model.lm.save_pretrained(checkpoint, save_embedding_layers=False)
     tokenizer.save_pretrained(checkpoint)
     write_meta(checkpoint, Meta(
         base=str(base), head=model.head.state_dict(), lora=2, head_dim=8,
-        special_embeddings=True, tokenizer_saved=True,
+        special_embeddings=model.special_embeddings, tokenizer_saved=True,
         backbone_adapter=adapter, branch_mode=model.branch_mode,
     ))
     return checkpoint

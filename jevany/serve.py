@@ -189,13 +189,18 @@ def main(argv=None):
     add_placement_arguments(ap)
     ap.add_argument("--cuda-graphs", action="store_true",
                     help="capture CUDA graphs at startup (row-mode backbones on one GPU); same as JEVANY_CUDA_GRAPHS=1")
+    ap.add_argument("--cuda-graph-max-tokens", type=int,
+                    help="largest captured row; longer rows run eagerly (default 2048)")
     add_inference_arguments(ap)
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=8008)
     a = ap.parse_args(argv)
     options = load_options_from_args(a)
-    if a.cuda_graphs:
-        options = replace(options or LoadOptions.from_env(), cuda_graphs=True)
+    if a.cuda_graphs or a.cuda_graph_max_tokens is not None:
+        options = options or LoadOptions.from_env()
+        options = replace(options, cuda_graphs=True,
+                          cuda_graph_max_tokens=(a.cuda_graph_max_tokens if a.cuda_graph_max_tokens is not None
+                                                 else options.cuda_graph_max_tokens))
     application = create_app(a.run, device=a.device, dtype=a.dtype, model_name=a.model_name,
                              options=options, inference_options=inference_options_from_args(a))
     import uvicorn
