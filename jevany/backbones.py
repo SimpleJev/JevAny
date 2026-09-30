@@ -4,6 +4,7 @@ The default adapter uses Transformers' base-model interface. Custom adapters can
 subclass ``BackboneAdapter`` and be selected by an import path (``module:Class``)
 in both the training recipe and the saved checkpoint.
 """
+import functools
 import importlib
 from dataclasses import dataclass
 
@@ -135,6 +136,27 @@ def frozen_weight_options(config: dict) -> dict:
         from transformers import FineGrainedFP8Config
         return {"quantization_config": FineGrainedFP8Config(dequantize=True)}
     return {}
+
+
+LINEAR_ATTENTION_KERNELS = {"flash_linear_attention": "fla", "causal_conv1d": "causal_conv1d"}
+
+
+@functools.cache
+def linear_attention_kernels() -> dict[str, bool]:
+    """Whether the optional packages behind Transformers' gated-DeltaNet fast path import.
+
+    Hybrid backbones (Qwen3.5/3.8) otherwise run the reference PyTorch
+    recurrence, which is exact but several times slower on long states.
+    Transformers resolves the same imports once, when its modeling module loads.
+    """
+    status = {}
+    for name, module in LINEAR_ATTENTION_KERNELS.items():
+        try:
+            importlib.import_module(module)
+            status[name] = True
+        except Exception:
+            status[name] = False
+    return status
 
 
 class BackboneAdapter:
