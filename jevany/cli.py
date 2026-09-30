@@ -51,22 +51,30 @@ def decide_main(argv: list[str]) -> None:
     parser.add_argument("--dtype", choices=["fp32", "fp16", "bf16"])
     parser.add_argument("--model-name", help="identity for a locally loaded checkpoint")
     add_placement_arguments(parser)
+    parser.add_argument("--cuda-graphs", action="store_true", help="capture CUDA graphs for the local checkpoint")
     add_inference_arguments(parser)
     args = parser.parse_args(argv)
     content = sys.stdin.read() if args.request == "-" else Path(args.request).read_text(encoding="utf-8")
     from .api import SystemOneRequest
     request = SystemOneRequest.model_validate_json(content)
     if args.checkpoint:
+        from dataclasses import replace
+        from .checkpoint import LoadOptions
         from .runtime import JevModel
+        options = load_options_from_args(args)
+        if args.cuda_graphs:
+            options = replace(options or LoadOptions.from_env(), cuda_graphs=True)
         client = JevModel.from_pretrained(
             args.checkpoint, device=args.device, dtype=args.dtype, model_name=args.model_name,
-            options=load_options_from_args(args), inference_options=inference_options_from_args(args),
+            options=options, inference_options=inference_options_from_args(args),
         )
     else:
         if (args.device or args.dtype or args.model_name is not None
                 or args.device_map is not None or args.max_memory_gib is not None
+                or args.cuda_graphs
                 or any(getattr(args, item.name) is not None for item in fields(InferenceOptions))):
-            parser.error("device, dtype, placement, model-name and inference limit options require --checkpoint")
+            parser.error("device, dtype, placement, model-name, cuda-graphs and inference limit options require "
+                         "--checkpoint")
         client = JevClient(args.base_url)
     print(json.dumps(client(request), indent=2, ensure_ascii=False))
 

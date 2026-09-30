@@ -147,6 +147,9 @@ class LoadOptions:
                  another, so this adds memory, not speed. The readout head stays on the requested device.
     max_memory_gib
                  per-GPU weight budget for device_map; leave room for activations on long requests.
+    cuda_graphs  capture one CUDA graph per padded row length after loading (jevany.cudagraphs) and replay them at
+                 inference. Row-mode backbones on one CUDA device only; capture adds tens of seconds to loading.
+                 Probabilities are not bit-identical to the eager path.
     """
     dtype: torch.dtype | None = None
     merge: bool = True
@@ -158,6 +161,7 @@ class LoadOptions:
     compile_mode: str | None = None
     device_map: str | None = None
     max_memory_gib: float | None = None
+    cuda_graphs: bool = False
 
     def __post_init__(self):
         if self.compile_mode not in (None, *COMPILE_MODES):
@@ -169,6 +173,8 @@ class LoadOptions:
                 raise ValueError("max_memory_gib requires device_map")
             if not (math.isfinite(self.max_memory_gib) and self.max_memory_gib > 0):
                 raise ValueError("max_memory_gib must be finite and positive")
+        if self.cuda_graphs and self.compile_mode:
+            raise ValueError("cuda_graphs and compile_mode are alternative graph captures; enable one")
 
     @classmethod
     def from_env(cls, env=os.environ):
@@ -181,7 +187,8 @@ class LoadOptions:
                    merge_bf16=env.get("JEVANY_MERGE_BF16", "0") == "1",
                    compile_mode=_compile_mode(env.get("JEVANY_COMPILE")),
                    device_map=env.get("JEVANY_DEVICE_MAP") or None,
-                   max_memory_gib=float(env["JEVANY_MAX_MEMORY_GIB"]) if env.get("JEVANY_MAX_MEMORY_GIB") else None)
+                   max_memory_gib=float(env["JEVANY_MAX_MEMORY_GIB"]) if env.get("JEVANY_MAX_MEMORY_GIB") else None,
+                   cuda_graphs=env.get("JEVANY_CUDA_GRAPHS", "0") == "1")
 
 
 def add_placement_arguments(parser):
@@ -282,6 +289,11 @@ class Checkpoint:
         }
         if opts.compile_mode:
             m.lm.compile(mode=opts.compile_mode, fullgraph=False, dynamic=True)
+        graphs = None
+        if opts.cuda_graphs:
+            from .cudagraphs import RowGraphs
+            graphs = m.cuda_graphs = RowGraphs(m).capture()
+        m.inference_acceleration["cuda_graphs"] = graphs.stats if graphs is not None else None
         return tok, m
 
     COMPAT_FIELDS = ("base", "base_revision", "lora", "head_dim", "head_residual_dim", "head_type",

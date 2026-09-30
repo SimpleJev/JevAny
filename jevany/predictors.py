@@ -65,14 +65,15 @@ class ModelPredictor:
 
 
 class LocalPredictor(ModelPredictor):
-    def __init__(self, run, device, opts=LoadOptions(), max_packed=MAX_PACKED):
-        """opts.temperature=None scores with the temperature the checkpoint carries; 1.0 scores raw logits."""
+    def __init__(self, run, device, opts=LoadOptions(), max_packed=MAX_PACKED, exact_kernels=True):
+        """opts.temperature=None scores with the temperature the checkpoint carries; 1.0 scores raw logits.
+        exact_kernels=False keeps PyTorch's default CUDA kernels (fused SDPA), as `jevany serve` does."""
         if opts.temperature is not None and not (math.isfinite(opts.temperature) and opts.temperature > 0):
             raise ValueError("temperature must be finite and positive")
         checkpoint = Checkpoint(run)
         self.run = checkpoint.path
         self.base_loading = base_loading_provenance(checkpoint.meta, opts)
-        if device == "cuda":
+        if device == "cuda" and exact_kernels:
             # evaluation is fp32-exact: TF32 (10-bit mantissa) moves probabilities by ~1e-3, the isolation gate's tolerance
             torch.backends.cuda.matmul.allow_tf32 = False; torch.backends.cudnn.allow_tf32 = False
             torch.backends.cuda.enable_flash_sdp(False); torch.backends.cuda.enable_mem_efficient_sdp(False)

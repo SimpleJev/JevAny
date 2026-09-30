@@ -9,6 +9,7 @@ JEVANY_PREFIX_MIN_TOKENS size the state-prefix cache; JEVANY_DATE_FACTS=1 enable
 """
 import argparse, os
 from contextlib import asynccontextmanager
+from dataclasses import replace
 from pathlib import Path
 from fastapi import APIRouter, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -186,12 +187,17 @@ def main(argv=None):
     ap.add_argument("--device", choices=["cpu", "mps", "cuda"], default=None)
     ap.add_argument("--dtype", choices=["fp32", "fp16", "bf16"])
     add_placement_arguments(ap)
+    ap.add_argument("--cuda-graphs", action="store_true",
+                    help="capture CUDA graphs at startup (row-mode backbones on one GPU); same as JEVANY_CUDA_GRAPHS=1")
     add_inference_arguments(ap)
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=8008)
     a = ap.parse_args(argv)
+    options = load_options_from_args(a)
+    if a.cuda_graphs:
+        options = replace(options or LoadOptions.from_env(), cuda_graphs=True)
     application = create_app(a.run, device=a.device, dtype=a.dtype, model_name=a.model_name,
-                             options=load_options_from_args(a), inference_options=inference_options_from_args(a))
+                             options=options, inference_options=inference_options_from_args(a))
     import uvicorn
     uvicorn.run(application, host=a.host, port=a.port)
 
