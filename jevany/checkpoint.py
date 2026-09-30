@@ -137,6 +137,9 @@ class LoadOptions:
                  optional node-local mirror for base-model I/O. Checkpoint metadata still names the canonical base.
     merge_bf16   allow the faster but slightly approximate merge of a LoRA adapter into BF16 base weights.
     compile_mode opt into torch.compile. ``reduce-overhead`` also enables CUDA Graphs for compatible graph segments.
+    cuda_graphs  capture one CUDA graph per padded row length after loading (jevany.cudagraphs) and replay them at
+                 inference. Row-mode backbones on one CUDA device only; capture adds tens of seconds to loading.
+                 Probabilities are not bit-identical to the eager path.
     """
     dtype: torch.dtype | None = None
     merge: bool = True
@@ -146,10 +149,13 @@ class LoadOptions:
     base_load_path: str | None = None
     merge_bf16: bool = False
     compile_mode: str | None = None
+    cuda_graphs: bool = False
 
     def __post_init__(self):
         if self.compile_mode not in (None, *COMPILE_MODES):
             raise ValueError(f"compile_mode must be one of {sorted(COMPILE_MODES)}")
+        if self.cuda_graphs and self.compile_mode:
+            raise ValueError("cuda_graphs and compile_mode are alternative graph captures; enable one")
 
     @classmethod
     def from_env(cls, env=os.environ):
@@ -160,7 +166,8 @@ class LoadOptions:
                    temperature=float(env["JEVANY_TEMPERATURE"]) if env.get("JEVANY_TEMPERATURE") else None,
                    base_load_path=env.get("JEVANY_BASE_LOAD_PATH") or None,
                    merge_bf16=env.get("JEVANY_MERGE_BF16", "0") == "1",
-                   compile_mode=_compile_mode(env.get("JEVANY_COMPILE")))
+                   compile_mode=_compile_mode(env.get("JEVANY_COMPILE")),
+                   cuda_graphs=env.get("JEVANY_CUDA_GRAPHS", "0") == "1")
 
 
 class Checkpoint:
@@ -245,6 +252,11 @@ class Checkpoint:
         }
         if opts.compile_mode:
             m.lm.compile(mode=opts.compile_mode, fullgraph=False, dynamic=True)
+        graphs = None
+        if opts.cuda_graphs:
+            from .cudagraphs import RowGraphs
+            graphs = m.cuda_graphs = RowGraphs(m).capture()
+        m.inference_acceleration["cuda_graphs"] = graphs.stats if graphs is not None else None
         return tok, m
 
     COMPAT_FIELDS = ("base", "base_revision", "lora", "head_dim", "head_residual_dim", "head_type",

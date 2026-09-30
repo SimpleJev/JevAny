@@ -346,6 +346,7 @@ class DecisionModel(nn.Module):
         self.verbalizer_ids = verbalizer_token_ids(tokenizer, self.verbalizers) if self.verbalizers else []
         self.temperature = 1.0
         self.device = device
+        self.cuda_graphs = None   # jevany.cudagraphs.RowGraphs, attached by Checkpoint.load(cuda_graphs=True)
         self.to(device)
 
     @property
@@ -439,7 +440,11 @@ class DecisionModel(nn.Module):
         """Row form: every question of every record is one causal row = state tokens + its branch tokens, right-padded
         into a single batch. Returns the same nested logits as forward_batch. Exact isolation by construction (rows are
         independent); the state is recomputed per row (Q x state tokens), which training accepts; serving uses the
-        prefix cache instead."""
+        prefix cache instead. Single-question inference replays captured CUDA graphs when they are attached."""
+        if self.cuda_graphs is not None and not torch.is_grad_enabled():
+            out = self.cuda_graphs.forward_rows_batch(encs)
+            if out is not None:
+                return out
         rows, readouts = [], []   # one causal row per question; readouts[i] = (record, <decide> offset, option offsets)
         for b, e in enumerate(encs):
             S, Sp, brs = rows_of(e)

@@ -10,6 +10,7 @@ import os
 import platform
 import random
 import time
+from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
@@ -87,6 +88,11 @@ def main(argv=None):
     parser.add_argument("--warmup", type=int, default=16)
     parser.add_argument("--repeats", type=int, default=3)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--cuda-graphs", action="store_true",
+                        help="replay captured CUDA graphs (LoadOptions.cuda_graphs; also JEVANY_CUDA_GRAPHS=1)")
+    parser.add_argument("--serving-kernels", action="store_true",
+                        help="keep PyTorch's fused SDPA kernels as `jevany serve` does, instead of the math kernel "
+                             "LocalPredictor selects for fp32-exact evaluation")
     args = parser.parse_args(argv)
     if args.records < 0 or min(args.warmup, args.repeats) < 1:
         parser.error("records must be nonnegative; warmup and repeats must be positive")
@@ -109,7 +115,9 @@ def main(argv=None):
     if len(set(identities)) != len(identities):
         parser.error("latency panel contains duplicate record IDs")
     options = LoadOptions.from_env()
-    predictor = LocalPredictor(args.run, args.device, options)
+    if args.cuda_graphs:
+        options = replace(options, cuda_graphs=True)
+    predictor = LocalPredictor(args.run, args.device, options, exact_kernels=not args.serving_kernels)
     report = measure(records, predictor, args.device, args.warmup, args.repeats, args.seed)
     report.update(
         checkpoint=args.run, base_loading=predictor.base_loading,
@@ -138,6 +146,7 @@ def main(argv=None):
             "lora_scale": options.lora_scale, "temperature": options.temperature,
             "merge_bf16": options.merge_bf16, "compile_mode": options.compile_mode,
         },
+        cuda_graphs=getattr(predictor.model, "inference_acceleration", {}).get("cuda_graphs"),
     )
     target.parent.mkdir(parents=True, exist_ok=True)
     with target.open("x") as output:
