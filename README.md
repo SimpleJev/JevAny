@@ -304,32 +304,32 @@ NLL, Brier and ECE are measured on Transfer.
 [Machine-readable results](results/model-family-v2.json) ·
 [Method and ablation report](reports/JevAny_Tech_Report.pdf)
 
-The public external comparison uses the same nine-model cohort on the complete
+The public external comparison uses the same ten-model cohort on the complete
 2,000-decision Typed Decisions test split and the same 724 JevJudge text
-requests. Typed Decisions measures agreement with teacher-derived soft gold,
-not objective correctness. JevJudge reports all-requested accuracy, so
-rejections count wrong.
+requests. JevJudge uses native inputs without truncation under a shared
+65,536-token context ceiling; every model answers 724/724. Typed Decisions
+measures agreement with teacher-derived soft gold, not objective correctness.
 
 [![Two-panel comparison of the same JevAny and locally rerun open-model cohort on Typed Decisions and the JevJudge common text set](docs/external-zero-shot.svg)](docs/external-zero-shot.svg)
 
-| Model | Typed Decisions ↑ | JevJudge text ↑ | JevJudge coverage | Source / status |
-|:---|---:|---:|---:|:---|
-| **JevAny-Qwen3.8-27B** | **72.80%** | **58.29%** | 637 / 724 | Ours; locally rerun |
-| JevAny-Qwen3.5-4B-Direct-Token | 67.20% | 50.55% | 637 / 724 | Ours; locally rerun |
-| JevAny-Qwen3.5-4B | 63.50% | 50.00% | 637 / 724 | Ours; locally rerun |
-| OpenDecider-small | 66.65% | 54.97% | 724 / 724 | Open; locally rerun |
-| Bongard-mini | 59.65% | 51.24% | 724 / 724 | Open; locally rerun |
-| Jeff-Gemma4-E2B | 57.95% | 44.06% | 688 / 724 | Open; locally rerun |
-| Jeff-Qwen3.5-2B | 55.45% | 39.64% | 693 / 724 | Open; locally rerun |
-| Jeff-Qwen3.5-0.8B | 49.15% | 41.30% | 693 / 724 | Open; locally rerun |
-| Laya | 36.20% | 38.67% | 724 / 724 | Open; locally rerun |
+| Model | Typed Decisions ↑ | JevJudge text ↑ | Source / status |
+|:---|---:|---:|:---|
+| **JevAny-Qwen3.8-27B** | **72.80%** | **66.44%** | Ours; full-context rerun |
+| JevAny-Muse-Glimmer-30B | 69.95% | 62.57% | Ours; full-context rerun |
+| JevAny-Qwen3.5-4B-Direct-Token | 67.20% | 58.56% | Ours; full-context rerun |
+| JevAny-Qwen3.5-4B | 63.50% | 57.87% | Ours; full-context rerun |
+| JevAny-Gemma-4B | 66.25% | 51.10% | Ours; full-context rerun |
+| OpenDecider-small | 66.65% | 54.97% | Open; full-context rerun |
+| Bongard-mini | 59.65% | 51.24% | Open; full-context rerun |
+| Jeff-Gemma4-E2B | 57.95% | 46.69% | Open; full-context rerun |
+| Jeff-Qwen3.5-2B | 55.45% | 42.82% | Open; full-context rerun |
+| Jeff-Qwen3.5-0.8B | 49.15% | 43.51% | Open; full-context rerun |
 
 JevJudge text covers four roles and is a diagnostic, not the official
-five-role full-multimodal headline. Every model received the same 724 requests;
-coverage differences reflect model rejection and context capability, not
-different requested samples. Benchmark-trained specialist checkpoints are
-excluded from this zero-shot chart. Additional JevAny, Kev and published-only
-rows remain in the full external tables.
+five-role full-multimodal headline. Benchmark-trained specialist checkpoints
+are excluded from this zero-shot chart. Laya uses silent `max_len=512`
+truncation and is not full-context comparable; Laya, Kev and published-only
+rows remain clearly labeled in the supplemental external tables.
 
 [Full external tables and reproducibility notes](docs/EXTERNAL_EVALUATION.md) ·
 [Machine-readable chart results](results/external-zero-shot-v1.json)

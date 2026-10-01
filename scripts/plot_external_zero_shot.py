@@ -129,7 +129,7 @@ def main() -> None:
     fig.text(
         0.035,
         0.910,
-        "The same nine models in the same order · full public splits",
+        "The same ten models in the same order · full public splits",
         fontsize=12.5,
         color=MUTED,
     )
@@ -157,13 +157,13 @@ def main() -> None:
         axes[1],
         panels["jevjudge_text"],
         "JevJudge common text set",
-        "724 requests · all-requested accuracy (%)",
+        "724/724 full-context requests · accuracy (%)",
     )
     fig.text(
         0.035,
         0.045,
-        "JevJudge text is a four-role diagnostic, not the official full-multimodal headline; all models receive the "
-        "same 724 requests and rejections count wrong.",
+        "JevJudge text is a four-role diagnostic, not the official full-multimodal headline; native inputs use the "
+        "same 65,536-token ceiling with no truncation.",
         fontsize=10.2,
         color=MUTED,
     )

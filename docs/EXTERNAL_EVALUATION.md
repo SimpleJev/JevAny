@@ -26,16 +26,18 @@ with that teacher-derived label, not objective correctness.
 | Jeff-Gemma4-E2B | Open external | 57.95% | 0.382 | 0.204 | 0.090 | 53.5 ms |
 | Jeff-Qwen3.5-2B | Open external | 55.45% | 0.386 | 0.210 | 0.099 | 42.2 ms |
 | Jeff-Qwen3.5-0.8B | Open external | 49.15% | 0.558 | 0.272 | 0.136 | 41.7 ms |
-| Laya (`55cf4c4`) | Open external | 36.20% | 0.576 | 0.316 | 0.174 | **19.7 ms** |
 
-The pinned dataset card also contains results that were not rerun locally. They
-are displayed separately because hardware, runtime and item-level outputs are
-not available under the local protocol. OpenDecider and Bongard are included
-here only to show their published references; the locally rerun rows above are
-used in the chart.
+#### Supplemental Typed Decisions rows
 
-| Published dataset-card row | Accuracy ↑ | KL ↓ | Brier ↓ | ECE ↓ | Status |
+Laya is retained as a request-conversion check but is not in the common
+dual-panel cohort. The pinned dataset card also contains results that were not
+rerun locally; their hardware, runtime and item-level outputs are unavailable
+under the local protocol. OpenDecider and Bongard appear below only as
+published references; the locally rerun rows above are used in the chart.
+
+| Supplemental row | Accuracy ↑ | KL ↓ | Brier ↓ | ECE ↓ | Status |
 |---|---:|---:|---:|---:|---:|
+| Laya (`55cf4c4`) | 36.20% | 0.576 | 0.316 | 0.174 | Open; local full-split rerun |
 | meraGPT Decider 1 | **76.80%** | **0.096** | **0.052** | 0.180 | Published only; not rerun |
 | Liquid AI d1 | 74.20% | 0.475 | 0.155 | 0.124 | Published only; not rerun |
 | TypeSafe Jev 1.13.0 | 72.70% | 1.442 | 0.148 | 0.144 | Published only; not rerun |
@@ -53,42 +55,40 @@ zero-shot comparison.
 
 ### JevJudge-Public
 
-For a common-input comparison, we selected the same nine current/open models
+For a common-input comparison, we selected the same ten current/open models
 reported on Typed Decisions and evaluated all 724 records declared
-`modality=text` in JevJudge-Public v0.3 at revision `4d576ded`. Every row below
-uses the same native state and typed question with labels and metadata hidden,
-and the fixed order matches the chart. No input is truncated: over-limit or
-invalid requests are rejected and count wrong in the primary all-requested
-accuracy. Probability metrics are computed on answered rows only and therefore
-must be read with coverage.
+`modality=text` in JevJudge-Public v0.3 at revision `4d576ded`. Every row uses
+the same native state and typed question with labels and metadata hidden, and
+the fixed order matches the chart. Native inputs are not truncated and share a
+65,536-token context ceiling; every model completed 724/724 requests.
 
-| Model | Answered / 724 | Coverage | All-requested accuracy ↑ | Answered accuracy | NLL ↓ | Brier ↓ | ECE ↓ |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| **JevAny-Qwen3.8-27B** | 637 | 88.0% | **58.29%** | 66.25% | **0.838** | **0.480** | 0.094 |
-| JevAny-Qwen3.5-4B-Direct-Token | 637 | 88.0% | 50.55% | 57.46% | 0.947 | 0.536 | 0.095 |
-| JevAny-Qwen3.5-4B | 637 | 88.0% | 50.00% | 56.83% | 1.033 | 0.573 | 0.082 |
-| OpenDecider-small | 724 | 100.0% | 54.97% | 54.97% | 0.971 | 0.547 | **0.033** |
-| Bongard-mini | 724 | 100.0% | 51.24% | 51.24% | 1.048 | 0.594 | 0.068 |
-| Jeff-Gemma4-E2B | 688 | 95.0% | 44.06% | 46.37% | 1.226 | 0.684 | 0.181 |
-| Jeff-Qwen3.5-2B | 693 | 95.7% | 39.64% | 41.41% | 1.237 | 0.693 | 0.205 |
-| Jeff-Qwen3.5-0.8B | 693 | 95.7% | 41.30% | 43.15% | 1.274 | 0.708 | 0.214 |
-| Laya | 724 | 100.0% | 38.67% | 38.67% | 2.293 | 0.717 | 0.208 |
+| Model | Accuracy ↑ | NLL ↓ | Brier ↓ | ECE ↓ |
+|---|---:|---:|---:|---:|
+| **JevAny-Qwen3.8-27B** | **66.44%** | **0.824** | **0.476** | 0.103 |
+| JevAny-Muse-Glimmer-30B | 62.57% | 0.873 | 0.503 | 0.099 |
+| JevAny-Qwen3.5-4B-Direct-Token | 58.56% | 0.915 | 0.516 | 0.089 |
+| JevAny-Qwen3.5-4B | 57.87% | 0.997 | 0.554 | 0.074 |
+| JevAny-Gemma-4B | 51.10% | 1.030 | 0.590 | 0.100 |
+| OpenDecider-small | 54.97% | 0.971 | 0.547 | **0.033** |
+| Bongard-mini | 51.24% | 1.048 | 0.594 | 0.068 |
+| Jeff-Gemma4-E2B | 46.69% | 1.210 | 0.681 | 0.181 |
+| Jeff-Qwen3.5-2B | 42.82% | 1.214 | 0.682 | 0.191 |
+| Jeff-Qwen3.5-0.8B | 43.51% | 1.256 | 0.703 | 0.211 |
 
-Every model above received the same 724 requested records. Coverage differences
-are consequences of each model's rejection and context behavior, not different
-requested samples. Two additional open Kev rows were locally run on the same
-text set but lack a matching Typed Decisions result, so they remain
-supplemental rather than entering the dual-panel cohort:
+Kev lacks matching Typed Decisions results and Laya's runtime silently applies
+`max_len=512` truncation, so these runs are supplemental and do not enter the
+full-context dual-panel cohort:
 
-| Supplemental model | Answered / 724 | All-requested accuracy ↑ | Status |
-|---|---:|---:|---|
-| Kev-4B | 637 | 46.41% | Open; locally rerun |
-| Kev-27B | 724 | 38.54% | Open; locally rerun |
+| Supplemental model | JevJudge text | Status |
+|---|---:|---|
+| Kev-4B | 54.28% | Open full-context rerun; no matching Typed result |
+| Kev-27B | 38.54% | Open full-context rerun; no matching Typed result |
+| Laya | 38.67% | Not full-context comparable; silent `max_len=512` truncation |
 
 This text-only slice represents four roles and has no quality-role records, so
 it is a diagnostic rather than JevJudge's official five-role full-multimodal
-headline. Earlier 3,220-record runs used different answered subsets and an
-internal Qwen checkpoint; they remain archived in
+headline. Earlier partial-context runs and an internal Qwen checkpoint remain
+archived in
 [`jevjudge-public.json`](../results/external-decision-evals-20261001/jevjudge-public.json)
 but are not used for the main comparison.
 
@@ -98,21 +98,16 @@ but are not used for the main comparison.
   [`external-zero-shot-v1.json`](../results/external-zero-shot-v1.json), and the
   deterministic renderer is
   [`plot_external_zero_shot.py`](../scripts/plot_external_zero_shot.py).
-- The source summaries are recorded by repository-relative path and SHA-256 in
-  that artifact: `runs/external-open-baselines-20261001/summary.json` and
-  `runs/jevjudge-open-baselines-20261001/summary.json`. Per-model report and
-  prediction hashes remain in those summaries. The current 4B pointer text
-  slice comes from
-  `results/external-decision-evals-20261001/jevjudge-public.json` (tracked
-  SHA-256 `f2f0de…6bc`) at `step-013850`; its adapter SHA-256 is
-  `5acbae…907f`.
+- The source files are recorded by repository-relative path and SHA-256 in that
+  artifact. JevJudge scores come from
+  `runs/jevjudge-open-baselines-20261001/scores-full-context`; detailed reports
+  and predictions are under the sibling `results-full-context` directory.
 - Typed Decisions uses dataset revision `d0e2f0c4`, parquet SHA-256
   `4f294f…b647c`; JevJudge uses revision `4d576ded`, test SHA-256
   `5c50f8…e83cb` and suite-manifest SHA-256 `ee52a1…15b68`.
 - Typed Decisions sends all five questions for a case in one serial request.
-  JevJudge sends one question per request. Neither protocol samples, truncates,
-  tunes calibration on the evaluation set, or substitutes predictions for
-  rejections.
+  JevJudge sends one question per request. Neither main protocol samples,
+  truncates, or tunes calibration on the evaluation set.
 
 ### JevBench v1.5.4
 
