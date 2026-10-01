@@ -84,6 +84,7 @@ score remains reported below and in the technical report.
 | Kev-27B | — | — | — | — | — | No native image/video path |
 | Kev-4B | — | — | — | — | — | No native image/video path |
 | OpenDecider-small | — | — | — | — | — | Text only |
+| Jev 1.13 (OpenRouter) | — | — | — | — | — | Text only |
 | Bongard-mini | — | — | — | — | — | No native video path |
 | Jeff-Gemma4-E2B | — | — | — | — | — | Text-only checkpoint |
 | Jeff-Qwen3.5-2B | 48.23% | 13.57% [10.80, 15.99] | 1.105 | 0.628 | 0.137 | 3,220/3,220 |
@@ -104,7 +105,8 @@ and is not the official five-role headline.
 
 | Model | Accuracy ↑ | NLL ↓ | Brier ↓ | ECE ↓ | Coverage |
 |---|---:|---:|---:|---:|---:|
-| **JevAny-Qwen3.8-27B** | **66.44%** | **0.824** | **0.476** | 0.103 | 724/724 |
+| **JevAny-Qwen3.8-27B** | **66.44%** | **0.824** | 0.476 | 0.103 | 724/724 |
+| Jev 1.13 (OpenRouter) | 65.06% | 0.836 | **0.461** | 0.076 | 724/724 |
 | JevAny-Muse-Glimmer-30B | 62.57% | 0.873 | 0.503 | 0.099 | 724/724 |
 | JevAny-Qwen3.5-4B-Direct-Token | 58.56% | 0.915 | 0.516 | 0.089 | 724/724 |
 | JevAny-Qwen3.5-4B | 57.87% | 0.997 | 0.554 | 0.074 | 724/724 |
