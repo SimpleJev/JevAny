@@ -25,8 +25,8 @@ The adapter and residual pointer head were trained with supervised fine-tuning o
 
 | Evaluation | Result |
 |---|---:|
-| Transfer accuracy (1,046 clean, knowable decisions) | 85.76% |
-| JevBench public-development accuracy (231 items) | 90.48% |
+| Transfer accuracy (1,046 clean, knowable decisions) | 86.04% |
+| JevBench public-development accuracy (231 items) | 90.04% |
 
 Transfer uses Kev's frozen `transfer-v9` suite and also informed model development. JevBench reports accuracy on all 231 public development items; it is not a sealed Benchmark Heaven score. Full measurements and suite identifiers are in the [release results](../results/model-family-v2.json), with protocols in the [evaluation guide](EVALUATION.md#model-family-v2).
 

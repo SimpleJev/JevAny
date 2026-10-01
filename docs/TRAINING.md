@@ -259,9 +259,9 @@ the maintained scope. The Phi conversion utilities and legacy media adapter name
 have been removed. The generic text adapter and custom adapter interface are
 available for experimenting with other architectures.
 
-The released JevAny adapters identify `Qwen/Qwen3.8-27B` in their release manifest
-and adapter configuration. Its Transformers architecture is `qwen3_5`.
-Load each adapter with its recorded base and revision.
+The released `JevAny-Qwen3.8-27B` adapter identifies `Qwen/Qwen3.8-27B`
+as its base in the release manifest and adapter configuration.
+Each released adapter must be loaded with its own recorded base and revision.
 
 Select the base in the existing recipe or on the command line:
 
