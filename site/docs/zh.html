@@ -49,15 +49,23 @@
 或<a href="#本地体验">在本地运行模型</a>，输入自己的任务，查看模型的选择和各选项概率。</p>
 <p><a href="../index.html#case-library">Explore all 30 application replays →</a></p>
 <h3 id="jev-llm-agent">⚡ Jev 加入 LLM Agent 循环</h3>
-<blockquote>
-<p><strong>关键结论：</strong>LLM 负责规划，环境或 LLM 提供少量选项，Jev 选择常规动作，LLM 验证并完成任务。</p>
-</blockquote>
-<p><strong>1 · Terminal-Bench · <code>sqlite-db-truncate</code>——从三个命令中选择一个</strong></p>
-<p><video class="doc-video" controls playsinline preload="none" aria-label="Jev 从三个 Terminal-Bench 命令中选择原始页面检查，LLM 随后解析并验证" poster="../assets/media/docs/jev-agent-harness-sqlite.webp"><source src="../assets/media/docs/jev-agent-harness-sqlite.webm" type="video/webm"><source src="../assets/media/docs/jev-agent-harness-sqlite.mp4" type="video/mp4">Your browser does not support video.</video></p>
-<p><strong>2 · WebShop——从页面动作中选择任务要求的颜色</strong></p>
-<p><video class="doc-video" controls playsinline preload="none" aria-label="Jev 选择任务要求的黑色商品选项，LLM 随后选择 11.5 尺码并完成购买" poster="../assets/media/docs/jev-agent-harness-webshop.webp"><source src="../assets/media/docs/jev-agent-harness-webshop.webm" type="video/webm"><source src="../assets/media/docs/jev-agent-harness-webshop.mp4" type="video/mp4">Your browser does not support video.</video></p>
-<p><strong>3 · FrozenLake——每一步都比较四个方向</strong></p>
-<p><video class="doc-video" controls playsinline preload="none" aria-label="LLM 规划一次后，Jev 在 FrozenLake 中连续选择四个依赖当前状态的导航动作" poster="../assets/media/docs/jev-agent-harness-frozen-lake.webp"><source src="../assets/media/docs/jev-agent-harness-frozen-lake.webm" type="video/webm"><source src="../assets/media/docs/jev-agent-harness-frozen-lake.mp4" type="video/mp4">Your browser does not support video.</video></p>
+<p><strong>关键结论</strong></p>
+<ul>
+<li><strong>任务层级：</strong>T0 受控环境 → T4 开放终端；任务难度与委托程度分开判断。</li>
+<li><strong>委托层级：</strong>D0 仅 LLM → D4 有边界子目标；只有局部选择容易验证时才提高委托程度。</li>
+<li><strong>适合 Jev：</strong>LLM 能生成 2–4 个有效、有明确差别、可回退且能立即看到反馈的选项。</li>
+<li><strong>保留给 LLM：</strong>规划、开放搜索、精确修改、失败恢复、高风险动作和最终完成。</li>
+<li><strong>成功标准：</strong>reward 不降，同时减少 LLM calls、tokens 或时间；否则立即交回 LLM。</li>
+</ul>
+<p><strong>1 · WebShop——从 LLM 生成的颜色和尺寸候选中选择精确选项</strong></p>
+<p><video class="doc-video" controls playsinline preload="none" aria-label="LLM 分别生成三个颜色和三个尺寸候选，Jev 选中精确选项，LLM 完成购买" poster="../assets/media/docs/jev-decision-webshop-v2.webp"><source src="../assets/media/docs/jev-decision-webshop-v2.webm" type="video/webm"><source src="../assets/media/docs/jev-decision-webshop-v2.mp4" type="video/mp4">Your browser does not support video.</video></p>
+<p>Reward <code>1→1</code> · LLM calls <code>9→4</code> · tokens <code>38,852→14,256</code> · 时间 <code>18.54s→7.83s</code></p>
+<p><strong>2 · FrozenLake——每一步都比较四个方向</strong></p>
+<p><video class="doc-video" controls playsinline preload="none" aria-label="Jev 比较四个方向、执行选中的移动、到达目标并减少 LLM 调用" poster="../assets/media/docs/jev-decision-frozen-lake-v2.webp"><source src="../assets/media/docs/jev-decision-frozen-lake-v2.webm" type="video/webm"><source src="../assets/media/docs/jev-decision-frozen-lake-v2.mp4" type="video/mp4">Your browser does not support video.</video></p>
+<p>Reward <code>1→1</code> · LLM calls <code>4→1</code> · tokens <code>2,338→663</code></p>
+<p><strong>3 · Terminal-Bench · <code>sqlite-db-truncate</code>——从三个真实命令中选择一个</strong></p>
+<p><video class="doc-video" controls playsinline preload="none" aria-label="Jev 比较三个真实 Terminal-Bench 命令，选择原始页面检查，LLM 恢复十行数据" poster="../assets/media/docs/jev-decision-terminal-v2.webp"><source src="../assets/media/docs/jev-decision-terminal-v2.webm" type="video/webm"><source src="../assets/media/docs/jev-decision-terminal-v2.mp4" type="video/mp4">Your browser does not support video.</video></p>
+<p>Reward <code>1→1</code> · LLM calls <code>15→8</code> · 时间 <code>187.9s→144.7s</code></p>
 <div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
 <thead>
 <tr>
@@ -73,9 +81,9 @@
 <td style="text-align: right;">LLM calls −64.4% · tokens −63.1% · 时间 −37.6%</td>
 </tr>
 <tr>
-<td>WebShop · 10 pairs</td>
-<td style="text-align: right;">50% → 60%</td>
-<td style="text-align: right;">LLM calls −7.7% · tokens −2.9% · 时间 −6.1%</td>
+<td>WebShop · LLM 生成候选 · 3 pairs</td>
+<td style="text-align: right;">67% → 100%</td>
+<td style="text-align: right;">LLM calls −21.4% · tokens −14.3% · 时间 −15.0%</td>
 </tr>
 <tr>
 <td>WebArena · 6 pairs</td>
@@ -89,10 +97,7 @@
 </tr>
 </tbody>
 </table></div>
-<p><strong>适合交给 Jev：</strong>2–4 个有边界、可回退、能立即观察结果的选择。</p>
-<p><strong>保留给 LLM：</strong>规划、精确修改、失败恢复和最终答案。</p>
 <p><a href="reports-JevAny_Tech_Report_Agent_Harness_Appendix.html">完整结果</a> ·
-<a href="../assets/media/docs/jev-agent-harness.mp4">组合动画</a> ·
 <a href="experiments-AGENT_HARNESS_FRONTIER_PROTOCOL.html">任务与委托分级</a> ·
 <a href="../files/reports/JevAny_Tech_Report_with_Agent_Harness.pdf">合并版技术报告</a></p>
 <h2 id="_2">📑 目录</h2>
