@@ -70,20 +70,24 @@ floor. Family skill is averaged inside each role, then the five roles are
 equally averaged. Plain accuracy weights every item equally and does not remove
 chance performance.
 
-| Model | `skill_role` ↑ (95% CI) | Plain accuracy ↑ | NLL ↓ | Brier ↓ | ECE ↓ | Full-suite status |
+For a direct visual comparison with the 724-record text subset, the README
+figure uses plain accuracy in both JevJudge panels. The official `skill_role`
+score remains reported below and in the technical report.
+
+| Model | Accuracy ↑ | Official `skill_role` ↑ (95% CI) | NLL ↓ | Brier ↓ | ECE ↓ | Full-suite status |
 |---|---:|---:|---:|---:|---:|---|
-| **JevAny-Qwen3.8-27B** | **35.55% [32.84, 38.18]** | **62.27%** | **0.878** | **0.500** | 0.094 | 3,220/3,220 |
-| JevAny-Muse-Glimmer-30B | 29.65% [26.71, 32.31] | 58.70% | 0.911 | 0.528 | 0.100 | 3,220/3,220 |
-| JevAny-Qwen3.5-4B-Direct-Token | 23.85% [20.96, 26.70] | 54.94% | 1.005 | 0.573 | 0.131 | 3,220/3,220 |
-| JevAny-Qwen3.5-4B | 23.23% [20.49, 25.84] | 54.75% | 1.051 | 0.586 | 0.117 | 3,220/3,220 |
-| JevAny-Gemma-4B | 17.92% [15.25, 20.37] | 51.49% | 1.003 | 0.578 | **0.078** | 3,220/3,220 |
+| **JevAny-Qwen3.8-27B** | **62.27%** | 35.55% [32.84, 38.18] | **0.878** | **0.500** | 0.094 | 3,220/3,220 |
+| JevAny-Muse-Glimmer-30B | 58.70% | 29.65% [26.71, 32.31] | 0.911 | 0.528 | 0.100 | 3,220/3,220 |
+| JevAny-Qwen3.5-4B-Direct-Token | 54.94% | 23.85% [20.96, 26.70] | 1.005 | 0.573 | 0.131 | 3,220/3,220 |
+| JevAny-Qwen3.5-4B | 54.75% | 23.23% [20.49, 25.84] | 1.051 | 0.586 | 0.117 | 3,220/3,220 |
+| JevAny-Gemma-4B | 51.49% | 17.92% [15.25, 20.37] | 1.003 | 0.578 | **0.078** | 3,220/3,220 |
 | Kev-27B | — | — | — | — | — | No native image/video path |
 | Kev-4B | — | — | — | — | — | No native image/video path |
 | OpenDecider-small | — | — | — | — | — | Text only |
 | Bongard-mini | — | — | — | — | — | No native video path |
 | Jeff-Gemma4-E2B | — | — | — | — | — | Text-only checkpoint |
-| Jeff-Qwen3.5-2B | 13.57% [10.80, 15.99] | 48.23% | 1.105 | 0.628 | 0.137 | 3,220/3,220 |
-| Jeff-Qwen3.5-0.8B | 11.23% [8.65, 13.44] | 47.95% | 1.118 | 0.629 | 0.123 | 3,220/3,220 |
+| Jeff-Qwen3.5-2B | 48.23% | 13.57% [10.80, 15.99] | 1.105 | 0.628 | 0.137 | 3,220/3,220 |
+| Jeff-Qwen3.5-0.8B | 47.95% | 11.23% [8.65, 13.44] | 1.118 | 0.629 | 0.123 | 3,220/3,220 |
 
 Confidence intervals use 1,000 `group_id` cluster-bootstrap replicates,
 stratified over 16 sources with seed `20261001`. Qwen3.8-27B's 62.27% plain
@@ -91,11 +95,12 @@ accuracy and 35.55% `skill_role` are not competing measurements: the latter
 removes chance and equally weights the five roles. The uniform baseline has
 40.0% plain accuracy but −0.77% `skill_role`.
 
-#### JevJudge text diagnostic
+#### JevJudge text-only accuracy
 
-The separate text view uses all 724 records declared `modality=text`, the same
+The separate text-only view uses all 724 records declared `modality=text`, the same
 native state and typed question, a 65,536-token ceiling and no input
-truncation. It covers four roles and is not the official five-role headline.
+truncation. It is a subset of the 3,220-record full suite, covers four roles,
+and is not the official five-role headline.
 
 | Model | Accuracy ↑ | NLL ↓ | Brier ↓ | ECE ↓ | Coverage |
 |---|---:|---:|---:|---:|---:|

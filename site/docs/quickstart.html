@@ -55,18 +55,37 @@ JevAny checkpoint. The current default release is
 try your own inputs and see its choices and probabilities.</p>
 <p><a href="../index.html#case-library">Explore all 30 application replays →</a></p>
 <h3 id="jev-inside-llm-agent-loops">⚡ Jev inside LLM agent loops</h3>
-<p>Jev chooses among valid, reversible actions proposed by the LLM, which handles
-planning, recovery, and completion. The animations compare LLM only (left) with
-LLM + Jev (right) at equal reward. Steps are illustrated; accelerated playback
-preserves each pair's measured completion-time ratio. Click an animation to enlarge it.</p>
+<p>Jev chooses among bounded candidate actions supplied by the environment or
+proposed by the LLM, which handles planning, recovery, and completion. The
+animations compare LLM only (left) with LLM + Jev (right) at equal reward.
+Steps are illustrated; accelerated playback preserves each pair's measured
+completion-time ratio. Click an animation to enlarge it.</p>
 <p><strong>Golden rules</strong></p>
+<p><strong>Delegate the selection bottleneck, not the task.</strong> Jev is useful in the
+narrow gap where the LLM already knows the valid alternatives, but repeated
+frontier selection is costly or measurably unreliable.</p>
+<p>Jev has two valid jobs: <strong>remove frontier work</strong>, or <strong>correct a measured local
+ranking weakness</strong>. If it does neither, it is overhead.</p>
 <ul>
-<li>Delegate when the LLM can propose 2–4 valid, meaningfully different,
-  reversible actions and the next observation can verify the choice.</li>
-<li>Keep planning, open-ended search, exact edits, recovery, high-risk actions,
-  and completion with the LLM.</li>
-<li>Use Jev only when reward stays equal or improves while decision steps, tokens,
-  or time fall; otherwise return control to the LLM.</li>
+<li><strong>Judge the phase, not the benchmark.</strong> WebShop and Terminal-Bench both mix
+  open-ended reasoning with bounded choices. Delegate only the bounded phase;
+  trivial choices are cheaper to execute directly, while missing strategies
+  stay with the LLM.</li>
+<li><strong>The menu is the capability ceiling.</strong> Give Jev 2–4 currently valid
+  counterfactual branches that include the correct action and lead to different
+  outcomes. Jev can rank expressed options; it cannot invent a missing plan.</li>
+<li><strong>For efficiency, replace reasoning; do not append a judge.</strong> One LLM plan
+  should fund several Jev choices. In the GPT-5.6-sol + 27B FrozenLake cell,
+  LLM calls fell 64.4%; WebArena, where delegation did not remove frontier
+  work, added 5.6% calls and 28.2% tokens. Quality-only use should first show a
+  ranking gain in paired or D1 shadow evaluation.</li>
+<li><strong>Stay inside the feedback horizon.</strong> Continue only while each action is
+  reversible and its semantic effect is immediately observable. Return to the
+  LLM on novelty, stale candidates, delayed feedback, or recovery.</li>
+<li><strong>Promote autonomy with evidence.</strong> Move from D0 LLM-only → D1 shadow → D2
+  one-step → D3 routine-default → D4 bounded subgoal. Keep only non-dominated
+  points: equal or higher verifier reward at lower cost, or higher reward with
+  the added cost explicitly reported. Delegation coverage itself is not a win.</li>
 </ul>
 <div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
   <tr>
@@ -344,16 +363,16 @@ NLL, Brier and ECE are measured on Transfer.
 3,220-record JevJudge multimodal suite, and its 724-record text slice. The same
 12 models stay in the same order; <code>—</code> means unsupported native input or no
 matching result.</p>
-<p><a href="../files/docs/external-zero-shot.svg"><img loading="lazy" alt="Typed Decisions, full JevJudge, and JevJudge text results for the same twelve-model cohort" src="../files/docs/external-zero-shot.svg" /></a></p>
+<p><a href="../files/docs/external-zero-shot.svg"><img loading="lazy" alt="Accuracy on Typed Decisions, full JevJudge, and the JevJudge text-only subset for the same twelve-model cohort" src="../files/docs/external-zero-shot.svg" /></a></p>
 <ul>
-<li><strong>JevAny-Qwen3.8-27B:</strong> 72.8% Typed agreement, <strong>35.6%</strong> JevJudge <code>skill_role</code>, and 66.4% JevJudge text accuracy.</li>
-<li>All five JevAny releases completed 3,220/3,220 native text, image, and video records. Their <code>skill_role</code> scores range from 17.9% to 35.6%; the strongest complete open baseline scores 13.6%.</li>
-<li>On JevJudge text, Qwen3.8-27B scores 66.4% and Kev-27B scores 64.2%. Kev has no native image/video path, so its full result is <code>—</code>.</li>
+<li><strong>JevAny-Qwen3.8-27B:</strong> 72.8% Typed accuracy, <strong>62.3%</strong> JevJudge full accuracy, and 66.4% JevJudge text-only accuracy.</li>
+<li>All five JevAny releases completed 3,220/3,220 native text, image, and video records. Their full-suite accuracy ranges from 51.5% to 62.3%; the strongest complete open baseline scores 48.2%.</li>
+<li>On the JevJudge text-only subset, Qwen3.8-27B scores 66.4% and Kev-27B scores 64.2%. Kev has no native image/video path, so its full result is <code>—</code>.</li>
 <li>Published-only Decider 1 (76.8%) and Liquid d1 (74.2%) remain above our 72.8% on Typed Decisions; neither has a JevJudge result.</li>
 </ul>
-<p>JevJudge's official <code>skill_role</code> removes each family's chance or majority-label floor and
-equally weights its five roles. Qwen3.8-27B has 62.27% plain full-suite accuracy
-and 35.55% <code>skill_role</code>; the two metrics answer different questions.</p>
+<p>All three panels use accuracy. JevJudge full covers all 3,220 multimodal records;
+text-only is its 724-record text subset. The benchmark's official <code>skill_role</code>
+metric remains in the detailed evaluation notes.</p>
 <p><a href="EXTERNAL_EVALUATION.html">Full external tables and reproducibility notes</a> ·
 <a href="../files/results/external-zero-shot-v1.json">Machine-readable chart results</a></p>
 <h3 id="31-inference-efficiency">⏱️ 3.1 Inference efficiency <a name="efficiency"></a></h3>

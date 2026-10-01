@@ -91,7 +91,7 @@ def card(fig, x: float, title: str, body: str) -> None:
 def overview_page(pdf: PdfPages, data: dict, chart: Path) -> None:
     fig = plt.figure(figsize=(8.5, 11), facecolor="white")
     header(fig, "External decision-suite evaluation",
-           "Complete Typed Decisions · JevJudge-Public v0.3 full multimodal suite · text diagnostic", 1)
+           "Accuracy on Typed Decisions · JevJudge-Public v0.3 full multimodal suite · text-only subset", 1)
     ax = fig.add_axes([0.055, 0.42, 0.89, 0.36])
     ax.imshow(mpimg.imread(chart))
     ax.axis("off")
@@ -99,15 +99,15 @@ def overview_page(pdf: PdfPages, data: dict, chart: Path) -> None:
     text = {row["model"]: row for row in data["jevjudge_text"]["models"]}
     qwen = full["JevAny-Qwen3.8-27B"]
     jeff = full["Jeff-Qwen3.5-2B"]
-    card(fig, 0.065, "Full-suite lead",
-         f"Qwen3.8-27B: {qwen['skill_role'] * 100:.2f}% skill_role\n"
-         f"Jeff-2B: {jeff['skill_role'] * 100:.2f}%\n"
-         f"Gap: {(qwen['skill_role'] - jeff['skill_role']) * 100:.2f} points")
+    card(fig, 0.065, "Full-suite accuracy",
+         f"Qwen3.8-27B: {qwen['accuracy'] * 100:.2f}%\n"
+         f"Jeff-2B: {jeff['accuracy'] * 100:.2f}%\n"
+         f"Gap: {(qwen['accuracy'] - jeff['accuracy']) * 100:.2f} points")
     card(fig, 0.365, "Complete native inputs",
          "All five JevAny releases: 3,220/3,220\n"
          "724 text · 2,214 image · 282 video\n"
          "Zero rejected or truncated records")
-    card(fig, 0.665, "Text diagnostic",
+    card(fig, 0.665, "Text-only accuracy",
          f"JevAny Qwen27: {text['JevAny-Qwen3.8-27B']['accuracy'] * 100:.2f}%\n"
          f"Kev-27B: {text['Kev-27B']['accuracy'] * 100:.2f}%\n"
          "Kev full multimodal: unsupported")
@@ -118,12 +118,12 @@ def overview_page(pdf: PdfPages, data: dict, chart: Path) -> None:
 def results_page(pdf: PdfPages, data: dict) -> None:
     fig = plt.figure(figsize=(8.5, 11), facecolor="white")
     header(fig, "JevJudge full-multimodal results",
-           "Official chance-corrected equal-role skill · returned-probability calibration metrics", 2)
+           "Accuracy headline · official chance-corrected skill_role · returned-probability calibration", 2)
     ax = fig.add_axes([0.065, 0.50, 0.87, 0.31])
     ax.axis("off")
     scored = [row for row in data["jevjudge_full"]["models"] if row.get("skill_role") is not None]
-    columns = (0.00, 0.49, 0.68, 0.81, 0.92)
-    headers = ("Model", "skill_role (95% CI)", "Accuracy", "NLL", "ECE")
+    columns = (0.00, 0.42, 0.72, 0.86, 0.97)
+    headers = ("Model", "Accuracy", "Official skill_role (95% CI)", "NLL", "ECE")
     for x, label in zip(columns, headers):
         ax.text(x, 1.02, label, transform=ax.transAxes, fontsize=8.5, color=MUTED,
                 weight="bold", ha="right" if x else "left")
@@ -133,8 +133,8 @@ def results_page(pdf: PdfPages, data: dict) -> None:
         low, high = row["skill_role_ci_95"]
         values = (
             row["model"].replace("JevAny-", ""),
-            f"{row['skill_role'] * 100:.2f}% [{low * 100:.2f}, {high * 100:.2f}]",
             f"{row['accuracy'] * 100:.2f}%",
+            f"{row['skill_role'] * 100:.2f}% [{low * 100:.2f}, {high * 100:.2f}]",
             f"{row['nll']:.3f}",
             f"{row['ece']:.3f}",
         )
@@ -157,7 +157,7 @@ def results_page(pdf: PdfPages, data: dict) -> None:
     fig.text(0.065, 0.300,
              "OpenDecider-small and Jeff-Gemma4 are text-only; Bongard-mini has no video path; Kev does not consume "
              "image or video media. Their full result is therefore —, never a media-stripped score. On the 724-record "
-             "text diagnostic, Qwen3.8-27B scores 66.44%, Kev-27B 64.23%, and Muse-Glimmer-30B 62.57%.",
+        "text-only subset, Qwen3.8-27B scores 66.44%, Kev-27B 64.23%, and Muse-Glimmer-30B 62.57%.",
              color=MUTED, fontsize=8.5, wrap=True, linespacing=1.45, va="top")
 
     fig.text(0.065, 0.215, "Protocol and provenance", color=INK, fontsize=12, weight="bold")

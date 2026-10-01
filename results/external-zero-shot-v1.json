@@ -1,5 +1,5 @@
 {
-  "artifact_version": 3,
+  "artifact_version": 4,
   "title": "External zero-shot decision evaluation",
   "generated_by": "scripts/plot_external_zero_shot.py",
   "provenance": {
@@ -115,6 +115,7 @@
     "revision": "d0e2f0c42fef86cc15d1688d25a19f5ba7c85b18",
     "scope": "complete test split: 400 cases and 2,000 scored decisions",
     "metric": "argmax agreement with the teacher-derived soft-gold label",
+    "chart_metric": "accuracy",
     "models": [
       {"model": "meraGPT Decider 1", "kind": "published_only", "status": "dataset-card result; not locally rerun", "accuracy": 0.768},
       {"model": "Liquid AI d1", "kind": "published_only", "status": "dataset-card result; not locally rerun", "accuracy": 0.742},
@@ -141,6 +142,7 @@
     "revision": "4d576ded443e159c18d46558d233c80fdf353849",
     "scope": "complete v0.3 test split: 3,220 records (724 text, 2,214 image, 282 video), 22 families and five roles",
     "metric": "skill_role: chance-corrected family skill, averaged within each role and then equally over five roles",
+    "chart_metric": "accuracy",
     "context": "native inputs; 65,536-token ceiling; no token, option, or media truncation; only complete 3,220/3,220 runs receive a score",
     "official_headline": true,
     "bootstrap": "1,000 source-stratified group_id cluster replicates; seed 20261001; percentile 95% CI",
@@ -169,6 +171,7 @@
     "revision": "4d576ded443e159c18d46558d233c80fdf353849",
     "scope": "all 724 records declared modality=text; four represented roles",
     "metric": "accuracy on the shared 724/724 full-context text requests",
+    "chart_metric": "accuracy",
     "context": "native inputs, no truncation, 65,536-token shared context ceiling",
     "official_headline": false,
     "models": [

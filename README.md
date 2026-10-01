@@ -48,19 +48,40 @@ try your own inputs and see its choices and probabilities.
 
 ### ⚡ Jev inside LLM agent loops
 
-Jev chooses among valid, reversible actions proposed by the LLM, which handles
-planning, recovery, and completion. The animations compare LLM only (left) with
-LLM + Jev (right) at equal reward. Steps are illustrated; accelerated playback
-preserves each pair's measured completion-time ratio. Click an animation to enlarge it.
+Jev chooses among bounded candidate actions supplied by the environment or
+proposed by the LLM, which handles planning, recovery, and completion. The
+animations compare LLM only (left) with LLM + Jev (right) at equal reward.
+Steps are illustrated; accelerated playback preserves each pair's measured
+completion-time ratio. Click an animation to enlarge it.
 
 **Golden rules**
 
-- Delegate when the LLM can propose 2–4 valid, meaningfully different,
-  reversible actions and the next observation can verify the choice.
-- Keep planning, open-ended search, exact edits, recovery, high-risk actions,
-  and completion with the LLM.
-- Use Jev only when reward stays equal or improves while decision steps, tokens,
-  or time fall; otherwise return control to the LLM.
+**Delegate the selection bottleneck, not the task.** Jev is useful in the
+narrow gap where the LLM already knows the valid alternatives, but repeated
+frontier selection is costly or measurably unreliable.
+
+Jev has two valid jobs: **remove frontier work**, or **correct a measured local
+ranking weakness**. If it does neither, it is overhead.
+
+- **Judge the phase, not the benchmark.** WebShop and Terminal-Bench both mix
+  open-ended reasoning with bounded choices. Delegate only the bounded phase;
+  trivial choices are cheaper to execute directly, while missing strategies
+  stay with the LLM.
+- **The menu is the capability ceiling.** Give Jev 2–4 currently valid
+  counterfactual branches that include the correct action and lead to different
+  outcomes. Jev can rank expressed options; it cannot invent a missing plan.
+- **For efficiency, replace reasoning; do not append a judge.** One LLM plan
+  should fund several Jev choices. In the GPT-5.6-sol + 27B FrozenLake cell,
+  LLM calls fell 64.4%; WebArena, where delegation did not remove frontier
+  work, added 5.6% calls and 28.2% tokens. Quality-only use should first show a
+  ranking gain in paired or D1 shadow evaluation.
+- **Stay inside the feedback horizon.** Continue only while each action is
+  reversible and its semantic effect is immediately observable. Return to the
+  LLM on novelty, stale candidates, delayed feedback, or recovery.
+- **Promote autonomy with evidence.** Move from D0 LLM-only → D1 shadow → D2
+  one-step → D3 routine-default → D4 bounded subgoal. Keep only non-dominated
+  points: equal or higher verifier reward at lower cost, or higher reward with
+  the added cost explicitly reported. Delegation coverage itself is not a win.
 
 <table>
   <tr>
@@ -309,16 +330,16 @@ The external comparison uses the complete Typed Decisions test split, the full
 12 models stay in the same order; `—` means unsupported native input or no
 matching result.
 
-[![Typed Decisions, full JevJudge, and JevJudge text results for the same twelve-model cohort](docs/external-zero-shot.svg)](docs/external-zero-shot.svg)
+[![Accuracy on Typed Decisions, full JevJudge, and the JevJudge text-only subset for the same twelve-model cohort](docs/external-zero-shot.svg)](docs/external-zero-shot.svg)
 
-- **JevAny-Qwen3.8-27B:** 72.8% Typed agreement, **35.6%** JevJudge `skill_role`, and 66.4% JevJudge text accuracy.
-- All five JevAny releases completed 3,220/3,220 native text, image, and video records. Their `skill_role` scores range from 17.9% to 35.6%; the strongest complete open baseline scores 13.6%.
-- On JevJudge text, Qwen3.8-27B scores 66.4% and Kev-27B scores 64.2%. Kev has no native image/video path, so its full result is `—`.
+- **JevAny-Qwen3.8-27B:** 72.8% Typed accuracy, **62.3%** JevJudge full accuracy, and 66.4% JevJudge text-only accuracy.
+- All five JevAny releases completed 3,220/3,220 native text, image, and video records. Their full-suite accuracy ranges from 51.5% to 62.3%; the strongest complete open baseline scores 48.2%.
+- On the JevJudge text-only subset, Qwen3.8-27B scores 66.4% and Kev-27B scores 64.2%. Kev has no native image/video path, so its full result is `—`.
 - Published-only Decider 1 (76.8%) and Liquid d1 (74.2%) remain above our 72.8% on Typed Decisions; neither has a JevJudge result.
 
-JevJudge's official `skill_role` removes each family's chance or majority-label floor and
-equally weights its five roles. Qwen3.8-27B has 62.27% plain full-suite accuracy
-and 35.55% `skill_role`; the two metrics answer different questions.
+All three panels use accuracy. JevJudge full covers all 3,220 multimodal records;
+text-only is its 724-record text subset. The benchmark's official `skill_role`
+metric remains in the detailed evaluation notes.
 
 [Full external tables and reproducibility notes](docs/EXTERNAL_EVALUATION.md) ·
 [Machine-readable chart results](results/external-zero-shot-v1.json)

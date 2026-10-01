@@ -806,9 +806,9 @@ uniform baseline illustrates the distinction: 40.0% plain accuracy but −0.77%
 <thead>
 <tr>
 <th>Model</th>
-<th style="text-align: right;">Typed agreement</th>
-<th style="text-align: right;">JevJudge <code>skill_role</code> (95% CI)</th>
-<th style="text-align: right;">Plain accuracy</th>
+<th style="text-align: right;">Typed accuracy</th>
+<th style="text-align: right;">JevJudge full accuracy</th>
+<th style="text-align: right;">Official <code>skill_role</code> (95% CI)</th>
 <th style="text-align: right;">Full coverage</th>
 </tr>
 </thead>
@@ -816,50 +816,50 @@ uniform baseline illustrates the distinction: 40.0% plain accuracy but −0.77%
 <tr>
 <td>JevAny-Qwen3.8-27B</td>
 <td style="text-align: right;">72.80%</td>
-<td style="text-align: right;"><strong>35.55% [32.84, 38.18]</strong></td>
-<td style="text-align: right;">62.27%</td>
+<td style="text-align: right;"><strong>62.27%</strong></td>
+<td style="text-align: right;">35.55% [32.84, 38.18]</td>
 <td style="text-align: right;">3,220/3,220</td>
 </tr>
 <tr>
 <td>JevAny-Muse-Glimmer-30B</td>
 <td style="text-align: right;">69.95%</td>
-<td style="text-align: right;">29.65% [26.71, 32.31]</td>
 <td style="text-align: right;">58.70%</td>
+<td style="text-align: right;">29.65% [26.71, 32.31]</td>
 <td style="text-align: right;">3,220/3,220</td>
 </tr>
 <tr>
 <td>JevAny-Qwen3.5-4B-Direct-Token</td>
 <td style="text-align: right;">67.20%</td>
-<td style="text-align: right;">23.85% [20.96, 26.70]</td>
 <td style="text-align: right;">54.94%</td>
+<td style="text-align: right;">23.85% [20.96, 26.70]</td>
 <td style="text-align: right;">3,220/3,220</td>
 </tr>
 <tr>
 <td>JevAny-Qwen3.5-4B</td>
 <td style="text-align: right;">63.50%</td>
-<td style="text-align: right;">23.23% [20.49, 25.84]</td>
 <td style="text-align: right;">54.75%</td>
+<td style="text-align: right;">23.23% [20.49, 25.84]</td>
 <td style="text-align: right;">3,220/3,220</td>
 </tr>
 <tr>
 <td>JevAny-Gemma-4B</td>
 <td style="text-align: right;">66.25%</td>
-<td style="text-align: right;">17.92% [15.25, 20.37]</td>
 <td style="text-align: right;">51.49%</td>
+<td style="text-align: right;">17.92% [15.25, 20.37]</td>
 <td style="text-align: right;">3,220/3,220</td>
 </tr>
 <tr>
 <td>Jeff-Qwen3.5-2B</td>
 <td style="text-align: right;">55.45%</td>
-<td style="text-align: right;">13.57% [10.80, 15.99]</td>
 <td style="text-align: right;">48.23%</td>
+<td style="text-align: right;">13.57% [10.80, 15.99]</td>
 <td style="text-align: right;">3,220/3,220</td>
 </tr>
 <tr>
 <td>Jeff-Qwen3.5-0.8B</td>
 <td style="text-align: right;">49.15%</td>
-<td style="text-align: right;">11.23% [8.65, 13.44]</td>
 <td style="text-align: right;">47.95%</td>
+<td style="text-align: right;">11.23% [8.65, 13.44]</td>
 <td style="text-align: right;">3,220/3,220</td>
 </tr>
 </tbody>
@@ -869,7 +869,7 @@ the complete native multimodal suite. OpenDecider-small and Jeff-Gemma4 are
 text-only; Bongard-mini has no video path; Kev's pinned runtime does not consume
 image or video media. These systems show <code>—</code> in the full-suite comparison
 rather than a media-stripped score.</p>
-<p>The separate 724-record text diagnostic places JevAny-Qwen3.8-27B at 66.44%,
+<p>The separate 724-record text-only accuracy view places JevAny-Qwen3.8-27B at 66.44%,
 Kev-27B at 64.23%, Muse-Glimmer-30B at 62.57%, and the remaining compared
 systems at 42.82%–58.56%. Kev uses a full-context 4,096-token chunked-KV
 protocol with no token truncation. Its old 38.54% 27B row is invalid: the

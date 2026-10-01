@@ -25,7 +25,7 @@ PANELS = (
         "key": "typed_decisions",
         "metric": "accuracy",
         "title": "Typed Decisions",
-        "scope": "2,000 decisions · teacher agreement (%)",
+        "scope": "2,000 decisions · accuracy (%)",
         "xmax": 82,
         "ticks": [0, 20, 40, 60, 80],
         "score_range": (0, 1),
@@ -33,20 +33,19 @@ PANELS = (
     },
     {
         "key": "jevjudge_full",
-        "metric": "skill_role",
+        "metric": "accuracy",
         "title": "JevJudge full",
-        "scope": "3,220 text / image / video · skill_role (%)",
-        "xmax": 42,
-        "ticks": [0, 10, 20, 30, 40],
-        # Chance correction can be less than -1 when a family's floor is high.
-        "score_range": (None, 1),
+        "scope": "3,220 text / image / video · accuracy (%)",
+        "xmax": 72,
+        "ticks": [0, 20, 40, 60],
+        "score_range": (0, 1),
         "coverage": 3220,
     },
     {
         "key": "jevjudge_text",
         "metric": "accuracy",
-        "title": "JevJudge text",
-        "scope": "724 full-context text requests · accuracy (%)",
+        "title": "JevJudge text-only",
+        "scope": "724-record text subset · accuracy (%)",
         "xmax": 72,
         "ticks": [0, 20, 40, 60],
         "score_range": (0, 1),
@@ -102,15 +101,18 @@ def _validate_row(row: dict, panel: dict) -> None:
     if coverage is not None and (row.get("answered"), row.get("requested")) != (coverage, coverage):
         raise ValueError(f"{suite}: {model} must have exact {coverage}/{coverage} coverage")
 
+    skill_role = row.get("skill_role")
     ci = row.get("skill_role_ci_95")
-    if metric == "skill_role":
+    if suite == "jevjudge_full":
+        if not _finite_number(skill_role) or skill_role > 1:
+            raise ValueError(f"{suite}: invalid skill_role for {model}")
         if not isinstance(ci, list) or len(ci) != 2 or not all(_finite_number(value) for value in ci):
             raise ValueError(f"{suite}: invalid skill_role CI for {model}")
         ci_low, ci_high = ci
-        if not ci_low <= score <= ci_high <= 1:
+        if not ci_low <= skill_role <= ci_high <= 1:
             raise ValueError(f"{suite}: skill_role CI must be ordered and contain the score for {model}")
-    elif ci is not None:
-        raise ValueError(f"{suite}: unexpected skill_role CI for {model}")
+    elif skill_role is not None or ci is not None:
+        raise ValueError(f"{suite}: unexpected skill_role data for {model}")
 
 
 def load_results(source: Path = SOURCE) -> dict:
@@ -121,6 +123,8 @@ def load_results(source: Path = SOURCE) -> dict:
     cohort_kinds = {}
     for panel in PANELS:
         suite = data[panel["key"]]
+        if suite.get("chart_metric") != panel["metric"]:
+            raise ValueError(f"{panel['key']}: chart_metric must be {panel['metric']}")
         by_model = {}
         for row in suite["models"]:
             model = row.get("model")
@@ -183,24 +187,8 @@ def draw_panel(ax, rows: list[dict], panel: dict, show_labels: bool) -> None:
         value = score * 100
         bar = ax.barh(index, value, height=0.66, color=color, edgecolor="none", zorder=3)
         bar[0].set_hatch(HATCHES[row["kind"]])
-        ci = row.get("skill_role_ci_95") if metric == "skill_role" else None
-        label_edge = value
-        if ci:
-            low, high = (bound * 100 for bound in ci)
-            label_edge = high
-            ax.errorbar(
-                value,
-                index,
-                xerr=[[value - low], [high - value]],
-                fmt="none",
-                ecolor=INK,
-                elinewidth=1.15,
-                capsize=2.5,
-                capthick=1.15,
-                zorder=5,
-            )
         ax.text(
-            min(label_edge + panel["xmax"] * 0.018, panel["xmax"] * 0.985),
+            min(value + panel["xmax"] * 0.018, panel["xmax"] * 0.985),
             index,
             f"{value:.1f}",
             ha="right" if value > panel["xmax"] * 0.91 else "left",
@@ -250,7 +238,7 @@ def main() -> None:
     })
     fig, axes = plt.subplots(1, 3, figsize=(21, 8.2), dpi=110, facecolor="white", sharey=True)
     fig.subplots_adjust(left=0.17, right=0.988, bottom=0.16, top=0.72, wspace=0.20)
-    fig.text(0.035, 0.955, "External zero-shot decision results", fontsize=24, weight="bold")
+    fig.text(0.035, 0.955, "External zero-shot decision accuracy", fontsize=24, weight="bold")
     fig.text(
         0.035,
         0.910,
@@ -278,8 +266,8 @@ def main() -> None:
     fig.text(
         0.035,
         0.045,
-        "JevJudge full uses official chance-corrected, equal-role skill with 95% source-stratified group-bootstrap CIs. "
-        "The text slice is a separate four-role diagnostic.",
+        "All three panels use accuracy. Typed accuracy is agreement with teacher-derived labels; JevJudge full "
+        "covers 3,220 multimodal records and text-only is its 724-record subset.",
         fontsize=10.2,
         color=MUTED,
     )
@@ -292,7 +280,7 @@ def main() -> None:
         )
         for panel in PANELS
     )
-    metadata = {"Date": None, "Title": "External zero-shot decision results", "Description": description}
+    metadata = {"Date": None, "Title": "External zero-shot decision accuracy", "Description": description}
     fig.savefig(SVG_OUT, metadata=metadata)
     SVG_OUT.write_text("\n".join(line.rstrip() for line in SVG_OUT.read_text().splitlines()) + "\n")
     fig.savefig(PNG_OUT, dpi=170, metadata={"Software": "JevAny plot_external_zero_shot.py"})
