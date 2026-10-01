@@ -93,7 +93,8 @@ h2 { font-size: 45px; line-height: 1.1; letter-spacing: -.045em; }
 .replay-choice strong { display: block; color: #bdc9c3; font-size: 14px; font-weight: 500; }
 .choice-arrow { color: var(--mint); opacity: 0; margin-left: auto; font-size: 18px; }
 .replay-choice:hover { background: #a8f0c808; }
-.replay-choice.is-active { background: #a8f0c80e; box-shadow: inset 2px 0 var(--mint); }
+.replay-choice.is-active { background: #a8f0c80e; }
+.replay-choice.is-active::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 2px; background: var(--mint); transform: scaleY(var(--replay-progress, 1)); transform-origin: top; pointer-events: none; }
 .replay-choice.is-active strong { color: #e3f0e7; }
 .replay-choice.is-active .choice-arrow { opacity: 1; }
 .replay-choice:focus-visible, .terminal-tabs button:focus-visible,
@@ -182,7 +183,7 @@ pre code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace
   .replay-choice { min-height: 68px; padding: 14px 10px; border-right: 1px solid var(--line); }
   .replay-choice:last-child { border-bottom: 1px solid var(--line); }
   .replay-choice:nth-child(3n) { border-right: 0; }
-  .replay-choice.is-active { box-shadow: inset 0 2px var(--mint); }
+  .replay-choice.is-active::before { inset: 0 0 auto; width: auto; height: 2px; transform: scaleX(var(--replay-progress, 1)); transform-origin: left; }
   .how-section, .start-section { grid-template-columns: 1fr; gap: 38px; padding-block: 72px; }
   .how-copy h2 br { display: none; }
   .how-copy h2 { max-width: 540px; }

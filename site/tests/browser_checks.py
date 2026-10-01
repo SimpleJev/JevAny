@@ -9,7 +9,7 @@ import tempfile
 from threading import Thread
 from urllib.parse import urlsplit
 
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import Page, sync_playwright
 
 
 SITE = Path(__file__).resolve().parents[1]
@@ -28,13 +28,22 @@ class Handler(SimpleHTTPRequestHandler):
         pass
 
 
-def finish_replay(page, *, seek=True):
+def finish_replay(page: Page, *, seek: bool = True) -> None:
     page.wait_for_function("document.querySelector('#replay-video').readyState >= 2")
-    page.locator("#replay-video").evaluate("""(video, seek) => new Promise((resolve, reject) => {
-        video.addEventListener('ended', () => resolve(), {once: true});
+    page.locator("#replay-video").evaluate("""(video, seek) => {
+        video.dataset.testReplayEnded = 'false';
+        video.addEventListener('ended', () => { video.dataset.testReplayEnded = 'true'; }, {once: true});
         if (seek) video.currentTime = video.duration - 0.1;
-        video.play().catch(reject);
-    })""", seek)
+        return video.play();
+    }""", seek)
+    page.wait_for_function("document.querySelector('#replay-video').dataset.testReplayEnded === 'true'")
+
+
+def replay_progress(page: Page) -> float:
+    return page.locator(".replay-choice.is-active").evaluate("""choice => {
+        const transform = new DOMMatrixReadOnly(getComputedStyle(choice, '::before').transform);
+        return Math.min(transform.a, transform.d);
+    }""")
 
 
 def check(url: str, output: Path) -> None:
@@ -74,45 +83,93 @@ def check(url: str, output: Path) -> None:
         assert popup.value.url == "https://github.com/SimpleJev/JevAny"
         popup.value.close()
 
-        # All six selectors must load real, decodable videos with the right labels.
+        # Start from a fresh visit: clicking a selector disables automatic rotation.
+        page.reload(wait_until="networkidle")
+        page.add_style_tag(content="html { scroll-behavior: auto !important; }")
         page.locator("#in-action").scroll_into_view_if_needed()
         page.wait_for_function("document.documentElement.classList.contains('models-offscreen')")
         assert page.locator(".model-track").evaluate("e => getComputedStyle(e).animationPlayState") == "paused"
-        # Let a whole recording play twice; subsequent checks seek near the end.
         player = page.locator("#replay-video")
-        page.locator('.replay-choice[data-case="peg_insertion"]').click()
         assert not player.evaluate("v => v.loop")
+        page.wait_for_function("document.querySelector('#replay-video').currentTime > 0")
+        progress = replay_progress(page)
+        assert 0 < progress < 0.5
+        page.wait_for_timeout(150)
+        assert replay_progress(page) > progress
         finish_replay(page, seek=False)
         assert player.get_attribute("src").endswith("/peg_insertion.webm")
-        finish_replay(page, seek=False)
-        assert player.get_attribute("src").endswith("/drone.webm")
-        assert page.locator('.replay-choice[data-case="drone"]').get_attribute("aria-pressed") == "true"
-        drone = next(case for case in json.loads((SITE / "assets/data/cases.json").read_text()) if case["id"] == "drone")
-        assert drone["title"] in player.get_attribute("aria-label")
-        assert drone["description"] == page.locator("#replay-description").inner_text()
-
-        # A manual choice starts a fresh pair; the final featured case wraps around.
-        finish_replay(page)
-        assert player.get_attribute("src").endswith("/drone.webm")
-        page.locator('.replay-choice[data-case="chess"]').click()
-        finish_replay(page)
-        assert player.get_attribute("src").endswith("/chess.webm")
-        finish_replay(page)
-        assert player.get_attribute("src").endswith("/peg_insertion.webm")
-
-        # Pausing and scrolling away retain the first completed play.
-        finish_replay(page)
         player.evaluate("v => v.pause()")
-        page.wait_for_timeout(100)
+        assert 0.5 <= replay_progress(page) < 0.55
+
+        # Halfway through the second play is 75%. Let media time drive the test;
+        # SimpleHTTPRequestHandler does not support seeking to byte ranges.
+        player.evaluate("v => v.play()")
+        page.wait_for_function("""() => {
+            const video = document.querySelector('#replay-video');
+            return video.currentTime >= video.duration / 2;
+        }""")
+        player.evaluate("v => v.pause()")
+        expected_progress = player.evaluate("v => (1 + v.currentTime / v.duration) / 2")
+        assert 0.75 <= expected_progress < 0.8
+        assert abs(replay_progress(page) - expected_progress) < 0.01
         page.locator("#get-started").scroll_into_view_if_needed()
         page.wait_for_timeout(150)
         page.locator("#in-action").scroll_into_view_if_needed()
         page.wait_for_timeout(150)
         assert player.evaluate("v => v.paused")
-        assert player.get_attribute("src").endswith("/peg_insertion.webm")
-        finish_replay(page)
+        assert abs(replay_progress(page) - expected_progress) < 0.01
+        page.locator(".replay-shell").screenshot(path=str(output / "replay-progress-desktop.png"))
+        assert page.locator(".replay-choice.is-active").evaluate(
+            "e => new DOMMatrixReadOnly(getComputedStyle(e, '::before').transform).a"
+        ) == 1
+        page.set_viewport_size({"width": 390, "height": 844})
+        assert abs(replay_progress(page) - expected_progress) < 0.01
+        assert page.locator(".replay-choice.is-active").evaluate(
+            "e => new DOMMatrixReadOnly(getComputedStyle(e, '::before').transform).d"
+        ) == 1
+        page.locator(".replay-shell").screenshot(path=str(output / "replay-progress-mobile.png"))
+        page.set_viewport_size({"width": 1440, "height": 1000})
+        page.locator("#in-action").scroll_into_view_if_needed()
+        player.evaluate("""video => new Promise(resolve => {
+            video.addEventListener('seeked', resolve, {once: true});
+            video.currentTime = 0;
+        })""")
+        assert abs(replay_progress(page) - 0.5) < 0.01
+        finish_replay(page, seek=False)
         assert player.get_attribute("src").endswith("/drone.webm")
+        assert replay_progress(page) < 0.1
+        assert page.locator('.replay-choice[data-case="drone"]').get_attribute("aria-pressed") == "true"
+        drone = next(case for case in json.loads((SITE / "assets/data/cases.json").read_text()) if case["id"] == "drone")
+        assert drone["title"] in player.get_attribute("aria-label")
+        assert drone["description"] == page.locator("#replay-description").inner_text()
 
+        # Every featured case gets two plays, and the final case wraps to the first.
+        for current, following in zip(
+            ("drone", "lab", "frontend", "sql", "chess"),
+            ("lab", "frontend", "sql", "chess", "peg_insertion"),
+        ):
+            finish_replay(page)
+            assert player.get_attribute("src").endswith(f"/{current}.webm")
+            assert 0.5 <= replay_progress(page) < 0.6
+            finish_replay(page)
+            assert player.get_attribute("src").endswith(f"/{following}.webm")
+            assert replay_progress(page) < 0.1
+
+        # Even selecting the current case cancels rotation for the rest of the visit.
+        page.locator('.replay-choice[data-case="peg_insertion"]').click()
+        for _ in range(3):
+            finish_replay(page)
+            assert player.get_attribute("src").endswith("/peg_insertion.webm")
+            assert replay_progress(page) == 1
+        page.locator('.replay-choice[data-case="chess"]').click()
+        page.locator("#motion-toggle").click()
+        page.locator("#motion-toggle").click()
+        for _ in range(2):
+            finish_replay(page)
+            assert player.get_attribute("src").endswith("/chess.webm")
+            assert replay_progress(page) == 1
+
+        # All six selectors must load real, decodable videos with the right labels.
         for name in ("peg_insertion", "drone", "lab", "frontend", "sql", "chess"):
             page.locator(f'.replay-choice[data-case="{name}"]').click()
             page.wait_for_function("document.querySelector('#replay-video').readyState >= 2")
@@ -131,12 +188,10 @@ def check(url: str, output: Path) -> None:
             assert name in page.locator("#replay-video").get_attribute("src")
             assert page.url == url + "#case-library"
         last_case = page.locator(".case-card").last.get_attribute("data-case")
-        first_case = page.locator(".case-card").first.get_attribute("data-case")
-        finish_replay(page)
-        assert player.get_attribute("src").endswith(f"/{last_case}.webm")
-        finish_replay(page)
-        assert player.get_attribute("src").endswith(f"/{first_case}.webm")
-        assert page.locator(f'.case-card[data-case="{first_case}"]').evaluate("e => e.classList.contains('is-active')")
+        for _ in range(2):
+            finish_replay(page)
+            assert player.get_attribute("src").endswith(f"/{last_case}.webm")
+        assert page.locator(f'.case-card[data-case="{last_case}"]').evaluate("e => e.classList.contains('is-active')")
         page.locator("#case-library > summary").click()
 
         # Metrics must sort in the right direction and display the source values.
@@ -288,10 +343,11 @@ def check(url: str, output: Path) -> None:
         reduced_page.locator("#in-action").scroll_into_view_if_needed()
         reduced_page.locator("#replay-video").evaluate("v => v.play()")
         reduced_page.wait_for_function("document.querySelector('#replay-video').currentTime > 0")
-        for _ in range(2):
+        for expected_progress in (0.5, 1):
             finish_replay(reduced_page)
             assert reduced_page.locator("#replay-video").get_attribute("src").endswith("/peg_insertion.webm")
             assert reduced_page.locator("#replay-video").evaluate("v => v.ended && v.paused")
+            assert replay_progress(reduced_page) == expected_progress
         assert not background_requests
         reduced_page.locator("#motion-toggle").click()
         reduced_page.wait_for_function("document.querySelector('#replay-video').getAttribute('src').endsWith('/drone.webm')")
@@ -315,6 +371,10 @@ def check(url: str, output: Path) -> None:
         failed_page.goto(url, wait_until="networkidle")
         assert failed_page.locator(".hero h1").is_visible()
         assert failed_page.locator(".ambient-poster").is_visible()
+        failed_page.locator("#in-action").scroll_into_view_if_needed()
+        for _ in range(2):
+            finish_replay(failed_page)
+        assert failed_page.locator("#replay-video").get_attribute("src").endswith("/drone.webm")
         failed_page.locator("#case-library summary").click()
         assert failed_page.locator('[data-case="warehouse_rover"]').get_attribute("href").endswith(".mp4")
         failed_page.locator('[data-metric="transfer_v9_accuracy"]').click()
@@ -356,7 +416,8 @@ def check(url: str, output: Path) -> None:
             "checks": ["one preblurred background stream", "responsive background resolution",
                        "scrolling model logos and offscreen pause", "Muse identity", "Hugging Face links",
                        "upright heading font", "Star link without authentication",
-                       "30 decoded replays", "two-play rotation, manual reset and playlist wrapping",
+                       "30 decoded replays", "two-play rotation and featured playlist wrapping",
+                       "desktop/mobile playback progress, pause and seek", "manual selection cancels rotation",
                        "rotation pause and reduced-motion controls", "five benchmark metrics and correct sorting",
                        "full results table", "model support deep links", "local documentation and PDF", "global pause",
                        "native pause", "CPU/GPU model selection and model card links",

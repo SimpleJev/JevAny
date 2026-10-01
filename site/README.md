@@ -44,9 +44,11 @@ the browser does not apply a live blur filter. Model-family logos scroll across
 the top and pause outside the viewport. The motion toggle pauses both the logo strip and videos;
 reduced-motion and data-saving preferences disable automatic playback.
 Individual replays also have native video controls.
-Each featured case plays twice before advancing to the next. Selecting a case
-from the full gallery cycles through that catalog instead. Manual selection
-restarts the count; pausing or leaving the player preserves playback progress.
+Each featured case plays twice before advancing to the next. The selected
+case's highlight fills over both plays, following the video's actual progress.
+Pausing or leaving the player preserves that progress. Selecting any case
+disables automatic switching for the rest of the page visit and loops that
+recording instead; its highlight stays full to mark the selection.
 
 Regenerate media with `python3 site/tools/prepare_media.py` after installing
 ffmpeg and Pillow. Use `--background-only` to regenerate just the two background

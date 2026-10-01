@@ -85,6 +85,7 @@ function localRecipe() {
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 const motionButton = document.querySelector("#motion-toggle");
 const replay = document.querySelector("#replay-video");
+const replayChoices = document.querySelector(".replay-choices");
 const videoExtension = replay.canPlayType('video/webm; codecs="vp9"') ? "webm" : "mp4";
 const ambientVideo = document.querySelector(".ambient-video");
 const portraitBackground = window.matchMedia("(max-aspect-ratio: 3/4)");
@@ -94,9 +95,11 @@ let replayVisible = false;
 let selectedCase = "peg_insertion";
 let manuallyPausedReplay = false;
 let completedReplays = 0;
-let galleryPlayback = false;
+let autoAdvanceReplay = true;
+let replayProgressFrame = 0;
 let caseOrder = featuredCases;
 replay.loop = false;
+replayChoices.style.setProperty("--replay-progress", "0");
 
 function play(video) {
   // Autoplay may be denied by the browser; the poster and native controls remain.
@@ -108,15 +111,31 @@ function canAnimate() {
   return motionEnabled && !document.hidden;
 }
 
+function updateReplayProgress() {
+  // The ended handler records a completed play before resetting the video time.
+  if (autoAdvanceReplay && replay.ended) return;
+  const fraction = Number.isFinite(replay.duration) && replay.duration > 0
+    ? replay.currentTime / replay.duration : 0;
+  const progress = autoAdvanceReplay ? Math.min((completedReplays + fraction) / 2, 1) : 1;
+  replayChoices.style.setProperty("--replay-progress", String(progress));
+}
+
+function trackReplayProgress() {
+  updateReplayProgress();
+  if (autoAdvanceReplay && !replay.paused && !replay.ended) {
+    replayProgressFrame = requestAnimationFrame(trackReplayProgress);
+  }
+}
+
 function resumeReplay() {
   if (!canAnimate() || !replayVisible || manuallyPausedReplay) return;
+  if (autoAdvanceReplay && completedReplays >= 2) {
+    selectCase(featuredCases[(featuredCases.indexOf(selectedCase) + 1) % featuredCases.length]);
+    return;
+  }
   if (replay.ended) {
-    if (completedReplays >= 2) {
-      const playlist = galleryPlayback ? caseOrder : featuredCases;
-      selectCase(playlist[(playlist.indexOf(selectedCase) + 1) % playlist.length]);
-      return;
-    }
     replay.currentTime = 0;
+    updateReplayProgress();
   }
   if (replay.paused) play(replay);
 }
@@ -194,6 +213,7 @@ observer.observe(replay);
 function selectCase(name) {
   selectedCase = name;
   completedReplays = 0;
+  replayChoices.style.setProperty("--replay-progress", autoAdvanceReplay ? "0" : "1");
   const details = caseDetails[name];
   document.querySelectorAll("[data-case]").forEach(choice => {
     const selected = choice.dataset.case === name;
@@ -215,9 +235,9 @@ document.querySelectorAll("[data-case]").forEach(button => {
     // When the catalog is unavailable, gallery links still open local MP4s.
     if (!caseDetails[button.dataset.case]) return;
     event.preventDefault();
-    galleryPlayback = button.classList.contains("case-card");
+    autoAdvanceReplay = false;
     selectCase(button.dataset.case);
-    if (galleryPlayback) {
+    if (button.classList.contains("case-card")) {
       document.querySelector("#in-action").scrollIntoView();
       replay.focus({ preventScroll: true });
     }
@@ -226,11 +246,23 @@ document.querySelectorAll("[data-case]").forEach(button => {
 
 // Preserve a pause made with the video's native controls across viewport changes.
 replay.addEventListener("pause", () => {
+  cancelAnimationFrame(replayProgressFrame);
+  updateReplayProgress();
   if (canAnimate() && replayVisible && !replay.ended && !replay.seeking && replay.readyState >= 2) manuallyPausedReplay = true;
 });
-replay.addEventListener("play", () => { manuallyPausedReplay = false; });
+replay.addEventListener("play", () => {
+  manuallyPausedReplay = false;
+  cancelAnimationFrame(replayProgressFrame);
+  trackReplayProgress();
+});
+replay.addEventListener("timeupdate", updateReplayProgress);
+replay.addEventListener("seeked", updateReplayProgress);
+replay.addEventListener("loadedmetadata", updateReplayProgress);
 replay.addEventListener("ended", () => {
-  completedReplays += 1;
+  if (autoAdvanceReplay) {
+    completedReplays += 1;
+    replayChoices.style.setProperty("--replay-progress", String(Math.min(completedReplays / 2, 1)));
+  }
   resumeReplay();
 });
 
