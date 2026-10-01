@@ -1,13 +1,14 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a1114">
-<title>Connect a model to the Playground — JevAny</title><link rel="stylesheet" href="../styles.css"><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"></head>
+<title>Run a model in the Playground — JevAny</title><link rel="stylesheet" href="../styles.css"><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"></head>
 <body class="docs-page"><a class="skip-link" href="#content">Skip to content</a>
 <header class="site-header wrap"><a class="brand" href="../index.html"><img src="../assets/favicon.svg" width="30" height="30" alt=""><span>JevAny<span class="brand-period">.</span></span></a>
 <nav aria-label="Main navigation"><a href="../index.html#benchmarks">Benchmarks</a><a href="../index.html#models">Models</a><a href="../index.html#get-started">Get started</a></nav></header>
 <div class="docs-layout wrap"><aside class="docs-sidebar"><a class="text-link" href="../index.html">← Project homepage</a><nav aria-label="Documentation"><a href="quickstart.html">Quickstart</a><a href="TRAINING.html">Training</a><a href="DATA.html">Data</a><a href="DEPLOYMENT.html">Deployment</a><a href="API.html">API reference</a><a href="examples.html">Examples</a><a href="CASES.html">Cases</a><a href="EVALUATION.html">Evaluation</a><a href="ALGORITHM.html">Method</a><a href="INTEGRATIONS.html">Integrations</a><a href="zh.html">中文文档</a></nav>
 <details class="doc-toc"><summary>On this page</summary><div class="toc">
 <ul>
+<li><a href="#choose-and-load-a-model">Choose and load a model</a></li>
 <li><a href="#start-the-playground">Start the Playground</a></li>
 <li><a href="#connect-a-running-model">Connect a running model</a></li>
 <li><a href="#text-first-images-when-they-work">Text first, images when they work</a></li>
@@ -16,28 +17,71 @@
 </ul>
 </div>
 </details></aside>
-<main id="content" class="doc-content"><p class="eyebrow">JEVANY / DOCUMENTATION</p><h1>Connect a model to the Playground</h1><p>The Playground (<code>jevany demo</code>) serves packaged replays, the optional CPU
-environments, and a form for your own decisions. Replays need no model, no GPU
-and no account. This page covers the part that needs a model: connecting one,
-confirming what it is, and asking it a question.</p>
+<main id="content" class="doc-content"><p class="eyebrow">JEVANY / DOCUMENTATION</p><h1>Run a model in the Playground</h1><p>Load a model on your computer, then use the Playground (<code>jevany demo</code>) to try
+your own decisions. You can edit the state and options, inspect probabilities,
+or let the model act in a game or robot environment.</p>
 <p>The <a href="examples.html#play-locally-or-connect-your-model">playground guide</a>
-covers the environments themselves. <a href="DEPLOYMENT.html">DEPLOYMENT.md</a> covers the
-server.</p>
+covers the environments themselves. <a href="DEPLOYMENT.html">DEPLOYMENT.md</a> covers server
+settings and the full checkpoint list.</p>
+<h2 id="choose-and-load-a-model">Choose and load a model</h2>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Checkpoint</th>
+<th>Device / dtype</th>
+<th>Memory</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Qwen 0.8B starter</td>
+<td><code>runs/cpu-jev</code> after <a href="TRAINING.html#start-with-a-small-backbone">CPU training</a></td>
+<td><code>cpu</code> / <code>fp32</code></td>
+<td>16 GB RAM recommended</td>
+</tr>
+<tr>
+<td>JevAny-Qwen 4B</td>
+<td><code>SimpleJev/JevAny-Qwen3.5-4B-LoRA</code></td>
+<td><code>cuda</code> / <code>bf16</code></td>
+<td>~8 GB base weights + runtime memory</td>
+</tr>
+<tr>
+<td>JevAny-Qwen 27B</td>
+<td><code>SimpleJev/JevAny-Qwen3.8-27B-LoRA</code></td>
+<td><code>cuda</code> / <code>bf16</code></td>
+<td>~54 GB base weights + runtime memory</td>
+</tr>
+</tbody>
+</table></div>
+<p>The 0.8B starter trains a small adapter on the bundled support tickets to teach
+the training and inference workflow. Released checkpoints download their adapter
+and base weights on first use, then reuse the local cache.</p>
+<p>In the environment from the <a href="quickstart.html#quickstart">Quickstart</a>, install the
+server and load your chosen model. For example, the released Qwen 4B:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m pip install -e '.[serve,multimodal]'
+jevany serve --checkpoint SimpleJev/JevAny-Qwen3.5-4B-LoRA \
+  --device cuda --dtype bf16 --port 8008
+</code></pre>
+<p>For the CPU starter, use <code>--checkpoint runs/cpu-jev --device cpu --dtype fp32</code>;
+for 27B, substitute its checkpoint ID from the table. A checkpoint you trained
+can be loaded by its directory, such as <code>runs/my-jev</code>.</p>
 <h2 id="start-the-playground">Start the Playground</h2>
-<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m pip install -e .
-jevany demo
+<p>Keep the model server running. Open a second terminal in the same checkout:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">source .venv/bin/activate
+jevany demo --base-url http://127.0.0.1:8008 --text-only
 </code></pre>
 <p>Open <code>http://127.0.0.1:8090</code> if the browser does not open by itself. The
-Playground binds to loopback only and accepts same-origin requests only.</p>
+Playground binds to loopback only and accepts same-origin requests only.
+For packaged replays or manual play, start with <code>jevany demo</code>; no model is needed.</p>
 <h2 id="connect-a-running-model">Connect a running model</h2>
-<p>Start a server in another terminal. A small checkpoint of your own is the
-cheapest option:</p>
-<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany serve --checkpoint runs/my-jev --model-name my-jev --port 8008
-curl http://127.0.0.1:8008/health
+<p>Choose <strong>Test and connect</strong> in the Playground. You can also connect a model
+server that is already running: enter its address in <strong>YOUR MODEL URL</strong>.
+To inspect the server from the terminal:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">curl http://127.0.0.1:8008/health
 curl http://127.0.0.1:8008/v1/models
 </code></pre>
-<p>In the Playground, put that address in <strong>YOUR MODEL URL</strong> and choose
-<strong>Test and connect</strong>:</p>
+<p>The default local address is:</p>
 <pre tabindex="0" role="region" aria-label="Code example"><code class="language-text">http://127.0.0.1:8008
 </code></pre>
 <p>Leave <strong>MODEL ID</strong> empty to use whatever the server reports. Fill it in only

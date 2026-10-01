@@ -14,8 +14,9 @@
 </li>
 <li><a href="#_2">📑 目录</a></li>
 <li><a href="#1">⚡ 1. 快速上手</a><ul>
-<li><a href="#11-jevany">🛠️ 1.1 JevAny 训练</a></li>
-<li><a href="#12-jevany">🚀 1.2 JevAny 部署</a></li>
+<li><a href="#11">💻 1.1 本地体验</a></li>
+<li><a href="#12-jevany">🛠️ 1.2 JevAny 训练</a></li>
+<li><a href="#13-jevany">🚀 1.3 JevAny 部署</a></li>
 </ul>
 </li>
 <li><a href="#2">🤗 2. 预训练模型</a></li>
@@ -45,7 +46,7 @@
 <p>以下 30 个案例是由早期兼容 checkpoint 录制的历史回放，展示了 JevAny 在机器人、浏览器、软件、实验室和出行任务中的动作选择；
 当前默认发布模型为
 <a href="https://huggingface.co/SimpleJev/JevAny-Qwen3.8-27B-LoRA">JevAny-Qwen3.8-27B</a>。<a href="CASES.html">查看全部案例</a>，
-或<a href="#打开交互演示">打开交互演示</a>，查看记录的动作和选项概率。</p>
+或<a href="#本地体验">在本地运行模型</a>，输入自己的任务，查看模型的选择和各选项概率。</p>
 <p><a href="../index.html#case-library">Explore all 30 application replays →</a></p>
 <h3 id="jev-llm-agent">⚡ Jev 加入 LLM Agent 循环</h3>
 <blockquote>
@@ -98,8 +99,9 @@
 <ul>
 <li><a href="#结果与演示">🎮 结果与演示</a></li>
 <li><a href="#快速上手">⚡ 1. 快速上手</a></li>
-<li><a href="#训练">🛠️ 1.1 JevAny 训练</a></li>
-<li><a href="#部署">🚀 1.2 JevAny 部署</a></li>
+<li><a href="#本地体验">💻 1.1 本地体验</a></li>
+<li><a href="#训练">🛠️ 1.2 JevAny 训练</a></li>
+<li><a href="#部署">🚀 1.3 JevAny 部署</a></li>
 <li><a href="#预训练模型">🤗 2. 预训练模型</a></li>
 <li><a href="#评测">📊 3. 基准测试结果</a></li>
 <li><a href="#示例与测试环境">🕹️ 4. 示例与测试环境</a></li>
@@ -115,9 +117,45 @@ source .venv/bin/activate
 python -m pip install -e .
 </code></pre>
 <p>以下命令均在仓库根目录运行，并使用上述虚拟环境。
-你可以<a href="#训练">训练自己的模型</a>，也可以<a href="#部署">直接部署已发布模型</a>。
-只想先体验效果，可以在 CPU 上<a href="#打开交互演示">打开交互演示</a>。</p>
-<h3 id="11-jevany">🛠️ 1.1 JevAny 训练 <a name="训练"></a></h3>
+先在本地体验，再用自己的数据<a href="#训练">训练模型</a>，或通过 <a href="#部署">API 接入应用</a>。</p>
+<h3 id="11">💻 1.1 本地体验 <a name="本地体验"></a></h3>
+<p>选择适合自己电脑的模型：</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>模型</th>
+<th>硬件</th>
+<th>从这里开始</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Qwen 0.8B 入门配置</td>
+<td>CPU · 建议 16 GB 内存</td>
+<td>用随包工单<a href="TRAINING.html#start-with-a-small-backbone">训练小型 adapter</a></td>
+</tr>
+<tr>
+<td>JevAny-Qwen 4B</td>
+<td>CUDA · BF16 基座权重约 8 GB，另需运行时显存</td>
+<td><a href="#部署">加载已发布模型</a></td>
+</tr>
+<tr>
+<td>JevAny-Qwen 27B</td>
+<td>CUDA · BF16 基座权重约 54 GB，另需运行时显存</td>
+<td><a href="PLAYGROUND.html#choose-and-load-a-model">选择更大的 checkpoint</a></td>
+</tr>
+</tbody>
+</table></div>
+<p>准备和加载步骤见<a href="PLAYGROUND.html">本地模型指南</a>。已发布模型首次使用时下载，
+之后复用本地缓存。保持模型服务运行，在同一仓库目录打开第二个终端：</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">source .venv/bin/activate
+jevany demo --base-url http://127.0.0.1:8008 --text-only
+</code></pre>
+<p>打开 <code>http://127.0.0.1:8090</code>，点击 <strong>Test and connect</strong>，在
+<strong>Try your own decision</strong> 中输入任务，点击 <strong>Ask the model</strong>。
+修改状态或候选选项，观察模型的选择如何变化。
+同一界面还提供<a href="#打开交互演示">游戏、机器人和回放</a>。</p>
+<h3 id="12-jevany">🛠️ 1.2 JevAny 训练 <a name="训练"></a></h3>
 <p>用标注决策数据训练自己的 System 1 模型：数据沿用推理时的 <code>state</code> 和 <code>questions</code>，
 为每个问题增加标签。
 先用随包提供的合成客服工单开始训练，再换成自己的标注数据。入门配置在 CUDA 上
@@ -138,7 +176,7 @@ CPU 配置、多模态数据和标准 <code>torchrun</code> 启动方式见<a hr
 <p>完成 SFT 后，可用实验性的 <a href="ALGORITHM.html#rlcr">RLCR</a> 继续训练，其奖励兼顾正确率与概率校准：</p>
 <pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany train --config recipes/rlcr.toml
 </code></pre>
-<h3 id="12-jevany">🚀 1.2 JevAny 部署 <a name="部署"></a></h3>
+<h3 id="13-jevany">🚀 1.3 JevAny 部署 <a name="部署"></a></h3>
 <p>安装推理依赖，在 CUDA GPU 上启动已发布的 Qwen 4B 模型。
 显存要求见<a href="DEPLOYMENT.html#checkpoints-and-hardware">硬件与加载说明</a>。</p>
 <pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m pip install -e '.[serve,multimodal]'
@@ -173,6 +211,7 @@ print(&quot;Probabilities:&quot;, answer[&quot;probabilities&quot;])
 <p>进程内推理可以<a href="DEPLOYMENT.html#python">在 Python 中加载模型</a>，通过相同接口调用。
 图片和视频输入见<a href="DEPLOYMENT.html#native-media-and-limits">媒体配置</a>。</p>
 <h2 id="2">🤗 2. 预训练模型 <a name="预训练模型"></a></h2>
+<p>第一次在本地运行，可以先按<a href="#本地体验">本地体验</a>中的硬件要求选择模型。</p>
 <div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
 <thead>
 <tr>
@@ -257,18 +296,18 @@ NLL、Brier 和 ECE 均在 Transfer 上计算。
 <p>采集木材、制作工具、开采石头，同时管理生命值和物资。</p>
 <p><video class="doc-video" controls playsinline preload="none" aria-label="Crafter 浏览器回放：资源采集、制作工具和四项目标的完成进度" poster="../assets/media/docs/playground-crafter.webp"><source src="../assets/media/docs/playground-crafter.webm" type="video/webm"><source src="../assets/media/docs/playground-crafter.mp4" type="video/mp4">Your browser does not support video.</video></p>
 <h3 id="44">🎮 4.4 打开交互演示 <a name="打开交互演示"></a></h3>
-<p>在<a href="#快速上手">快速上手</a>配置的环境中启动交互演示：</p>
-<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany demo
+<p>按<a href="#本地体验">本地体验</a>启动模型后，打开交互演示：</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany demo --base-url http://127.0.0.1:8008 --text-only
 </code></pre>
-<p>打开 <code>http://127.0.0.1:8090</code>，点击 <strong>Replay</strong> 观看录制的运行过程。
-只需 CPU 即可播放内置录制内容。</p>
-<p>让模型在环境中运行时，保持<a href="#部署">部署</a>中的模型服务运行。在终端按 Ctrl+C
-停止回放演示，安装可选游戏引擎，再连接模型服务启动演示：</p>
+<p>打开 <code>http://127.0.0.1:8090</code>，点击 <strong>Test and connect</strong>，尝试自己的决策任务。
+要让模型操作游戏，安装可选引擎并重新启动演示：</p>
 <pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m pip install -e '.[demo]'
 jevany demo --base-url http://127.0.0.1:8008 --text-only
 </code></pre>
-<p>在浏览器中选择 <strong>Run model</strong> 让模型操作，或选择 <strong>Play yourself</strong> 自己操作。
-实时控制向模型发送文本状态；机械臂控制使用 <code>.[robotics]</code> 依赖。
+<p>在浏览器中选择 <strong>Run model</strong>，再点击 <strong>One decision</strong> 单步运行，或
+<strong>Run automatically</strong> 连续运行。选择 <strong>Play yourself</strong> 可以自己操作。
+实时控制向模型发送文本状态；机械臂控制使用 <code>.[robotics]</code> 依赖。</p>
+<p>观看内置录制内容时，运行 <code>jevany demo</code> 并选择 <strong>Replay</strong>，只需 CPU，无需模型权重。
 平台要求与环境接口见<a href="examples.html">演示指南</a>，结合 LLM 规划器使用
 JevAny 决策可参考<a href="INTEGRATIONS.html">集成文档</a>。</p>
 <h2 id="5">🧩 5. 支持的模型系列 <a name="支持的模型系列"></a></h2>

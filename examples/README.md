@@ -2,7 +2,11 @@
 
 ## Open the playground
 
-From the repository root, after creating the Python environment in the
+To run a model locally, [choose a CPU or GPU model](../docs/PLAYGROUND.md#choose-and-load-a-model)
+and open the Playground. Start with **Try your own decision** to edit a task and
+see the model's choices and probabilities; the environments below add live actions.
+
+For the bundled replays, run from the repository root after creating the Python environment in the
 [installation guide](../README.md#quickstart):
 
 ```bash

@@ -34,10 +34,6 @@ const setup = [
   "source .venv/bin/activate",
 ];
 const recipes = {
-  preview: {
-    commands: ["python -m pip install -e .", "", "jevany demo"],
-    note: "Python 3.12+ · macOS / Linux shell · Open localhost:8090 and choose Replay.",
-  },
   train: {
     commands: [
       "python -m pip install -e '.[train]'",
@@ -58,6 +54,33 @@ const recipes = {
     note: "Python 3.12+ · macOS / Linux shell · CUDA GPU required. Base weights need about 8 GB in BF16, plus runtime memory.",
   },
 };
+
+function localRecipe() {
+  const model = document.querySelector("#local-model");
+  if (model.value === "cpu-starter") {
+    return {
+      commands: [
+        "python -m pip install -e '.[train,serve]'",
+        "jevany data init --out data/starter",
+        "OMP_NUM_THREADS=4 jevany train --config recipes/sft.toml \\",
+        "  --device cpu --dtype fp32 --weights-dtype fp32 \\",
+        "  --out runs/cpu-jev",
+        "OMP_NUM_THREADS=4 jevany serve --checkpoint runs/cpu-jev \\",
+        "  --device cpu --dtype fp32 --port 8008",
+      ],
+      note: "CPU · 16 GB RAM recommended. Downloads the Qwen 0.8B base and trains a small adapter on the bundled tickets before starting the model.",
+    };
+  }
+  return {
+    commands: [
+      "python -m pip install -e '.[serve,multimodal]'",
+      "jevany serve \\",
+      `  --checkpoint ${model.value} \\`,
+      "  --device cuda --dtype bf16 --port 8008",
+    ],
+    note: `CUDA · BF16 base weights need about ${model.selectedOptions[0].dataset.memory} GB, plus runtime memory. Downloads the checkpoint and base on first use; later runs use the local cache.`,
+  };
+}
 
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 const motionButton = document.querySelector("#motion-toggle");
@@ -249,7 +272,8 @@ document.querySelector(".metric-buttons").hidden = false;
 
 const tabs = [...document.querySelectorAll("[data-recipe]")];
 function selectRecipe(tab) {
-  const recipe = recipes[tab.dataset.recipe];
+  const local = tab.dataset.recipe === "local";
+  const recipe = local ? localRecipe() : recipes[tab.dataset.recipe];
   tabs.forEach(item => {
     const selected = item === tab;
     item.setAttribute("aria-selected", String(selected));
@@ -258,7 +282,16 @@ function selectRecipe(tab) {
   document.querySelector("#quickstart-panel").setAttribute("aria-labelledby", tab.id);
   document.querySelector("#quickstart-code").textContent = [...setup, ...recipe.commands].join("\n");
   document.querySelector("#recipe-note").textContent = recipe.note;
+  document.querySelector("#local-model-control").hidden = !local;
+  document.querySelector("#demo-launch").hidden = !local;
+  document.querySelector("#command-label").textContent = local ? "1. Start the model" : "Shell commands";
 }
+document.querySelector("#local-model").addEventListener("change", () => selectRecipe(tabs[0]));
+document.querySelectorAll("[data-local-model]").forEach(link => link.addEventListener("click", () => {
+  document.querySelector("#local-model").value = link.dataset.localModel;
+  selectRecipe(tabs[0]);
+}));
+selectRecipe(tabs[0]);
 tabs.forEach((tab, index) => {
   tab.addEventListener("click", () => selectRecipe(tab));
   tab.addEventListener("keydown", event => {
@@ -274,22 +307,24 @@ tabs.forEach((tab, index) => {
   });
 });
 
-const copyButton = document.querySelector("#copy-code");
-const copyLabel = copyButton.querySelector(".copy-label");
-copyButton.hidden = false;
-copyButton.addEventListener("click", async () => {
-  const status = document.querySelector("#copy-status");
-  try {
-    await navigator.clipboard.writeText(document.querySelector("#quickstart-code").textContent);
-    copyLabel.textContent = "Copied";
-    status.textContent = "Commands copied to clipboard.";
-    setTimeout(() => { copyLabel.textContent = "Copy commands"; }, 2500);
-  } catch {
-    const selection = window.getSelection();
-    const range = document.createRange();
-    range.selectNodeContents(document.querySelector("#quickstart-code"));
-    selection.removeAllRanges();
-    selection.addRange(range);
-    status.textContent = "Clipboard unavailable. Commands selected; press Control+C or Command+C to copy.";
-  }
+document.querySelectorAll("[data-copy-code]").forEach(copyButton => {
+  const copyLabel = copyButton.querySelector(".copy-label");
+  const code = document.querySelector(copyButton.dataset.copyCode);
+  copyButton.hidden = false;
+  copyButton.addEventListener("click", async () => {
+    const status = document.querySelector("#copy-status");
+    try {
+      await navigator.clipboard.writeText(code.textContent);
+      copyLabel.textContent = "Copied";
+      status.textContent = "Commands copied to clipboard.";
+      setTimeout(() => { copyLabel.textContent = "Copy commands"; }, 2500);
+    } catch {
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(code);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      status.textContent = "Clipboard unavailable. Commands selected; press Control+C or Command+C to copy.";
+    }
+  });
 });

@@ -16,6 +16,7 @@
   <a href="README.md">🇺🇸 English</a> | <strong>🇨🇳 简体中文</strong><br>
   <strong><a href="#结果与演示">🎮 结果与演示</a> |
   <a href="#快速上手">⚡ 快速上手</a> |
+  <a href="#本地体验">💻 本地体验</a> |
   <a href="#预训练模型">🤗 模型</a> |
   <a href="#评测">📊 评测</a> |
   <a href="#文档与贡献">📚 文档</a></strong>
@@ -38,7 +39,7 @@
 以下 30 个案例是由早期兼容 checkpoint 录制的历史回放，展示了 JevAny 在机器人、浏览器、软件、实验室和出行任务中的动作选择；
 当前默认发布模型为
 [JevAny-Qwen3.8-27B](https://huggingface.co/SimpleJev/JevAny-Qwen3.8-27B-LoRA)。[查看全部案例](docs/CASES.md)，
-或[打开交互演示](#打开交互演示)，查看记录的动作和选项概率。
+或[在本地运行模型](#本地体验)，输入自己的任务，查看模型的选择和各选项概率。
 
 [![JevAny 在机器人、浏览器、软件、实验室和出行任务中选择动作](docs/demos/jevany-cases.gif)](docs/CASES.md)
 
@@ -78,8 +79,9 @@
 
 - [🎮 结果与演示](#结果与演示)
 - [⚡ 1. 快速上手](#快速上手)
-  - [🛠️ 1.1 JevAny 训练](#训练)
-  - [🚀 1.2 JevAny 部署](#部署)
+  - [💻 1.1 本地体验](#本地体验)
+  - [🛠️ 1.2 JevAny 训练](#训练)
+  - [🚀 1.3 JevAny 部署](#部署)
 - [🤗 2. 预训练模型](#预训练模型)
 - [📊 3. 基准测试结果](#评测)
 - [🕹️ 4. 示例与测试环境](#示例与测试环境)
@@ -99,10 +101,32 @@ python -m pip install -e .
 ```
 
 以下命令均在仓库根目录运行，并使用上述虚拟环境。
-你可以[训练自己的模型](#训练)，也可以[直接部署已发布模型](#部署)。
-只想先体验效果，可以在 CPU 上[打开交互演示](#打开交互演示)。
+先在本地体验，再用自己的数据[训练模型](#训练)，或通过 [API 接入应用](#部署)。
 
-### 🛠️ 1.1 JevAny 训练 <a name="训练"></a>
+### 💻 1.1 本地体验 <a name="本地体验"></a>
+
+选择适合自己电脑的模型：
+
+| 模型 | 硬件 | 从这里开始 |
+|---|---|---|
+| Qwen 0.8B 入门配置 | CPU · 建议 16 GB 内存 | 用随包工单[训练小型 adapter](docs/TRAINING.md#start-with-a-small-backbone) |
+| JevAny-Qwen 4B | CUDA · BF16 基座权重约 8 GB，另需运行时显存 | [加载已发布模型](#部署) |
+| JevAny-Qwen 27B | CUDA · BF16 基座权重约 54 GB，另需运行时显存 | [选择更大的 checkpoint](docs/PLAYGROUND.md#choose-and-load-a-model) |
+
+准备和加载步骤见[本地模型指南](docs/PLAYGROUND.md)。已发布模型首次使用时下载，
+之后复用本地缓存。保持模型服务运行，在同一仓库目录打开第二个终端：
+
+```bash
+source .venv/bin/activate
+jevany demo --base-url http://127.0.0.1:8008 --text-only
+```
+
+打开 `http://127.0.0.1:8090`，点击 **Test and connect**，在
+**Try your own decision** 中输入任务，点击 **Ask the model**。
+修改状态或候选选项，观察模型的选择如何变化。
+同一界面还提供[游戏、机器人和回放](#打开交互演示)。
+
+### 🛠️ 1.2 JevAny 训练 <a name="训练"></a>
 
 用标注决策数据训练自己的 System 1 模型：数据沿用推理时的 `state` 和 `questions`，
 为每个问题增加标签。
@@ -134,7 +158,7 @@ CPU 配置、多模态数据和标准 `torchrun` 启动方式见[训练指南](d
 jevany train --config recipes/rlcr.toml
 ```
 
-### 🚀 1.2 JevAny 部署 <a name="部署"></a>
+### 🚀 1.3 JevAny 部署 <a name="部署"></a>
 
 安装推理依赖，在 CUDA GPU 上启动已发布的 Qwen 4B 模型。
 显存要求见[硬件与加载说明](docs/DEPLOYMENT.md#checkpoints-and-hardware)。
@@ -179,6 +203,8 @@ print("Probabilities:", answer["probabilities"])
 图片和视频输入见[媒体配置](docs/DEPLOYMENT.md#native-media-and-limits)。
 
 ## 🤗 2. 预训练模型 <a name="预训练模型"></a>
+
+第一次在本地运行，可以先按[本地体验](#本地体验)中的硬件要求选择模型。
 
 | 模型 | Readout | 用途 |
 |---|---|---|
@@ -255,25 +281,25 @@ NLL、Brier 和 ECE 均在 Transfer 上计算。
 
 ### 🎮 4.4 打开交互演示 <a name="打开交互演示"></a>
 
-在[快速上手](#快速上手)配置的环境中启动交互演示：
+按[本地体验](#本地体验)启动模型后，打开交互演示：
 
 ```bash
-jevany demo
+jevany demo --base-url http://127.0.0.1:8008 --text-only
 ```
 
-打开 `http://127.0.0.1:8090`，点击 **Replay** 观看录制的运行过程。
-只需 CPU 即可播放内置录制内容。
-
-让模型在环境中运行时，保持[部署](#部署)中的模型服务运行。在终端按 Ctrl+C
-停止回放演示，安装可选游戏引擎，再连接模型服务启动演示：
+打开 `http://127.0.0.1:8090`，点击 **Test and connect**，尝试自己的决策任务。
+要让模型操作游戏，安装可选引擎并重新启动演示：
 
 ```bash
 python -m pip install -e '.[demo]'
 jevany demo --base-url http://127.0.0.1:8008 --text-only
 ```
 
-在浏览器中选择 **Run model** 让模型操作，或选择 **Play yourself** 自己操作。
+在浏览器中选择 **Run model**，再点击 **One decision** 单步运行，或
+**Run automatically** 连续运行。选择 **Play yourself** 可以自己操作。
 实时控制向模型发送文本状态；机械臂控制使用 `.[robotics]` 依赖。
+
+观看内置录制内容时，运行 `jevany demo` 并选择 **Replay**，只需 CPU，无需模型权重。
 平台要求与环境接口见[演示指南](examples/README.md)，结合 LLM 规划器使用
 JevAny 决策可参考[集成文档](docs/INTEGRATIONS.md)。
 

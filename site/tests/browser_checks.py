@@ -41,7 +41,7 @@ def check(url: str, output: Path) -> None:
         page.goto(url, wait_until="networkidle")
         page.evaluate("document.fonts.ready")
         page.add_style_tag(content="html { scroll-behavior: auto !important; }")
-        assert page.title() == "JevAny — Any model. Your next move."
+        assert page.title() == "JevAny: Decision Models"
         assert page.locator(".ambient-video").count() == 1
         page.wait_for_function("[...document.querySelectorAll('.ambient-video')].every(v => v.currentTime > 0)")
         assert page.locator(".ambient-video").get_attribute("src").endswith("/grid.webm")
@@ -130,23 +130,51 @@ def check(url: str, output: Path) -> None:
         page.wait_for_timeout(150)
         assert page.locator("#replay-video").evaluate("v => v.paused"), "Native pause lost"
 
+        # Model cards select the corresponding local launch commands.
+        for model in results["released_models"]:
+            checkpoint = model["repository"]
+            page.locator(f'[data-local-model="{checkpoint}"]').click()
+            assert page.url.endswith("#get-started")
+            assert page.locator("#local-model").input_value() == checkpoint
+            commands = page.locator("#quickstart-code").inner_text()
+            assert f"--checkpoint {checkpoint}" in commands
+            assert "--device cuda --dtype bf16" in commands
+            assert "jevany train" not in commands
+            assert page.locator("#demo-launch").is_visible()
+        page.locator("#local-model").select_option("cpu-starter")
+        commands = page.locator("#quickstart-code").inner_text()
+        assert "jevany train" in commands and "--weights-dtype fp32" in commands
+        assert "--out runs/cpu-jev" in commands and "--checkpoint runs/cpu-jev" in commands
+        assert "--device cpu --dtype fp32" in commands
+        assert "16 GB" in page.locator("#recipe-note").inner_text()
+        assert "--base-url http://127.0.0.1:8008 --text-only" in page.locator("#demo-code").inner_text()
+        for value in ("SimpleJev/JevAny-Qwen3.5-4B-LoRA", "SimpleJev/JevAny-Qwen3.8-27B-LoRA"):
+            page.locator("#local-model").select_option(value)
+            assert f"--checkpoint {value}" in page.locator("#quickstart-code").inner_text()
+        page.locator("#local-model").select_option("cpu-starter")
+
         # Keyboard tabs, actual recipe content, and clipboard contents.
-        page.locator("#tab-preview").click()
-        page.locator("#tab-preview").press("ArrowRight")
+        page.locator("#tab-local").click()
+        page.locator("#tab-local").press("ArrowRight")
         assert page.locator("#tab-train").get_attribute("aria-selected") == "true"
         assert "data validate" in page.locator("#quickstart-code").inner_text()
+        assert page.locator("#local-model-control").is_hidden()
+        assert page.locator("#demo-launch").is_hidden()
         page.locator("#tab-train").press("End")
         assert page.locator("#tab-serve").get_attribute("aria-selected") == "true"
         assert "--device cuda" in page.locator("#quickstart-code").inner_text()
         page.locator("#tab-serve").press("Home")
         page.locator("#copy-code").click()
         assert page.evaluate("navigator.clipboard.readText()") == page.locator("#quickstart-code").inner_text()
+        page.locator("#copy-demo").click()
+        assert page.evaluate("navigator.clipboard.readText()") == page.locator("#demo-code").inner_text()
         page.evaluate("Object.defineProperty(navigator, 'clipboard', {value: undefined, configurable: true})")
         page.locator("#copy-code").click()
         assert "Commands selected" in page.locator("#copy-status").inner_text()
 
         # Responsive layout and preview artifacts; keep videos still in screenshots.
         page.evaluate("window.getSelection().removeAllRanges()")
+        page.wait_for_function("[...document.querySelectorAll('.copy-label')].every(e => e.textContent === 'Copy commands')")
         page.locator('.replay-choice[data-case="peg_insertion"]').click()
         page.locator("#motion-toggle").click()
         for width, height in ((1440, 1000), (1280, 800), (768, 1024), (640, 900), (540, 900), (390, 844), (320, 700)):
@@ -157,7 +185,7 @@ def check(url: str, output: Path) -> None:
             assert page.locator("img:not([loading=lazy])").evaluate_all("imgs => imgs.every(i => i.complete && i.naturalWidth > 0)")
             if width == 320:
                 for selector in (".api-code", ".terminal pre"):
-                    code = page.locator(selector)
+                    code = page.locator(selector).first
                     assert code.get_attribute("tabindex") == "0"
                     code.focus()
                     code.press("ArrowRight")
@@ -167,6 +195,10 @@ def check(url: str, output: Path) -> None:
                 page.screenshot(path=str(output / f"homepage-{width}.png"), full_page=True)
                 page.screenshot(path=str(output / f"hero-{width}.png"))
                 page.locator("#benchmarks").screenshot(path=str(output / f"benchmarks-{width}.png"))
+                page.locator("#get-started").screenshot(path=str(output / f"local-cpu-{width}.png"))
+                page.locator("#local-model").select_option("SimpleJev/JevAny-Qwen3.5-4B-LoRA")
+                page.locator("#get-started").screenshot(path=str(output / f"local-gpu-{width}.png"))
+                page.locator("#local-model").select_option("cpu-starter")
         page.set_viewport_size({"width": 390, "height": 844})
         page.locator("#motion-toggle").click()
         page.wait_for_function("document.querySelector('.ambient-video').videoWidth === 360")
@@ -251,7 +283,9 @@ def check(url: str, output: Path) -> None:
         plain_page.goto(url, wait_until="networkidle")
         assert plain_page.locator(".hero h1").is_visible()
         assert plain_page.locator(".noscript-note").is_visible()
-        assert "jevany demo" in plain_page.locator("#quickstart-code").inner_text()
+        assert "jevany demo" in plain_page.locator("#demo-code").inner_text()
+        assert "jevany serve --checkpoint runs/cpu-jev" in plain_page.locator("#quickstart-code").inner_text()
+        assert plain_page.locator("#local-model-control").is_hidden()
         assert plain_page.locator(".benchmark-value").first.inner_text() == "90.04%"
         plain_page.locator("#case-library summary").click()
         assert plain_page.locator(".case-card").first.is_visible()
@@ -267,7 +301,8 @@ def check(url: str, output: Path) -> None:
                        "upright heading font", "Star link without authentication",
                        "30 decoded replays", "five benchmark metrics and correct sorting",
                        "full results table", "model support deep links", "local documentation and PDF", "global pause",
-                       "native pause", "keyboard tabs", "clipboard and fallback",
+                       "native pause", "CPU/GPU model selection and model card links",
+                       "keyboard tabs", "clipboard and fallback",
                        "no overflow", "reduced motion", "save data", "network fallback",
                        "MP4 fallback", "keyboard code scrolling", "no JavaScript fallback"],
             "console_errors": errors,

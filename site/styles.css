@@ -135,12 +135,19 @@ pre code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace
 .terminal-tabs { display: flex; align-items: center; border-bottom: 1px solid var(--line); background: #adceb306; padding-inline: 20px; }
 .terminal-tabs button { min-height: 50px; background: transparent; border: 0; padding: 16px 18px; border-bottom: 1px solid transparent; font-size: 12px; color: #9eafa4; margin-bottom: -1px; }
 .terminal-tabs button[aria-selected="true"] { color: var(--mint); border-bottom-color: var(--mint); }
-.terminal-label { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px 10px; color: #adbfaf; font-size: 12px; }
-.terminal-label button { border: 1px solid var(--line); background: #b8d9c207; font-size: 12px; padding: 8px 10px; border-radius: 4px; min-height: 34px; }
+.model-picker { padding: 20px 24px 0; align-items: center; gap: 14px; }
+.model-picker:not([hidden]) { display: flex; }
+.model-picker label { font-size: 12px; color: #adbfaf; }
+.model-picker select { min-width: 0; width: 100%; min-height: 44px; padding: 10px; font: inherit; font-size: 12px; color: var(--ink); background: #14221d; border: 1px solid var(--line); border-radius: 4px; }
+.model-picker select:focus-visible { outline: 2px solid var(--mint); outline-offset: 3px; }
+.terminal-label { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 20px 24px 10px; color: #adbfaf; font-size: 12px; }
+.terminal-label button { flex-shrink: 0; border: 1px solid var(--line); background: #b8d9c207; font-size: 12px; padding: 8px 10px; border-radius: 4px; min-height: 34px; }
 .terminal-label button:hover { color: var(--mint); }
 .terminal-label button span[aria-hidden] { margin-left: 6px; }
 .terminal pre { padding: 14px 24px 24px; min-height: 226px; color: #c9dacd; }
 .terminal code { font-size: 12px; line-height: 2; }
+.demo-launch pre { min-height: 0; }
+.demo-launch .terminal-label { line-height: 1.6; }
 .recipe-note { padding: 18px 24px; font-size: 12px; color: #a6b9ab; line-height: 1.8; background: #a8f0c806; border-top: 1px solid var(--line); }
 .site-footer { padding-block: 35px 85px; border-top: 1px solid var(--line); }
 .footer-top { display: flex; align-items: center; gap: 28px; }
@@ -233,7 +240,9 @@ pre code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace
   .terminal-tabs { padding-inline: 10px; }
   .terminal-tabs button { padding-inline: 16px; font-size: 12px; min-height: 47px; }
   .terminal-label { padding: 16px 16px 5px; }
+  .model-picker { padding: 16px 16px 0; gap: 10px; }
   .terminal pre { padding: 13px 16px 20px; min-height: 190px; }
+  .demo-launch pre { min-height: 0; }
   .terminal code { font-size: 12px; }
   .recipe-note { padding: 16px; font-size: 12px; }
   .site-footer { padding-top: 30px; }
@@ -337,6 +346,7 @@ caption { padding: 16px 18px; text-align: left; color: #adbcaf; font-size: 12px;
 .checkpoint-card p { width: 100%; color: var(--muted); font-size: 14px; line-height: 1.8; margin: 8px 0 20px; min-height: 44px; }
 .checkpoint-card code { display: block; font-size: 12px; line-height: 1.8; color: #bbd3c4; overflow-wrap: anywhere; padding: 10px 12px; background: #030c0c55; border-radius: 4px; user-select: all; }
 .checkpoint-card a { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--mint); padding-block: 8px; }
+.checkpoint-card a + a { margin-left: 20px; }
 .hf-mark { font-size: 20px; }
 .checkpoint-details { width: 100%; margin-top: 14px; font-size: 13px; color: #a9bfb0; }
 .checkpoint-details summary { cursor: pointer; padding-block: 8px; }

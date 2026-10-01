@@ -127,6 +127,7 @@ def models():
             f'<article class="checkpoint-card"><img src="assets/model-logos/jevany-{family.lower()}.svg" width="48" height="48" alt="">'
             f'<h3>{escape(name.removeprefix("JevAny-"))}</h3><p>{blurbs[name]}</p>'
             f'<a href="https://huggingface.co/{model["repository"]}"><span class="hf-mark" aria-hidden="true">🤗</span>Model card</a>'
+            f'<a href="#get-started" data-local-model="{escape(model["repository"], quote=True)}">Run locally →</a>'
             f'<details class="checkpoint-details"><summary>Checkpoint details</summary>'
             f'<p>{escape(model["readout"].capitalize())} readout</p><code>{escape(model["repository"])}</code></details></article>'
         )

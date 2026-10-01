@@ -14,8 +14,9 @@
 </li>
 <li><a href="#table-of-contents">📑 Table of Contents</a></li>
 <li><a href="#1-quickstart">⚡ 1. Quickstart</a><ul>
-<li><a href="#11-jevany-training">🛠️ 1.1 JevAny Training</a></li>
-<li><a href="#12-jevany-deployment">🚀 1.2 JevAny Deployment</a></li>
+<li><a href="#11-run-locally">💻 1.1 Run locally</a></li>
+<li><a href="#12-jevany-training">🛠️ 1.2 JevAny Training</a></li>
+<li><a href="#13-jevany-deployment">🚀 1.3 JevAny Deployment</a></li>
 </ul>
 </li>
 <li><a href="#2-pretrained-models">🤗 2. Pretrained Models</a></li>
@@ -47,8 +48,8 @@ options, then directly returns a choice and its probabilities.</p>
 <p>The following 30 examples are archived replays from an earlier compatible
 JevAny checkpoint. The current default release is
 <a href="https://huggingface.co/SimpleJev/JevAny-Qwen3.8-27B-LoRA">JevAny-Qwen3.8-27B</a>.
-<a href="CASES.html">Explore the cases</a>, or <a href="#try-the-playground">try the playground</a> to inspect
-recorded actions and option probabilities.</p>
+<a href="CASES.html">Explore the cases</a>, or <a href="#run-locally">run a model locally</a> to
+try your own inputs and see its choices and probabilities.</p>
 <p><a href="../index.html#case-library">Explore all 30 application replays →</a></p>
 <h3 id="jev-inside-llm-agent-loops">⚡ Jev inside LLM agent loops</h3>
 <blockquote>
@@ -102,8 +103,9 @@ Jev picks the routine action; the LLM verifies and finishes the task.</p>
 <ul>
 <li><a href="#results-and-demos">🎮 Results and Demos</a></li>
 <li><a href="#quickstart">⚡ 1. Quickstart</a></li>
-<li><a href="#training">🛠️ 1.1 JevAny Training</a></li>
-<li><a href="#deployment">🚀 1.2 JevAny Deployment</a></li>
+<li><a href="#run-locally">💻 1.1 Run locally</a></li>
+<li><a href="#training">🛠️ 1.2 JevAny Training</a></li>
+<li><a href="#deployment">🚀 1.3 JevAny Deployment</a></li>
 <li><a href="#pretrained-models">🤗 2. Pretrained Models</a></li>
 <li><a href="#evaluation">📊 3. Benchmark Results</a></li>
 <li><a href="#examples--test-environments">🕹️ 4. Examples &amp; Test Environments</a></li>
@@ -118,10 +120,47 @@ python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install -e .
 </code></pre>
-<p>Keep this environment active and work from the repository root. Choose
-<a href="#training">Training</a> to build your own model or <a href="#deployment">Deployment</a> to
-use a released checkpoint. For a preview on CPU, <a href="#try-the-playground">try the playground</a>.</p>
-<h3 id="11-jevany-training">🛠️ 1.1 JevAny Training <a name="training"></a></h3>
+<p>Keep this environment active and work from the repository root. Start with a
+local demo, then <a href="#training">train on your own data</a> or <a href="#deployment">use the API</a>.</p>
+<h3 id="11-run-locally">💻 1.1 Run locally <a name="run-locally"></a></h3>
+<p>Choose a model that fits your computer:</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Hardware</th>
+<th>Start here</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Qwen 0.8B starter</td>
+<td>CPU · 16 GB RAM recommended</td>
+<td><a href="TRAINING.html#start-with-a-small-backbone">Train the small adapter</a> on the bundled tickets</td>
+</tr>
+<tr>
+<td>JevAny-Qwen 4B</td>
+<td>CUDA · ~8 GB for BF16 base weights, plus runtime memory</td>
+<td><a href="#deployment">Load the released model</a></td>
+</tr>
+<tr>
+<td>JevAny-Qwen 27B</td>
+<td>CUDA · ~54 GB for BF16 base weights, plus runtime memory</td>
+<td><a href="PLAYGROUND.html#choose-and-load-a-model">Choose the larger checkpoint</a></td>
+</tr>
+</tbody>
+</table></div>
+<p>The <a href="PLAYGROUND.html">local model guide</a> covers preparation and loading.
+Released models download on first use and reuse the local cache. With the model
+server running, open a second terminal in the same checkout:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">source .venv/bin/activate
+jevany demo --base-url http://127.0.0.1:8008 --text-only
+</code></pre>
+<p>Open <code>http://127.0.0.1:8090</code>, choose <strong>Test and connect</strong>, then edit
+<strong>Try your own decision</strong> and press <strong>Ask the model</strong>. Change the state or options
+to see how its decision changes. <a href="#try-the-playground">Games, robotics and replays</a>
+are available in the same playground.</p>
+<h3 id="12-jevany-training">🛠️ 1.2 JevAny Training <a name="training"></a></h3>
 <p>Train your own System 1 model on the same <code>state</code> and <code>questions</code> you send at
 inference, with a label for each question. Start with the bundled synthetic
 support tickets, then train on your own labelled data. The starter recipe uses
@@ -144,7 +183,7 @@ standard <code>torchrun</code> launches. For image/video training or fine-tuning
 which rewards correctness and probability calibration:</p>
 <pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany train --config recipes/rlcr.toml
 </code></pre>
-<h3 id="12-jevany-deployment">🚀 1.2 JevAny Deployment <a name="deployment"></a></h3>
+<h3 id="13-jevany-deployment">🚀 1.3 JevAny Deployment <a name="deployment"></a></h3>
 <p>Install the serving dependencies and start the released Qwen 4B model on a CUDA
 GPU. See the <a href="DEPLOYMENT.html#checkpoints-and-hardware">hardware and loading guide</a>
 for memory requirements.</p>
@@ -185,6 +224,7 @@ See the <a href="API.html">API reference</a> for all three question types.</p>
 and use the same interface. For image and video inputs, follow the
 <a href="DEPLOYMENT.html#native-media-and-limits">media setup</a>.</p>
 <h2 id="2-pretrained-models">🤗 2. Pretrained Models <a name="pretrained-models"></a></h2>
+<p>For a first local run, choose a model and hardware in <a href="#run-locally">Run locally</a>.</p>
 <div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
 <thead>
 <tr>
@@ -274,20 +314,21 @@ forward. The environment uses ViZDoom and the included Freedoom assets.</p>
 <p>Gather wood, craft tools and mine stone while managing health and supplies.</p>
 <p><video class="doc-video" controls playsinline preload="none" aria-label="Crafter browser replay showing resource gathering, crafting actions and progress through four goal milestones" poster="../assets/media/docs/playground-crafter.webp"><source src="../assets/media/docs/playground-crafter.webm" type="video/webm"><source src="../assets/media/docs/playground-crafter.mp4" type="video/mp4">Your browser does not support video.</video></p>
 <h3 id="44-try-the-playground">🎮 4.4 Try the playground <a name="try-the-playground"></a></h3>
-<p>From the <a href="#quickstart">Quickstart</a> environment, start the playground:</p>
-<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany demo
+<p>With a model running from <a href="#run-locally">Run locally</a>, open the playground:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany demo --base-url http://127.0.0.1:8008 --text-only
 </code></pre>
-<p>Open <code>http://127.0.0.1:8090</code> and choose <strong>Replay</strong> to watch a recorded run.
-The bundled recordings play locally on CPU.</p>
-<p>To run your model, keep the server from <a href="#deployment">Deployment</a> running.
-Stop the replay viewer with Ctrl+C, install the optional game engines, then
-restart the playground with the server address:</p>
+<p>Open <code>http://127.0.0.1:8090</code>, choose <strong>Test and connect</strong>, and try your own
+decision. To let the model control a game, install the optional engines and
+restart the playground:</p>
 <pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m pip install -e '.[demo]'
 jevany demo --base-url http://127.0.0.1:8008 --text-only
 </code></pre>
-<p>Choose <strong>Run model</strong> in the browser, or <strong>Play yourself</strong> to control the game.
-Live control sends text state to the model. Robot control uses the
-<code>.[robotics]</code> extra. See the <a href="examples.html">playground guide</a> for platform
+<p>Choose <strong>Run model</strong>, then <strong>One decision</strong> or <strong>Run automatically</strong>.
+<strong>Play yourself</strong> lets you control the game. Live control sends text state to the
+model; robot control uses the <code>.[robotics]</code> extra.</p>
+<p>For the bundled recordings, run <code>jevany demo</code> and choose <strong>Replay</strong>.
+Playback works on CPU without model weights.
+See the <a href="examples.html">playground guide</a> for platform
 requirements and environment APIs, or <a href="INTEGRATIONS.html">integrations</a> to
 combine JevAny decisions with an LLM planner.</p>
 <h2 id="5-supported-model-families">🧩 5. Supported Model Families <a name="supported-model-families"></a></h2>
