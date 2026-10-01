@@ -20,6 +20,10 @@ JEVANY_ARROW = "#7db7f4"
 OTHER = "#8c8d89"
 OTHER_ARROW = "#c2c2bf"
 FRONTIER = "#f26634"
+FEATURED_MODELS = {
+    "JevAny-Qwen3.8-27B",
+    "JevAny-Muse-Glimmer-30B",
+}
 
 LABELS = {
     "JevAny-Qwen3.5-4B": "JevAny-4B",
@@ -44,8 +48,6 @@ OFFSETS = {
         "JevAny-Qwen3.5-4B": (-12, 18, "right"),
         "JevAny-Qwen3.5-4B-Direct-Token": (-12, -22, "right"),
         "JevAny-Gemma-4B": (-12, 0, "right"),
-        "JevAny-Qwen3.8-27B": (0, 17, "center"),
-        "JevAny-Muse-Glimmer-30B": (8, -20, "left"),
         "Bespoke-Nimble-9B": (8, 3, "left"),
         "Intern-Decision-4B": (8, -14, "left"),
         "Intern-Decision-2B": (8, -14, "left"),
@@ -61,8 +63,6 @@ OFFSETS = {
         "JevAny-Qwen3.5-4B": (-12, -14, "right"),
         "JevAny-Qwen3.5-4B-Direct-Token": (-12, 16, "right"),
         "JevAny-Gemma-4B": (-12, -18, "right"),
-        "JevAny-Qwen3.8-27B": (0, 17, "center"),
-        "JevAny-Muse-Glimmer-30B": (8, -20, "left"),
         "Bespoke-Nimble-9B": (8, -14, "left"),
         "Intern-Decision-4B": (0, 15, "center"),
         "Intern-Decision-2B": (8, -14, "left"),
@@ -103,13 +103,93 @@ def frontier(points: list[tuple[float, float, str]]) -> list[tuple[float, float,
     return result
 
 
-def plot(data: dict, output: Path) -> None:
-    models = grouped(data["rows"])
-    fig, axes = plt.subplots(1, 2, figsize=(18, 10.133), dpi=150)
-    fig.subplots_adjust(left=0.055, right=0.985, top=0.80, bottom=0.19, wspace=0.17)
+def draw_featured_card(ax: plt.Axes, row: dict) -> None:
+    panel = row["panel"]
+    before = row["default"]
+    after = row["accelerated"]
+    ax.set_facecolor("#f4f8fd")
+    for spine in ax.spines.values():
+        spine.set_color("#cfe3fb")
+        spine.set_linewidth(1.5)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.text(
+        0.025,
+        0.82,
+        f"H200  •  {panel['suite']}  •  fixed {panel['records']}-request panel",
+        fontsize=11,
+        color="#42688f",
+        fontweight="bold",
+        va="center",
+    )
+    ax.text(
+        0.025,
+        0.54,
+        LABELS.get(row["model"], row["model"]),
+        fontsize=14,
+        color="#151515",
+        fontweight="bold",
+        va="center",
+    )
+    ax.text(
+        0.975,
+        0.55,
+        f"{before['median_ms']:.2f} ms  →  {after['median_ms']:.2f} ms   {row['median_speedup']:.2f}×",
+        fontsize=15,
+        color=JEVANY,
+        fontweight="bold",
+        ha="right",
+        va="center",
+    )
+    ax.text(
+        0.025,
+        0.23,
+        f"Accuracy {before['correct']}/{before['total']} → "
+        f"{after['correct']}/{after['total']}  •  no argmax changes",
+        fontsize=10.5,
+        color="#5d5d5a",
+        va="center",
+    )
+    ax.text(
+        0.975,
+        0.23,
+        "within-row comparison only",
+        fontsize=10.5,
+        color="#7a7a76",
+        fontstyle="italic",
+        ha="right",
+        va="center",
+    )
+
+
+def plot(data: dict, featured: dict, output: Path) -> None:
+    models = grouped([row for row in data["rows"] if row["model"] not in FEATURED_MODELS])
+    featured_by_suite = {row["panel"]["suite"]: row for row in featured["rows"]}
+    fig = plt.figure(figsize=(18, 10.8), dpi=150)
+    grid = fig.add_gridspec(
+        2,
+        2,
+        left=0.055,
+        right=0.985,
+        top=0.785,
+        bottom=0.18,
+        wspace=0.17,
+        hspace=0.28,
+        height_ratios=(0.8, 3.2),
+    )
+    card_axes = (fig.add_subplot(grid[0, 0]), fig.add_subplot(grid[0, 1]))
+    axes = (fig.add_subplot(grid[1, 0]), fig.add_subplot(grid[1, 1]))
+    draw_featured_card(card_axes[0], featured_by_suite["Transfer balanced sample"])
+    draw_featured_card(card_axes[1], featured_by_suite["JevBench public"])
     best_points: dict[str, list[tuple[float, float, str]]] = {"transfer": [], "jevbench": []}
 
-    for ax, suite, title in zip(axes, ("transfer", "jevbench"), ("Transfer", "JevBench public")):
+    panel_titles = (
+        "A100-40GB comparison  •  Transfer-v9 (1,046 scored)",
+        "A100-40GB comparison  •  JevBench public (231)",
+    )
+    for ax, suite, title in zip(axes, ("transfer", "jevbench"), panel_titles):
         for model, rows in models.items():
             ours = model.startswith("JevAny-")
             color = JEVANY if ours else OTHER
@@ -152,7 +232,7 @@ def plot(data: dict, output: Path) -> None:
         ax.xaxis.set_minor_formatter(NullFormatter())
         ax.grid(True, color="#e5e5e2", linewidth=1)
         ax.set_axisbelow(True)
-        ax.set_title(title, loc="left", fontsize=17, fontweight="bold", pad=12)
+        ax.set_title(title, loc="left", fontsize=15, fontweight="bold", pad=12)
         ax.set_xlabel("Median latency per request (log scale)", fontsize=13, color="#5d5d5a")
         ax.set_ylabel("Accuracy", fontsize=13, color="#5d5d5a")
         ax.yaxis.set_major_formatter(FuncFormatter(lambda value, _: f"{value:.0f}%"))
@@ -162,10 +242,10 @@ def plot(data: dict, output: Path) -> None:
 
     axes[0].set_ylim(49.2, 89.2)
     axes[1].set_ylim(57.7, 91.8)
-    fig.suptitle("Accuracy vs measured latency, before and after acceleration",
+    fig.suptitle("Best measured inference efficiency, before and after acceleration",
                  x=0.055, y=0.965, ha="left", fontsize=23, fontweight="bold")
     fig.text(0.055, 0.915,
-             "Same A100-40GB nodes, batch size 1, one request = one question; accuracy re-measured after each change.",
+             "Each arrow compares one hardware + fixed panel only. H200 cards and A100 plots are not absolute cross-hardware comparisons.",
              fontsize=13.5, color="#5d5d5a")
     legend = [
         Line2D([], [], marker="o", linestyle="", markerfacecolor=JEVANY,
@@ -180,11 +260,11 @@ def plot(data: dict, output: Path) -> None:
                markeredgecolor="none", markersize=16, label="JevAny on the frontier"),
         Line2D([], [], color=FRONTIER, lw=2.5, label="Pareto frontier (after)"),
     ]
-    fig.legend(handles=legend, loc="upper left", bbox_to_anchor=(0.052, 0.88),
+    fig.legend(handles=legend, loc="upper left", bbox_to_anchor=(0.052, 0.865),
                ncol=6, frameon=False, fontsize=11.5, handlelength=1.4, columnspacing=1.4)
     fig.text(0.055, 0.055,
              "After: flash-linear-attention + causal-conv1d for models with Gated DeltaNet layers, plus fused SDPA.\n"
-             "Single-GPU JevAny models also use CUDA graphs; 27B/30B models stay layer-sharded over 40 GB GPUs.\n"
+             "Single-GPU JevAny models also use CUDA graphs; 27B/30B cards report their best one-H200 fixed-panel measurements.\n"
              "JevAny times the model call; third-party timings include each runtime's tokenization.",
              fontsize=10.5, color="#5d5d5a", wrap=True)
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -195,10 +275,12 @@ def plot(data: dict, output: Path) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", default="results/efficiency-a100-v1.json")
+    parser.add_argument("--featured-input", default="results/efficiency-h200-best-v1.json")
     parser.add_argument("--output", default="docs/efficiency-latency.png")
     args = parser.parse_args()
     data = json.loads(Path(args.input).read_text(encoding="utf-8"))
-    plot(data, Path(args.output))
+    featured = json.loads(Path(args.featured_input).read_text(encoding="utf-8"))
+    plot(data, featured, Path(args.output))
 
 
 if __name__ == "__main__":

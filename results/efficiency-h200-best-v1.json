@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "name": "efficiency-h200-best-v1",
+  "measured": "2026-10-01",
+  "comparison_scope": "Each before/after pair uses one H200 and one fixed panel. Absolute latency and accuracy must not be compared across panels or against the A100 comparison.",
+  "rows": [
+    {
+      "model": "JevAny-Qwen3.8-27B",
+      "hardware": "1 x NVIDIA H200",
+      "panel": {
+        "suite": "JevBench public",
+        "records": 231
+      },
+      "default": {
+        "median_ms": 113.54,
+        "correct": 207,
+        "total": 231
+      },
+      "accelerated": {
+        "configuration": "fused SDPA + CUDA graphs",
+        "median_ms": 30.53,
+        "correct": 207,
+        "total": 231
+      },
+      "median_speedup": 3.72,
+      "argmax_flips": 0,
+      "source": "docs/DEPLOYMENT.md native CUDA Graph measurement"
+    },
+    {
+      "model": "JevAny-Muse-Glimmer-30B",
+      "hardware": "1 x NVIDIA H200",
+      "panel": {
+        "suite": "Transfer balanced sample",
+        "records": 44
+      },
+      "default": {
+        "median_ms": 100.71,
+        "correct": 38,
+        "total": 44
+      },
+      "accelerated": {
+        "configuration": "fused SDPA + CUDA graphs",
+        "median_ms": 43.25,
+        "correct": 38,
+        "total": 44
+      },
+      "median_speedup": 2.33,
+      "argmax_flips": 0,
+      "source": "results/efficiency-h200-muse30-v1.json"
+    }
+  ]
+}
