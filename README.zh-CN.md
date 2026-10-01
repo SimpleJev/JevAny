@@ -91,6 +91,7 @@ Reward `1→1` · LLM calls `15→8` · 时间 `187.9s→144.7s`
   - [🚀 1.3 JevAny 部署](#部署)
 - [🤗 2. 预训练模型](#预训练模型)
 - [📊 3. 基准测试结果](#评测)
+  - [⏱️ 3.1 推理效率](#推理效率)
 - [🕹️ 4. 示例与测试环境](#示例与测试环境)
 - [🧩 5. 支持的模型系列](#支持的模型系列)
 - [📚 6. 文档与贡献](#文档与贡献)
@@ -261,6 +262,34 @@ NLL、Brier 和 ECE 均在 Transfer 上计算。
 [完整结果与评测协议](docs/EVALUATION.md#model-family-v2) ·
 [机器可读结果](results/model-family-v2.json) ·
 [方法与消融实验报告](reports/JevAny_Tech_Report.pdf)
+
+### ⏱️ 3.1 推理效率 <a name="推理效率"></a>
+
+在单张 A100-40GB、batch size 1 的条件下，打开可选的 CUDA 加速
+（`flash-linear-attention`、融合 SDPA 和 `--cuda-graphs`）后，4B 版本的中位延迟降到原来的约四分之一，
+Transfer 准确率最多变化 3 题。27B 和 30B 版本用 `--device-map auto` 按层切分到多张 40 GB GPU 上，
+提速 8–10%。
+
+[![加速前后 JevAny 与其他决策模型的准确率-延迟对比](docs/efficiency-latency.png)](docs/EFFICIENCY.md)
+
+<div align="center">
+
+| 模型 | GPU 数 | 默认 | 加速后 | Transfer 准确率 |
+|:---|---:|---:|---:|---:|
+| JevAny-Qwen3.5-4B | 1 | 104.6 ms | **25.3 ms** | 78.68% → 78.87% |
+| JevAny-Qwen3.5-4B-Direct-Token | 1 | 106.4 ms | **25.9 ms** | 78.11% → 78.39% |
+| JevAny-Gemma-4B | 1 | 106.3 ms | **31.9 ms** | 70.84% → 70.84% |
+| JevAny-Muse-Glimmer-30B | 3 | 171.2 ms | **154.2 ms** | 83.37% → 83.37% |
+| JevAny-Qwen3.8-27B<sup>†</sup> | 3 | 240.2 ms | **220.1 ms** | 85.66% → 85.66% |
+
+Transfer-v9 上每个请求的中位延迟，batch size 1。
+<sup>†</sup> 测的是 step 22,160 版本。
+
+</div>
+
+[完整表格、实验设置与其他模型](docs/EFFICIENCY.md) ·
+[开启方法](docs/DEPLOYMENT.md#optional-cuda-acceleration) ·
+[机器可读结果](results/efficiency-a100-v1.json)
 
 ## 🕹️ 4. 示例与测试环境 <a name="示例与测试环境"></a>
 

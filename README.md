@@ -94,6 +94,7 @@ Reward `1→1` · LLM calls `15→8` · time `187.9s→144.7s`
   - [🚀 1.3 JevAny Deployment](#deployment)
 - [🤗 2. Pretrained Models](#pretrained-models)
 - [📊 3. Benchmark Results](#evaluation)
+  - [⏱️ 3.1 Inference efficiency](#efficiency)
 - [🕹️ 4. Examples & Test Environments](#examples--test-environments)
 - [🧩 5. Supported Model Families](#supported-model-families)
 - [📚 6. Documentation and Contributing](#documentation-and-contributing)
@@ -276,6 +277,35 @@ NLL, Brier and ECE are measured on Transfer.
 [Full results and protocols](docs/EVALUATION.md#model-family-v2) ·
 [Machine-readable results](results/model-family-v2.json) ·
 [Method and ablation report](reports/JevAny_Tech_Report.pdf)
+
+### ⏱️ 3.1 Inference efficiency <a name="efficiency"></a>
+
+On one A100-40GB at batch size 1, the optional CUDA path
+(`flash-linear-attention`, fused SDPA and `--cuda-graphs`) cuts the median
+latency of the 4B releases about fourfold. Transfer accuracy moves by at most
+three questions. The 27B and 30B releases run layer-sharded over 40 GB GPUs
+with `--device-map auto` and gain 8–10%.
+
+[![Accuracy vs median latency before and after acceleration for JevAny and other decision models](docs/efficiency-latency.png)](docs/EFFICIENCY.md)
+
+<div align="center">
+
+| Model | GPUs | Default | Accelerated | Transfer accuracy |
+|:---|---:|---:|---:|---:|
+| JevAny-Qwen3.5-4B | 1 | 104.6 ms | **25.3 ms** | 78.68% → 78.87% |
+| JevAny-Qwen3.5-4B-Direct-Token | 1 | 106.4 ms | **25.9 ms** | 78.11% → 78.39% |
+| JevAny-Gemma-4B | 1 | 106.3 ms | **31.9 ms** | 70.84% → 70.84% |
+| JevAny-Muse-Glimmer-30B | 3 | 171.2 ms | **154.2 ms** | 83.37% → 83.37% |
+| JevAny-Qwen3.8-27B<sup>†</sup> | 3 | 240.2 ms | **220.1 ms** | 85.66% → 85.66% |
+
+Median per-request latency on Transfer-v9, batch size 1.
+<sup>†</sup> Measured at step 22,160.
+
+</div>
+
+[Full tables, setup and other models](docs/EFFICIENCY.md) ·
+[How to enable](docs/DEPLOYMENT.md#optional-cuda-acceleration) ·
+[Machine-readable results](results/efficiency-a100-v1.json)
 
 ## 🕹️ 4. Examples & Test Environments <a name="examples--test-environments"></a>
 
