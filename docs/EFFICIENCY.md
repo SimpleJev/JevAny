@@ -86,8 +86,6 @@ so the kernels do not apply. Jev-Omni and Laya were therefore not re-run.
 |  | + kernels | 1 | 60.33% | 40.9 | 40.8 | 41.4 |
 | Intern-Decision-0.8B | Default | 1 | 55.35% | 151.9 | 150.7 | 162.0 |
 |  | + kernels | 1 | 55.45% | 40.3 | 40.2 | 40.7 |
-| JevK5 | Default | 1 | 73.14% | 41.6 | 34.5 | 54.5 |
-|  | + kernels | 1 | 73.33% | 21.1 | 18.8 | 24.6 |
 | decider-4b | Default | 1 | 74.76% | 70.0 | 68.9 | 78.7 |
 |  | + kernels + own CUDA graphs | 1 | 74.67% | 393.7\* | 26.7 | 47.9 |
 | decider-2b | Default | 1 | 67.21% | 53.1 | 50.9 | 64.2 |
@@ -128,8 +126,6 @@ so the kernels do not apply. Jev-Omni and Laya were therefore not re-run.
 |  | + kernels | 1 | 78.35% | 46.4 | 41.2 | 67.0 |
 | Intern-Decision-0.8B | Default | 1 | 71.00% | 193.0 | 153.1 | 347.1 |
 |  | + kernels | 1 | 71.00% | 42.2 | 40.5 | 47.9 |
-| JevK5 | Default | 1 | 87.01% | 117.0 | 42.2 | 407.0 |
-|  | + kernels | 1 | 87.45% | 53.4 | 21.2 | 178.5 |
 | decider-4b | Default | 1 | 82.68% | 143.6 | 73.9 | 348.5 |
 |  | + kernels + own CUDA graphs | 1 | 82.68% | 1962.0\* | 35.5 | 259.8 |
 | decider-2b | Default | 1 | 75.76% | 89.2 | 54.5 | 189.1 |
@@ -155,3 +151,6 @@ included in the mean. Its median and p90 describe steady-state latency.
 - **Comparing across rows:** every row uses the same GPU type, but some
   comparisons span different nodes of the cluster. That adds a few percent of
   run-to-run variation.
+
+Regenerate the figure from the repository root with
+`python scripts/plot_efficiency.py`.

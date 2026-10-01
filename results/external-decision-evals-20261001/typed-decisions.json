@@ -1,0 +1,122 @@
+{
+  "artifact_version": 1,
+  "kind": "local_evaluation_with_published_comparators",
+  "benchmark": {
+    "repository": "LocalLLaMA/typed-decisions",
+    "revision": "d0e2f0c42fef86cc15d1688d25a19f5ba7c85b18",
+    "license": "Apache-2.0",
+    "test_parquet_sha256": "4f294f218ea1da27f3efef936359389c62ea4d3973a41457732990f1d31b647c",
+    "schema": "state, questions and gold are JSON strings; questions use native choice/noul/score System One shapes",
+    "split": {
+      "train_cases": 1200,
+      "test_cases": 400,
+      "test_decisions": 2000,
+      "workflows": 4,
+      "decisions_per_case": 5
+    }
+  },
+  "protocol": {
+    "mode": "zero-shot",
+    "request_shape": "all five questions for one state in one request",
+    "execution": "batch size 1, serial cases",
+    "hardware": "1 x NVIDIA H200 per local model run",
+    "precision": "BF16 for JevAny; Laya official checkpoint path",
+    "attention": "SDPA for JevAny",
+    "metrics": {
+      "accuracy": "argmax prediction equals the argmax soft-gold label",
+      "kl_from_gold": "mean KL(gold || prediction)",
+      "brier": "mean sum of squared probability error against soft gold",
+      "ece": "15-bin top-label expected calibration error",
+      "latency": "model call for one five-question case; tokenization excluded for JevAny and included by Laya's native call"
+    },
+    "slurm_jobs": ["1984228_0", "1984228_1", "1984228_2", "1984228_3", "1984228_4", "1984235"]
+  },
+  "local_results": [
+    {
+      "model": "JevAny-Qwen3.8-27B",
+      "checkpoint": "/lustre-storage/fsx/tianxinwei/JevAny/releases/qwen38-27b-step44319-20260930/JevAny-Qwen3.8-27B-LoRA",
+      "base_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "metrics": {"accuracy": 0.728, "kl_from_gold": 0.29284607004173263, "brier": 0.13141516555965035, "ece": 0.05304485014212309},
+      "accuracy_by_type": {"choice": 0.7116666666666667, "noul": 0.8016666666666666, "score": 0.685},
+      "latency_ms_per_case": {"mean": 271.2365106830839, "median": 279.846342978999, "p95": 384.42612695507705},
+      "mean_ms_per_decision_amortized": 54.24730213661678,
+      "raw_report": "/lustre-storage/fsx/tianxinwei/JevAny/runs/external-decision-evals-20261001/typed-decisions-full/JevAny-Qwen3.8-27B/report.json",
+      "raw_predictions": "/lustre-storage/fsx/tianxinwei/JevAny/runs/external-decision-evals-20261001/typed-decisions-full/JevAny-Qwen3.8-27B/predictions.jsonl"
+    },
+    {
+      "model": "JevAny-Muse-Glimmer-30B",
+      "checkpoint": "/lustre-storage/fsx/tianxinwei/JevAny/releases/model-family-v2-20260929/JevAny-Muse-Glimmer-30B-LoRA",
+      "base_revision": "a4e59da52a7bc87ae7251dd5545c0dd437c44b68",
+      "metrics": {"accuracy": 0.6995, "kl_from_gold": 0.24526825101571734, "brier": 0.11076614862515069, "ece": 0.027932146407057316},
+      "accuracy_by_type": {"choice": 0.71, "noul": 0.8116666666666666, "score": 0.6075},
+      "latency_ms_per_case": {"mean": 254.43818863015622, "median": 265.92537853866816, "p95": 379.5321909710765},
+      "mean_ms_per_decision_amortized": 50.887637726031244,
+      "raw_report": "/lustre-storage/fsx/tianxinwei/JevAny/runs/external-decision-evals-20261001/typed-decisions-full/JevAny-Muse-Glimmer-30B/report.json",
+      "raw_predictions": "/lustre-storage/fsx/tianxinwei/JevAny/runs/external-decision-evals-20261001/typed-decisions-full/JevAny-Muse-Glimmer-30B/predictions.jsonl"
+    },
+    {
+      "model": "JevAny-Qwen3.5-4B-Direct-Token",
+      "checkpoint": "/lustre-storage/fsx/tianxinwei/JevAny/releases/model-family-v2-20260929/JevAny-Qwen3.5-4B-Direct-Token-LoRA",
+      "base_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+      "metrics": {"accuracy": 0.672, "kl_from_gold": 0.4349209967113214, "brier": 0.17878543329515909, "ece": 0.08238339723477661},
+      "accuracy_by_type": {"choice": 0.6916666666666667, "noul": 0.6933333333333334, "score": 0.64125},
+      "latency_ms_per_case": {"mean": 95.1714781759074, "median": 89.42042104899883, "p95": 108.40185591951013},
+      "mean_ms_per_decision_amortized": 19.03429563518148,
+      "raw_report": "/lustre-storage/fsx/tianxinwei/JevAny/runs/external-decision-evals-20261001/typed-decisions-full/JevAny-Qwen3.5-4B-Direct-Token/report.json",
+      "raw_predictions": "/lustre-storage/fsx/tianxinwei/JevAny/runs/external-decision-evals-20261001/typed-decisions-full/JevAny-Qwen3.5-4B-Direct-Token/predictions.jsonl"
+    },
+    {
+      "model": "JevAny-Gemma-4B",
+      "checkpoint": "/lustre-storage/fsx/tianxinwei/JevAny/releases/model-family-v2-20260929/JevAny-Gemma-4B-LoRA",
+      "base_revision": "ee0ef6023621cff504d758262d4e04895a5af4a2",
+      "metrics": {"accuracy": 0.6625, "kl_from_gold": 0.2715169187711413, "brier": 0.12813895549191406, "ece": 0.03607486958158731},
+      "accuracy_by_type": {"choice": 0.6366666666666667, "noul": 0.7833333333333333, "score": 0.59125},
+      "latency_ms_per_case": {"mean": 109.18176479870453, "median": 107.06288402434438, "p95": 142.25536910817027},
+      "mean_ms_per_decision_amortized": 21.836352959740907,
+      "raw_report": "/lustre-storage/fsx/tianxinwei/JevAny/runs/external-decision-evals-20261001/typed-decisions-full/JevAny-Gemma-4B/report.json",
+      "raw_predictions": "/lustre-storage/fsx/tianxinwei/JevAny/runs/external-decision-evals-20261001/typed-decisions-full/JevAny-Gemma-4B/predictions.jsonl"
+    },
+    {
+      "model": "JevAny-Qwen3.5-4B",
+      "checkpoint": "/lustre-storage/fsx/tianxinwei/JevAny/releases/model-family-v2-20260929/JevAny-Qwen3.5-4B-LoRA",
+      "base_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+      "metrics": {"accuracy": 0.635, "kl_from_gold": 0.4787718293268527, "brier": 0.21769431550066473, "ece": 0.11542953593789122},
+      "accuracy_by_type": {"choice": 0.645, "noul": 0.6283333333333333, "score": 0.6325},
+      "latency_ms_per_case": {"mean": 91.97534012433607, "median": 85.49249148927629, "p95": 104.90787914022803},
+      "mean_ms_per_decision_amortized": 18.395068024867214,
+      "raw_report": "/lustre-storage/fsx/tianxinwei/JevAny/runs/external-decision-evals-20261001/typed-decisions-full/JevAny-Qwen3.5-4B/report.json",
+      "raw_predictions": "/lustre-storage/fsx/tianxinwei/JevAny/runs/external-decision-evals-20261001/typed-decisions-full/JevAny-Qwen3.5-4B/predictions.jsonl"
+    },
+    {
+      "model": "convaiinnovations/laya",
+      "checkpoint_revision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+      "license": "Apache-2.0",
+      "metrics": {"accuracy": 0.362, "kl_from_gold": 0.5757992905951531, "brier": 0.3156945969140454, "ece": 0.17423100706995998},
+      "accuracy_by_type": {"choice": 0.28833333333333333, "noul": 0.485, "score": 0.325},
+      "latency_ms_per_case": {"mean": 25.998055592062883, "median": 19.658496603369713, "p95": 33.4935300052166},
+      "mean_ms_per_decision_amortized": 5.199611118412577,
+      "raw_report": "/lustre-storage/fsx/tianxinwei/JevAny/runs/external-decision-evals-20261001/typed-decisions-full/Laya/report.json",
+      "raw_predictions": "/lustre-storage/fsx/tianxinwei/JevAny/runs/external-decision-evals-20261001/typed-decisions-full/Laya/predictions.jsonl"
+    }
+  ],
+  "published_dataset_card_comparators": {
+    "source": "LocalLLaMA/typed-decisions README at revision d0e2f0c42fef86cc15d1688d25a19f5ba7c85b18",
+    "local_rerun": false,
+    "latency_comparability": "No: hosted, local and self-reported rows use different hardware and timing boundaries.",
+    "rows": [
+      {"model": "meraGPT Decider 1", "accuracy": 0.768, "kl_from_gold": 0.096, "brier": 0.052, "ece": 0.18, "reported_p50_ms": 526},
+      {"model": "Liquid AI d1", "accuracy": 0.742, "kl_from_gold": 0.475, "brier": 0.155, "ece": 0.124, "reported_p50_ms": 525},
+      {"model": "TypeSafe Jev 1.13.0", "accuracy": 0.727, "kl_from_gold": 1.442, "brier": 0.148, "ece": 0.144, "reported_p50_ms": 710},
+      {"model": "Featherless Simple Jev", "accuracy": 0.716, "kl_from_gold": 0.488, "brier": 0.176, "ece": null, "reported_p50_ms": null},
+      {"model": "prima-ratio + 12B", "accuracy": 0.702, "kl_from_gold": 0.564, "brier": 0.234, "ece": 0.146, "reported_p50_ms": 700},
+      {"model": "OpenDecider-small", "accuracy": 0.671, "kl_from_gold": 0.211, "brier": 0.117, "ece": null, "reported_p50_ms": 40},
+      {"model": "Bongard-mini", "accuracy": 0.594, "kl_from_gold": 0.256, "brier": 0.132, "ece": 0.067, "reported_p50_ms": 225}
+    ]
+  },
+  "raw_run_root": "/lustre-storage/fsx/tianxinwei/JevAny/runs/external-decision-evals-20261001",
+  "notes": [
+    "Local result rows are fresh measurements; published comparator rows are copied from the pinned dataset card and were not locally rerun.",
+    "The Laya accuracy of 0.362 exactly matches the pinned dataset card's base-checkpoint value, validating the request mapping.",
+    "All six local jobs completed with 400 prediction records and 2,000 scored decisions."
+  ]
+}

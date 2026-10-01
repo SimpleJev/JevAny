@@ -49,6 +49,12 @@ LLM 负责规划并提出有效、可回退的候选动作，Jev 做局部选择
 下方动图对比左侧纯 LLM 与右侧 LLM + Jev，两侧 reward 相同；步骤为示意，
 加速播放保留各组记录的实测耗时比例，点击可放大查看。
 
+**快速判断原则**
+
+- 当 LLM 能提出 2–4 个有效、有实质区别、可回退的动作，且下一次观察能立即验证选择时，交给 Jev。
+- 规划、开放式搜索、精确编辑、失败恢复、高风险动作和最终完成继续由 LLM 负责。
+- 只有在 reward 不降且决策步数、tokens 或时间减少时使用 Jev；否则立即交回 LLM。
+
 <table>
   <tr>
     <td width="64%" valign="middle">
@@ -57,7 +63,8 @@ LLM 负责规划并提出有效、可回退的候选动作，Jev 做局部选择
     <td width="36%" valign="middle">
       <p><strong>1. <a href="docs/demos/jev-agent-harness-traces.json">WebShop</a></strong><br>
       Jev 从 LLM 生成的候选中选中所需颜色和尺寸，LLM 随后完成购买。
-      用时从 18.54 秒降至 7.83 秒，LLM 调用从 9 次降至 4 次。</p>
+      动作从 9 步降至 5 步，LLM 调用从 9 次降至 4 次，tokens 从 38,852
+      降至 14,256，用时从 18.54 秒降至 7.83 秒。</p>
     </td>
   </tr>
   <tr>
@@ -67,7 +74,8 @@ LLM 负责规划并提出有效、可回退的候选动作，Jev 做局部选择
     <td width="36%" valign="middle">
       <p><strong>2. <a href="docs/demos/jev-agent-harness-traces.json">FrozenLake</a></strong><br>
       LLM 规划一次路线，Jev 在每个新状态下从四个方向中选择下一步。
-      两侧均到达目标，用时从 19.7 秒降至 16.7 秒，LLM 调用从 4 次降至 1 次。</p>
+      两侧均用 4 步到达目标；LLM 决策调用从 4 次降至 1 次，tokens 从
+      2,338 降至 663，用时从 19.7 秒降至 16.7 秒。</p>
     </td>
   </tr>
   <tr>
@@ -77,14 +85,15 @@ LLM 负责规划并提出有效、可回退的候选动作，Jev 做局部选择
     <td width="36%" valign="middle">
       <p><strong>3. <a href="reports/JevAny_Tech_Report_Agent_Harness_Appendix.md#h1-sqlite-recovery-a-meaningful-three-way-decision">Terminal-Bench</a></strong><br>
       在 <code>sqlite-db-truncate</code> 任务中，Jev 从三个命令中选择原始页面检查，
-      LLM 随后恢复并验证十行数据。用时从 187.9 秒降至 144.7 秒，LLM 调用从 15 次降至 8 次。</p>
+      LLM 随后恢复并验证十行数据。工具命令从 13 步降至 7 步，LLM 调用从
+      15 次降至 8 次，tokens 从 202,050 降至 121,293，用时从 187.9 秒降至 144.7 秒。</p>
     </td>
   </tr>
 </table>
 
 下表展示更多配对评测结果，收益随任务而变化。[完整结果](reports/JevAny_Tech_Report_Agent_Harness_Appendix.md)、
 [委托协议](docs/experiments/AGENT_HARNESS_FRONTIER_PROTOCOL.md)和
-[技术报告](reports/JevAny_Tech_Report_with_Agent_Harness.pdf)说明了 Jev 适合处理哪些选择，以及何时交回 LLM。
+[技术报告](reports/JevAny_Tech_Report.pdf)说明了 Jev 适合处理哪些选择，以及何时交回 LLM。
 
 | 任务 | 成功率 | 效率 |
 |---|---:|---:|
@@ -361,8 +370,8 @@ JevAny 决策可参考[集成文档](docs/INTEGRATIONS.md)。
 [训练](docs/TRAINING.md) · [部署](docs/DEPLOYMENT.md) · [API](docs/API.md) · [数据](docs/DATA.md) · [评测](docs/EVALUATION.md) · [Agent harness 协议](docs/experiments/AGENT_HARNESS_FRONTIER_PROTOCOL.md) · [贡献指南](CONTRIBUTING.md)
 
 欢迎贡献模型适配、评测或应用示例，开发步骤见[贡献指南](CONTRIBUTING.md)。
-[合并版技术报告](reports/JevAny_Tech_Report_with_Agent_Harness.pdf)介绍了模型设计、多模态路径、
-agent-harness 实验、负面结果与开放问题；[原始发布报告](reports/JevAny_Tech_Report.pdf)保持不变。
+[技术报告](reports/JevAny_Tech_Report.pdf)介绍了模型设计、多模态路径、
+agent-harness 实验与附录、负面结果和开放问题。
 
 代码和入门数据采用 Apache-2.0。部分组件改编自 [Kev](https://github.com/jaredpalmer/kev)，
 归属说明见 [NOTICE](NOTICE) 和 [ACKNOWLEDGEMENTS.md](ACKNOWLEDGEMENTS.md)。

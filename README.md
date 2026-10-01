@@ -53,6 +53,15 @@ planning, recovery, and completion. The animations compare LLM only (left) with
 LLM + Jev (right) at equal reward. Steps are illustrated; accelerated playback
 preserves each pair's measured completion-time ratio. Click an animation to enlarge it.
 
+**Golden rules**
+
+- Delegate when the LLM can propose 2–4 valid, meaningfully different,
+  reversible actions and the next observation can verify the choice.
+- Keep planning, open-ended search, exact edits, recovery, high-risk actions,
+  and completion with the LLM.
+- Use Jev only when reward stays equal or improves while decision steps, tokens,
+  or time fall; otherwise return control to the LLM.
+
 <table>
   <tr>
     <td width="64%" valign="middle">
@@ -61,8 +70,8 @@ preserves each pair's measured completion-time ratio. Click an animation to enla
     <td width="36%" valign="middle">
       <p><strong>1. <a href="docs/demos/jev-agent-harness-traces.json">WebShop</a></strong><br>
       Jev selects the requested color and size from LLM-generated menus before the
-      LLM buys the product. Time falls from 18.54 to 7.83 seconds and LLM calls
-      from 9 to 4.</p>
+      LLM buys the product. Actions fall from 9 to 5, LLM calls from 9 to 4,
+      tokens from 38,852 to 14,256, and time from 18.54 to 7.83 seconds.</p>
     </td>
   </tr>
   <tr>
@@ -72,8 +81,8 @@ preserves each pair's measured completion-time ratio. Click an animation to enla
     <td width="36%" valign="middle">
       <p><strong>2. <a href="docs/demos/jev-agent-harness-traces.json">FrozenLake</a></strong><br>
       After one LLM plan, Jev checks each new state and chooses among four directions.
-      Both runs reach the goal; time falls from 19.7 to 16.7 seconds and LLM calls
-      from 4 to 1.</p>
+      Both runs reach the goal in 4 moves; LLM decision calls fall from 4 to 1,
+      tokens from 2,338 to 663, and time from 19.7 to 16.7 seconds.</p>
     </td>
   </tr>
   <tr>
@@ -83,15 +92,16 @@ preserves each pair's measured completion-time ratio. Click an animation to enla
     <td width="36%" valign="middle">
       <p><strong>3. <a href="reports/JevAny_Tech_Report_Agent_Harness_Appendix.md#h1-sqlite-recovery-a-meaningful-three-way-decision">Terminal-Bench</a></strong><br>
       For <code>sqlite-db-truncate</code>, Jev selects raw-page inspection from three
-      commands, then the LLM recovers and verifies ten rows. Time falls from 187.9
-      to 144.7 seconds and LLM calls from 15 to 8.</p>
+      commands, then the LLM recovers and verifies ten rows. Tool commands fall
+      from 13 to 7, LLM calls from 15 to 8, tokens from 202,050 to 121,293, and
+      time from 187.9 to 144.7 seconds.</p>
     </td>
   </tr>
 </table>
 
 Broader paired evaluations show that gains vary by task. The [full results](reports/JevAny_Tech_Report_Agent_Harness_Appendix.md),
 [delegation protocol](docs/experiments/AGENT_HARNESS_FRONTIER_PROTOCOL.md), and
-[technical report](reports/JevAny_Tech_Report_with_Agent_Harness.pdf) describe
+[technical report](reports/JevAny_Tech_Report.pdf) describe
 where Jev helps and when to return control to the LLM.
 
 | Task | Success | Efficiency |
@@ -388,9 +398,9 @@ combine JevAny decisions with an LLM planner.
 
 To contribute a model adapter, evaluation or application example, start with the
 [contribution guide](CONTRIBUTING.md). The
-[combined technical report](reports/JevAny_Tech_Report_with_Agent_Harness.pdf)
-describes model design, multimodal support, the agent-harness study, negative results,
-and open questions; the [original release report](reports/JevAny_Tech_Report.pdf) remains unchanged.
+[technical report](reports/JevAny_Tech_Report.pdf) describes model design,
+multimodal support, the agent-harness study and appendix, negative results, and
+open questions.
 
 Code and starter data are Apache-2.0. Some components are adapted from
 [Kev](https://github.com/jaredpalmer/kev); see [NOTICE](NOTICE) and
