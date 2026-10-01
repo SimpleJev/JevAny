@@ -415,24 +415,6 @@ so the kernels do not apply. Jev-Omni and Laya were therefore not re-run.</p>
 <td style="text-align: right;">40.7</td>
 </tr>
 <tr>
-<td style="text-align: left;">JevK5</td>
-<td style="text-align: left;">Default</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">73.14%</td>
-<td style="text-align: right;">41.6</td>
-<td style="text-align: right;">34.5</td>
-<td style="text-align: right;">54.5</td>
-</tr>
-<tr>
-<td style="text-align: left;"></td>
-<td style="text-align: left;">+ kernels</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">73.33%</td>
-<td style="text-align: right;">21.1</td>
-<td style="text-align: right;">18.8</td>
-<td style="text-align: right;">24.6</td>
-</tr>
-<tr>
 <td style="text-align: left;">decider-4b</td>
 <td style="text-align: left;">Default</td>
 <td style="text-align: right;">1</td>
@@ -764,24 +746,6 @@ so the kernels do not apply. Jev-Omni and Laya were therefore not re-run.</p>
 <td style="text-align: right;">47.9</td>
 </tr>
 <tr>
-<td style="text-align: left;">JevK5</td>
-<td style="text-align: left;">Default</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">87.01%</td>
-<td style="text-align: right;">117.0</td>
-<td style="text-align: right;">42.2</td>
-<td style="text-align: right;">407.0</td>
-</tr>
-<tr>
-<td style="text-align: left;"></td>
-<td style="text-align: left;">+ kernels</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">87.45%</td>
-<td style="text-align: right;">53.4</td>
-<td style="text-align: right;">21.2</td>
-<td style="text-align: right;">178.5</td>
-</tr>
-<tr>
 <td style="text-align: left;">decider-4b</td>
 <td style="text-align: left;">Default</td>
 <td style="text-align: right;">1</td>
@@ -854,5 +818,7 @@ included in the mean. Its median and p90 describe steady-state latency.</p>
 <li><strong>Comparing across rows:</strong> every row uses the same GPU type, but some
   comparisons span different nodes of the cluster. That adds a few percent of
   run-to-run variation.</li>
-</ul></main></div>
+</ul>
+<p>Regenerate the figure from the repository root with
+<code>python scripts/plot_efficiency.py</code>.</p></main></div>
 <footer class="site-footer wrap"><a href="../index.html">← Back to JevAny</a><a href="license.html">Apache-2.0 code</a></footer></body></html>

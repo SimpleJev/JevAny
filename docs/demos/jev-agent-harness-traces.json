@@ -31,8 +31,8 @@
       }
     ],
     "pair": {
-      "baseline": {"reward": 1, "llm_calls": 4, "tokens": 2338, "wall_time_seconds": 19.7},
-      "jev_harness": {"reward": 1, "llm_calls": 1, "tokens": 663, "wall_time_seconds": 16.7}
+      "baseline": {"reward": 1, "steps": 4, "step_label": "moves", "llm_calls": 4, "tokens": 2338, "wall_time_seconds": 19.7},
+      "jev_harness": {"reward": 1, "steps": 4, "step_label": "moves", "llm_calls": 1, "tokens": 663, "wall_time_seconds": 16.7}
     },
     "ten_pair_result": {
       "baseline_success": 1.0,
@@ -76,6 +76,8 @@
     "result": "10 rows recovered and verifier passed",
     "baseline": {
       "reward": 1,
+      "steps": 13,
+      "step_label": "commands",
       "llm_calls": 15,
       "tokens": 202050,
       "wall_time_seconds": 187.9,
@@ -84,6 +86,8 @@
     },
     "jev_harness": {
       "reward": 1,
+      "steps": 7,
+      "step_label": "commands",
       "llm_calls": 8,
       "tokens": 121293,
       "wall_time_seconds": 144.7,
@@ -113,6 +117,8 @@
     ],
     "baseline": {
       "reward": 1,
+      "steps": 9,
+      "step_label": "actions",
       "llm_calls": 9,
       "tokens": 38852,
       "wall_time_seconds": 18.54,
@@ -128,6 +134,8 @@
     },
     "jev_harness": {
       "reward": 1,
+      "steps": 5,
+      "step_label": "actions",
       "llm_calls": 4,
       "tokens": 14256,
       "wall_time_seconds": 7.83,

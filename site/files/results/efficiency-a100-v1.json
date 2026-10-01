@@ -549,42 +549,6 @@
    "mean_includes_compilation": false
   },
   {
-   "model": "JevK5",
-   "configuration": "Default",
-   "gpus": 1,
-   "transfer": {
-    "accuracy": 73.14,
-    "mean_ms": 41.6,
-    "median_ms": 34.5,
-    "p90_ms": 54.5
-   },
-   "jevbench": {
-    "accuracy": 87.01,
-    "mean_ms": 117.0,
-    "median_ms": 42.2,
-    "p90_ms": 407.0
-   },
-   "mean_includes_compilation": false
-  },
-  {
-   "model": "JevK5",
-   "configuration": "+ kernels",
-   "gpus": 1,
-   "transfer": {
-    "accuracy": 73.33,
-    "mean_ms": 21.1,
-    "median_ms": 18.8,
-    "p90_ms": 24.6
-   },
-   "jevbench": {
-    "accuracy": 87.45,
-    "mean_ms": 53.4,
-    "median_ms": 21.2,
-    "p90_ms": 178.5
-   },
-   "mean_includes_compilation": false
-  },
-  {
    "model": "decider-4b",
    "configuration": "Default",
    "gpus": 1,

@@ -223,10 +223,17 @@ def render_frame(key: str, trace: dict, tick: int) -> Image.Image:
         length = round(460 * progress)
         if length:
             draw.rounded_rectangle((x + 22, 551, x + 22 + length, 560), 4, fill=color)
-        text(draw, x + 22, 577, f"Total: {run['llm_calls']} LLM calls", 23, MUTED)
+        text(draw, x + 22, 577,
+             f"{run['steps']} {run['step_label']} · {run['llm_calls']} LLM calls · {run['tokens']:,} tokens",
+             20, MUTED)
     saved = baseline["wall_time_seconds"] - assisted["wall_time_seconds"]
-    text(draw, 28, 626, f"Recorded pair: {saved:.2f} s saved ({saved / baseline['wall_time_seconds']:.0%} less time)",
-         27, ACCENT, True)
+    step_saved = baseline["steps"] - assisted["steps"]
+    call_saved = baseline["llm_calls"] - assisted["llm_calls"]
+    token_saved = baseline["tokens"] - assisted["tokens"]
+    text(draw, 28, 626,
+         f"Saved: {step_saved} {baseline['step_label']} · {call_saved} LLM calls · "
+         f"{token_saved:,} tokens · {saved:.2f} s",
+         25, ACCENT, True)
     text(draw, 28, 668, f"Illustrated steps; measured totals at {longest * 1000 / PLAY_MS:.2f}× playback", 23, MUTED)
     return image
 
