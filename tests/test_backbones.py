@@ -174,6 +174,80 @@ def test_train_tokens_lora_isolation_cache_and_reload(tmp_path, family):
         torch.testing.assert_close(left, right, atol=2e-6, rtol=1e-5)
 
 
+@pytest.mark.parametrize("saved_dtype", ["fp32", "bf16"])
+@pytest.mark.parametrize("requested_dtype", [None, "fp32", "fp16", "bf16"])
+@pytest.mark.parametrize("merge_bf16", [False, True])
+def test_checkpoint_explicit_dtype_preserves_merge_policy(tmp_path, saved_dtype, requested_dtype, merge_bf16):
+    from jevany import JevModel
+    from jevany.checkpoint import LoadOptions
+
+    dtypes = {"fp32": torch.float32, "fp16": torch.float16, "bf16": torch.bfloat16}
+    base = tmp_path / "base"
+    make_base(base, "llama", legacy=True)
+    tokenizer = load_tokenizer(base)
+    model = DecisionModel(base, tokenizer, "cpu", lora=2, head_dim=8, dtype=dtypes[saved_dtype])
+    checkpoint = tmp_path / "checkpoint"
+    model.lm.save_pretrained(checkpoint, save_embedding_layers=False)
+    tokenizer.save_pretrained(checkpoint)
+    write_meta(checkpoint, Meta(base=str(base), head=model.head.state_dict(), lora=2, head_dim=8,
+                               weights_dtype=saved_dtype, tokenizer_saved=True))
+
+    local = JevModel.from_pretrained(checkpoint, device="cpu", dtype=requested_dtype,
+                                    options=LoadOptions(merge_bf16=merge_bf16))
+    restored = local.runtime.model
+    assert restored.lm.get_input_embeddings().weight.dtype == dtypes[requested_dtype or saved_dtype]
+    assert restored.inference_acceleration["lora_merged"] == (saved_dtype == "fp32" or merge_bf16)
+    probabilities = restored.probs(restored.encode(local.runtime.tok, RECORD))
+    assert all(torch.isfinite(p).all() for p in probabilities)
+    if requested_dtype is None:
+        explicit = JevModel.from_pretrained(checkpoint, device="cpu", dtype=saved_dtype,
+                                           options=LoadOptions(merge_bf16=merge_bf16))
+        expected = explicit.runtime.model.probs(explicit.runtime.model.encode(explicit.runtime.tok, RECORD))
+        for left, right in zip(probabilities, expected):
+            torch.testing.assert_close(left, right, atol=0, rtol=0)
+
+
+@pytest.mark.parametrize("family,branch_mode", [
+    ("llama", "packed"), ("llama", "rows"), ("mistral", "rows"),
+    ("qwen35", "rows"), ("gemma", "rows"), ("qwen35_moe", "rows"),
+    ("gpt2", "rows"), ("glm", "rows"), ("nemotron", "rows"),
+])
+def test_ordinary_scoring_disables_cache_without_changing_logits(tmp_path, family, branch_mode):
+    base = tmp_path / "base"
+    make_base(base, family)
+    tokenizer = load_tokenizer(base)
+    model = DecisionModel(base, tokenizer, "cpu", lora=2, head_dim=8, branch_mode=branch_mode).eval()
+    model.lm.config.use_cache = True
+    encoded = model.encode(tokenizer, RECORD)
+
+    # Reproduce the old forward call, which inherited the backbone's cache default.
+    def inherited_cache(module, args, kwargs):
+        kwargs.pop("use_cache", None)
+        return args, kwargs
+
+    handle = model.lm.register_forward_pre_hook(inherited_cache, with_kwargs=True)
+    try:
+        with torch.no_grad():
+            expected = model(encoded)
+    finally:
+        handle.remove()
+
+    calls = []
+    def inspect_cache(module, args, kwargs, output):
+        calls.append(kwargs.get("use_cache"))
+        assert getattr(output, "past_key_values", None) is None
+
+    handle = model.lm.register_forward_hook(inspect_cache, with_kwargs=True)
+    try:
+        with torch.no_grad():
+            actual = model(encoded)
+    finally:
+        handle.remove()
+    assert calls == [False]
+    for left, right in zip(actual, expected):
+        torch.testing.assert_close(left, right, atol=2e-6, rtol=1e-5)
+
+
 @pytest.mark.parametrize("family,preset", [
     ("glm", "all"), ("glm", "dense"), ("glm", "attn"),
     ("nemotron", "all"), ("nemotron", "dense"), ("nemotron", "attn"),

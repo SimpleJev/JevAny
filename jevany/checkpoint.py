@@ -130,6 +130,7 @@ class LoadOptions:
 
     dtype        None = fp32 (bf16 when the checkpoint was trained with a bf16 backbone). bf16 halves memory for
                  serving large backbones; probabilities then differ from fp32 in the third decimal.
+                 An explicit dtype overrides the checkpoint default without changing its merge policy.
     merge        fold the LoRA into the base weights in fp32 before any cast. Exact in fp32; in bf16 it is faster (~15%)
                  and closer to fp32 than merging directly into bf16. Ignored for adapters that carry trained token embeddings.
     attn         attention backend; None = the model default (SDPA on CUDA, eager elsewhere). "sdpa" on MPS measured
@@ -185,7 +186,7 @@ class LoadOptions:
     @classmethod
     def from_env(cls, env=os.environ):
         """Read checkpoint loading, placement and optional inference acceleration settings."""
-        return cls(dtype={"bf16": torch.bfloat16, "fp16": torch.float16}.get(env.get("JEVANY_DTYPE", "")),
+        return cls(dtype={"fp32": torch.float32, "bf16": torch.bfloat16, "fp16": torch.float16}.get(env.get("JEVANY_DTYPE", "")),
                    merge=env.get("JEVANY_MERGE", "1") != "0", attn=env.get("JEVANY_ATTN") or None,
                    lora_scale=float(env.get("JEVANY_LORA_SCALE", "1")),
                    temperature=float(env["JEVANY_TEMPERATURE"]) if env.get("JEVANY_TEMPERATURE") else None,
@@ -224,11 +225,13 @@ class Checkpoint:
                 raise ValueError("torch.compile acceleration is supported only on CUDA")
             _check_compile_runtime()
         meta = self.meta
-        dtype, merge = opts.dtype or torch.float32, opts.merge
+        default_dtype = torch.bfloat16 if meta.weights_dtype == "bf16" else torch.float32
+        dtype = opts.dtype if opts.dtype is not None else default_dtype
+        merge = opts.merge
         if meta.weights_dtype == "bf16":
-            # The exact path keeps the FP32 adapter separate from BF16 base weights.
-            # An explicit fast-mode opt-in permits the lossy BF16 merge.
-            dtype, merge = torch.bfloat16, merge and opts.merge_bf16
+            # Preserve the checkpoint's separate-adapter default even when dtype is overridden.
+            # Merging still requires the explicit fast-mode opt-in.
+            merge = merge and opts.merge_bf16
         source, revision = meta.base, meta.base_revision
         if opts.base_load_path:
             if not Path(opts.base_load_path).is_dir():
