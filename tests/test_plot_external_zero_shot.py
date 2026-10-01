@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts.plot_external_zero_shot import load_results
+from scripts.plot_external_zero_shot import PANELS, load_results
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -31,8 +31,10 @@ def test_tracked_chart_artifact_has_one_valid_twelve_model_cohort():
     data = load_results(SOURCE)
     order = data["main_comparison_order"]
     assert len(order) == 12
+    assert {panel["metric"] for panel in PANELS} == {"accuracy"}
     for panel in ("typed_decisions", "jevjudge_full", "jevjudge_text"):
         assert [row["model"] for row in data[panel]["ordered_models"]] == order
+        assert data[panel]["chart_metric"] == "accuracy"
 
 
 @pytest.mark.parametrize("value", [-0.01, 1.01, True, float("inf")])
@@ -107,7 +109,7 @@ def test_dash_rows_require_null_metrics_and_an_unavailable_status(tmp_path, arti
             artifact,
             "jevjudge_full",
             "Kev-27B",
-            accuracy=0.5,
+            skill_role=0.5,
         )
     with pytest.raises(ValueError, match="needs a no-matching status"):
         load_modified(

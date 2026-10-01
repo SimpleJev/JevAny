@@ -52,14 +52,29 @@
 或<a href="#本地体验">在本地运行模型</a>，输入自己的任务，查看模型的选择和各选项概率。</p>
 <p><a href="../index.html#case-library">Explore all 30 application replays →</a></p>
 <h3 id="jev-llm-agent">⚡ Jev 加入 LLM Agent 循环</h3>
-<p>LLM 负责规划并提出有效、可回退的候选动作，Jev 做局部选择，失败恢复和最终完成仍由 LLM 负责。
+<p>候选动作由环境提供或由 LLM 生成；Jev 做局部选择，规划、失败恢复和最终完成仍由 LLM 负责。
 下方动图对比左侧纯 LLM 与右侧 LLM + Jev，两侧 reward 相同；步骤为示意，
 加速播放保留各组记录的实测耗时比例，点击可放大查看。</p>
 <p><strong>快速判断原则</strong></p>
+<p><strong>委托“选择瓶颈”，而不是委托整个任务。</strong> Jev 只在一个窄区间有价值：
+LLM 已经知道有效选项，但让大模型逐次做局部选择成本高，或已经测出排序不稳定。</p>
+<p>Jev 只有两种有效价值：<strong>减少 frontier 工作量</strong>，或<strong>修正已经测出的局部排序弱点</strong>。
+两者都做不到时，Jev 就只是额外开销。</p>
 <ul>
-<li>当 LLM 能提出 2–4 个有效、有实质区别、可回退的动作，且下一次观察能立即验证选择时，交给 Jev。</li>
-<li>规划、开放式搜索、精确编辑、失败恢复、高风险动作和最终完成继续由 LLM 负责。</li>
-<li>只有在 reward 不降且决策步数、tokens 或时间减少时使用 Jev；否则立即交回 LLM。</li>
+<li><strong>按阶段判断，不按 benchmark 名称判断。</strong> WebShop 和 Terminal-Bench
+  都同时包含开放推理与有界选择。只委托后者；太简单的动作直接执行更便宜，
+  缺失的策略则继续交给 LLM。</li>
+<li><strong>候选决定能力上限。</strong> 给 Jev 2–4 个当前有效、包含正确动作且会导向
+  不同结果的反事实分支。Jev 能重排已有选项，不能发明缺失的计划。</li>
+<li><strong>追求效率时，要替代推理，不要追加裁判。</strong> 一次 LLM 计划应供多次 Jev
+  选择复用。在 GPT-5.6-sol + 27B 的 FrozenLake cell 中，LLM 调用减少
+  64.4%；WebArena 没有真正替代 frontier 工作，调用反而增加 5.6%，
+  tokens 增加 28.2%。纯效果收益应先在配对实验或 D1 shadow 中验证排序改善。</li>
+<li><strong>只在反馈视界内委托。</strong> 仅当动作可回退、语义效果能立即验证时继续；
+  遇到新状态、候选失效、延迟反馈或失败恢复，立即交回 LLM。</li>
+<li><strong>用证据升级自治层级。</strong> 从 D0 纯 LLM → D1 shadow → D2 单步选择 →
+  D3 常规决策默认委托 → D4 有界子任务逐级推进。只保留 Pareto 非劣点：
+  reward 不降且成本更低，或 reward 提升但明确披露额外成本。委托比例高本身不是收益。</li>
 </ul>
 <div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
   <tr>
@@ -322,16 +337,15 @@ NLL、Brier 和 ECE 均在 Transfer 上计算。
 <p>外部对比覆盖完整 Typed Decisions、JevJudge 3,220 条多模态全集及其 724 条
 文本切片。12 个模型在三个面板中保持同一顺序；<code>—</code> 表示不支持原生输入或
 没有对应结果。</p>
-<p><a href="../files/docs/external-zero-shot.svg"><img loading="lazy" alt="同一组十二个模型在 Typed Decisions、JevJudge 全集和文本切片上的结果" src="../files/docs/external-zero-shot.svg" /></a></p>
+<p><a href="../files/docs/external-zero-shot.svg"><img loading="lazy" alt="同一组十二个模型在 Typed Decisions、JevJudge 全集和 JevJudge 纯文本子集上的准确率" src="../files/docs/external-zero-shot.svg" /></a></p>
 <ul>
-<li><strong>JevAny-Qwen3.8-27B：</strong>Typed agreement 72.8%，JevJudge <code>skill_role</code> <strong>35.6%</strong>，JevJudge 文本准确率 66.4%。</li>
-<li>五个 JevAny 版本都完成了 3,220/3,220 条原生文本、图片和视频评测，<code>skill_role</code> 为 17.9%–35.6%；最强完整开源 baseline 为 13.6%。</li>
-<li>JevJudge 文本中，Qwen3.8-27B 为 66.4%，Kev-27B 为 64.2%。Kev 没有原生图片/视频路径，因此全集为 <code>—</code>。</li>
+<li><strong>JevAny-Qwen3.8-27B：</strong>Typed 准确率 72.8%，JevJudge 全集准确率 <strong>62.3%</strong>，JevJudge 纯文本准确率 66.4%。</li>
+<li>五个 JevAny 版本都完成了 3,220/3,220 条原生文本、图片和视频评测，全集准确率为 51.5%–62.3%；最强完整开源 baseline 为 48.2%。</li>
+<li>JevJudge 纯文本子集中，Qwen3.8-27B 为 66.4%，Kev-27B 为 64.2%。Kev 没有原生图片/视频路径，因此全集为 <code>—</code>。</li>
 <li>仅有公开报告的 Decider 1（76.8%）和 Liquid d1（74.2%）仍高于我们在 Typed Decisions 上的 72.8%；二者都没有 JevJudge 结果。</li>
 </ul>
-<p>JevJudge 官方 <code>skill_role</code> 会扣除每个 family 的猜测或多数类基线，再等权平均五种
-role。Qwen3.8-27B 的全集普通准确率是 62.27%，<code>skill_role</code> 是 35.55%；
-两者衡量的内容不同。</p>
+<p>三个面板现在统一使用准确率。JevJudge 全集包含全部 3,220 条多模态记录，
+纯文本面板是其中 724 条记录的子集；官方 <code>skill_role</code> 只保留在详细评测说明中。</p>
 <p><a href="EXTERNAL_EVALUATION.html">完整外部结果</a> ·
 <a href="../files/results/external-zero-shot-v1.json">机器可读图表数据</a></p>
 <h3 id="31">⏱️ 3.1 推理效率 <a name="推理效率"></a></h3>
