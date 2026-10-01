@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a1114">
+<title>A small decision-model experiment — JevAny</title><link rel="stylesheet" href="../styles.css"><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"></head>
+<body class="docs-page"><a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header wrap"><a class="brand" href="../index.html"><img src="../assets/favicon.svg" width="30" height="30" alt=""><span>JevAny<span class="brand-period">.</span></span></a>
+<nav aria-label="Main navigation"><a href="../index.html#benchmarks">Benchmarks</a><a href="../index.html#models">Models</a><a href="../index.html#get-started">Get started</a></nav></header>
+<div class="docs-layout wrap"><aside class="docs-sidebar"><a class="text-link" href="../index.html">← Project homepage</a><nav aria-label="Documentation"><a href="quickstart.html">Quickstart</a><a href="TRAINING.html">Training</a><a href="DATA.html">Data</a><a href="DEPLOYMENT.html">Deployment</a><a href="API.html">API reference</a><a href="examples.html">Examples</a><a href="CASES.html">Cases</a><a href="EVALUATION.html">Evaluation</a><a href="ALGORITHM.html">Method</a><a href="INTEGRATIONS.html">Integrations</a><a href="zh.html">中文文档</a></nav>
+<details class="doc-toc"><summary>On this page</summary><div class="toc">
+<ul>
+<li><a href="#compare-the-training-paradigms">Compare the training paradigms</a></li>
+<li><a href="#change-a-loss-or-decision-head">Change a loss or decision head</a></li>
+<li><a href="#data-provenance">Data provenance</a></li>
+</ul>
+</div>
+</details></aside>
+<main id="content" class="doc-content"><p class="eyebrow">JEVANY / DOCUMENTATION</p><h1>A small decision-model experiment</h1><p>This example trains, evaluates and reloads a model using only the public
+repository and a public backbone. The starter contains original synthetic
+support tickets with separate training and development files. It is useful for
+trying the research workflow; replace it with your task's data for meaningful
+accuracy comparisons.</p>
+<p>Run these commands from the repository root with Python 3.12 or newer:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m pip install -e '.[train,serve]'
+jevany data init --out data/research
+jevany data validate data/research/train.jsonl
+jevany train --config recipes/sft.toml \
+  --data data/research/train.jsonl \
+  --eval-data data/research/development.jsonl \
+  --device cpu --dtype fp32 --weights-dtype fp32 \
+  --accum 1 --max-steps 12 \
+  --eval-every-steps 4 --checkpoint-every-steps 4 \
+  --out runs/research
+jevany eval --run runs/research --data data/research/development.jsonl \
+  --device cpu --out runs/research-evaluation
+jevany decide examples/request.json --checkpoint runs/research --device cpu
+</code></pre>
+<p>The recipe uses Qwen3.5-0.8B. The first run downloads its weights; subsequent runs
+can use the Hugging Face cache. On a CUDA GPU with enough memory, omit the three
+CPU overrides to use the recipe's BF16 settings.</p>
+<p>Inspect <code>data_admission.json</code> before comparing experiments: it lists any records
+excluded by token limits. <code>training_eval/history.jsonl</code> records intermediate
+held-out scores, and <code>training_metrics.json</code> records the examples and optimizer
+steps actually processed. The standalone evaluation writes per-question
+predictions, metrics and coverage to <code>runs/research-evaluation</code>.</p>
+<p>To reproduce the rest of this experiment from its fourth optimizer step:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany train --resume runs/research/checkpoints/step-000004 \
+  --out runs/research-resumed
+</code></pre>
+<p>Resume restores the saved recipe, optimizer, schedule, data order and random
+states. Use the same device type and software environment, and retain the
+original input files. See <a href="TRAINING.html#resume-an-interrupted-experiment">resume semantics</a>
+for the settings that can change.</p>
+<h2 id="compare-the-training-paradigms">Compare the training paradigms</h2>
+<p>The default run uses the pointer head with supervised labels. For a direct-token
+baseline, repeat the training command with <code>--decision-mode lm_token</code> and a new
+output directory. This mode uses the base model's original vocabulary head and
+single-token candidate labels.</p>
+<p>For an RLCR continuation, start from the pointer checkpoint:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany train --config recipes/sft.toml \
+  --data data/research/train.jsonl --eval-data data/research/development.jsonl \
+  --init-from runs/research --rlcr \
+  --device cpu --dtype fp32 --weights-dtype fp32 \
+  --accum 1 --max-steps 12 --eval-every-steps 4 \
+  --out runs/research-rlcr
+</code></pre>
+<p><code>--init-from</code> starts a new optimizer and schedule. It is the entry point for
+changing objectives or adapting an existing checkpoint to new data. <code>--resume</code>
+continues the same experiment. Score each model on the same held-out file and
+compare accuracy, NLL, Brier score and coverage, keeping token limits fixed.</p>
+<h2 id="change-a-loss-or-decision-head">Change a loss or decision head</h2>
+<p>The trainer's loss functions are ordinary PyTorch functions in
+<a href="../files/jevany/train.py"><code>train.py</code></a>. Start a loss experiment with <code>question_loss</code>,
+<code>lm_token_loss</code> or <code>rlcr_question_loss</code>; <code>batch_loss</code> selects the objective and
+averages question losses within each record.</p>
+<p>For example, a label-smoothing ablation can keep the existing soft-target branch
+of <code>question_loss</code> and change its hard-label return to:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-python">return F.cross_entropy(z[None], y, label_smoothing=0.1)
+</code></pre>
+<p>Record that source revision with the experiment and use a new output directory.
+Changing a training loss does not change the inference checkpoint format. Resume
+assumes that the objective's implementation is unchanged.</p>
+<p>For a head ablation, the built-in residual variant already has a recipe setting:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany train --config recipes/sft.toml \
+  --data data/research/train.jsonl --eval-data data/research/development.jsonl \
+  --device cpu --dtype fp32 --weights-dtype fp32 \
+  --head-residual-dim 128 --accum 1 --max-steps 12 --eval-every-steps 4 \
+  --out runs/residual-head
+</code></pre>
+<p>For a different architecture, the implementation points are:</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Change</th>
+<th>Source contract</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Compute decision logits</td>
+<td><code>PointerHead</code> and <code>DecisionModel._question_readout</code> in <code>model.py</code>; return one logit per option</td>
+</tr>
+<tr>
+<td>Construct the head</td>
+<td><code>DecisionModel.__init__</code> in <code>model.py</code>; retain the output interface expected by training and inference</td>
+</tr>
+<tr>
+<td>Save and reload its configuration</td>
+<td><code>Meta</code>, <code>Checkpoint.load</code> and <code>Checkpoint.COMPAT_FIELDS</code> in <code>checkpoint.py</code>, plus the trainer's <code>Meta</code> construction</td>
+</tr>
+<tr>
+<td>Change backbone loading or native media processing</td>
+<td>The <a href="TRAINING.html#backbone-support">BackboneAdapter extension</a></td>
+</tr>
+</tbody>
+</table></div>
+<p>Check both hard labels and soft targets for a new loss. For a new head, train a
+small model, save it, reload it in a fresh process and compare local and HTTP
+answers. Add new architecture fields to warm-start compatibility checks so that
+loading mismatched head weights fails explicitly.</p>
+<h2 id="data-provenance">Data provenance</h2>
+<p>The public starter and dataset builders are available for reproducible workflow
+experiments. They do not reconstruct the release's full training mixture. The
+<a href="DATA.html">data guide</a> describes the public inputs and the release-data boundary;
+the <a href="EVALUATION.html">evaluation guide</a> records published results.</p></main></div>
+<footer class="site-footer wrap"><a href="../index.html">← Back to JevAny</a><a href="license.html">Apache-2.0 code</a></footer></body></html>

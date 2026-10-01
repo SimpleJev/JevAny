@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a1114">
+<title>JevAny-27B-RLCR v0.2 — JevAny</title><link rel="stylesheet" href="../styles.css"><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"></head>
+<body class="docs-page"><a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header wrap"><a class="brand" href="../index.html"><img src="../assets/favicon.svg" width="30" height="30" alt=""><span>JevAny<span class="brand-period">.</span></span></a>
+<nav aria-label="Main navigation"><a href="../index.html#benchmarks">Benchmarks</a><a href="../index.html#models">Models</a><a href="../index.html#get-started">Get started</a></nav></header>
+<div class="docs-layout wrap"><aside class="docs-sidebar"><a class="text-link" href="../index.html">← Project homepage</a><nav aria-label="Documentation"><a href="quickstart.html">Quickstart</a><a href="TRAINING.html">Training</a><a href="DATA.html">Data</a><a href="DEPLOYMENT.html">Deployment</a><a href="API.html">API reference</a><a href="examples.html">Examples</a><a href="CASES.html">Cases</a><a href="EVALUATION.html">Evaluation</a><a href="ALGORITHM.html">Method</a><a href="INTEGRATIONS.html">Integrations</a><a href="zh.html">中文文档</a></nav>
+<details class="doc-toc"><summary>On this page</summary><div class="toc">
+<ul>
+<li><a href="#intended-use">Intended Use</a></li>
+<li><a href="#training">Training</a></li>
+<li><a href="#evaluation">Evaluation</a></li>
+<li><a href="#limits">Limits</a></li>
+</ul>
+</div>
+</details></aside>
+<main id="content" class="doc-content"><p class="eyebrow">JEVANY / DOCUMENTATION</p><h1>JevAny-27B-RLCR v0.2</h1><p>JevAny-27B-RLCR is an experimental continuation of JevAny-27B-SFT using reinforcement learning with calibration rewards. It retains the same rank 16 LoRA and pointer-head architecture.</p>
+<h2 id="intended-use">Intended Use</h2>
+<p>Use this checkpoint to study calibration-reward training for bounded decisions. JevAny-27B-SFT remains the recommended general checkpoint because RLCR did not improve overall development or transfer accuracy.</p>
+<h2 id="training">Training</h2>
+<p>The 40,000-record RL mixture emphasizes hard reasoning, many-choice questions, agent actions, preferences, mathematical and medical decisions, and image-derived and video-derived cases. The objective combines group-relative calibration reward with a supervised anchor. This decision-only RL operates on pointer logits, without generating reasoning traces or confidence tokens.</p>
+<h2 id="evaluation">Evaluation</h2>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Evaluation</th>
+<th style="text-align: right;">Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>v2 development accuracy</td>
+<td style="text-align: right;">89.74%</td>
+</tr>
+<tr>
+<td>v2 development NLL</td>
+<td style="text-align: right;">0.260</td>
+</tr>
+<tr>
+<td>transfer-v9 accuracy</td>
+<td style="text-align: right;">82.31%</td>
+</tr>
+<tr>
+<td>MMLU-Pro accuracy</td>
+<td style="text-align: right;">73.5%</td>
+</tr>
+<tr>
+<td>AI2D accuracy</td>
+<td style="text-align: right;">87.0%</td>
+</tr>
+<tr>
+<td>MMMU accuracy</td>
+<td style="text-align: right;">63.0%</td>
+</tr>
+</tbody>
+</table></div>
+<p>Development metrics exclude a 100-question single-class VideoFeedback slice. Against SFT, transfer accuracy changed by -0.10 percentage points, with 3 fixes and 4 regressions. The paired 95% bootstrap interval is [-0.58, 0.39] points. Full measurements are in the repository <a href="../files/results/release-v0.2.json">release results</a>.</p>
+<h2 id="limits">Limits</h2>
+<p>The small development NLL gain did not transfer consistently after independent calibration. Native multimodal requests currently contain one isolated question and use a bounded visual token budget. HTTP media is operator opt-in through a controlled local root; network media URLs are rejected. Confidence requires deployment-specific validation. The adapter requires the separately distributed Qwen base weights and JevAny runtime.</p></main></div>
+<footer class="site-footer wrap"><a href="../index.html">← Back to JevAny</a><a href="license.html">Apache-2.0 code</a></footer></body></html>

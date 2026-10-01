@@ -1,0 +1,3307 @@
+{
+  "date": "2026-09-27",
+  "complete_public_matrix": true,
+  "scope": {
+    "local_models": 16,
+    "jevany_checkpoints": 2,
+    "kev_checkpoints": 14,
+    "public_panels": 67,
+    "logical_records_per_model": 56677,
+    "unique_requests_per_model": 22219,
+    "unique_model_requests": 355504,
+    "original_gpu_queue_requests_per_model": 22219,
+    "original_gpu_queue_requests_total": 355504,
+    "original_successful_gpu_predictions": 355290,
+    "unavailable_partitions": 14
+  },
+  "inference_code_revision": "7a128ce61f5249231db9599440cf1be92dfe123f",
+  "report_code_revision": "f0bde334b46da39379707f0e34c441d5de4013d4",
+  "pinned_inference_dependencies": {
+    "transformers": "5.17.0",
+    "peft": "0.21.0",
+    "accelerate": "1.15.0",
+    "source": "GPU worker setup; Python and PyTorch versions are in each run's runtime"
+  },
+  "suite_manifest_sha256": "7f12054eaa6d1e00cc001a7dbfb73442f2d9c34d8afb71ff503fc06d780d3233",
+  "request_queue_sha256": "4a4076bea699c7c406fd10f04fb3561492d63bc7f66d9b3820a750a92b7d0e11",
+  "context_correction": {
+    "panel": "kev/external/ekzhang-mmlupro-v1/records",
+    "original_context": {
+      "max_state": 8192,
+      "max_branch": 8192,
+      "max_packed": 16384
+    },
+    "corrected_context": {
+      "max_state": 384,
+      "max_branch": 1024,
+      "max_packed": 2048
+    },
+    "reason": "match pinned kev.benchmark --data defaults",
+    "method": "native CPU context replay; reuse accepted GPU predictions only with identical full encoding",
+    "script": "scripts/replay_external_context.py",
+    "original_suite_manifest_sha256": "c24ebc59fd11fb28b8cb5cb945572cdf753d87eab5794dd4f627b6c13b500767",
+    "original_request_queue_sha256": "5ea179cfce27aca98d4a4c87eac174e482041b71a65496a29761dcf077f3fd09"
+  },
+  "sources": {
+    "kev": {
+      "repository": "jaredpalmer/kev",
+      "revision": "5920c5fe4ca8e0970ed4209ac2c9b8e18bea5109"
+    },
+    "jevbench": {
+      "repository": "fstandhartinger/jevbench",
+      "revision": "d06ee95988da1350eb8ae5511daa0e06bfffe911"
+    }
+  },
+  "hardware": {
+    "instance_type": "p4de.24xlarge",
+    "instance_count": 1,
+    "gpus_per_host": 8,
+    "processes_per_host": 8,
+    "world_size": 8,
+    "total_reserved_gpus": 8,
+    "utilization_shortfall_reason": null,
+    "work": "16 fixed checkpoints, 67 public evaluation panels",
+    "initial_distinct_gpu_bindings_verified": true,
+    "maximum_reserved_but_inactive_gpus_observed_before_all_models_finished": 7,
+    "tail_idle_reason": "fixed per-rank model queues finish at different times"
+  },
+  "weight_provenance": [
+    {
+      "model": "jevany-27b-sft",
+      "checkpoint": "tianxinwei/JevAny-27B-SFT@ad7b48b7056a9742f54aacc9b98b6b46dc2ce167",
+      "base": "Qwen/Qwen3.8-27B",
+      "declared_base_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "resolved_base_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
+    },
+    {
+      "model": "jevany-27b-rlcr",
+      "checkpoint": "tianxinwei/JevAny-27B-RLCR@078883b2edbab687585bc86fe5508059756c7f09",
+      "base": "Qwen/Qwen3.8-27B",
+      "declared_base_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "resolved_base_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
+    },
+    {
+      "model": "kev-0.5b",
+      "checkpoint": "jaredpalmer/kev-0.5b@9ce2fd39db3a397c89733f94af948e3d1fdfffcd",
+      "base": "Qwen/Qwen2.5-0.5B",
+      "declared_base_revision": null,
+      "resolved_base_revision": "060db6499f32faf8b98477b0a26969ef7d8b9987"
+    },
+    {
+      "model": "kev-0.6b",
+      "checkpoint": "jaredpalmer/kev-0.6b@dece6dba8d43f0f7ded45e9f5b9df12474d90843",
+      "base": "Qwen/Qwen3-0.6B-Base",
+      "declared_base_revision": "da87bfb608c14b7cf20ba1ce41287e8de496c0cd",
+      "resolved_base_revision": "da87bfb608c14b7cf20ba1ce41287e8de496c0cd"
+    },
+    {
+      "model": "kev-0.8b",
+      "checkpoint": "jaredpalmer/kev-0.8b@9a45d25eb2ab761841196625383fa1dff0e56c1e",
+      "base": "Qwen/Qwen3.5-0.8B-Base",
+      "declared_base_revision": "dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68",
+      "resolved_base_revision": "dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68"
+    },
+    {
+      "model": "kev-0.8b-night2-du-release",
+      "checkpoint": "jaredpalmer/kev-0.8b@20768323abc27a24a7a5e9723a36eaec4a103318",
+      "base": "Qwen/Qwen3.5-0.8B-Base",
+      "declared_base_revision": "dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68",
+      "resolved_base_revision": "dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68"
+    },
+    {
+      "model": "kev-0.8b-v7-base",
+      "checkpoint": "jaredpalmer/kev-0.8b@f9bd9f47d6ab83797e69704971d6538cf1402cdf",
+      "base": "Qwen/Qwen3.5-0.8B-Base",
+      "declared_base_revision": "dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68",
+      "resolved_base_revision": "dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68"
+    },
+    {
+      "model": "kev-27b",
+      "checkpoint": "jaredpalmer/kev-27b@01b81998019be550f0ae858727df49bac9511195",
+      "base": "Qwen/Qwen3.8-27B",
+      "declared_base_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "resolved_base_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
+    },
+    {
+      "model": "kev-4b",
+      "checkpoint": "jaredpalmer/kev-4b@139fdd94f1b6a6ad80cc15e08fcb99cac885a101",
+      "base": "Qwen/Qwen3.5-4B-Base",
+      "declared_base_revision": "1001bb4d826a52d1f399e183466143f4da7b741b",
+      "resolved_base_revision": "1001bb4d826a52d1f399e183466143f4da7b741b"
+    },
+    {
+      "model": "kev-4b-night2-du-release",
+      "checkpoint": "jaredpalmer/kev-4b@485ace8703592fcf405488b262449990824cfed1",
+      "base": "Qwen/Qwen3.5-4B-Base",
+      "declared_base_revision": "1001bb4d826a52d1f399e183466143f4da7b741b",
+      "resolved_base_revision": "1001bb4d826a52d1f399e183466143f4da7b741b"
+    },
+    {
+      "model": "kev-4b-qwen3",
+      "checkpoint": "jaredpalmer/kev-4b@c113c66d2ca8ae40d2d52d918015f77a7a8a7dc0",
+      "base": "Qwen/Qwen3-4B-Base",
+      "declared_base_revision": "906bfd4b4dc7f14ee4320094d8b41684abff8539",
+      "resolved_base_revision": "906bfd4b4dc7f14ee4320094d8b41684abff8539"
+    },
+    {
+      "model": "kev-4b-r8-documents-release",
+      "checkpoint": "jaredpalmer/kev-4b@238c172f86e7f722e01d6739d183a39338f866a1",
+      "base": "Qwen/Qwen3.5-4B-Base",
+      "declared_base_revision": "1001bb4d826a52d1f399e183466143f4da7b741b",
+      "resolved_base_revision": "1001bb4d826a52d1f399e183466143f4da7b741b"
+    },
+    {
+      "model": "kev-4b-v7-base",
+      "checkpoint": "jaredpalmer/kev-4b@c1b3758b14b30d9e0e7f2e90aa12a1823ff2df46",
+      "base": "Qwen/Qwen3.5-4B-Base",
+      "declared_base_revision": "1001bb4d826a52d1f399e183466143f4da7b741b",
+      "resolved_base_revision": "1001bb4d826a52d1f399e183466143f4da7b741b"
+    },
+    {
+      "model": "kev-8b",
+      "checkpoint": "jaredpalmer/kev-8b@c80773da7f383f93c4dbff0c0b008e0463f9145a",
+      "base": "Qwen/Qwen3-8B-Base",
+      "declared_base_revision": "49e3418fbbbca6ecbdf9608b4d22e5a407081db4",
+      "resolved_base_revision": "49e3418fbbbca6ecbdf9608b4d22e5a407081db4"
+    },
+    {
+      "model": "kev-9b",
+      "checkpoint": "jaredpalmer/kev-9b@2629c06a5aeb0feb3b9783bafed17ed8f39ecf5c",
+      "base": "Qwen/Qwen3.5-9B-Base",
+      "declared_base_revision": "68c46c4b3498877f3ef123c856ecfde50c39f404",
+      "resolved_base_revision": "68c46c4b3498877f3ef123c856ecfde50c39f404"
+    },
+    {
+      "model": "kev-9b-v7-base",
+      "checkpoint": "jaredpalmer/kev-9b@4cc35fded308e19c1025990383b24ccfafc624ad",
+      "base": "Qwen/Qwen3.5-9B-Base",
+      "declared_base_revision": "68c46c4b3498877f3ef123c856ecfde50c39f404",
+      "resolved_base_revision": "68c46c4b3498877f3ef123c856ecfde50c39f404"
+    }
+  ],
+  "previous_release_comparison": {
+    "weights": {
+      "jevany-27b-sft": {
+        "checkpoint": "tianxinwei/JevAny-27B-SFT@ad7b48b7056a9742f54aacc9b98b6b46dc2ce167",
+        "resolved_revision": "ad7b48b7056a9742f54aacc9b98b6b46dc2ce167",
+        "files": {
+          "adapter_model.safetensors": "7f4312a93a0fe42e53405b0de8f8b08cfbdf0d7f67454e815a5cb3a2703463b9",
+          "head.pt": "e465a3d96cdc2505db97e9021f21e2ebb30329721b9d3bdd88f3919e5798d8d0"
+        },
+        "match_original_release": true
+      },
+      "jevany-27b-rlcr": {
+        "checkpoint": "tianxinwei/JevAny-27B-RLCR@078883b2edbab687585bc86fe5508059756c7f09",
+        "resolved_revision": "078883b2edbab687585bc86fe5508059756c7f09",
+        "files": {
+          "adapter_model.safetensors": "d4282eb326b7a5ddb3665ffbb057e1a626ccf992f8b990753cf4729077786808",
+          "head.pt": "747946cbeda8a47fc43168a582e142be7465878a53cb1ccc1cb26ebc7fe0011a"
+        },
+        "match_original_release": true
+      }
+    },
+    "encodings": {
+      "panel_sha256": "cad17c4c360f66a5971191369eff7bbdc7cacb0fcc661fb1a4ac8f9199e68791",
+      "records_checked": 1264,
+      "identical_full_encodings": 1264,
+      "legacy_code": "v0.2.0:jevany/model.py:encode",
+      "current_code": "c30adfb:jevany/model.py:encode",
+      "limitation": "The original release per-row predictions and runtime record are unavailable; this checks encoding on the current frozen transfer data, not the cause of an aggregate-score difference."
+    },
+    "scores": {
+      "jevany-27b-sft": {
+        "questions": 1046,
+        "previous_transfer_accuracy": 0.8240917782026769,
+        "current_transfer_accuracy": 0.8212237093690249,
+        "previous_mmlu_pro_200_accuracy": 0.73,
+        "current_mmlu_pro_200_accuracy": 0.725
+      },
+      "jevany-27b-rlcr": {
+        "questions": 1046,
+        "previous_transfer_accuracy": 0.8231357552581262,
+        "current_transfer_accuracy": 0.8212237093690249,
+        "previous_mmlu_pro_200_accuracy": 0.735,
+        "current_mmlu_pro_200_accuracy": 0.725
+      }
+    },
+    "limitation": "Original release per-item predictions and runtime records were unavailable for this comparison; the small aggregate differences have no established cause."
+  },
+  "models": {
+    "jevany-27b-sft": {
+      "checkpoint": "tianxinwei/JevAny-27B-SFT@ad7b48b7056a9742f54aacc9b98b6b46dc2ce167",
+      "completion": {
+        "complete": true,
+        "requests": 22219,
+        "ok": 22191,
+        "rejected": 28
+      },
+      "elapsed_seconds": 8905.566323041916,
+      "raw_predictions_sha256": "0f1fe1b47fea9d2fe69733737dfc3cf0e6d6f7c663be5cbe63a2d1913fb33005",
+      "context_replay": {
+        "original_suite_manifest_sha256": "c24ebc59fd11fb28b8cb5cb945572cdf753d87eab5794dd4f627b6c13b500767",
+        "original_request_queue_sha256": "5ea179cfce27aca98d4a4c87eac174e482041b71a65496a29761dcf077f3fd09",
+        "original_run_sha256": "9f9906e074f1a1456a3bab8ef007eb22ed2495f36c622ba01c8eb165bc3e1c3c",
+        "original_predictions_sha256": "b20d61a9a0edac7b2ac649cc693fa5d7bc56f17502c012a8cfdafa271982b552",
+        "encoder": {
+          "base": "Qwen/Qwen3.8-27B",
+          "base_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+          "head_sha256": "e465a3d96cdc2505db97e9021f21e2ebb30329721b9d3bdd88f3919e5798d8d0",
+          "option_isolation": false,
+          "native_source_sha256": {
+            "api": "9a2531adc937000cc88e43b83ce10c574ef2be8d81ca5f5f17a855634b71897d",
+            "model": "35057e1c3606830208151a7089728f5c64b3b4f59d9107b19a204e1b2583fcd9",
+            "checkpoint": "b31e7d2b8bb78373ac9fdd2ef995de884dd1644819601d36555bc543a6e1bbe6"
+          }
+        },
+        "changes": {
+          "identical_full_encoding": 992,
+          "native_context_rejection": 8
+        },
+        "latency": "accepted predictions retain original GPU timing; new rejections have none"
+      },
+      "original_gpu_queue_outcomes": {
+        "ok": 22199,
+        "rejected": 20
+      },
+      "rejection_errors": {
+        "state exceeds 8192 tokens: 9051": 6,
+        "branch too long: 1590": 1,
+        "branch too long: 1273": 1,
+        "branch too long: 244": 1,
+        "branch too long: 1237": 1,
+        "branch too long: 539": 1,
+        "branch too long: 296": 1,
+        "branch too long: 275": 1,
+        "CUDA out of memory. Tried to allocate 2.62 GiB. GPU 0 has a total capacity of 79.25 GiB of which 1.08 GiB is free. Including non-PyTorch memory, this process has 78.16 GiB memory in use. Of the allocated memory 73.76 GiB is allocated by PyTorch, and 3.91 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)": 1,
+        "CUDA out of memory. Tried to allocate 2.64 GiB. GPU 0 has a total capacity of 79.25 GiB of which 748.69 MiB is free. Including non-PyTorch memory, this process has 78.51 GiB memory in use. Of the allocated memory 74.64 GiB is allocated by PyTorch, and 3.37 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)": 1,
+        "CUDA out of memory. Tried to allocate 2.62 GiB. GPU 0 has a total capacity of 79.25 GiB of which 1.80 GiB is free. Including non-PyTorch memory, this process has 77.44 GiB memory in use. Of the allocated memory 74.00 GiB is allocated by PyTorch, and 2.94 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)": 1,
+        "CUDA out of memory. Tried to allocate 2.67 GiB. GPU 0 has a total capacity of 79.25 GiB of which 1.40 GiB is free. Including non-PyTorch memory, this process has 77.85 GiB memory in use. Of the allocated memory 74.03 GiB is allocated by PyTorch, and 3.32 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)": 1,
+        "CUDA out of memory. Tried to allocate 2.78 GiB. GPU 0 has a total capacity of 79.25 GiB of which 1.74 GiB is free. Including non-PyTorch memory, this process has 77.50 GiB memory in use. Of the allocated memory 74.93 GiB is allocated by PyTorch, and 2.07 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)": 1,
+        "CUDA out of memory. Tried to allocate 2.65 GiB. GPU 0 has a total capacity of 79.25 GiB of which 2.10 GiB is free. Including non-PyTorch memory, this process has 77.14 GiB memory in use. Of the allocated memory 73.85 GiB is allocated by PyTorch, and 2.79 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)": 1,
+        "CUDA out of memory. Tried to allocate 2.69 GiB. GPU 0 has a total capacity of 79.25 GiB of which 1.72 GiB is free. Including non-PyTorch memory, this process has 77.53 GiB memory in use. Of the allocated memory 74.16 GiB is allocated by PyTorch, and 2.86 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)": 1,
+        "state exceeds 384 tokens: 440": 1,
+        "state exceeds 384 tokens: 408": 1,
+        "state exceeds 384 tokens: 404": 1,
+        "state exceeds 384 tokens: 394": 1,
+        "state exceeds 384 tokens: 425": 1,
+        "state exceeds 384 tokens: 396": 1,
+        "state exceeds 384 tokens: 431": 1,
+        "state exceeds 384 tokens: 386": 1
+      },
+      "rejection_error_types": {
+        "ValueError": 21,
+        "OutOfMemoryError": 7
+      },
+      "native_predictor_parity": {
+        "question_types": [
+          "choice",
+          "noul",
+          "score"
+        ],
+        "max_probability_delta": 0.0
+      }
+    },
+    "jevany-27b-rlcr": {
+      "checkpoint": "tianxinwei/JevAny-27B-RLCR@078883b2edbab687585bc86fe5508059756c7f09",
+      "completion": {
+        "complete": true,
+        "requests": 22219,
+        "ok": 22191,
+        "rejected": 28
+      },
+      "elapsed_seconds": 8863.314742088318,
+      "raw_predictions_sha256": "bc26e02c1a5f10adf94cf4eaad61709f9e422fdfb097f50c5a224d4fefe6978b",
+      "context_replay": {
+        "original_suite_manifest_sha256": "c24ebc59fd11fb28b8cb5cb945572cdf753d87eab5794dd4f627b6c13b500767",
+        "original_request_queue_sha256": "5ea179cfce27aca98d4a4c87eac174e482041b71a65496a29761dcf077f3fd09",
+        "original_run_sha256": "a3550c1f8d58f7133429792734a1a6f1791af56bd0482a23b98211de08f697c3",
+        "original_predictions_sha256": "203b11ec64142fd14e8a7171de3289f4f78e73ef2165c0177d5afc8ccc425c31",
+        "encoder": {
+          "base": "Qwen/Qwen3.8-27B",
+          "base_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+          "head_sha256": "747946cbeda8a47fc43168a582e142be7465878a53cb1ccc1cb26ebc7fe0011a",
+          "option_isolation": false,
+          "native_source_sha256": {
+            "api": "9a2531adc937000cc88e43b83ce10c574ef2be8d81ca5f5f17a855634b71897d",
+            "model": "35057e1c3606830208151a7089728f5c64b3b4f59d9107b19a204e1b2583fcd9",
+            "checkpoint": "b31e7d2b8bb78373ac9fdd2ef995de884dd1644819601d36555bc543a6e1bbe6"
+          }
+        },
+        "changes": {
+          "identical_full_encoding": 992,
+          "native_context_rejection": 8
+        },
+        "latency": "accepted predictions retain original GPU timing; new rejections have none"
+      },
+      "original_gpu_queue_outcomes": {
+        "ok": 22199,
+        "rejected": 20
+      },
+      "rejection_errors": {
+        "state exceeds 8192 tokens: 9051": 6,
+        "branch too long: 1590": 1,
+        "branch too long: 1273": 1,
+        "branch too long: 244": 1,
+        "branch too long: 1237": 1,
+        "branch too long: 539": 1,
+        "branch too long: 296": 1,
+        "branch too long: 275": 1,
+        "CUDA out of memory. Tried to allocate 2.62 GiB. GPU 1 has a total capacity of 79.25 GiB of which 1.08 GiB is free. Including non-PyTorch memory, this process has 78.16 GiB memory in use. Of the allocated memory 73.76 GiB is allocated by PyTorch, and 3.91 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)": 1,
+        "CUDA out of memory. Tried to allocate 2.64 GiB. GPU 1 has a total capacity of 79.25 GiB of which 748.69 MiB is free. Including non-PyTorch memory, this process has 78.51 GiB memory in use. Of the allocated memory 74.64 GiB is allocated by PyTorch, and 3.37 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)": 1,
+        "CUDA out of memory. Tried to allocate 2.62 GiB. GPU 1 has a total capacity of 79.25 GiB of which 1.80 GiB is free. Including non-PyTorch memory, this process has 77.44 GiB memory in use. Of the allocated memory 74.00 GiB is allocated by PyTorch, and 2.94 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)": 1,
+        "CUDA out of memory. Tried to allocate 2.67 GiB. GPU 1 has a total capacity of 79.25 GiB of which 1.40 GiB is free. Including non-PyTorch memory, this process has 77.85 GiB memory in use. Of the allocated memory 74.03 GiB is allocated by PyTorch, and 3.32 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)": 1,
+        "CUDA out of memory. Tried to allocate 2.78 GiB. GPU 1 has a total capacity of 79.25 GiB of which 1.74 GiB is free. Including non-PyTorch memory, this process has 77.50 GiB memory in use. Of the allocated memory 74.93 GiB is allocated by PyTorch, and 2.07 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)": 1,
+        "CUDA out of memory. Tried to allocate 2.65 GiB. GPU 1 has a total capacity of 79.25 GiB of which 2.10 GiB is free. Including non-PyTorch memory, this process has 77.14 GiB memory in use. Of the allocated memory 73.85 GiB is allocated by PyTorch, and 2.79 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)": 1,
+        "CUDA out of memory. Tried to allocate 2.69 GiB. GPU 1 has a total capacity of 79.25 GiB of which 1.72 GiB is free. Including non-PyTorch memory, this process has 77.53 GiB memory in use. Of the allocated memory 74.16 GiB is allocated by PyTorch, and 2.86 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)": 1,
+        "state exceeds 384 tokens: 440": 1,
+        "state exceeds 384 tokens: 408": 1,
+        "state exceeds 384 tokens: 404": 1,
+        "state exceeds 384 tokens: 394": 1,
+        "state exceeds 384 tokens: 425": 1,
+        "state exceeds 384 tokens: 396": 1,
+        "state exceeds 384 tokens: 431": 1,
+        "state exceeds 384 tokens: 386": 1
+      },
+      "rejection_error_types": {
+        "ValueError": 21,
+        "OutOfMemoryError": 7
+      },
+      "native_predictor_parity": {
+        "question_types": [
+          "choice",
+          "noul",
+          "score"
+        ],
+        "max_probability_delta": 0.0
+      }
+    },
+    "kev-0.5b": {
+      "checkpoint": "jaredpalmer/kev-0.5b@9ce2fd39db3a397c89733f94af948e3d1fdfffcd",
+      "completion": {
+        "complete": true,
+        "requests": 22219,
+        "ok": 22200,
+        "rejected": 19
+      },
+      "elapsed_seconds": 1004.180534362793,
+      "raw_predictions_sha256": "610c01951ffe109f5802938c8ef6d2477ae937e86178515cd5f0aaf0feb5e7d3",
+      "context_replay": {
+        "original_suite_manifest_sha256": "c24ebc59fd11fb28b8cb5cb945572cdf753d87eab5794dd4f627b6c13b500767",
+        "original_request_queue_sha256": "5ea179cfce27aca98d4a4c87eac174e482041b71a65496a29761dcf077f3fd09",
+        "original_run_sha256": "19c29c21e9aaddee379b5ae2682b6a2a44decf9b58e933bc003580c20479b2d2",
+        "original_predictions_sha256": "214af14cdc4fe0fcafa5af45f59ef0353a26da61f1d500357dcc029b9c0b6caf",
+        "encoder": {
+          "base": "Qwen/Qwen2.5-0.5B",
+          "base_revision": "060db6499f32faf8b98477b0a26969ef7d8b9987",
+          "head_sha256": "0d59bd4608e38f32b4f86c85eb29e8187e14f2117ca99fe765e799b290c52a66",
+          "option_isolation": false,
+          "native_source_sha256": {
+            "api": "a6f53af5354f8ea17915abc78360fdf291a5108ce39a53a2d9135d48c603ae58",
+            "model": "d78fab645f29513a62816e594d10296b02bf166ba77835c55db5eda80c7f1978",
+            "checkpoint": "59b56b9872220495ffe25afacc6a6838114651fc484c3fa4d27f446a0986ee95"
+          }
+        },
+        "changes": {
+          "identical_full_encoding": 992,
+          "native_context_rejection": 8
+        },
+        "latency": "accepted predictions retain original GPU timing; new rejections have none"
+      },
+      "original_gpu_queue_outcomes": {
+        "ok": 22208,
+        "rejected": 11
+      },
+      "rejection_errors": {
+        "state exceeds 8192 tokens: 8983": 6,
+        "branch too long: 1592 tokens with a 7917-token state (row limit 8192)": 1,
+        "branch too long: 1273 tokens with a 7917-token state (row limit 8192)": 1,
+        "branch too long: 1237 tokens with a 7917-token state (row limit 8192)": 1,
+        "branch too long: 539 tokens with a 7917-token state (row limit 8192)": 1,
+        "branch too long: 296 tokens with a 7917-token state (row limit 8192)": 1,
+        "state exceeds 384 tokens: 419": 1,
+        "state exceeds 384 tokens: 408": 1,
+        "state exceeds 384 tokens: 404": 1,
+        "state exceeds 384 tokens: 394": 1,
+        "state exceeds 384 tokens: 423": 1,
+        "state exceeds 384 tokens: 391": 1,
+        "state exceeds 384 tokens: 434": 1,
+        "state exceeds 384 tokens: 386": 1
+      },
+      "rejection_error_types": {
+        "ContextOverflow": 19
+      },
+      "native_predictor_parity": {
+        "question_types": [
+          "choice",
+          "noul",
+          "score"
+        ],
+        "max_probability_delta": 0.0
+      }
+    },
+    "kev-0.6b": {
+      "checkpoint": "jaredpalmer/kev-0.6b@dece6dba8d43f0f7ded45e9f5b9df12474d90843",
+      "completion": {
+        "complete": true,
+        "requests": 22219,
+        "ok": 22200,
+        "rejected": 19
+      },
+      "elapsed_seconds": 1380.107684135437,
+      "raw_predictions_sha256": "d46e6bf8c9523c81975ed21187f9affd182d19f784c871339457785e08d7dd34",
+      "context_replay": {
+        "original_suite_manifest_sha256": "c24ebc59fd11fb28b8cb5cb945572cdf753d87eab5794dd4f627b6c13b500767",
+        "original_request_queue_sha256": "5ea179cfce27aca98d4a4c87eac174e482041b71a65496a29761dcf077f3fd09",
+        "original_run_sha256": "796eda840e5ef3975340eda0229b1304b714827ef13e97b282a31aef1c55f351",
+        "original_predictions_sha256": "51c86e5a3a1938bb988959afda5a2108dc2438da29319c80d0ea9a55f26b12c4",
+        "encoder": {
+          "base": "Qwen/Qwen3-0.6B-Base",
+          "base_revision": "da87bfb608c14b7cf20ba1ce41287e8de496c0cd",
+          "head_sha256": "ce6cd9ffc54db41c179b65a33d60973dc8280c29e886218eb3ec07dc28d6f28b",
+          "option_isolation": false,
+          "native_source_sha256": {
+            "api": "a6f53af5354f8ea17915abc78360fdf291a5108ce39a53a2d9135d48c603ae58",
+            "model": "d78fab645f29513a62816e594d10296b02bf166ba77835c55db5eda80c7f1978",
+            "checkpoint": "59b56b9872220495ffe25afacc6a6838114651fc484c3fa4d27f446a0986ee95"
+          }
+        },
+        "changes": {
+          "identical_full_encoding": 992,
+          "native_context_rejection": 8
+        },
+        "latency": "accepted predictions retain original GPU timing; new rejections have none"
+      },
+      "original_gpu_queue_outcomes": {
+        "ok": 22208,
+        "rejected": 11
+      },
+      "rejection_errors": {
+        "state exceeds 8192 tokens: 8983": 6,
+        "branch too long: 1592 tokens with a 7917-token state (row limit 8192)": 1,
+        "branch too long: 1273 tokens with a 7917-token state (row limit 8192)": 1,
+        "branch too long: 1237 tokens with a 7917-token state (row limit 8192)": 1,
+        "branch too long: 539 tokens with a 7917-token state (row limit 8192)": 1,
+        "branch too long: 296 tokens with a 7917-token state (row limit 8192)": 1,
+        "state exceeds 384 tokens: 419": 1,
+        "state exceeds 384 tokens: 408": 1,
+        "state exceeds 384 tokens: 404": 1,
+        "state exceeds 384 tokens: 394": 1,
+        "state exceeds 384 tokens: 423": 1,
+        "state exceeds 384 tokens: 391": 1,
+        "state exceeds 384 tokens: 434": 1,
+        "state exceeds 384 tokens: 386": 1
+      },
+      "rejection_error_types": {
+        "ContextOverflow": 19
+      },
+      "native_predictor_parity": {
+        "question_types": [
+          "choice",
+          "noul",
+          "score"
+        ],
+        "max_probability_delta": 0.0
+      }
+    },
+    "kev-0.8b": {
+      "checkpoint": "jaredpalmer/kev-0.8b@9a45d25eb2ab761841196625383fa1dff0e56c1e",
+      "completion": {
+        "complete": true,
+        "requests": 22219,
+        "ok": 22198,
+        "rejected": 21
+      },
+      "elapsed_seconds": 1999.3872001171112,
+      "raw_predictions_sha256": "4db270ac5ecba8107eda34be630752f2b0cc23eac526e18b69affd48e0b57830",
+      "context_replay": {
+        "original_suite_manifest_sha256": "c24ebc59fd11fb28b8cb5cb945572cdf753d87eab5794dd4f627b6c13b500767",
+        "original_request_queue_sha256": "5ea179cfce27aca98d4a4c87eac174e482041b71a65496a29761dcf077f3fd09",
+        "original_run_sha256": "3b1eae87ae2682abbf13066744b42f3d59e50f3104079d153c522070c31209e1",
+        "original_predictions_sha256": "0901076aa2bd67ad61a90113cb3554400d75d26f8d23d113b3daf9962ca4f7e2",
+        "encoder": {
+          "base": "Qwen/Qwen3.5-0.8B-Base",
+          "base_revision": "dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68",
+          "head_sha256": "f400bd12802b2b105ae45d6b03774a158a3db4fccff42413734ddca2e5c920b6",
+          "option_isolation": false,
+          "native_source_sha256": {
+            "api": "a6f53af5354f8ea17915abc78360fdf291a5108ce39a53a2d9135d48c603ae58",
+            "model": "d78fab645f29513a62816e594d10296b02bf166ba77835c55db5eda80c7f1978",
+            "checkpoint": "59b56b9872220495ffe25afacc6a6838114651fc484c3fa4d27f446a0986ee95"
+          }
+        },
+        "changes": {
+          "identical_full_encoding": 992,
+          "native_context_rejection": 8
+        },
+        "latency": "accepted predictions retain original GPU timing; new rejections have none"
+      },
+      "original_gpu_queue_outcomes": {
+        "ok": 22206,
+        "rejected": 13
+      },
+      "rejection_errors": {
+        "state exceeds 8192 tokens: 9051": 6,
+        "branch too long: 1590 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 1273 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 244 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 1237 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 539 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 296 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 275 tokens with a 8021-token state (row limit 8192)": 1,
+        "state exceeds 384 tokens: 440": 1,
+        "state exceeds 384 tokens: 408": 1,
+        "state exceeds 384 tokens: 404": 1,
+        "state exceeds 384 tokens: 394": 1,
+        "state exceeds 384 tokens: 425": 1,
+        "state exceeds 384 tokens: 396": 1,
+        "state exceeds 384 tokens: 431": 1,
+        "state exceeds 384 tokens: 386": 1
+      },
+      "rejection_error_types": {
+        "ContextOverflow": 21
+      },
+      "native_predictor_parity": {
+        "question_types": [
+          "choice",
+          "noul",
+          "score"
+        ],
+        "max_probability_delta": 0.0
+      }
+    },
+    "kev-0.8b-night2-du-release": {
+      "checkpoint": "jaredpalmer/kev-0.8b@20768323abc27a24a7a5e9723a36eaec4a103318",
+      "completion": {
+        "complete": true,
+        "requests": 22219,
+        "ok": 22198,
+        "rejected": 21
+      },
+      "elapsed_seconds": 1804.8457372188568,
+      "raw_predictions_sha256": "d86e29d80879c36f0e2d11629cbf737931453da62c9224adb7dc42155a9cb3a3",
+      "context_replay": {
+        "original_suite_manifest_sha256": "c24ebc59fd11fb28b8cb5cb945572cdf753d87eab5794dd4f627b6c13b500767",
+        "original_request_queue_sha256": "5ea179cfce27aca98d4a4c87eac174e482041b71a65496a29761dcf077f3fd09",
+        "original_run_sha256": "9d68fd9f76870922d82a233c93414e9849175179dfb3f332db396bc8136a2a83",
+        "original_predictions_sha256": "c86a173a41a93ff6f0aa48dafb8ab204a079b2f866a59da2d5b643cb879a9bac",
+        "encoder": {
+          "base": "Qwen/Qwen3.5-0.8B-Base",
+          "base_revision": "dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68",
+          "head_sha256": "39f4343ccccc65e583bbfff0de0e11bfedb849fcfaaf94b50ac4f2b73bc79c65",
+          "option_isolation": false,
+          "native_source_sha256": {
+            "api": "a6f53af5354f8ea17915abc78360fdf291a5108ce39a53a2d9135d48c603ae58",
+            "model": "d78fab645f29513a62816e594d10296b02bf166ba77835c55db5eda80c7f1978",
+            "checkpoint": "59b56b9872220495ffe25afacc6a6838114651fc484c3fa4d27f446a0986ee95"
+          }
+        },
+        "changes": {
+          "identical_full_encoding": 992,
+          "native_context_rejection": 8
+        },
+        "latency": "accepted predictions retain original GPU timing; new rejections have none"
+      },
+      "original_gpu_queue_outcomes": {
+        "ok": 22206,
+        "rejected": 13
+      },
+      "rejection_errors": {
+        "state exceeds 8192 tokens: 9051": 6,
+        "branch too long: 1590 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 1273 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 244 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 1237 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 539 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 296 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 275 tokens with a 8021-token state (row limit 8192)": 1,
+        "state exceeds 384 tokens: 440": 1,
+        "state exceeds 384 tokens: 408": 1,
+        "state exceeds 384 tokens: 404": 1,
+        "state exceeds 384 tokens: 394": 1,
+        "state exceeds 384 tokens: 425": 1,
+        "state exceeds 384 tokens: 396": 1,
+        "state exceeds 384 tokens: 431": 1,
+        "state exceeds 384 tokens: 386": 1
+      },
+      "rejection_error_types": {
+        "ContextOverflow": 21
+      },
+      "native_predictor_parity": {
+        "question_types": [
+          "choice",
+          "noul",
+          "score"
+        ],
+        "max_probability_delta": 0.0
+      }
+    },
+    "kev-0.8b-v7-base": {
+      "checkpoint": "jaredpalmer/kev-0.8b@f9bd9f47d6ab83797e69704971d6538cf1402cdf",
+      "completion": {
+        "complete": true,
+        "requests": 22219,
+        "ok": 22198,
+        "rejected": 21
+      },
+      "elapsed_seconds": 1800.5190424919128,
+      "raw_predictions_sha256": "e2d5b821871c8a509d1ce50b862abacf92d4bdf89019527c45fd317454545353",
+      "context_replay": {
+        "original_suite_manifest_sha256": "c24ebc59fd11fb28b8cb5cb945572cdf753d87eab5794dd4f627b6c13b500767",
+        "original_request_queue_sha256": "5ea179cfce27aca98d4a4c87eac174e482041b71a65496a29761dcf077f3fd09",
+        "original_run_sha256": "79b6b7d0ada4c46ef1f34de1dca8b4fcaceecdfff3427eff2d029dd7bbd04197",
+        "original_predictions_sha256": "1ffbdf443b1a3e23b3f2ba0558eb37053ddb15862660801744c05c36e66c6b9f",
+        "encoder": {
+          "base": "Qwen/Qwen3.5-0.8B-Base",
+          "base_revision": "dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68",
+          "head_sha256": "8610dac1c30a64bbcea7715f20a258f4d084d7b862c10f96a1625c732049a32a",
+          "option_isolation": false,
+          "native_source_sha256": {
+            "api": "a6f53af5354f8ea17915abc78360fdf291a5108ce39a53a2d9135d48c603ae58",
+            "model": "d78fab645f29513a62816e594d10296b02bf166ba77835c55db5eda80c7f1978",
+            "checkpoint": "59b56b9872220495ffe25afacc6a6838114651fc484c3fa4d27f446a0986ee95"
+          }
+        },
+        "changes": {
+          "identical_full_encoding": 992,
+          "native_context_rejection": 8
+        },
+        "latency": "accepted predictions retain original GPU timing; new rejections have none"
+      },
+      "original_gpu_queue_outcomes": {
+        "ok": 22206,
+        "rejected": 13
+      },
+      "rejection_errors": {
+        "state exceeds 8192 tokens: 9051": 6,
+        "branch too long: 1590 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 1273 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 244 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 1237 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 539 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 296 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 275 tokens with a 8021-token state (row limit 8192)": 1,
+        "state exceeds 384 tokens: 440": 1,
+        "state exceeds 384 tokens: 408": 1,
+        "state exceeds 384 tokens: 404": 1,
+        "state exceeds 384 tokens: 394": 1,
+        "state exceeds 384 tokens: 425": 1,
+        "state exceeds 384 tokens: 396": 1,
+        "state exceeds 384 tokens: 431": 1,
+        "state exceeds 384 tokens: 386": 1
+      },
+      "rejection_error_types": {
+        "ContextOverflow": 21
+      },
+      "native_predictor_parity": {
+        "question_types": [
+          "choice",
+          "noul",
+          "score"
+        ],
+        "max_probability_delta": 0.0
+      }
+    },
+    "kev-27b": {
+      "checkpoint": "jaredpalmer/kev-27b@01b81998019be550f0ae858727df49bac9511195",
+      "completion": {
+        "complete": true,
+        "requests": 22219,
+        "ok": 22198,
+        "rejected": 21
+      },
+      "elapsed_seconds": 8042.987889051437,
+      "raw_predictions_sha256": "142cafd135df60c0d6c1cd27177fd9bd2c6e574fb9d12d6c1b9c61f08348ca9b",
+      "context_replay": {
+        "original_suite_manifest_sha256": "c24ebc59fd11fb28b8cb5cb945572cdf753d87eab5794dd4f627b6c13b500767",
+        "original_request_queue_sha256": "5ea179cfce27aca98d4a4c87eac174e482041b71a65496a29761dcf077f3fd09",
+        "original_run_sha256": "09341bdcc294aa664f4344ea45935d9877b8bb867f6e2bf6461f6b76c8b70a47",
+        "original_predictions_sha256": "938a98067a5435a5114d8ce10d7f5cc1be36331989be44e89a3607c2e51c7a7d",
+        "encoder": {
+          "base": "Qwen/Qwen3.8-27B",
+          "base_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+          "head_sha256": "1322189d3a31eaacd12758791ffe952371062bfc34be3b9281bcf7b5f87671d2",
+          "option_isolation": false,
+          "native_source_sha256": {
+            "api": "a6f53af5354f8ea17915abc78360fdf291a5108ce39a53a2d9135d48c603ae58",
+            "model": "d78fab645f29513a62816e594d10296b02bf166ba77835c55db5eda80c7f1978",
+            "checkpoint": "59b56b9872220495ffe25afacc6a6838114651fc484c3fa4d27f446a0986ee95"
+          }
+        },
+        "changes": {
+          "identical_full_encoding": 992,
+          "native_context_rejection": 8
+        },
+        "latency": "accepted predictions retain original GPU timing; new rejections have none"
+      },
+      "original_gpu_queue_outcomes": {
+        "ok": 22206,
+        "rejected": 13
+      },
+      "rejection_errors": {
+        "state exceeds 8192 tokens: 9051": 6,
+        "branch too long: 1590 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 1273 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 244 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 1237 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 539 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 296 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 275 tokens with a 8021-token state (row limit 8192)": 1,
+        "state exceeds 384 tokens: 440": 1,
+        "state exceeds 384 tokens: 408": 1,
+        "state exceeds 384 tokens: 404": 1,
+        "state exceeds 384 tokens: 394": 1,
+        "state exceeds 384 tokens: 425": 1,
+        "state exceeds 384 tokens: 396": 1,
+        "state exceeds 384 tokens: 431": 1,
+        "state exceeds 384 tokens: 386": 1
+      },
+      "rejection_error_types": {
+        "ContextOverflow": 21
+      },
+      "native_predictor_parity": {
+        "question_types": [
+          "choice",
+          "noul",
+          "score"
+        ],
+        "max_probability_delta": 0.0
+      }
+    },
+    "kev-4b": {
+      "checkpoint": "jaredpalmer/kev-4b@139fdd94f1b6a6ad80cc15e08fcb99cac885a101",
+      "completion": {
+        "complete": true,
+        "requests": 22219,
+        "ok": 22198,
+        "rejected": 21
+      },
+      "elapsed_seconds": 5506.192009687424,
+      "raw_predictions_sha256": "0be0a6810861b8e5f238c4d7d5504e3aa1985cfbb40786fecceb447984e1f960",
+      "context_replay": {
+        "original_suite_manifest_sha256": "c24ebc59fd11fb28b8cb5cb945572cdf753d87eab5794dd4f627b6c13b500767",
+        "original_request_queue_sha256": "5ea179cfce27aca98d4a4c87eac174e482041b71a65496a29761dcf077f3fd09",
+        "original_run_sha256": "12f652ff73f5d462a5e996e6306ba4038f5857dbfb4c07567e7e24ef036919ac",
+        "original_predictions_sha256": "9c11adc5946a2655a7fd7340ea93bc5dab5e2ca43de2afbeba4e5f28f95c50eb",
+        "encoder": {
+          "base": "Qwen/Qwen3.5-4B-Base",
+          "base_revision": "1001bb4d826a52d1f399e183466143f4da7b741b",
+          "head_sha256": "dd633435998ecc751ac538717a3742e32149500fabf7d7276287dbf0693f347c",
+          "option_isolation": false,
+          "native_source_sha256": {
+            "api": "a6f53af5354f8ea17915abc78360fdf291a5108ce39a53a2d9135d48c603ae58",
+            "model": "d78fab645f29513a62816e594d10296b02bf166ba77835c55db5eda80c7f1978",
+            "checkpoint": "59b56b9872220495ffe25afacc6a6838114651fc484c3fa4d27f446a0986ee95"
+          }
+        },
+        "changes": {
+          "identical_full_encoding": 992,
+          "native_context_rejection": 8
+        },
+        "latency": "accepted predictions retain original GPU timing; new rejections have none"
+      },
+      "original_gpu_queue_outcomes": {
+        "ok": 22206,
+        "rejected": 13
+      },
+      "rejection_errors": {
+        "state exceeds 8192 tokens: 9051": 6,
+        "branch too long: 1590 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 1273 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 244 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 1237 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 539 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 296 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 275 tokens with a 8021-token state (row limit 8192)": 1,
+        "state exceeds 384 tokens: 440": 1,
+        "state exceeds 384 tokens: 408": 1,
+        "state exceeds 384 tokens: 404": 1,
+        "state exceeds 384 tokens: 394": 1,
+        "state exceeds 384 tokens: 425": 1,
+        "state exceeds 384 tokens: 396": 1,
+        "state exceeds 384 tokens: 431": 1,
+        "state exceeds 384 tokens: 386": 1
+      },
+      "rejection_error_types": {
+        "ContextOverflow": 21
+      },
+      "native_predictor_parity": {
+        "question_types": [
+          "choice",
+          "noul",
+          "score"
+        ],
+        "max_probability_delta": 0.0
+      }
+    },
+    "kev-4b-night2-du-release": {
+      "checkpoint": "jaredpalmer/kev-4b@485ace8703592fcf405488b262449990824cfed1",
+      "completion": {
+        "complete": true,
+        "requests": 22219,
+        "ok": 22198,
+        "rejected": 21
+      },
+      "elapsed_seconds": 5559.701909303665,
+      "raw_predictions_sha256": "d681ba3ad9120f8305790a17ef2aa7de57d8ddcb62fcba6a319860c5f63803d1",
+      "context_replay": {
+        "original_suite_manifest_sha256": "c24ebc59fd11fb28b8cb5cb945572cdf753d87eab5794dd4f627b6c13b500767",
+        "original_request_queue_sha256": "5ea179cfce27aca98d4a4c87eac174e482041b71a65496a29761dcf077f3fd09",
+        "original_run_sha256": "124ac5db71d557a3fec04c10c7be9ec414daacca41de7dba71929299665febae",
+        "original_predictions_sha256": "9172067eb9a3d1e8421c65a621446f1ddf44b49bc1a94c3d036d61e9dbd3209e",
+        "encoder": {
+          "base": "Qwen/Qwen3.5-4B-Base",
+          "base_revision": "1001bb4d826a52d1f399e183466143f4da7b741b",
+          "head_sha256": "d8f796da36ff7bd7c0fb9496b452139bb7851af4fc82b07b500b682d3f721d6a",
+          "option_isolation": false,
+          "native_source_sha256": {
+            "api": "a6f53af5354f8ea17915abc78360fdf291a5108ce39a53a2d9135d48c603ae58",
+            "model": "d78fab645f29513a62816e594d10296b02bf166ba77835c55db5eda80c7f1978",
+            "checkpoint": "59b56b9872220495ffe25afacc6a6838114651fc484c3fa4d27f446a0986ee95"
+          }
+        },
+        "changes": {
+          "identical_full_encoding": 992,
+          "native_context_rejection": 8
+        },
+        "latency": "accepted predictions retain original GPU timing; new rejections have none"
+      },
+      "original_gpu_queue_outcomes": {
+        "ok": 22206,
+        "rejected": 13
+      },
+      "rejection_errors": {
+        "state exceeds 8192 tokens: 9051": 6,
+        "branch too long: 1590 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 1273 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 244 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 1237 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 539 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 296 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 275 tokens with a 8021-token state (row limit 8192)": 1,
+        "state exceeds 384 tokens: 440": 1,
+        "state exceeds 384 tokens: 408": 1,
+        "state exceeds 384 tokens: 404": 1,
+        "state exceeds 384 tokens: 394": 1,
+        "state exceeds 384 tokens: 425": 1,
+        "state exceeds 384 tokens: 396": 1,
+        "state exceeds 384 tokens: 431": 1,
+        "state exceeds 384 tokens: 386": 1
+      },
+      "rejection_error_types": {
+        "ContextOverflow": 21
+      },
+      "native_predictor_parity": {
+        "question_types": [
+          "choice",
+          "noul",
+          "score"
+        ],
+        "max_probability_delta": 0.0
+      }
+    },
+    "kev-4b-qwen3": {
+      "checkpoint": "jaredpalmer/kev-4b@c113c66d2ca8ae40d2d52d918015f77a7a8a7dc0",
+      "completion": {
+        "complete": true,
+        "requests": 22219,
+        "ok": 22200,
+        "rejected": 19
+      },
+      "elapsed_seconds": 4764.874059438705,
+      "raw_predictions_sha256": "280705aa98085eb4a5a6e02e2ce2947a513965e50a7f39e1d5be0c0a8297b760",
+      "context_replay": {
+        "original_suite_manifest_sha256": "c24ebc59fd11fb28b8cb5cb945572cdf753d87eab5794dd4f627b6c13b500767",
+        "original_request_queue_sha256": "5ea179cfce27aca98d4a4c87eac174e482041b71a65496a29761dcf077f3fd09",
+        "original_run_sha256": "88846c61c921ed0eb34f72d661931a1bc0ceb63557947415f5d5e381ec30c83d",
+        "original_predictions_sha256": "e60a01afa9bddcb238458298581024b03d6b8599c87ecf57826b3a0182bf14cb",
+        "encoder": {
+          "base": "Qwen/Qwen3-4B-Base",
+          "base_revision": "906bfd4b4dc7f14ee4320094d8b41684abff8539",
+          "head_sha256": "dad87f7e60c8b3f1eec8bee83858a5429c6ab06dc96385a935bc88e6b468a45d",
+          "option_isolation": false,
+          "native_source_sha256": {
+            "api": "a6f53af5354f8ea17915abc78360fdf291a5108ce39a53a2d9135d48c603ae58",
+            "model": "d78fab645f29513a62816e594d10296b02bf166ba77835c55db5eda80c7f1978",
+            "checkpoint": "59b56b9872220495ffe25afacc6a6838114651fc484c3fa4d27f446a0986ee95"
+          }
+        },
+        "changes": {
+          "identical_full_encoding": 992,
+          "native_context_rejection": 8
+        },
+        "latency": "accepted predictions retain original GPU timing; new rejections have none"
+      },
+      "original_gpu_queue_outcomes": {
+        "ok": 22208,
+        "rejected": 11
+      },
+      "rejection_errors": {
+        "state exceeds 8192 tokens: 8983": 6,
+        "branch too long: 1592 tokens with a 7917-token state (row limit 8192)": 1,
+        "branch too long: 1273 tokens with a 7917-token state (row limit 8192)": 1,
+        "branch too long: 1237 tokens with a 7917-token state (row limit 8192)": 1,
+        "branch too long: 539 tokens with a 7917-token state (row limit 8192)": 1,
+        "branch too long: 296 tokens with a 7917-token state (row limit 8192)": 1,
+        "state exceeds 384 tokens: 419": 1,
+        "state exceeds 384 tokens: 408": 1,
+        "state exceeds 384 tokens: 404": 1,
+        "state exceeds 384 tokens: 394": 1,
+        "state exceeds 384 tokens: 423": 1,
+        "state exceeds 384 tokens: 391": 1,
+        "state exceeds 384 tokens: 434": 1,
+        "state exceeds 384 tokens: 386": 1
+      },
+      "rejection_error_types": {
+        "ContextOverflow": 19
+      },
+      "native_predictor_parity": {
+        "question_types": [
+          "choice",
+          "noul",
+          "score"
+        ],
+        "max_probability_delta": 0.0
+      }
+    },
+    "kev-4b-r8-documents-release": {
+      "checkpoint": "jaredpalmer/kev-4b@238c172f86e7f722e01d6739d183a39338f866a1",
+      "completion": {
+        "complete": true,
+        "requests": 22219,
+        "ok": 22198,
+        "rejected": 21
+      },
+      "elapsed_seconds": 5535.560618400574,
+      "raw_predictions_sha256": "1d472f024b038677a5ad2fc47f05b0caab95a0e3dc8bd123e7d79cc2d517b90b",
+      "context_replay": {
+        "original_suite_manifest_sha256": "c24ebc59fd11fb28b8cb5cb945572cdf753d87eab5794dd4f627b6c13b500767",
+        "original_request_queue_sha256": "5ea179cfce27aca98d4a4c87eac174e482041b71a65496a29761dcf077f3fd09",
+        "original_run_sha256": "381d9b9383b46460887cb7bc3e302614f587a6d1108fefea477a63f0ef138ef6",
+        "original_predictions_sha256": "840e337e19a5649410590a630935a7100931e4404e4ba41c99dfcb43f1849f0d",
+        "encoder": {
+          "base": "Qwen/Qwen3.5-4B-Base",
+          "base_revision": "1001bb4d826a52d1f399e183466143f4da7b741b",
+          "head_sha256": "9a3051c3676f0be29d885935b6f50c287f7acf04e3cb29a6fed82ca3e5540b7e",
+          "option_isolation": false,
+          "native_source_sha256": {
+            "api": "a6f53af5354f8ea17915abc78360fdf291a5108ce39a53a2d9135d48c603ae58",
+            "model": "d78fab645f29513a62816e594d10296b02bf166ba77835c55db5eda80c7f1978",
+            "checkpoint": "59b56b9872220495ffe25afacc6a6838114651fc484c3fa4d27f446a0986ee95"
+          }
+        },
+        "changes": {
+          "identical_full_encoding": 992,
+          "native_context_rejection": 8
+        },
+        "latency": "accepted predictions retain original GPU timing; new rejections have none"
+      },
+      "original_gpu_queue_outcomes": {
+        "ok": 22206,
+        "rejected": 13
+      },
+      "rejection_errors": {
+        "state exceeds 8192 tokens: 9051": 6,
+        "branch too long: 1590 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 1273 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 244 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 1237 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 539 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 296 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 275 tokens with a 8021-token state (row limit 8192)": 1,
+        "state exceeds 384 tokens: 440": 1,
+        "state exceeds 384 tokens: 408": 1,
+        "state exceeds 384 tokens: 404": 1,
+        "state exceeds 384 tokens: 394": 1,
+        "state exceeds 384 tokens: 425": 1,
+        "state exceeds 384 tokens: 396": 1,
+        "state exceeds 384 tokens: 431": 1,
+        "state exceeds 384 tokens: 386": 1
+      },
+      "rejection_error_types": {
+        "ContextOverflow": 21
+      },
+      "native_predictor_parity": {
+        "question_types": [
+          "choice",
+          "noul",
+          "score"
+        ],
+        "max_probability_delta": 0.0
+      }
+    },
+    "kev-4b-v7-base": {
+      "checkpoint": "jaredpalmer/kev-4b@c1b3758b14b30d9e0e7f2e90aa12a1823ff2df46",
+      "completion": {
+        "complete": true,
+        "requests": 22219,
+        "ok": 22198,
+        "rejected": 21
+      },
+      "elapsed_seconds": 5548.12779211998,
+      "raw_predictions_sha256": "a82c13f6cfa3140cb39f4fcc94f97c62aebd4ed3d4d06a36fee0215453650f81",
+      "context_replay": {
+        "original_suite_manifest_sha256": "c24ebc59fd11fb28b8cb5cb945572cdf753d87eab5794dd4f627b6c13b500767",
+        "original_request_queue_sha256": "5ea179cfce27aca98d4a4c87eac174e482041b71a65496a29761dcf077f3fd09",
+        "original_run_sha256": "b993d0e3c55ca50883630bc8617437f1013ef95e34fd35005c4c296273d75b92",
+        "original_predictions_sha256": "9914dbd9a37e5744084fabce421788ec186ec41a65865a1cb3846f45cb5ae043",
+        "encoder": {
+          "base": "Qwen/Qwen3.5-4B-Base",
+          "base_revision": "1001bb4d826a52d1f399e183466143f4da7b741b",
+          "head_sha256": "0976cae95ae97515c11fc324713e29218d39556a20f6d8bcc7d0c8a16738ea27",
+          "option_isolation": false,
+          "native_source_sha256": {
+            "api": "a6f53af5354f8ea17915abc78360fdf291a5108ce39a53a2d9135d48c603ae58",
+            "model": "d78fab645f29513a62816e594d10296b02bf166ba77835c55db5eda80c7f1978",
+            "checkpoint": "59b56b9872220495ffe25afacc6a6838114651fc484c3fa4d27f446a0986ee95"
+          }
+        },
+        "changes": {
+          "identical_full_encoding": 992,
+          "native_context_rejection": 8
+        },
+        "latency": "accepted predictions retain original GPU timing; new rejections have none"
+      },
+      "original_gpu_queue_outcomes": {
+        "ok": 22206,
+        "rejected": 13
+      },
+      "rejection_errors": {
+        "state exceeds 8192 tokens: 9051": 6,
+        "branch too long: 1590 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 1273 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 244 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 1237 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 539 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 296 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 275 tokens with a 8021-token state (row limit 8192)": 1,
+        "state exceeds 384 tokens: 440": 1,
+        "state exceeds 384 tokens: 408": 1,
+        "state exceeds 384 tokens: 404": 1,
+        "state exceeds 384 tokens: 394": 1,
+        "state exceeds 384 tokens: 425": 1,
+        "state exceeds 384 tokens: 396": 1,
+        "state exceeds 384 tokens: 431": 1,
+        "state exceeds 384 tokens: 386": 1
+      },
+      "rejection_error_types": {
+        "ContextOverflow": 21
+      },
+      "native_predictor_parity": {
+        "question_types": [
+          "choice",
+          "noul",
+          "score"
+        ],
+        "max_probability_delta": 0.0
+      }
+    },
+    "kev-8b": {
+      "checkpoint": "jaredpalmer/kev-8b@c80773da7f383f93c4dbff0c0b008e0463f9145a",
+      "completion": {
+        "complete": true,
+        "requests": 22219,
+        "ok": 22200,
+        "rejected": 19
+      },
+      "elapsed_seconds": 7821.995512008667,
+      "raw_predictions_sha256": "2e9a325b68a57280f9bddddc36bca5eda9e41ba613ff6568a0a4853e03d4e032",
+      "context_replay": {
+        "original_suite_manifest_sha256": "c24ebc59fd11fb28b8cb5cb945572cdf753d87eab5794dd4f627b6c13b500767",
+        "original_request_queue_sha256": "5ea179cfce27aca98d4a4c87eac174e482041b71a65496a29761dcf077f3fd09",
+        "original_run_sha256": "04f892eed54058a1cec087c0d829629bd200573b7fc8a49e0213275fc8aba7f5",
+        "original_predictions_sha256": "390be08b424ee37f51cb896433e31be1d6bfed9e4ca7deffa4b4ade5debd2591",
+        "encoder": {
+          "base": "Qwen/Qwen3-8B-Base",
+          "base_revision": "49e3418fbbbca6ecbdf9608b4d22e5a407081db4",
+          "head_sha256": "35ebe2a18c16ebd74f8c2090e7b2de8c2b007856fde96908c3a83459a2ca32bd",
+          "option_isolation": false,
+          "native_source_sha256": {
+            "api": "a6f53af5354f8ea17915abc78360fdf291a5108ce39a53a2d9135d48c603ae58",
+            "model": "d78fab645f29513a62816e594d10296b02bf166ba77835c55db5eda80c7f1978",
+            "checkpoint": "59b56b9872220495ffe25afacc6a6838114651fc484c3fa4d27f446a0986ee95"
+          }
+        },
+        "changes": {
+          "identical_full_encoding": 992,
+          "native_context_rejection": 8
+        },
+        "latency": "accepted predictions retain original GPU timing; new rejections have none"
+      },
+      "original_gpu_queue_outcomes": {
+        "ok": 22208,
+        "rejected": 11
+      },
+      "rejection_errors": {
+        "state exceeds 8192 tokens: 8983": 6,
+        "branch too long: 1592 tokens with a 7917-token state (row limit 8192)": 1,
+        "branch too long: 1273 tokens with a 7917-token state (row limit 8192)": 1,
+        "branch too long: 1237 tokens with a 7917-token state (row limit 8192)": 1,
+        "branch too long: 539 tokens with a 7917-token state (row limit 8192)": 1,
+        "branch too long: 296 tokens with a 7917-token state (row limit 8192)": 1,
+        "state exceeds 384 tokens: 419": 1,
+        "state exceeds 384 tokens: 408": 1,
+        "state exceeds 384 tokens: 404": 1,
+        "state exceeds 384 tokens: 394": 1,
+        "state exceeds 384 tokens: 423": 1,
+        "state exceeds 384 tokens: 391": 1,
+        "state exceeds 384 tokens: 434": 1,
+        "state exceeds 384 tokens: 386": 1
+      },
+      "rejection_error_types": {
+        "ContextOverflow": 19
+      },
+      "native_predictor_parity": {
+        "question_types": [
+          "choice",
+          "noul",
+          "score"
+        ],
+        "max_probability_delta": 0.0
+      }
+    },
+    "kev-9b": {
+      "checkpoint": "jaredpalmer/kev-9b@2629c06a5aeb0feb3b9783bafed17ed8f39ecf5c",
+      "completion": {
+        "complete": true,
+        "requests": 22219,
+        "ok": 22198,
+        "rejected": 21
+      },
+      "elapsed_seconds": 9375.626046180725,
+      "raw_predictions_sha256": "796da6e5e6f6feaca9f3ccd991c0e79d4d80cb80db29038e82a8816029a9364e",
+      "context_replay": {
+        "original_suite_manifest_sha256": "c24ebc59fd11fb28b8cb5cb945572cdf753d87eab5794dd4f627b6c13b500767",
+        "original_request_queue_sha256": "5ea179cfce27aca98d4a4c87eac174e482041b71a65496a29761dcf077f3fd09",
+        "original_run_sha256": "d8d0553f9af9dc256e50a5241d433a914e922c01fdf91375bfa480204598005f",
+        "original_predictions_sha256": "180bf121850ae254be04aa38972e92c68c98157857a85f2ce5da719cabb90e17",
+        "encoder": {
+          "base": "Qwen/Qwen3.5-9B-Base",
+          "base_revision": "68c46c4b3498877f3ef123c856ecfde50c39f404",
+          "head_sha256": "5528f777437f561cb4a9d56b0278a42b6ae6edd373e7921e52b13adaac988c9f",
+          "option_isolation": false,
+          "native_source_sha256": {
+            "api": "a6f53af5354f8ea17915abc78360fdf291a5108ce39a53a2d9135d48c603ae58",
+            "model": "d78fab645f29513a62816e594d10296b02bf166ba77835c55db5eda80c7f1978",
+            "checkpoint": "59b56b9872220495ffe25afacc6a6838114651fc484c3fa4d27f446a0986ee95"
+          }
+        },
+        "changes": {
+          "identical_full_encoding": 992,
+          "native_context_rejection": 8
+        },
+        "latency": "accepted predictions retain original GPU timing; new rejections have none"
+      },
+      "original_gpu_queue_outcomes": {
+        "ok": 22206,
+        "rejected": 13
+      },
+      "rejection_errors": {
+        "state exceeds 8192 tokens: 9051": 6,
+        "branch too long: 1590 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 1273 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 244 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 1237 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 539 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 296 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 275 tokens with a 8021-token state (row limit 8192)": 1,
+        "state exceeds 384 tokens: 440": 1,
+        "state exceeds 384 tokens: 408": 1,
+        "state exceeds 384 tokens: 404": 1,
+        "state exceeds 384 tokens: 394": 1,
+        "state exceeds 384 tokens: 425": 1,
+        "state exceeds 384 tokens: 396": 1,
+        "state exceeds 384 tokens: 431": 1,
+        "state exceeds 384 tokens: 386": 1
+      },
+      "rejection_error_types": {
+        "ContextOverflow": 21
+      },
+      "native_predictor_parity": {
+        "question_types": [
+          "choice",
+          "noul",
+          "score"
+        ],
+        "max_probability_delta": 0.0
+      }
+    },
+    "kev-9b-v7-base": {
+      "checkpoint": "jaredpalmer/kev-9b@4cc35fded308e19c1025990383b24ccfafc624ad",
+      "completion": {
+        "complete": true,
+        "requests": 22219,
+        "ok": 22198,
+        "rejected": 21
+      },
+      "elapsed_seconds": 9461.710231781006,
+      "raw_predictions_sha256": "2a6757b750d65d65353a762740eaea396a512013a4cdef3b89632c027324d7de",
+      "context_replay": {
+        "original_suite_manifest_sha256": "c24ebc59fd11fb28b8cb5cb945572cdf753d87eab5794dd4f627b6c13b500767",
+        "original_request_queue_sha256": "5ea179cfce27aca98d4a4c87eac174e482041b71a65496a29761dcf077f3fd09",
+        "original_run_sha256": "9f5f01ff4f0c9a812b79ecebb05ad8729bcf89c40da62b95078c921d79cf8f97",
+        "original_predictions_sha256": "7971061b25091fb5cf26ca4a1e72b95b973116f260cf0900e344b4edf2915125",
+        "encoder": {
+          "base": "Qwen/Qwen3.5-9B-Base",
+          "base_revision": "68c46c4b3498877f3ef123c856ecfde50c39f404",
+          "head_sha256": "55898a792efd8ed6656cc3374b28c7fef9258afdee0364834694b47d71ad43a8",
+          "option_isolation": false,
+          "native_source_sha256": {
+            "api": "a6f53af5354f8ea17915abc78360fdf291a5108ce39a53a2d9135d48c603ae58",
+            "model": "d78fab645f29513a62816e594d10296b02bf166ba77835c55db5eda80c7f1978",
+            "checkpoint": "59b56b9872220495ffe25afacc6a6838114651fc484c3fa4d27f446a0986ee95"
+          }
+        },
+        "changes": {
+          "identical_full_encoding": 992,
+          "native_context_rejection": 8
+        },
+        "latency": "accepted predictions retain original GPU timing; new rejections have none"
+      },
+      "original_gpu_queue_outcomes": {
+        "ok": 22206,
+        "rejected": 13
+      },
+      "rejection_errors": {
+        "state exceeds 8192 tokens: 9051": 6,
+        "branch too long: 1590 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 1273 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 244 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 1237 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 539 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 296 tokens with a 8021-token state (row limit 8192)": 1,
+        "branch too long: 275 tokens with a 8021-token state (row limit 8192)": 1,
+        "state exceeds 384 tokens: 440": 1,
+        "state exceeds 384 tokens: 408": 1,
+        "state exceeds 384 tokens: 404": 1,
+        "state exceeds 384 tokens: 394": 1,
+        "state exceeds 384 tokens: 425": 1,
+        "state exceeds 384 tokens: 396": 1,
+        "state exceeds 384 tokens: 431": 1,
+        "state exceeds 384 tokens: 386": 1
+      },
+      "rejection_error_types": {
+        "ContextOverflow": 21
+      },
+      "native_predictor_parity": {
+        "question_types": [
+          "choice",
+          "noul",
+          "score"
+        ],
+        "max_probability_delta": 0.0
+      }
+    }
+  },
+  "panels": [
+    {
+      "id": "kev/decision-v1/development",
+      "path": "panels/kev--decision-v1--development.jsonl",
+      "sha256": "543895c352a0c92e728e7346751717d8abdebe91b5b5a05aa239902d6cd1c779",
+      "records": 588,
+      "questions": 852,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 348,
+        "noul": 344,
+        "score": 160
+      },
+      "upstream_path": "evals/decision-v1/development.jsonl",
+      "upstream_sha256": "82adc559bdda908e54ef681bdc3e2ae28dfbe95e2f7873eac965c7c67797d10b",
+      "upstream_manifest_sha256": "f9373760e475d3a06753524b92baafc57a9c51403879136c9fea1ac73ed8acdd",
+      "holdout_sources": [
+        "mnli",
+        "sst5"
+      ],
+      "split": "development"
+    },
+    {
+      "id": "kev/decision-v1/test",
+      "path": "panels/kev--decision-v1--test.jsonl",
+      "sha256": "35cea096956aeccc7b5c98a2224b3d9c58cd29d9ec0b3ecb7d313999dbb8c527",
+      "records": 588,
+      "questions": 852,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 348,
+        "noul": 344,
+        "score": 160
+      },
+      "upstream_path": "evals/decision-v1/test.jsonl",
+      "upstream_sha256": "ee81c59634915e32b7da880912c5b1dcfd1ee0bbeb2221ab703158c486452be5",
+      "upstream_manifest_sha256": "f9373760e475d3a06753524b92baafc57a9c51403879136c9fea1ac73ed8acdd",
+      "holdout_sources": [
+        "mnli",
+        "sst5"
+      ],
+      "split": "test"
+    },
+    {
+      "id": "kev/decision-v2/development",
+      "path": "panels/kev--decision-v2--development.jsonl",
+      "sha256": "75f77d21be6700e6c34b07c2f16363f951058a8508e783557779ce4c47b53c60",
+      "records": 1176,
+      "questions": 1440,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 696,
+        "noul": 504,
+        "score": 240
+      },
+      "upstream_path": "evals/decision-v2/development.jsonl",
+      "upstream_sha256": "10e5a72102b844a167ade94c60cf4556cc63950b2ded17fb87bf96028cb557f1",
+      "upstream_manifest_sha256": "e0388e1d13284f5e0a2e6cb33a0fcd34f0099bfc31a6a852bd5cb619f505094d",
+      "holdout_sources": [],
+      "split": "development"
+    },
+    {
+      "id": "kev/decision-v2/test",
+      "path": "panels/kev--decision-v2--test.jsonl",
+      "sha256": "1963c5fead9e7cf01587e4f9bc5e431490d189549d9ecbe8ee090073726e7cf3",
+      "records": 1176,
+      "questions": 1440,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 696,
+        "noul": 504,
+        "score": 240
+      },
+      "upstream_path": "evals/decision-v2/test.jsonl",
+      "upstream_sha256": "cd7d129a84232e0c7a4e92b4840a6dfe14c8bb93c5d1904b526fa8c085325d2d",
+      "upstream_manifest_sha256": "e0388e1d13284f5e0a2e6cb33a0fcd34f0099bfc31a6a852bd5cb619f505094d",
+      "holdout_sources": [],
+      "split": "test"
+    },
+    {
+      "id": "kev/devtools-v1/development",
+      "path": "panels/kev--devtools-v1--development.jsonl",
+      "sha256": "a8a32a2b286f4726f4e5b77c779622a9ffd5804b3420bcd1cc5604682e4d1bba",
+      "records": 900,
+      "questions": 1074,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 7552,
+        "max_branch": 8192,
+        "max_packed": 9216
+      },
+      "types": {
+        "choice": 325,
+        "noul": 749
+      },
+      "upstream_path": "evals/devtools-v1/development.jsonl",
+      "upstream_sha256": "3df3aa83890c43db65ac73b5bb6e4fbb1466362fc1a25dbd383d4d2edd0a1fe6",
+      "upstream_manifest_sha256": "d0f7cf40cec3284684f8b2fe8f440a5f0cc40fe4a78db108eca47a5fbd141b0f",
+      "holdout_sources": [],
+      "split": "development"
+    },
+    {
+      "id": "kev/devtools-v1/test",
+      "path": "panels/kev--devtools-v1--test.jsonl",
+      "sha256": "d5797ef2d0dcdfb55c9f999250b95596932d906ef5ed486362a6d96b51295530",
+      "records": 900,
+      "questions": 1073,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 7552,
+        "max_branch": 8192,
+        "max_packed": 9216
+      },
+      "types": {
+        "choice": 325,
+        "noul": 748
+      },
+      "upstream_path": "evals/devtools-v1/test.jsonl",
+      "upstream_sha256": "2fb7c2a239fef923bcb62c0eee9d6884a608ce30e5e74a4e6b9082787679767f",
+      "upstream_manifest_sha256": "d0f7cf40cec3284684f8b2fe8f440a5f0cc40fe4a78db108eca47a5fbd141b0f",
+      "holdout_sources": [],
+      "split": "test"
+    },
+    {
+      "id": "kev/documents-v1/development",
+      "path": "panels/kev--documents-v1--development.jsonl",
+      "sha256": "c3f7e27077e8ef39caec9f9221bac9b086b3344336b7c5aeb2de1e4b6acaf198",
+      "records": 568,
+      "questions": 920,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 8192,
+        "max_branch": 8192,
+        "max_packed": 16384
+      },
+      "types": {
+        "choice": 920
+      },
+      "upstream_path": "evals/documents-v1/development.jsonl",
+      "upstream_sha256": "bfca7b41b0d8553b03f9781f48c942dfea368ce19b8508794316e555de8280f5",
+      "upstream_manifest_sha256": "711903d1241cadbfb9e0a20c93d978762123dcbec0108de9c539a60a753cf8d2",
+      "holdout_sources": [],
+      "split": "development"
+    },
+    {
+      "id": "kev/documents-v1/test",
+      "path": "panels/kev--documents-v1--test.jsonl",
+      "sha256": "95bedbe1822fe15b0e070d6c4845f5ae3433cb24b5cd002fbef5627d1c7edc75",
+      "records": 574,
+      "questions": 936,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 8192,
+        "max_branch": 8192,
+        "max_packed": 16384
+      },
+      "types": {
+        "choice": 936
+      },
+      "upstream_path": "evals/documents-v1/test.jsonl",
+      "upstream_sha256": "742d04a1abc2207bd3e4f24b281f483cdc69238e4da747cbbc3774e836f2e557",
+      "upstream_manifest_sha256": "711903d1241cadbfb9e0a20c93d978762123dcbec0108de9c539a60a753cf8d2",
+      "holdout_sources": [],
+      "split": "test"
+    },
+    {
+      "id": "kev/external/scienthoon-v1/development",
+      "path": "panels/kev--external--scienthoon-v1--development.jsonl",
+      "sha256": "e67ce164afcd7b9cf432b16647734c08e29f687939f00f8d4397cac06b077168",
+      "records": 291,
+      "questions": 873,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 291,
+        "score": 291,
+        "noul": 291
+      },
+      "upstream_path": "evals/external/scienthoon-v1/development.jsonl",
+      "upstream_sha256": "4a6511651209736b490097320d2b2a91480e068c6713bc285f5daa5fcca5fcf5",
+      "upstream_manifest_sha256": "ef31183425bf9d3c2d8ac5d245a14d30fa44d1e531c945e4405edcb1f75ae0d5",
+      "holdout_sources": [],
+      "split": "development"
+    },
+    {
+      "id": "kev/external/semif-v1/development",
+      "path": "panels/kev--external--semif-v1--development.jsonl",
+      "sha256": "e9f66e142d9af954ebfaf9ae452d0cd7aa4ff4b12398be5afcf8b72eac56fa56",
+      "records": 252,
+      "questions": 252,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 252
+      },
+      "upstream_path": "evals/external/semif-v1/development.jsonl",
+      "upstream_sha256": "b9e0c7939a25a04a7ef7bc12334b5fa45b2027d04904d32021295b5539a97303",
+      "upstream_manifest_sha256": "0de05eac16b0ddeeb2719c50a94a9148d6ae195f66303aec74aa103a3845ad11",
+      "holdout_sources": [],
+      "split": "development"
+    },
+    {
+      "id": "kev/external/typesafe-v1/development",
+      "path": "panels/kev--external--typesafe-v1--development.jsonl",
+      "sha256": "bcd3321b898bfa8abe995ea9a8b82b513387deb145265260b2f9b65b228e7d02",
+      "records": 102,
+      "questions": 102,
+      "source": "kev",
+      "protocol": "typesafe",
+      "context": {
+        "max_state": 8192,
+        "max_branch": 8192,
+        "max_packed": 16384
+      },
+      "types": {
+        "choice": 36,
+        "noul": 66
+      },
+      "upstream_path": "evals/external/typesafe-v1/development.jsonl",
+      "upstream_sha256": "877ed7cd473e3973d29f0bb0ff2a597192955e477f2127794df358b6ba795879",
+      "upstream_manifest_sha256": "d3f8f5ae927f105b418190397409a14bbe7db629f79b4c88ea97909ff0220982",
+      "holdout_sources": [],
+      "split": "development"
+    },
+    {
+      "id": "kev/external/wanli-v1/development",
+      "path": "panels/kev--external--wanli-v1--development.jsonl",
+      "sha256": "fd5cb5fbbe262dfd52eab2566068d12ba10111f5592901670a7fe7f6bb2bca92",
+      "records": 256,
+      "questions": 256,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 256
+      },
+      "upstream_path": "evals/external/wanli-v1/development.jsonl",
+      "upstream_sha256": "ab732d761daf51aa859263bb402fcc8e880bd801a21e3b882464a7766e8d1b5d",
+      "upstream_manifest_sha256": "017f1261d52a4b2ee1e8bb6a15b7793c9b4bd8fef74792ca2ce62439b32a7dfe",
+      "holdout_sources": [],
+      "split": "development"
+    },
+    {
+      "id": "kev/external/wanli-v2/development",
+      "path": "panels/kev--external--wanli-v2--development.jsonl",
+      "sha256": "4e36766d1b53ba79f827e368f50586961aa809160902116c2997bba10981c6a0",
+      "records": 1002,
+      "questions": 1002,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 1002
+      },
+      "upstream_path": "evals/external/wanli-v2/development.jsonl",
+      "upstream_sha256": "80216665abca483b8a0a197e073b69683ce3615c30fc5fc95d05848ae44a796e",
+      "upstream_manifest_sha256": "3bd7bf16d140122af3e0019f737f4f92d1353b40e66acdea6a69dd8e7a2ded36",
+      "holdout_sources": [],
+      "split": "development"
+    },
+    {
+      "id": "kev/hard-v1/development",
+      "path": "panels/kev--hard-v1--development.jsonl",
+      "sha256": "014163168195ddab1ab8ffb2a6c02d89537bc4308524d1fab459b99b287e31d7",
+      "records": 700,
+      "questions": 1083,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 7552,
+        "max_branch": 8192,
+        "max_packed": 9216
+      },
+      "types": {
+        "choice": 824,
+        "noul": 224,
+        "score": 35
+      },
+      "upstream_path": "evals/hard-v1/development.jsonl",
+      "upstream_sha256": "3cdbf12a6b7c3b70c73e8c39f2677127ea61ef32f0ea75b55a43556d884b2d98",
+      "upstream_manifest_sha256": "9d8dd335f5a73840b144c987ee91bb0513301128c474a7a4cd3f754a130cfa5c",
+      "holdout_sources": [],
+      "split": "development"
+    },
+    {
+      "id": "kev/hard-v1/test",
+      "path": "panels/kev--hard-v1--test.jsonl",
+      "sha256": "2f7b49b7d2cce18b2749f3a432aaa7eb639ddf2e1011881ccde205800e8170c5",
+      "records": 700,
+      "questions": 1088,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 7552,
+        "max_branch": 8192,
+        "max_packed": 9216
+      },
+      "types": {
+        "choice": 826,
+        "noul": 226,
+        "score": 36
+      },
+      "upstream_path": "evals/hard-v1/test.jsonl",
+      "upstream_sha256": "246ee92234d33f8e3f10ac6e1542651531b128fd7cc66f3a9964589b77dfa22b",
+      "upstream_manifest_sha256": "9d8dd335f5a73840b144c987ee91bb0513301128c474a7a4cd3f754a130cfa5c",
+      "holdout_sources": [],
+      "split": "test"
+    },
+    {
+      "id": "kev/public-pool-v4/development",
+      "path": "panels/kev--public-pool-v4--development.jsonl",
+      "sha256": "406ed80ab76a74e4b85ea46e7e875f58805bcc039f652f83be8ed94480318749",
+      "records": 980,
+      "questions": 1244,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 580,
+        "noul": 424,
+        "score": 240
+      },
+      "upstream_path": "evals/public-pool-v4/development.jsonl",
+      "upstream_sha256": "1542b2def96f9c86510ea2976bbc68f878acef0c36aff4cd6ed19868c2d2349f",
+      "upstream_manifest_sha256": "aac28e07c739d05178a7da4ee6caf097efeb2e8938d0d8742d1518dd64d30d2c",
+      "holdout_sources": [],
+      "split": "development"
+    },
+    {
+      "id": "kev/public-pool-v4/test",
+      "path": "panels/kev--public-pool-v4--test.jsonl",
+      "sha256": "bed2631f5f60e26a16c09fd1cfe69897d1eba14c33a99cc775ff4a6187013ccd",
+      "records": 980,
+      "questions": 1244,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 580,
+        "noul": 424,
+        "score": 240
+      },
+      "upstream_path": "evals/public-pool-v4/test.jsonl",
+      "upstream_sha256": "34b527ea42bfcf23c321fac642118e50434c54fa5756a208dc7dccfa98586613",
+      "upstream_manifest_sha256": "aac28e07c739d05178a7da4ee6caf097efeb2e8938d0d8742d1518dd64d30d2c",
+      "holdout_sources": [],
+      "split": "test"
+    },
+    {
+      "id": "kev/public-pool-v5/development",
+      "path": "panels/kev--public-pool-v5--development.jsonl",
+      "sha256": "406ed80ab76a74e4b85ea46e7e875f58805bcc039f652f83be8ed94480318749",
+      "records": 980,
+      "questions": 1244,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 580,
+        "noul": 424,
+        "score": 240
+      },
+      "upstream_path": "evals/public-pool-v5/development.jsonl",
+      "upstream_sha256": "1542b2def96f9c86510ea2976bbc68f878acef0c36aff4cd6ed19868c2d2349f",
+      "upstream_manifest_sha256": "bfedbf6bf6533418daa6e854d3559a2f5f6565ae6b482f44a5f8196968c5d571",
+      "holdout_sources": [],
+      "split": "development"
+    },
+    {
+      "id": "kev/public-pool-v5/test",
+      "path": "panels/kev--public-pool-v5--test.jsonl",
+      "sha256": "bed2631f5f60e26a16c09fd1cfe69897d1eba14c33a99cc775ff4a6187013ccd",
+      "records": 980,
+      "questions": 1244,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 580,
+        "noul": 424,
+        "score": 240
+      },
+      "upstream_path": "evals/public-pool-v5/test.jsonl",
+      "upstream_sha256": "34b527ea42bfcf23c321fac642118e50434c54fa5756a208dc7dccfa98586613",
+      "upstream_manifest_sha256": "bfedbf6bf6533418daa6e854d3559a2f5f6565ae6b482f44a5f8196968c5d571",
+      "holdout_sources": [],
+      "split": "test"
+    },
+    {
+      "id": "kev/public-pool-v6/development",
+      "path": "panels/kev--public-pool-v6--development.jsonl",
+      "sha256": "aa1aa5ef9eaab87359e797ee893da83693f6451dcd4528edea029bc7fb6f9e07",
+      "records": 1328,
+      "questions": 1592,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 928,
+        "noul": 424,
+        "score": 240
+      },
+      "upstream_path": "evals/public-pool-v6/development.jsonl",
+      "upstream_sha256": "0d3b60dc355b4101372449bed321d420eb69618ad400b184684e46be4c33ee77",
+      "upstream_manifest_sha256": "3fd5785634340347a0e25fe564d3d2824430b604b6f75b733d0eb50cb5969ca3",
+      "holdout_sources": [],
+      "split": "development"
+    },
+    {
+      "id": "kev/public-pool-v6/test",
+      "path": "panels/kev--public-pool-v6--test.jsonl",
+      "sha256": "34ec198fb3c197ddb350e98aa2947edc904c72e281678addbde01a05d3ce266b",
+      "records": 1328,
+      "questions": 1592,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 928,
+        "noul": 424,
+        "score": 240
+      },
+      "upstream_path": "evals/public-pool-v6/test.jsonl",
+      "upstream_sha256": "ea63dfe433d05ce9548399ac770a87c6b427f47662bd68121f0091ac9119493a",
+      "upstream_manifest_sha256": "3fd5785634340347a0e25fe564d3d2824430b604b6f75b733d0eb50cb5969ca3",
+      "holdout_sources": [],
+      "split": "test"
+    },
+    {
+      "id": "kev/round3/decision-r3/development",
+      "path": "panels/kev--round3--decision-r3--development.jsonl",
+      "sha256": "83804ba55c5d172839177c79aa343a8f7df34dd72db45583d1b664e316d24d0f",
+      "records": 1204,
+      "questions": 1468,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 756,
+        "noul": 472,
+        "score": 240
+      },
+      "upstream_path": "evals/round3/decision-r3/development.jsonl",
+      "upstream_sha256": "8d5765d7aec4d08c61854f4664ca79ec2ba44ed092e9b967eaf61ed86c496d9c",
+      "upstream_manifest_sha256": "8db5f3adaf73c3d335878d56f8d273319c600898f2415c75b89ff2245f86c176",
+      "holdout_sources": [],
+      "split": "development"
+    },
+    {
+      "id": "kev/round3/transfer-r3/development",
+      "path": "panels/kev--round3--transfer-r3--development.jsonl",
+      "sha256": "dad0114446aed0f6b5da05dd1db8f37b9cefe5adebc6cd99bb0a9d78bffa3b09",
+      "records": 764,
+      "questions": 764,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 444,
+        "noul": 280,
+        "score": 40
+      },
+      "upstream_path": "evals/round3/transfer-r3/development.jsonl",
+      "upstream_sha256": "ff374c49c6c9f15f8a56fb274b4a4857d20497eb8dd1ac07ce01560e682a5f2e",
+      "upstream_manifest_sha256": "5da4db16af3f1eac93c24443e3aa039e375af0764d7f401da303de24a67f19f0",
+      "holdout_sources": [
+        "mmlu",
+        "emotion",
+        "tweet_offensive",
+        "qnli",
+        "paws",
+        "sciq",
+        "legacy_holdout",
+        "composition_holdout"
+      ],
+      "split": "development"
+    },
+    {
+      "id": "kev/round3/transfer-r3/test",
+      "path": "panels/kev--round3--transfer-r3--test.jsonl",
+      "sha256": "709b10683282c294cc67769ff572dd478974ab827756da3e2118d31245ddb079",
+      "records": 1260,
+      "questions": 1260,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "noul": 520,
+        "choice": 580,
+        "score": 160
+      },
+      "upstream_path": "evals/round3/transfer-r3/test.jsonl",
+      "upstream_sha256": "23e786cc71a72fc15b565b80d720d3dcaffb2e5c7c79c5243077592df7a46370",
+      "upstream_manifest_sha256": "5da4db16af3f1eac93c24443e3aa039e375af0764d7f401da303de24a67f19f0",
+      "holdout_sources": [
+        "mmlu",
+        "emotion",
+        "tweet_offensive",
+        "qnli",
+        "paws",
+        "sciq",
+        "legacy_holdout",
+        "composition_holdout"
+      ],
+      "split": "test"
+    },
+    {
+      "id": "kev/round4/longstate-v1/development",
+      "path": "panels/kev--round4--longstate-v1--development.jsonl",
+      "sha256": "5a86472778ce8b5f668c2eace3b325c69642d45c0e82f54fa45dddc9a9ceed8c",
+      "records": 576,
+      "questions": 707,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 8192,
+        "max_branch": 8192,
+        "max_packed": 16384
+      },
+      "types": {
+        "choice": 333,
+        "noul": 240,
+        "score": 134
+      },
+      "upstream_path": "evals/round4/longstate-v1/development.jsonl",
+      "upstream_sha256": "efb8c47995d5146a58f1b562f55884b0a2166fef611e3dab8085f0031a051c4b",
+      "upstream_manifest_sha256": "2501f52f08b2f3afe692cb2d193c2ca9f71a1a210e16f06ecbd30c6092d52fa1",
+      "holdout_sources": [],
+      "split": "development"
+    },
+    {
+      "id": "kev/round5/longstate-v2/development",
+      "path": "panels/kev--round5--longstate-v2--development.jsonl",
+      "sha256": "4912135d09515c809cc1bcfba3a1a1bd0dfdf4662768e0f15caffb8505d835d0",
+      "records": 888,
+      "questions": 1090,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 8192,
+        "max_branch": 8192,
+        "max_packed": 16384
+      },
+      "types": {
+        "choice": 518,
+        "score": 238,
+        "noul": 334
+      },
+      "upstream_path": "evals/round5/longstate-v2/development.jsonl",
+      "upstream_sha256": "4c03830a64479b9470fffee0b2e7da979dffa1a2c531126bd53047841c41046b",
+      "upstream_manifest_sha256": "30c755ed922a8ddb0cb39d45fbdef93024c57bb0609a93c995ab7467655f2e25",
+      "holdout_sources": [],
+      "split": "development"
+    },
+    {
+      "id": "kev/round5/transfer-r5/development",
+      "path": "panels/kev--round5--transfer-r5--development.jsonl",
+      "sha256": "dad0114446aed0f6b5da05dd1db8f37b9cefe5adebc6cd99bb0a9d78bffa3b09",
+      "records": 764,
+      "questions": 764,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 444,
+        "noul": 280,
+        "score": 40
+      },
+      "upstream_path": "evals/round5/transfer-r5/development.jsonl",
+      "upstream_sha256": "ff374c49c6c9f15f8a56fb274b4a4857d20497eb8dd1ac07ce01560e682a5f2e",
+      "upstream_manifest_sha256": "48472d8e8a0119ff4b2b2c5125f36aedf5d72ac2f757dd20b420e36984512916",
+      "holdout_sources": [
+        "mmlu",
+        "emotion",
+        "tweet_offensive",
+        "qnli",
+        "paws",
+        "sciq",
+        "legacy_holdout",
+        "composition_holdout"
+      ],
+      "split": "development"
+    },
+    {
+      "id": "kev/round5/transfer-r5/test",
+      "path": "panels/kev--round5--transfer-r5--test.jsonl",
+      "sha256": "b62aa4ccce5bbd2e407243063c4fce6cc65b827bda4a4d1122389a1aed985532",
+      "records": 1260,
+      "questions": 1260,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 580,
+        "score": 160,
+        "noul": 520
+      },
+      "upstream_path": "evals/round5/transfer-r5/test.jsonl",
+      "upstream_sha256": "466e73e874f91515514ba61c388c2d767bbf652a83e0ea2a257bcf84526539c1",
+      "upstream_manifest_sha256": "48472d8e8a0119ff4b2b2c5125f36aedf5d72ac2f757dd20b420e36984512916",
+      "holdout_sources": [
+        "mmlu",
+        "emotion",
+        "tweet_offensive",
+        "qnli",
+        "paws",
+        "sciq",
+        "legacy_holdout",
+        "composition_holdout"
+      ],
+      "split": "test"
+    },
+    {
+      "id": "kev/smoke-v1/development",
+      "path": "panels/kev--smoke-v1--development.jsonl",
+      "sha256": "0b09fb121cf609dd24ed232bb382777fd68255b56e017233cfee485f5f5ea4ba",
+      "records": 30,
+      "questions": 40,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 24,
+        "noul": 12,
+        "score": 4
+      },
+      "upstream_path": "evals/smoke-v1/development.jsonl",
+      "upstream_sha256": "e0b18f4b8d95aaa2479a63bfc6b0af5f44bc2fd11bb87e5ca42317c5a5d8a306",
+      "upstream_manifest_sha256": "5a3f2e5616bf09c8d5111c3a503962f7d9b0e21fb3dbca1de75f7d40f99c4741",
+      "holdout_sources": [
+        "mnli",
+        "sst5"
+      ],
+      "split": "development"
+    },
+    {
+      "id": "kev/smoke-v1/test",
+      "path": "panels/kev--smoke-v1--test.jsonl",
+      "sha256": "efebcedeba09a47d0ec8d97c89a9ef5056706abadec7b48e1104b9503cd22365",
+      "records": 30,
+      "questions": 40,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 24,
+        "noul": 12,
+        "score": 4
+      },
+      "upstream_path": "evals/smoke-v1/test.jsonl",
+      "upstream_sha256": "740bbaa1ea4affafd7c63dff1f2103dcd9f98d7745868331fbd3472a5af41cda",
+      "upstream_manifest_sha256": "5a3f2e5616bf09c8d5111c3a503962f7d9b0e21fb3dbca1de75f7d40f99c4741",
+      "holdout_sources": [
+        "mnli",
+        "sst5"
+      ],
+      "split": "test"
+    },
+    {
+      "id": "kev/transfer-v1/development",
+      "path": "panels/kev--transfer-v1--development.jsonl",
+      "sha256": "3411ea87f7add8bed708cd78a1823a5c2004106f48e8970dca6c2a91eeebf29a",
+      "records": 784,
+      "questions": 784,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 464,
+        "noul": 240,
+        "score": 80
+      },
+      "upstream_path": "evals/transfer-v1/development.jsonl",
+      "upstream_sha256": "c8a325cd2e04b4b4831e53a4e3165dbeed21d1db8c4b4520c942f38b936c0636",
+      "upstream_manifest_sha256": "fb3448a9d0b6939b0b0754cff37eb033be97b9b927de2f28789fd8a641fcbb30",
+      "holdout_sources": [
+        "trec",
+        "dbpedia14",
+        "emotion",
+        "imdb",
+        "amazon",
+        "qnli",
+        "tweet_offensive",
+        "mmlu"
+      ],
+      "split": "development"
+    },
+    {
+      "id": "kev/transfer-v1/test",
+      "path": "panels/kev--transfer-v1--test.jsonl",
+      "sha256": "cdf2f2e7f7818a7f9b42239e105083089ec76665aec61599cf756b9df80128f0",
+      "records": 784,
+      "questions": 784,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 464,
+        "noul": 240,
+        "score": 80
+      },
+      "upstream_path": "evals/transfer-v1/test.jsonl",
+      "upstream_sha256": "63d51ef4d81320b24c8208ffa4b493800931c3989a1a3f1d3bc5d15f6d075be3",
+      "upstream_manifest_sha256": "fb3448a9d0b6939b0b0754cff37eb033be97b9b927de2f28789fd8a641fcbb30",
+      "holdout_sources": [
+        "trec",
+        "dbpedia14",
+        "emotion",
+        "imdb",
+        "amazon",
+        "qnli",
+        "tweet_offensive",
+        "mmlu"
+      ],
+      "split": "test"
+    },
+    {
+      "id": "kev/transfer-v2/development",
+      "path": "panels/kev--transfer-v2--development.jsonl",
+      "sha256": "3f7c2b2cc20f5e029806a4289589752b5d42b2e47a018e06a7a76e4776a951c0",
+      "records": 668,
+      "questions": 668,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 348,
+        "noul": 280,
+        "score": 40
+      },
+      "upstream_path": "evals/transfer-v2/development.jsonl",
+      "upstream_sha256": "02732ee2e662b7ec0c276f7f89ae29f44e7ce262ffac8e9c116c5bc82e5608b8",
+      "upstream_manifest_sha256": "a9dd4485e3247014209ecbee28d9fe02d0556c69e95dc30cca0584d1e5c27e35",
+      "holdout_sources": [
+        "mmlu",
+        "emotion",
+        "tweet_offensive",
+        "qnli",
+        "paws",
+        "sciq"
+      ],
+      "split": "development"
+    },
+    {
+      "id": "kev/transfer-v2/test",
+      "path": "panels/kev--transfer-v2--test.jsonl",
+      "sha256": "06827198227d6731d04deae70ed351d7141706e287b391178865f647ea74e2ef",
+      "records": 668,
+      "questions": 668,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 348,
+        "noul": 280,
+        "score": 40
+      },
+      "upstream_path": "evals/transfer-v2/test.jsonl",
+      "upstream_sha256": "96c06100b7e94772c4eddbd61b42c1a1a9d60911ddb2c23767c11c8980618dde",
+      "upstream_manifest_sha256": "a9dd4485e3247014209ecbee28d9fe02d0556c69e95dc30cca0584d1e5c27e35",
+      "holdout_sources": [
+        "mmlu",
+        "emotion",
+        "tweet_offensive",
+        "qnli",
+        "paws",
+        "sciq"
+      ],
+      "split": "test"
+    },
+    {
+      "id": "kev/v3/decision-v3/development",
+      "path": "panels/kev--v3--decision-v3--development.jsonl",
+      "sha256": "83804ba55c5d172839177c79aa343a8f7df34dd72db45583d1b664e316d24d0f",
+      "records": 1204,
+      "questions": 1468,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 756,
+        "noul": 472,
+        "score": 240
+      },
+      "upstream_path": "evals/v3/decision-v3/development.jsonl",
+      "upstream_sha256": "8d5765d7aec4d08c61854f4664ca79ec2ba44ed092e9b967eaf61ed86c496d9c",
+      "upstream_manifest_sha256": "3265e00117bd1727e2de5c5560992a2fc6130efdcc8bfb6235444f6f3ae1cf47",
+      "holdout_sources": [],
+      "split": "development"
+    },
+    {
+      "id": "kev/v3/decision-v3/test",
+      "path": "panels/kev--v3--decision-v3--test.jsonl",
+      "sha256": "1963c5fead9e7cf01587e4f9bc5e431490d189549d9ecbe8ee090073726e7cf3",
+      "records": 1176,
+      "questions": 1440,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 696,
+        "noul": 504,
+        "score": 240
+      },
+      "upstream_path": "evals/v3/decision-v3/test.jsonl",
+      "upstream_sha256": "cd7d129a84232e0c7a4e92b4840a6dfe14c8bb93c5d1904b526fa8c085325d2d",
+      "upstream_manifest_sha256": "3265e00117bd1727e2de5c5560992a2fc6130efdcc8bfb6235444f6f3ae1cf47",
+      "holdout_sources": [],
+      "split": "test"
+    },
+    {
+      "id": "kev/v3/smoke-v3/development",
+      "path": "panels/kev--v3--smoke-v3--development.jsonl",
+      "sha256": "fff05e7fef07e9012f0f8ab8b64739ff94744360258e69d175b8ff1909120cba",
+      "records": 62,
+      "questions": 72,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 48,
+        "noul": 18,
+        "score": 6
+      },
+      "upstream_path": "evals/v3/smoke-v3/development.jsonl",
+      "upstream_sha256": "b8a8df68bf8b673eb88888e8c2885b50db4fd98dbc91f1a7329e618d59005c01",
+      "upstream_manifest_sha256": "6bdaef99b9d753ca503e434d9eda4be0647e054746fee3b5bcf509f705e1f4c5",
+      "holdout_sources": [],
+      "split": "development"
+    },
+    {
+      "id": "kev/v3/transfer-v3/development",
+      "path": "panels/kev--v3--transfer-v3--development.jsonl",
+      "sha256": "dad0114446aed0f6b5da05dd1db8f37b9cefe5adebc6cd99bb0a9d78bffa3b09",
+      "records": 764,
+      "questions": 764,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 444,
+        "noul": 280,
+        "score": 40
+      },
+      "upstream_path": "evals/v3/transfer-v3/development.jsonl",
+      "upstream_sha256": "ff374c49c6c9f15f8a56fb274b4a4857d20497eb8dd1ac07ce01560e682a5f2e",
+      "upstream_manifest_sha256": "98fb572ea4e96c789ba37569f0b8231bcda43b43eb7ef09fac952227444cdbb1",
+      "holdout_sources": [
+        "mmlu",
+        "emotion",
+        "tweet_offensive",
+        "qnli",
+        "paws",
+        "sciq",
+        "contrastive",
+        "legacy_holdout",
+        "composition_holdout"
+      ],
+      "split": "development"
+    },
+    {
+      "id": "kev/v3/transfer-v3/test",
+      "path": "panels/kev--v3--transfer-v3--test.jsonl",
+      "sha256": "20c1853bf5932082a05f9eb3429df3cf8da7b0e9e60070aaf037685a9437bf80",
+      "records": 764,
+      "questions": 764,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 444,
+        "noul": 280,
+        "score": 40
+      },
+      "upstream_path": "evals/v3/transfer-v3/test.jsonl",
+      "upstream_sha256": "c30a91274f9b483aac9e4f02ada5dea953b3f1a2829456e0bc07806c4e73b517",
+      "upstream_manifest_sha256": "98fb572ea4e96c789ba37569f0b8231bcda43b43eb7ef09fac952227444cdbb1",
+      "holdout_sources": [
+        "mmlu",
+        "emotion",
+        "tweet_offensive",
+        "qnli",
+        "paws",
+        "sciq",
+        "contrastive",
+        "legacy_holdout",
+        "composition_holdout"
+      ],
+      "split": "test"
+    },
+    {
+      "id": "kev/v4/decision-v4/development",
+      "path": "panels/kev--v4--decision-v4--development.jsonl",
+      "sha256": "83804ba55c5d172839177c79aa343a8f7df34dd72db45583d1b664e316d24d0f",
+      "records": 1204,
+      "questions": 1468,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 756,
+        "noul": 472,
+        "score": 240
+      },
+      "upstream_path": "evals/v4/decision-v4/development.jsonl",
+      "upstream_sha256": "8d5765d7aec4d08c61854f4664ca79ec2ba44ed092e9b967eaf61ed86c496d9c",
+      "upstream_manifest_sha256": "1b33e566d114f9eafeff55b36c221fadb2a4ae358a1b9cc68006e82c7cfad8f1",
+      "holdout_sources": [],
+      "split": "development"
+    },
+    {
+      "id": "kev/v4/decision-v4/test",
+      "path": "panels/kev--v4--decision-v4--test.jsonl",
+      "sha256": "1963c5fead9e7cf01587e4f9bc5e431490d189549d9ecbe8ee090073726e7cf3",
+      "records": 1176,
+      "questions": 1440,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 696,
+        "noul": 504,
+        "score": 240
+      },
+      "upstream_path": "evals/v4/decision-v4/test.jsonl",
+      "upstream_sha256": "cd7d129a84232e0c7a4e92b4840a6dfe14c8bb93c5d1904b526fa8c085325d2d",
+      "upstream_manifest_sha256": "1b33e566d114f9eafeff55b36c221fadb2a4ae358a1b9cc68006e82c7cfad8f1",
+      "holdout_sources": [],
+      "split": "test"
+    },
+    {
+      "id": "kev/v4/transfer-v4/development",
+      "path": "panels/kev--v4--transfer-v4--development.jsonl",
+      "sha256": "dad0114446aed0f6b5da05dd1db8f37b9cefe5adebc6cd99bb0a9d78bffa3b09",
+      "records": 764,
+      "questions": 764,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 444,
+        "noul": 280,
+        "score": 40
+      },
+      "upstream_path": "evals/v4/transfer-v4/development.jsonl",
+      "upstream_sha256": "ff374c49c6c9f15f8a56fb274b4a4857d20497eb8dd1ac07ce01560e682a5f2e",
+      "upstream_manifest_sha256": "31677c2256b406222e7d94ffdc0a02a70ce05746b9efe307876024c4e77291d1",
+      "holdout_sources": [
+        "mmlu",
+        "emotion",
+        "tweet_offensive",
+        "qnli",
+        "paws",
+        "sciq",
+        "contrastive",
+        "legacy_holdout",
+        "composition_holdout"
+      ],
+      "split": "development"
+    },
+    {
+      "id": "kev/v4/transfer-v4/test",
+      "path": "panels/kev--v4--transfer-v4--test.jsonl",
+      "sha256": "20c1853bf5932082a05f9eb3429df3cf8da7b0e9e60070aaf037685a9437bf80",
+      "records": 764,
+      "questions": 764,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 444,
+        "noul": 280,
+        "score": 40
+      },
+      "upstream_path": "evals/v4/transfer-v4/test.jsonl",
+      "upstream_sha256": "c30a91274f9b483aac9e4f02ada5dea953b3f1a2829456e0bc07806c4e73b517",
+      "upstream_manifest_sha256": "31677c2256b406222e7d94ffdc0a02a70ce05746b9efe307876024c4e77291d1",
+      "holdout_sources": [
+        "mmlu",
+        "emotion",
+        "tweet_offensive",
+        "qnli",
+        "paws",
+        "sciq",
+        "contrastive",
+        "legacy_holdout",
+        "composition_holdout"
+      ],
+      "split": "test"
+    },
+    {
+      "id": "kev/v5/decision-v5/development",
+      "path": "panels/kev--v5--decision-v5--development.jsonl",
+      "sha256": "83804ba55c5d172839177c79aa343a8f7df34dd72db45583d1b664e316d24d0f",
+      "records": 1204,
+      "questions": 1468,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 756,
+        "noul": 472,
+        "score": 240
+      },
+      "upstream_path": "evals/v5/decision-v5/development.jsonl",
+      "upstream_sha256": "8d5765d7aec4d08c61854f4664ca79ec2ba44ed092e9b967eaf61ed86c496d9c",
+      "upstream_manifest_sha256": "434bfec53d056a6154f5587c633576ce3ab3fdd393f79f06c38865b8a65c3756",
+      "holdout_sources": [],
+      "split": "development"
+    },
+    {
+      "id": "kev/v5/decision-v5/test",
+      "path": "panels/kev--v5--decision-v5--test.jsonl",
+      "sha256": "1963c5fead9e7cf01587e4f9bc5e431490d189549d9ecbe8ee090073726e7cf3",
+      "records": 1176,
+      "questions": 1440,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 696,
+        "noul": 504,
+        "score": 240
+      },
+      "upstream_path": "evals/v5/decision-v5/test.jsonl",
+      "upstream_sha256": "cd7d129a84232e0c7a4e92b4840a6dfe14c8bb93c5d1904b526fa8c085325d2d",
+      "upstream_manifest_sha256": "434bfec53d056a6154f5587c633576ce3ab3fdd393f79f06c38865b8a65c3756",
+      "holdout_sources": [],
+      "split": "test"
+    },
+    {
+      "id": "kev/v5/transfer-v5/development",
+      "path": "panels/kev--v5--transfer-v5--development.jsonl",
+      "sha256": "dad0114446aed0f6b5da05dd1db8f37b9cefe5adebc6cd99bb0a9d78bffa3b09",
+      "records": 764,
+      "questions": 764,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 444,
+        "noul": 280,
+        "score": 40
+      },
+      "upstream_path": "evals/v5/transfer-v5/development.jsonl",
+      "upstream_sha256": "ff374c49c6c9f15f8a56fb274b4a4857d20497eb8dd1ac07ce01560e682a5f2e",
+      "upstream_manifest_sha256": "bd3976ec986358c5a6414f62e6ae58ff7e9812738d05fe0d1b0a596dbe3635cd",
+      "holdout_sources": [
+        "mmlu",
+        "emotion",
+        "tweet_offensive",
+        "qnli",
+        "paws",
+        "sciq",
+        "contrastive",
+        "legacy_holdout",
+        "composition_holdout"
+      ],
+      "split": "development"
+    },
+    {
+      "id": "kev/v5/transfer-v5/test",
+      "path": "panels/kev--v5--transfer-v5--test.jsonl",
+      "sha256": "20c1853bf5932082a05f9eb3429df3cf8da7b0e9e60070aaf037685a9437bf80",
+      "records": 764,
+      "questions": 764,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 444,
+        "noul": 280,
+        "score": 40
+      },
+      "upstream_path": "evals/v5/transfer-v5/test.jsonl",
+      "upstream_sha256": "c30a91274f9b483aac9e4f02ada5dea953b3f1a2829456e0bc07806c4e73b517",
+      "upstream_manifest_sha256": "bd3976ec986358c5a6414f62e6ae58ff7e9812738d05fe0d1b0a596dbe3635cd",
+      "holdout_sources": [
+        "mmlu",
+        "emotion",
+        "tweet_offensive",
+        "qnli",
+        "paws",
+        "sciq",
+        "contrastive",
+        "legacy_holdout",
+        "composition_holdout"
+      ],
+      "split": "test"
+    },
+    {
+      "id": "kev/v6/decision-v6/development",
+      "path": "panels/kev--v6--decision-v6--development.jsonl",
+      "sha256": "83804ba55c5d172839177c79aa343a8f7df34dd72db45583d1b664e316d24d0f",
+      "records": 1204,
+      "questions": 1468,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 756,
+        "noul": 472,
+        "score": 240
+      },
+      "upstream_path": "evals/v6/decision-v6/development.jsonl",
+      "upstream_sha256": "8d5765d7aec4d08c61854f4664ca79ec2ba44ed092e9b967eaf61ed86c496d9c",
+      "upstream_manifest_sha256": "13a1cbf63862492c1275e36c76e08b176a2b3e8b5259f668d7d34a825c86dfd1",
+      "holdout_sources": [],
+      "split": "development"
+    },
+    {
+      "id": "kev/v6/decision-v6/test",
+      "path": "panels/kev--v6--decision-v6--test.jsonl",
+      "sha256": "1963c5fead9e7cf01587e4f9bc5e431490d189549d9ecbe8ee090073726e7cf3",
+      "records": 1176,
+      "questions": 1440,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 696,
+        "noul": 504,
+        "score": 240
+      },
+      "upstream_path": "evals/v6/decision-v6/test.jsonl",
+      "upstream_sha256": "cd7d129a84232e0c7a4e92b4840a6dfe14c8bb93c5d1904b526fa8c085325d2d",
+      "upstream_manifest_sha256": "13a1cbf63862492c1275e36c76e08b176a2b3e8b5259f668d7d34a825c86dfd1",
+      "holdout_sources": [],
+      "split": "test"
+    },
+    {
+      "id": "kev/v6/transfer-v6/development",
+      "path": "panels/kev--v6--transfer-v6--development.jsonl",
+      "sha256": "dad0114446aed0f6b5da05dd1db8f37b9cefe5adebc6cd99bb0a9d78bffa3b09",
+      "records": 764,
+      "questions": 764,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 444,
+        "noul": 280,
+        "score": 40
+      },
+      "upstream_path": "evals/v6/transfer-v6/development.jsonl",
+      "upstream_sha256": "ff374c49c6c9f15f8a56fb274b4a4857d20497eb8dd1ac07ce01560e682a5f2e",
+      "upstream_manifest_sha256": "0bf4f65927a5b32a223eaafff631e617aacb724e19470b28dc73028856ec318f",
+      "holdout_sources": [
+        "mmlu",
+        "emotion",
+        "tweet_offensive",
+        "qnli",
+        "paws",
+        "sciq",
+        "contrastive",
+        "legacy_holdout",
+        "composition_holdout"
+      ],
+      "split": "development"
+    },
+    {
+      "id": "kev/v6/transfer-v6/test",
+      "path": "panels/kev--v6--transfer-v6--test.jsonl",
+      "sha256": "20c1853bf5932082a05f9eb3429df3cf8da7b0e9e60070aaf037685a9437bf80",
+      "records": 764,
+      "questions": 764,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 444,
+        "noul": 280,
+        "score": 40
+      },
+      "upstream_path": "evals/v6/transfer-v6/test.jsonl",
+      "upstream_sha256": "c30a91274f9b483aac9e4f02ada5dea953b3f1a2829456e0bc07806c4e73b517",
+      "upstream_manifest_sha256": "0bf4f65927a5b32a223eaafff631e617aacb724e19470b28dc73028856ec318f",
+      "holdout_sources": [
+        "mmlu",
+        "emotion",
+        "tweet_offensive",
+        "qnli",
+        "paws",
+        "sciq",
+        "contrastive",
+        "legacy_holdout",
+        "composition_holdout"
+      ],
+      "split": "test"
+    },
+    {
+      "id": "kev/v7/decision-v7/development",
+      "path": "panels/kev--v7--decision-v7--development.jsonl",
+      "sha256": "83804ba55c5d172839177c79aa343a8f7df34dd72db45583d1b664e316d24d0f",
+      "records": 1204,
+      "questions": 1468,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 756,
+        "noul": 472,
+        "score": 240
+      },
+      "upstream_path": "evals/v7/decision-v7/development.jsonl",
+      "upstream_sha256": "8d5765d7aec4d08c61854f4664ca79ec2ba44ed092e9b967eaf61ed86c496d9c",
+      "upstream_manifest_sha256": "a8f50e481b7d90b97da049e0ff6a01cee2f1ed204aed61a8265af0edbb5514d2",
+      "holdout_sources": [],
+      "split": "development"
+    },
+    {
+      "id": "kev/v7/decision-v7/test",
+      "path": "panels/kev--v7--decision-v7--test.jsonl",
+      "sha256": "1963c5fead9e7cf01587e4f9bc5e431490d189549d9ecbe8ee090073726e7cf3",
+      "records": 1176,
+      "questions": 1440,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 696,
+        "noul": 504,
+        "score": 240
+      },
+      "upstream_path": "evals/v7/decision-v7/test.jsonl",
+      "upstream_sha256": "cd7d129a84232e0c7a4e92b4840a6dfe14c8bb93c5d1904b526fa8c085325d2d",
+      "upstream_manifest_sha256": "a8f50e481b7d90b97da049e0ff6a01cee2f1ed204aed61a8265af0edbb5514d2",
+      "holdout_sources": [],
+      "split": "test"
+    },
+    {
+      "id": "kev/v8/decision-v8/development",
+      "path": "panels/kev--v8--decision-v8--development.jsonl",
+      "sha256": "83804ba55c5d172839177c79aa343a8f7df34dd72db45583d1b664e316d24d0f",
+      "records": 1204,
+      "questions": 1468,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 756,
+        "noul": 472,
+        "score": 240
+      },
+      "upstream_path": "evals/v8/decision-v8/development.jsonl",
+      "upstream_sha256": "8d5765d7aec4d08c61854f4664ca79ec2ba44ed092e9b967eaf61ed86c496d9c",
+      "upstream_manifest_sha256": "bc08479a5407977b71f660cdc7a28294eef4146620935115ca533a0c5d15b691",
+      "holdout_sources": [],
+      "split": "development"
+    },
+    {
+      "id": "kev/v8/decision-v8/test",
+      "path": "panels/kev--v8--decision-v8--test.jsonl",
+      "sha256": "1963c5fead9e7cf01587e4f9bc5e431490d189549d9ecbe8ee090073726e7cf3",
+      "records": 1176,
+      "questions": 1440,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 696,
+        "noul": 504,
+        "score": 240
+      },
+      "upstream_path": "evals/v8/decision-v8/test.jsonl",
+      "upstream_sha256": "cd7d129a84232e0c7a4e92b4840a6dfe14c8bb93c5d1904b526fa8c085325d2d",
+      "upstream_manifest_sha256": "bc08479a5407977b71f660cdc7a28294eef4146620935115ca533a0c5d15b691",
+      "holdout_sources": [],
+      "split": "test"
+    },
+    {
+      "id": "kev/v9/transfer-v9/development",
+      "path": "panels/kev--v9--transfer-v9--development.jsonl",
+      "sha256": "cad17c4c360f66a5971191369eff7bbdc7cacb0fcc661fb1a4ac8f9199e68791",
+      "records": 1264,
+      "questions": 1264,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 704,
+        "noul": 400,
+        "score": 160
+      },
+      "upstream_path": "evals/v9/transfer-v9/development.jsonl",
+      "upstream_sha256": "53872ba045564315cf3c3dd8fb656e76441c6c514b1a7ff985ff0db3955710cf",
+      "upstream_manifest_sha256": "3c4f0be94509a3612678bfd3a30fd99a8d0ca3c47ddfe7318075d95b2fa365e4",
+      "holdout_sources": [
+        "mmlu",
+        "emotion",
+        "tweet_offensive",
+        "qnli",
+        "paws",
+        "sciq",
+        "contrastive",
+        "legacy_holdout",
+        "composition_holdout"
+      ],
+      "split": "development"
+    },
+    {
+      "id": "kev/v9/transfer-v9/test",
+      "path": "panels/kev--v9--transfer-v9--test.jsonl",
+      "sha256": "595b53e3efa7b18e6c3db9efad4107328dd1a4e9b7968af98ab6092d65505ccf",
+      "records": 1264,
+      "questions": 1264,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 704,
+        "noul": 400,
+        "score": 160
+      },
+      "upstream_path": "evals/v9/transfer-v9/test.jsonl",
+      "upstream_sha256": "048abea5e12c73c3a622ce5836898c00fa43766e0bf48fb2459e77ee9873497f",
+      "upstream_manifest_sha256": "3c4f0be94509a3612678bfd3a30fd99a8d0ca3c47ddfe7318075d95b2fa365e4",
+      "holdout_sources": [
+        "mmlu",
+        "emotion",
+        "tweet_offensive",
+        "qnli",
+        "paws",
+        "sciq",
+        "contrastive",
+        "legacy_holdout",
+        "composition_holdout"
+      ],
+      "split": "test"
+    },
+    {
+      "id": "kev/external/ekzhang-mmlupro-v1/records",
+      "path": "panels/kev--external--ekzhang-mmlupro-v1--records.jsonl",
+      "sha256": "e13d7851f5b295b9a78e4b89e208962c4ba754afb187013ad99a93ac132a0e4d",
+      "records": 1000,
+      "questions": 1000,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 1000
+      },
+      "split": "external",
+      "purpose": "external test",
+      "upstream_path": "evals/external/ekzhang-mmlupro-v1/records.jsonl",
+      "upstream_sha256": "8bfde622e5a7b09b5133f2c7de8761422230e1dc4f8f7241b125b6499516b1f3",
+      "upstream_manifest_sha256": "a250a76f5e6680d4dd361546af4d539dd9df4ca92444c575e69be84581119f25"
+    },
+    {
+      "id": "kev/diagnostics/binding-v1",
+      "path": "panels/kev--diagnostics--binding-v1.jsonl",
+      "sha256": "fd678848e8ba7590ae3c66a9dfbf6f814c1472fe9aeb37002b9a43bc232c326b",
+      "records": 560,
+      "questions": 560,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "choice": 560
+      },
+      "split": "external",
+      "purpose": "evaluation diagnostic",
+      "upstream_path": "evals/diagnostics/binding-v1.jsonl",
+      "upstream_sha256": "0b00da23a732db87bddb3c582a02c8d0de9f76cb26d20f8453f73141bbfdacc8",
+      "upstream_manifest_sha256": "248f4a354a614ec842be70e0bd2b65df58b6bbc50057d279ab2c6fc067ba59dc"
+    },
+    {
+      "id": "kev/night2/dates",
+      "path": "panels/kev--night2--dates.jsonl",
+      "sha256": "803a07e45d1c2e16f56099987da2a340040a9eb55bb3cc7d909957f6075244f0",
+      "records": 900,
+      "questions": 900,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "noul": 300,
+        "score": 600
+      },
+      "split": "training_diagnostic",
+      "purpose": "later used for Kev fine-tuning",
+      "upstream_path": "evals/night2/dates.jsonl",
+      "upstream_sha256": "9d068b1e7d382992add46e93b22a9d539036f4db78b576ea07c0954534b3d401",
+      "upstream_manifest_sha256": "520b5d95e877fa972ac24d5c137c6b1e602fec709b935913dab86e40c83a34d1"
+    },
+    {
+      "id": "kev/night2/unknowable",
+      "path": "panels/kev--night2--unknowable.jsonl",
+      "sha256": "603b67c71c2471ebec70931ae3b0db871c78ece8b842ca71ebdc31be62aa3b3a",
+      "records": 525,
+      "questions": 525,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "noul": 116,
+        "choice": 109,
+        "score": 300
+      },
+      "split": "training_diagnostic",
+      "purpose": "later used for Kev fine-tuning",
+      "upstream_path": "evals/night2/unknowable.jsonl",
+      "upstream_sha256": "7d3ec178c743e922a491d372bf0920b5a341260414d38c99d7c1159855bf6e14",
+      "upstream_manifest_sha256": "520b5d95e877fa972ac24d5c137c6b1e602fec709b935913dab86e40c83a34d1"
+    },
+    {
+      "id": "kev/night2/assertion",
+      "path": "panels/kev--night2--assertion.jsonl",
+      "sha256": "84129094c5e5978d9f1036f609347c93194ce739ed8e9dcff07c724e86286493",
+      "records": 800,
+      "questions": 1020,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "noul": 1020
+      },
+      "split": "training_diagnostic",
+      "purpose": "later used for Kev fine-tuning",
+      "upstream_path": "evals/night2/assertion.jsonl",
+      "upstream_sha256": "0cf795280db6c16ec66499b6d8e5326215080e76a1f5b0a1a265d1f8ef9dd164",
+      "upstream_manifest_sha256": "520b5d95e877fa972ac24d5c137c6b1e602fec709b935913dab86e40c83a34d1"
+    },
+    {
+      "id": "kev/night2/all",
+      "path": "panels/kev--night2--all.jsonl",
+      "sha256": "8cd50694162269ae80218a5edb53f9de2032fe5b041652a6e7c9d4e010834c92",
+      "records": 2225,
+      "questions": 2445,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "noul": 1436,
+        "score": 900,
+        "choice": 109
+      },
+      "split": "training_diagnostic",
+      "purpose": "later used for Kev fine-tuning",
+      "upstream_path": "evals/night2/all.jsonl",
+      "upstream_sha256": "b8692830579a1b501aed66a4b5490c943a6fc47d5eca2ac7d1fa132eda0a3319",
+      "upstream_manifest_sha256": "520b5d95e877fa972ac24d5c137c6b1e602fec709b935913dab86e40c83a34d1"
+    },
+    {
+      "id": "kev/night2/dates_unknowable",
+      "path": "panels/kev--night2--dates_unknowable.jsonl",
+      "sha256": "4fbfb1e9d87be6c85a3063ee9aecd50358375ca346a7039b1c9a01553317657f",
+      "records": 1425,
+      "questions": 1425,
+      "source": "kev",
+      "protocol": "kev",
+      "context": {
+        "max_state": 384,
+        "max_branch": 1024,
+        "max_packed": 2048
+      },
+      "types": {
+        "noul": 416,
+        "score": 900,
+        "choice": 109
+      },
+      "split": "training_diagnostic",
+      "purpose": "later used for Kev fine-tuning",
+      "upstream_path": "evals/night2/dates_unknowable.jsonl",
+      "upstream_sha256": "afd8502d162163605ac446439e32c7b9083302dd78a6bfdc5e30075619e98437",
+      "upstream_manifest_sha256": "520b5d95e877fa972ac24d5c137c6b1e602fec709b935913dab86e40c83a34d1"
+    },
+    {
+      "id": "jevbench/easy",
+      "path": "panels/jevbench--easy.jsonl",
+      "sha256": "310206552a9dc72c8ef19e8755bc7d1518f9421ff3c0fe4cd93e3c0e28b6ae7d",
+      "records": 48,
+      "questions": 48,
+      "source": "jevbench",
+      "protocol": "jevbench",
+      "context": {
+        "max_state": 8192,
+        "max_branch": 8192,
+        "max_packed": 16384
+      },
+      "types": {
+        "choice": 36,
+        "noul": 12
+      },
+      "split": "public",
+      "upstream_path": "datasets/public/easy.jsonl",
+      "upstream_sha256": "231df3c2c8e88a1a8c137ebe85de96ba70fabd330849098ac7b3c52c70b7172b",
+      "public_only": true
+    },
+    {
+      "id": "jevbench/original",
+      "path": "panels/jevbench--original.jsonl",
+      "sha256": "3dc55807489a5339982098df53ff7fb70b9b2df9ca2fd3b09958d7365f247004",
+      "records": 72,
+      "questions": 72,
+      "source": "jevbench",
+      "protocol": "jevbench",
+      "context": {
+        "max_state": 8192,
+        "max_branch": 8192,
+        "max_packed": 16384
+      },
+      "types": {
+        "noul": 24,
+        "choice": 36,
+        "score": 12
+      },
+      "split": "public",
+      "upstream_path": "datasets/public/original.jsonl",
+      "upstream_sha256": "5c2414edb3006b8bfcb70fda433f0f9ca015759433849f8d3104328a1f7c4180",
+      "public_only": true
+    },
+    {
+      "id": "jevbench/hard",
+      "path": "panels/jevbench--hard.jsonl",
+      "sha256": "cfbc8c070cebdff0271ba060593f5f21474df43c8dd8b2a8bafe15f39bb25beb",
+      "records": 111,
+      "questions": 111,
+      "source": "jevbench",
+      "protocol": "jevbench",
+      "context": {
+        "max_state": 8192,
+        "max_branch": 8192,
+        "max_packed": 16384
+      },
+      "types": {
+        "choice": 67,
+        "noul": 38,
+        "score": 6
+      },
+      "split": "public",
+      "upstream_path": "datasets/public/hard.jsonl",
+      "upstream_sha256": "89e9e6becb33ed88c1de7d42dcc87531b2fb64cfaef4e1986faf7c37b3f80ebb",
+      "public_only": true
+    }
+  ],
+  "unavailable": [
+    {
+      "id": "kev/agents-ood-v1/development",
+      "upstream_path": "evals/agents-ood-v1/development.jsonl",
+      "upstream_sha256": "dab5d4a9a93c50d941d507e30663a6ca82f9e1f2d08647a1cd89adbdfbf7999d",
+      "upstream_manifest_sha256": "feebba9583c2523622ead1833176b0badc45e3f0be46cd19c9ea9c6377f758d9",
+      "holdout_sources": [],
+      "split": "development",
+      "records": 373,
+      "reason": "upstream partition is not public",
+      "mirror": {
+        "dataset": "jaredpalmer/kev-private-evals",
+        "revision": "d6498d4c42a3f85865dc776a24bf076ae0e1e267"
+      }
+    },
+    {
+      "id": "kev/breadth-v1/development",
+      "upstream_path": "evals/breadth-v1/development.jsonl",
+      "upstream_sha256": "9aad8f4a7374988b2768d31135d5690137df3a3d6cbc1e771db4ee95ca515a94",
+      "upstream_manifest_sha256": "6a391fedf285f2f8584f0ff1a5d845a119dd34cd16c58f8aa320c8beced54563",
+      "holdout_sources": [],
+      "split": "development",
+      "records": 1990,
+      "reason": "upstream partition is not public",
+      "mirror": {
+        "dataset": "jaredpalmer/kev-private-evals",
+        "revision": "aeaaed0f7532509608a23140130e389baac94f91"
+      }
+    },
+    {
+      "id": "kev/breadth-v1/test",
+      "upstream_path": "evals/breadth-v1/test.jsonl",
+      "upstream_sha256": "91a64f0a9448dcaece421c051a4b3fd079c15b84ea6cb9cfa8155237d8d1fa18",
+      "upstream_manifest_sha256": "6a391fedf285f2f8584f0ff1a5d845a119dd34cd16c58f8aa320c8beced54563",
+      "holdout_sources": [],
+      "split": "test",
+      "records": 1990,
+      "reason": "upstream partition is not public",
+      "mirror": {
+        "dataset": "jaredpalmer/kev-private-evals",
+        "revision": "aeaaed0f7532509608a23140130e389baac94f91"
+      }
+    },
+    {
+      "id": "kev/documents-v2/test",
+      "upstream_path": "evals/documents-v2/test.jsonl",
+      "upstream_sha256": "e5b53be5c6b34b5d0f912d7e14adaac45f1df4ba8ec77a3e544ada5b3197eef7",
+      "upstream_manifest_sha256": "f4d0a1dc1bce4ae0538becc5779907f7d2c0bf92fa3ed044bd1720971dae66ee",
+      "holdout_sources": [],
+      "split": "test",
+      "records": 577,
+      "reason": "upstream partition is not public",
+      "mirror": {
+        "dataset": "jaredpalmer/kev-private-evals",
+        "revision": "a54a79c4a4272d7ae458af57645252c5644e4fb0"
+      }
+    },
+    {
+      "id": "kev/guardrails-ood-v1/development",
+      "upstream_path": "evals/guardrails-ood-v1/development.jsonl",
+      "upstream_sha256": "99f8a1aa2608caff9d90aea3dc900f00817cb7d7f263006ebb690b901103f428",
+      "upstream_manifest_sha256": "68405d483c2a48b8603be25f898c5f1d16d9bb5d5fc92bac0e52f9e488dfd505",
+      "holdout_sources": [],
+      "split": "development",
+      "records": 1263,
+      "reason": "upstream partition is not public",
+      "mirror": {
+        "dataset": "jaredpalmer/kev-private-evals",
+        "revision": "d6498d4c42a3f85865dc776a24bf076ae0e1e267"
+      }
+    },
+    {
+      "id": "kev/longdoc-v1/development",
+      "upstream_path": "evals/longdoc-v1/development.jsonl",
+      "upstream_sha256": "185565956bc77bb722245ce902d643d87f9be57bd242c4df89c690fefa90611c",
+      "upstream_manifest_sha256": "8ee78c8474bc5e0314d05d8954e6e297372170f1a780672a6516e71fbd0455d7",
+      "holdout_sources": [],
+      "split": "development",
+      "records": 1200,
+      "reason": "upstream partition is not public",
+      "mirror": {
+        "dataset": "jaredpalmer/kev-private-evals",
+        "revision": "f6a0fbde99197658a5db53a37163fc39e0b94d37"
+      }
+    },
+    {
+      "id": "kev/longdoc-v1/test",
+      "upstream_path": "evals/longdoc-v1/test.jsonl",
+      "upstream_sha256": "900144fb3e8259afc0f04f6b31f529fa1dc9b925df6ad4bcd8036da5842470b8",
+      "upstream_manifest_sha256": "8ee78c8474bc5e0314d05d8954e6e297372170f1a780672a6516e71fbd0455d7",
+      "holdout_sources": [],
+      "split": "test",
+      "records": 1200,
+      "reason": "upstream partition is not public",
+      "mirror": {
+        "dataset": "jaredpalmer/kev-private-evals",
+        "revision": "f6a0fbde99197658a5db53a37163fc39e0b94d37"
+      }
+    },
+    {
+      "id": "kev/ood-v2/development",
+      "upstream_path": "evals/ood-v2/development.jsonl",
+      "upstream_sha256": "ba48a07be0274fdd90b8b3678bab98a56b2981167045c08c9ddcb28e4a9817e3",
+      "upstream_manifest_sha256": "47758ee2e3213f9200698ee791099fd11bb3372ef6824dcb8715d4d0d2dae87c",
+      "holdout_sources": [],
+      "split": "development",
+      "records": 1686,
+      "reason": "upstream partition is not public",
+      "mirror": {
+        "dataset": "jaredpalmer/kev-private-evals",
+        "revision": "d6498d4c42a3f85865dc776a24bf076ae0e1e267"
+      }
+    },
+    {
+      "id": "kev/sft-v1/development",
+      "upstream_path": "evals/sft-v1/development.jsonl",
+      "upstream_sha256": "a5941af2227d513f823b2d24aee5840d5ece0d419e6a95e3748d5ad4da07b104",
+      "upstream_manifest_sha256": "6e0d01505df4b12416571b0ca895f40729262e8058ea902457a052dff646d78a",
+      "holdout_sources": [],
+      "split": "development",
+      "records": 3483,
+      "reason": "upstream partition is not public",
+      "mirror": {
+        "dataset": "jaredpalmer/kev-private-train",
+        "revision": "119c1e7da94e763d912025585b9a85ecf207e0c1"
+      }
+    },
+    {
+      "id": "kev/sft-v2/development",
+      "upstream_path": "evals/sft-v2/development.jsonl",
+      "upstream_sha256": "1f7f43dcbc1a12ed9906aa378dc71b2b63e93bfd677a27f2fc948355b7984a9a",
+      "upstream_manifest_sha256": "ae4d593a6fc5959cf0086c510c05bc7e9d88d4704c00ee614eb640e4a1d7a138",
+      "holdout_sources": [],
+      "split": "development",
+      "records": 6470,
+      "reason": "upstream partition is not public",
+      "mirror": {
+        "dataset": "jaredpalmer/kev-private-train",
+        "revision": "97d545ff4c316cbff1e0d59232e6155128e461d8"
+      }
+    },
+    {
+      "id": "kev/sft-v2-r21/development",
+      "upstream_path": "evals/sft-v2-r21/development.jsonl",
+      "upstream_sha256": "92211e3207ca89c5d033ea2d7bb59a9fb46a4289722ed70103e06877a50ff5d6",
+      "upstream_manifest_sha256": "193a5f2352bfc3e83cd51e48b04d839e9bfdf31c6f015172340af668b8e947a7",
+      "holdout_sources": [],
+      "split": "development",
+      "records": 6201,
+      "reason": "upstream partition is not public",
+      "mirror": {
+        "dataset": "jaredpalmer/kev-private-train",
+        "revision": "c00d1c957f4d0f1fd4869621bd4829cf8ce81d2e"
+      }
+    },
+    {
+      "id": "kev/sft-v2-r22/development",
+      "upstream_path": "evals/sft-v2-r22/development.jsonl",
+      "upstream_sha256": "92211e3207ca89c5d033ea2d7bb59a9fb46a4289722ed70103e06877a50ff5d6",
+      "upstream_manifest_sha256": "74ea7052496122d6beafa3af2633bdea6c2c57dd1af41aace654026b02049fba",
+      "holdout_sources": [],
+      "split": "development",
+      "records": 6201,
+      "reason": "upstream partition is not public",
+      "mirror": {
+        "dataset": "jaredpalmer/kev-private-train",
+        "revision": "f8d59fbb6b1019c2e666658447f571ad64d7de30"
+      }
+    },
+    {
+      "id": "kev/tasksource-heldout-v1/development",
+      "upstream_path": "evals/tasksource-heldout-v1/development.jsonl",
+      "upstream_sha256": "5032ef8f2cb84dae78e6da8a204479e1ce04c133d3a7b893d5ce8015ff11c25a",
+      "upstream_manifest_sha256": "327f4e1a2d0cd94aa7a37ee5452b2188756676e235c4179763dee5acc6376c87",
+      "holdout_sources": [],
+      "split": "development",
+      "records": 2386,
+      "reason": "upstream partition is not public",
+      "mirror": {
+        "dataset": "jaredpalmer/kev-private-evals",
+        "revision": "e4f2c71de2b1c9d1d6f2a939aff20f8d12d24471"
+      }
+    },
+    {
+      "id": "kev/tasksource-heldout-v1/test",
+      "upstream_path": "evals/tasksource-heldout-v1/test.jsonl",
+      "upstream_sha256": "ea73d5e5373810e111ef8b239b449f956c894fe0c3f31256ee3ce8092d5564f5",
+      "upstream_manifest_sha256": "327f4e1a2d0cd94aa7a37ee5452b2188756676e235c4179763dee5acc6376c87",
+      "holdout_sources": [],
+      "split": "test",
+      "records": 2395,
+      "reason": "upstream partition is not public",
+      "mirror": {
+        "dataset": "jaredpalmer/kev-private-evals",
+        "revision": "e4f2c71de2b1c9d1d6f2a939aff20f8d12d24471"
+      }
+    }
+  ],
+  "official_jev": {
+    "live_api_run": false,
+    "reason": "No configured Jev, TypeSafe, or AI Gateway API key",
+    "kev_published_reports": 12,
+    "jevbench_published_reference": {
+      "provenance": "published_by_JevBench_not_rerun",
+      "model": "Jev 1.13.0 (TypeSafe AI)",
+      "source_path": "results/v1.2/jevbench-v1.2-per-task.json",
+      "source_sha256": "c772b3b85809f483449ec2a6ae0272347371ed5f40f7faff8394ecf4ee22ae7c",
+      "match_basis": "public task IDs at the pinned source revision",
+      "note": "accuracy only; no probabilities published, so calibration is unavailable",
+      "panels": {
+        "jevbench/easy": {
+          "questions": 48,
+          "correct": 48,
+          "accuracy": 1.0
+        },
+        "jevbench/original": {
+          "questions": 72,
+          "correct": 71,
+          "accuracy": 0.9861111111111112
+        },
+        "jevbench/hard": {
+          "questions": 111,
+          "correct": 81,
+          "accuracy": 0.7297297297297297
+        }
+      }
+    }
+  },
+  "artifacts": {
+    "scores.csv": {
+      "sha256": "2e765a9a5604de6a3b2eda6e317177be7cf94410a9de78a6413579d4f888022b",
+      "bytes": 271219
+    },
+    "accuracy.csv": {
+      "sha256": "f86c5ce80ad6a825441fb787f26a88e72ad55656c5fd8f2b93218c96cb923849",
+      "bytes": 20753
+    },
+    "comparison.json.gz": {
+      "sha256": "cbb18417d5f036588e09def9c039292361f850a37a21bbc09e9bcab7cf81a40f",
+      "bytes": 8156400
+    },
+    "official-jev-references.json": {
+      "sha256": "44d02c151272c4d9b495c52b1bb44559a9627e89551bc8eaf4d7cd75b66687cb",
+      "bytes": 249686
+    }
+  }
+}

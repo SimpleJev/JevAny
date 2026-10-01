@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a1114">
+<title>JevAny-27B-SFT v0.2 — JevAny</title><link rel="stylesheet" href="../styles.css"><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"></head>
+<body class="docs-page"><a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header wrap"><a class="brand" href="../index.html"><img src="../assets/favicon.svg" width="30" height="30" alt=""><span>JevAny<span class="brand-period">.</span></span></a>
+<nav aria-label="Main navigation"><a href="../index.html#benchmarks">Benchmarks</a><a href="../index.html#models">Models</a><a href="../index.html#get-started">Get started</a></nav></header>
+<div class="docs-layout wrap"><aside class="docs-sidebar"><a class="text-link" href="../index.html">← Project homepage</a><nav aria-label="Documentation"><a href="quickstart.html">Quickstart</a><a href="TRAINING.html">Training</a><a href="DATA.html">Data</a><a href="DEPLOYMENT.html">Deployment</a><a href="API.html">API reference</a><a href="examples.html">Examples</a><a href="CASES.html">Cases</a><a href="EVALUATION.html">Evaluation</a><a href="ALGORITHM.html">Method</a><a href="INTEGRATIONS.html">Integrations</a><a href="zh.html">中文文档</a></nav>
+<details class="doc-toc"><summary>On this page</summary><div class="toc">
+<ul>
+<li><a href="#intended-use">Intended Use</a></li>
+<li><a href="#training">Training</a></li>
+<li><a href="#evaluation">Evaluation</a></li>
+<li><a href="#usage">Usage</a></li>
+<li><a href="#limits">Limits</a></li>
+</ul>
+</div>
+</details></aside>
+<main id="content" class="doc-content"><p class="eyebrow">JEVANY / DOCUMENTATION</p><h1>JevAny-27B-SFT v0.2</h1><p><a href="https://huggingface.co/SimpleJev/JevAny-Qwen3.8-27B-LoRA">JevAny-Qwen3.8-27B</a> is the current recommended general JevAny checkpoint. It uses a rank-8 LoRA adapter and a residual pointer head with a readout dimension of 256 on <code>Qwen/Qwen3.8-27B</code>. It maps shared state and typed questions to option probabilities without decoding answer tokens.</p>
+<h2 id="intended-use">Intended Use</h2>
+<p>Use this checkpoint for bounded classification, routing, ranking, tool choice, agent actions, and confidence-aware decisions. It accepts choice, noul, and ordinal score questions through the JevAny API.</p>
+<h2 id="training">Training</h2>
+<p>The adapter and residual pointer head were trained with supervised fine-tuning on <strong>1,772,725 text records</strong> containing <strong>2,180,242 labelled decisions</strong>. The corpus spans preference, agent and tool decisions, reasoning, classification, and safety. The base weights remain frozen. See the <a href="DATA.html#current-release-scale">current training corpus</a> for the release scope and data disclosure.</p>
+<h2 id="evaluation">Evaluation</h2>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Evaluation</th>
+<th style="text-align: right;">Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Transfer accuracy (1,046 clean, knowable decisions)</td>
+<td style="text-align: right;">85.76%</td>
+</tr>
+<tr>
+<td>JevBench public-development accuracy (231 items)</td>
+<td style="text-align: right;">90.48%</td>
+</tr>
+</tbody>
+</table></div>
+<p>Transfer uses Kev's frozen <code>transfer-v9</code> suite and also informed model development. JevBench reports accuracy on all 231 public development items; it is not a sealed Benchmark Heaven score. Full measurements and suite identifiers are in the <a href="../files/results/model-family-v2.json">release results</a>, with protocols in the <a href="EVALUATION.html#model-family-v2">evaluation guide</a>.</p>
+<h2 id="usage">Usage</h2>
+<p>From the repository root, install the serving dependencies and load the published adapter:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m pip install -e '.[serve,multimodal]'
+jevany serve --checkpoint SimpleJev/JevAny-Qwen3.8-27B-LoRA --device cuda --dtype bf16
+</code></pre>
+<h2 id="limits">Limits</h2>
+<p>The released path accepts text, JSON-renderable state, native images, and native video. Multimodal requests currently contain one isolated question and use a bounded visual token budget. HTTP media is operator opt-in through a controlled local root; network media URLs are rejected. Requests must fit the checkpoint's context and configured token limits; see the <a href="DEPLOYMENT.html#native-media-and-limits">deployment guide</a>. Calibration can shift under new data, so validate thresholds on a deployment-specific calibration set. The adapter requires the separately distributed Qwen base weights and JevAny runtime.</p></main></div>
+<footer class="site-footer wrap"><a href="../index.html">← Back to JevAny</a><a href="license.html">Apache-2.0 code</a></footer></body></html>

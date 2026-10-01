@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a1114">
+<title>Cases — JevAny</title><link rel="stylesheet" href="../styles.css"><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"></head>
+<body class="docs-page"><a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header wrap"><a class="brand" href="../index.html"><img src="../assets/favicon.svg" width="30" height="30" alt=""><span>JevAny<span class="brand-period">.</span></span></a>
+<nav aria-label="Main navigation"><a href="../index.html#benchmarks">Benchmarks</a><a href="../index.html#models">Models</a><a href="../index.html#get-started">Get started</a></nav></header>
+<div class="docs-layout wrap"><aside class="docs-sidebar"><a class="text-link" href="../index.html">← Project homepage</a><nav aria-label="Documentation"><a href="quickstart.html">Quickstart</a><a href="TRAINING.html">Training</a><a href="DATA.html">Data</a><a href="DEPLOYMENT.html">Deployment</a><a href="API.html">API reference</a><a href="examples.html">Examples</a><a href="CASES.html" aria-current="page">Cases</a><a href="EVALUATION.html">Evaluation</a><a href="ALGORITHM.html">Method</a><a href="INTEGRATIONS.html">Integrations</a><a href="zh.html">中文文档</a></nav>
+<details class="doc-toc"><summary>On this page</summary><div class="toc">
+<ul>
+<li><a href="#robotics-assembly-and-laboratory-automation">Robotics, assembly and laboratory automation</a></li>
+<li><a href="#mobility-and-fulfillment">Mobility and fulfillment</a></li>
+<li><a href="#geospatial-analysis-services-and-tactical-decisions">Geospatial analysis, services and tactical decisions</a></li>
+<li><a href="#browser-work-and-productivity">Browser work and productivity</a></li>
+<li><a href="#software-and-data-workflows">Software and data workflows</a></li>
+<li><a href="#recording-notes">Recording notes</a></li>
+</ul>
+</div>
+</details></aside>
+<main id="content" class="doc-content"><p class="eyebrow">JEVANY / DOCUMENTATION</p><h1>Cases</h1><p>These are archived replays from an earlier compatible JevAny checkpoint. The
+overview preserves each selected action and its probability from the original
+run. The current default release is
+<a href="https://huggingface.co/SimpleJev/JevAny-Qwen3.8-27B-LoRA">JevAny-Qwen3.8-27B</a>.</p>
+<p><a href="../index.html#case-library">Explore all 30 replays on the homepage</a></p>
+<h2 id="robotics-assembly-and-laboratory-automation">Robotics, assembly and laboratory automation</h2>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Task</th>
+<th>Replay</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Robot assembly</td>
+<td>Commission an inspection rover with a 24 V bus, a 5 V camera rail, inspection firmware, fresh wiring measurements and camera calibration. Mechanical access, power isolation and test validity constrain the order of work.</td>
+<td><a href="../assets/media/assembly.mp4" class="doc-replay">Watch replay ▷</a></td>
+</tr>
+<tr>
+<td>Laboratory automation</td>
+<td>Calibrate the pipette, transfer 40 µL blue and 20 µL red into B3, and mix without contaminating the stocks. Calibration after a transfer does not repair a wrong dose; excessive mixing speed spills liquid.</td>
+<td><a href="../assets/media/lab.mp4" class="doc-replay">Watch replay ▷</a></td>
+</tr>
+<tr>
+<td>Circuit-board inspection</td>
+<td>Distinguish cosmetic surface marks from electrical discontinuity before diverting a board. Optical inspection and measured resistance must lead to the correct shipment, without discarding intact boards.</td>
+<td><a href="../assets/media/quality.mp4" class="doc-replay">Watch replay ▷</a></td>
+</tr>
+<tr>
+<td>Drawer manipulation</td>
+<td>Reach and grasp the handle, pull the drawer open by 14.86 cm, then release it. The close view exposes the sliding mechanism.</td>
+<td><a href="../assets/media/drawer_opening.mp4" class="doc-replay">Watch replay ▷</a></td>
+</tr>
+<tr>
+<td>Peg insertion</td>
+<td>Grasp the green peg, lift it over the cyan socket, lower it and release it to settle inside the opening.</td>
+<td><a href="../assets/media/peg_insertion.mp4" class="doc-replay">Watch replay ▷</a></td>
+</tr>
+<tr>
+<td>Conveyor sorting</td>
+<td>Advance and stop the belt, grasp the green parcel, and place it in the matching bin.</td>
+<td><a href="../assets/media/conveyor_sorting.mp4" class="doc-replay">Watch replay ▷</a></td>
+</tr>
+<tr>
+<td>Contact manipulation</td>
+<td>Choose a contact path around the barrier from seven persistent motion controls. Touching the obstacle counts against the run even if the part later reaches the target.</td>
+<td><a href="../assets/media/obstacle_push.mp4" class="doc-replay">Watch replay ▷</a></td>
+</tr>
+<tr>
+<td>Physical control panel</td>
+<td>Use short and long physical button presses to isolate power, bleed pressure, clamp and commission a fixture at 20–30 kPa. Loaded clamping and overpressure create faults. Button travel is Bullet physics; pressure and interlocks use an explicit state model.</td>
+<td><a href="../assets/media/control_panel.mp4" class="doc-replay">Watch replay ▷</a></td>
+</tr>
+<tr>
+<td>Block stacking</td>
+<td>Grasp and lift the green block, seat it on the blue base, and release the stack. The side view makes the contact height visible.</td>
+<td><a href="../assets/media/block_stacking.mp4" class="doc-replay">Watch replay ▷</a></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="mobility-and-fulfillment">Mobility and fulfillment</h2>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Task</th>
+<th>Replay</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Drone delivery</td>
+<td>Plan for route energy, pad occupancy, waiting and landing, then deliver with at least 12 energy units in reserve. Waiting consumes energy; releasing before landing loses the payload.</td>
+<td><a href="../assets/media/drone.mp4" class="doc-replay">Watch replay ▷</a></td>
+</tr>
+<tr>
+<td>Warehouse fulfillment</td>
+<td>Navigate to the rack, load the matching SKU, scan its barcode and secure the fragile parcel before padded dispatch. Wrong cargo and transit damage persist into the receipt.</td>
+<td><a href="../assets/media/warehouse.mp4" class="doc-replay">Watch replay ▷</a></td>
+</tr>
+<tr>
+<td>Roadworks bypass</td>
+<td>Choose among eight persistent controls using measured geometry. Drive around the roadworks, return and stop without obstacle contact.</td>
+<td><a href="../assets/media/lane_change.mp4" class="doc-replay">Watch replay ▷</a></td>
+</tr>
+<tr>
+<td>Warehouse navigation</td>
+<td>Choose among eight waypoints from the current pose and shelf geometry. The Husky must reach its dock without contact; candidate names do not reveal the safe sequence.</td>
+<td><a href="../assets/media/warehouse_rover.mp4" class="doc-replay">Watch replay ▷</a></td>
+</tr>
+<tr>
+<td>Pedestrian yielding</td>
+<td>The pedestrian moves independently as simulated time advances. Choose where to wait and for how long; entering while occupied remains a violation after the pedestrian clears.</td>
+<td><a href="../assets/media/crosswalk.mp4" class="doc-replay">Watch replay ▷</a></td>
+</tr>
+<tr>
+<td>Fleet dispatch</td>
+<td>Coordinate payload, cold-chain temperature, range budget and bridge clearance. Repeated dispatches consume resources, so a correct vehicle assignment alone does not complete both deliveries.</td>
+<td><a href="../assets/media/fleet.mp4" class="doc-replay">Watch replay ▷</a></td>
+</tr>
+<tr>
+<td>City-road driving</td>
+<td>Treat crosswalk clearance and the rear-lane gap as separate observations. Use a current gap measurement to merge safely, reach the north exit and stop.</td>
+<td><a href="../assets/media/driving.mp4" class="doc-replay">Watch replay ▷</a></td>
+</tr>
+<tr>
+<td>Reverse parking</td>
+<td>Choose incremental reverse or forward motions using measured bay and vehicle bounds. The entire vehicle must fit between the parked cars, rather than only its reference point.</td>
+<td><a href="../assets/media/reverse_parking.mp4" class="doc-replay">Watch replay ▷</a></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="geospatial-analysis-services-and-tactical-decisions">Geospatial analysis, services and tactical decisions</h2>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Task</th>
+<th>Replay</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Geospatial change analysis</td>
+<td>Register the offset images, mask clouds and measure vegetation change before classification. Export the correct region and coordinate reference as actual GeoJSON.</td>
+<td><a href="../assets/media/satellite.mp4" class="doc-replay">Watch replay ▷</a></td>
+</tr>
+<tr>
+<td>Selective threat response</td>
+<td>An abusive source IP also carries five legitimate sessions. Compare session policies and replay traffic before deployment, preserving both browser and non-browser legitimate clients.</td>
+<td><a href="../assets/media/security.mp4" class="doc-replay">Watch replay ▷</a></td>
+</tr>
+<tr>
+<td>Service recovery</td>
+<td>One current replica lacks full-load capacity; another has stale data. Prepare a replica, test a canary, promote traffic, probe the full load and drain the failed primary without losing the rollout error budget.</td>
+<td><a href="../assets/media/service.mp4" class="doc-replay">Watch replay ▷</a></td>
+</tr>
+<tr>
+<td>Tactical chess</td>
+<td>Find a forced mate in two in a nine-piece position. All legal moves are available without checkmate labels; a defending search chooses a legal reply that avoids mate when possible.</td>
+<td><a href="../assets/media/chess.mp4" class="doc-replay">Watch replay ▷</a></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="browser-work-and-productivity">Browser work and productivity</h2>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Task</th>
+<th>Replay</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Procurement browsing</td>
+<td>Compare hardware, commercial licensing, stock, shipping cost and a three-day deadline against a 650 total budget. Changing the product invalidates the prior quote assumptions.</td>
+<td><a href="../assets/media/procurement.mp4" class="doc-replay">Watch replay ▷</a></td>
+</tr>
+<tr>
+<td>Calendar coordination</td>
+<td>Convert attendee time zones and include 15-minute buffers. Coordinate room occupancy, capacity and a portable display kit, refreshing availability after each draft change.</td>
+<td><a href="../assets/media/calendar.mp4" class="doc-replay">Watch replay ▷</a></td>
+</tr>
+<tr>
+<td>Web research</td>
+<td>Resolve conflicting documentation versions, cite both the current reference and release notes, and run the local command-argument checker before saving the evidence.</td>
+<td><a href="../assets/media/research.mp4" class="doc-replay">Watch replay ▷</a></td>
+</tr>
+<tr>
+<td>Inbox triage</td>
+<td>Read the latest reply and verify the sender before filing. An urgent subject may already be resolved; a receipt subject may conceal a failed payment and deadline.</td>
+<td><a href="../assets/media/inbox.mp4" class="doc-replay">Watch replay ▷</a></td>
+</tr>
+<tr>
+<td>Spreadsheet cleanup</td>
+<td>Keep the latest order revision, parse each row using its own locale and reconcile missing quantities with a shipping ledger. Validate the revenue and export the real cleaned CSV.</td>
+<td><a href="../assets/media/spreadsheet.mp4" class="doc-replay">Watch replay ▷</a></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="software-and-data-workflows">Software and data workflows</h2>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Task</th>
+<th>Replay</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Frontend repair</td>
+<td>Repair card width, shrinking child elements and touch-target size separately. Chromium measures visibility, overflow and 44 px targets at 320, 390 and 680 px; stale measurements cannot authorize publication.</td>
+<td><a href="../assets/media/frontend.mp4" class="doc-replay">Watch replay ▷</a></td>
+</tr>
+<tr>
+<td>SQL repair</td>
+<td>Repair aggregation on actual SQLite data containing equal order amounts, NULLs, drafts and one-to-many lines. Both EXISTS and pre-aggregation can work; SUM(DISTINCT) loses legitimate equal-value orders.</td>
+<td><a href="../assets/media/sql.mp4" class="doc-replay">Watch replay ▷</a></td>
+</tr>
+<tr>
+<td>Build and release recovery</td>
+<td>Package the entry point, settings and selected locale assets, then execute the bundle smoke test. A configuration change after testing requires a fresh build and test before staging.</td>
+<td><a href="../assets/media/ci.mp4" class="doc-replay">Watch replay ▷</a></td>
+</tr>
+<tr>
+<td>Database performance</td>
+<td>Preserve the fresh, complete SQLite result with at most six queries and 24 rows per fetch. A single large batch violates the memory bound; stale caches and limited results fail correctness. Chunking and streaming are both supported.</td>
+<td><a href="../assets/media/performance.mp4" class="doc-replay">Watch replay ▷</a></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="recording-notes">Recording notes</h2>
+<p>The left panel shows recorded candidate probabilities and action replay progress, with execution feedback after each step. Reruns correct stale interface observations and clarify action preconditions while keeping task mechanics and acceptance checks unchanged. The Physical control panel and Tactical chess cases sample from the checkpoint's action distribution. Their GIFs label the sampling policy, and the record also includes the highest-probability action.</p>
+<p>The <a href="../files/docs/demos/case-showcase.json">decision record</a> holds every attempt behind these cases: each candidate distribution, the supplied text state, the selected action and the resulting state. Original observation images and complete physics trajectories stay in the local recording library.</p>
+<p>The 3D replay tiles reconstruct recorded state and motion separately from the model's observation images; additional geometry is for presentation only. The interface cases use browser recordings. Measured accuracy is in <a href="EVALUATION.html">the benchmark evaluations</a>.</p>
+<p><a href="quickstart.html">Back to the README</a></p></main></div>
+<footer class="site-footer wrap"><a href="../index.html">← Back to JevAny</a><a href="license.html">Apache-2.0 code</a></footer></body></html>

@@ -1,0 +1,228 @@
+"""Format observed game state for the checkpoint's next native action."""
+from typing import Any
+
+from jevany.api import validate_response
+from jevany.client import DecisionClient
+from . import CASES
+
+CRAFTER_RULES = (
+    "Each decision executes one native game turn. Movement also changes facing, even when "
+    "a tree, rock, table or water blocks movement. Interact (do) affects ONLY the adjacent "
+    "tile you face; it does not move you toward a distant resource. A tree gives one wood "
+    "and becomes grass. A table costs two wood; a wood pickaxe costs one MORE wood, so "
+    "the crafting task needs three wood total. Crafting works within one tile of a table "
+    "(including diagonals); facing the table is unnecessary. Interacting with a table "
+    "does not craft. A wood pickaxe lets you mine stone. Placing a table needs an empty "
+    "grass, sand, or path tile in front. Completed milestones remain completed; a table "
+    "and pickaxe can be reused. All native actions remain selectable, including actions "
+    "whose ingredients or surroundings are missing."
+)
+
+DIRECTIONS = {(-1, 0): "west", (1, 0): "east", (0, -1): "north", (0, 1): "south"}
+SYMBOLS = {
+    "player": "@", "grass": ".", "path": ":", "sand": ",", "tree": "T",
+    "stone": "R", "water": "~", "table": "B", "coal": "c", "iron": "i",
+    "diamond": "d", "lava": "!", "furnace": "F", "plant": "p",
+    "cow": "C", "zombie": "Z", "skeleton": "S", "arrow": "a", "boundary": "#",
+}
+
+DOOM_RULES = (
+    "Kill BOTH enemies before advancing through the exit. The screenshot is your current "
+    "first-person view. Aim horizontally: the crosshair is at x=320. Turn left to aim at "
+    "an enemy left of the crosshair; turn right for an enemy on its right. Aim at the "
+    "enemy's body center: sprite bounds may include an outstretched arm or weapon. "
+    "Fire when a living enemy's body is within 8 degrees of your aim. "
+    "Dead enemies, dropped weapons, blood and armor "
+    "are not targets. Stop shooting at a target as soon as its death is confirmed, then "
+    "aim at the remaining living enemy. After both kills, turn to face the exit "
+    "(within 10 degrees) and move forward. An aligned heading is good enough for "
+    "forward movement; do not keep turning to chase exact zero or alternate left/right "
+    "when already within tolerance. "
+    "Turning changes aim; strafing moves sideways without turning. The simulation pauses "
+    "between decisions. Every listed control remains available."
+)
+
+
+def doom_state(observation: dict[str, Any]) -> str:
+    """Keep current aim, native deaths and movement progress explicit."""
+    lines = [
+        f"Goal: {CASES['doom']['goal']}",
+        f"Player health={observation['health']:g}, ammo={observation['ammo2']:g}. "
+        f"Native kills={observation['killcount']:g}/2; hits by player={observation['hitcount']:g}.",
+        f"Position x={observation['position_x']:.1f}, y={observation['position_y']:.1f}; "
+        f"heading={(observation['angle'] + 180) % 360 - 180:.1f} degrees. Heading 0 faces down the corridor "
+        "toward the green armor at x=1312, y=0, beyond the room's exit at x=1184. "
+        "Positive headings turn left.",
+        f"Weapon ready to fire: {bool(observation['attack_ready'])}.",
+        "Current visible objects (image width 640; crosshair x=320):",
+    ]
+    for item in observation["visible_objects"]:
+        x, _, width, _ = item["screen_box_xywh"]
+        center = x + width / 2
+        relation = ("crosshair overlaps its horizontal bounds" if x <= 320 < x + width else
+                    f"{abs(center - 320):.0f} pixels {'left' if center < 320 else 'right'} of crosshair")
+        kind = ("DEAD enemy" if item["object"].startswith("Dead") else
+                "LIVING enemy" if item["object"] in ("ShotgunGuy", "ChaingunGuy") else "non-enemy")
+        offset = item["bearing_degrees"]
+        lines.append(f"- {kind}: {item['object']} id={item['id']}, x={x}..{x+width}; {relation}. "
+                     f"Body center is {abs(offset):.1f} degrees {'left' if offset >= 0 else 'right'} "
+                     "of current aim.")
+        if kind == "LIVING enemy":
+            lines.append(f"  Aim at this enemy's body: {'ALIGNED' if abs(offset) <= 8 else 'NOT ALIGNED'} "
+                         "(tolerance 8 degrees).")
+    if observation["cleared_at_x"] is not None:
+        offset = observation["exit_bearing_degrees"]
+        lines.append("Both enemies have been hit and killed. Combat is complete. "
+                     f"The green armor beyond the exit is {abs(offset):.1f} degrees "
+                     f"{'left' if offset >= 0 else 'right'} "
+                     "of your current heading. "
+                     f"Exit alignment: {'ALIGNED' if abs(offset) <= 10 else 'NOT ALIGNED'} "
+                     "(tolerance 10 degrees). Move through the cleared room "
+                     f"to x={max(1184, observation['cleared_at_x'] + 64):.1f}.")
+    lines.append("Last action result: " + observation["feedback"])
+    return "\n".join(lines)
+
+
+def crafter_state(observation: dict[str, Any]) -> str:
+    """Describe the current viewport and resources remembered from earlier views."""
+    inventory, achievements = observation["inventory"], observation["achievements"]
+    x, y = observation["position_xy"]
+    grid = observation["visible_grid"]
+    facing = DIRECTIONS[tuple(observation["facing_xy"])]
+    goals = ("collect_wood", "place_table", "make_wood_pickaxe", "collect_stone")
+    wood_needed = (0 if achievements["place_table"] else 2) + (0 if inventory["wood_pickaxe"] else 1)
+    lines = [
+        f"Goal: {CASES['crafter']['goal']}",
+        "Goal progress: " + "; ".join(f"{key}={'DONE' if achievements[key] else 'pending'}" for key in goals),
+        f"Turn {observation['turn']}. Position ({x}, {y}); +x east/right, +y south/down.",
+        f"Facing {facing}. The adjacent tile in front is {observation['front_tile']}.",
+        "Inventory: " + ", ".join(f"{key}={value}" for key, value in inventory.items()
+                                 if value or key in ("health", "food", "drink", "energy",
+                                                    "wood", "wood_pickaxe", "stone")),
+        f"Remaining construction costs {wood_needed} wood; carrying {inventory['wood']}; "
+        f"wood shortfall={max(0, wood_needed - inventory['wood'])}.",
+        "Adjacent tiles: " + "; ".join(
+            f"{name}={grid[3 + dy][4 + dx]}" for (dx, dy), name in DIRECTIONS.items()),
+        "Current 9-column × 7-row view (north at top, player @ in center):",
+        *(" ".join(SYMBOLS.get(tile, "?") for tile in row) for row in grid),
+        "Legend: " + ", ".join(f"{symbol}={tile}" for tile, symbol in SYMBOLS.items()
+                              if any(tile in row for row in grid)),
+        "Observed resource locations (offsets relative to you; older sightings may have changed):",
+    ]
+    if "adjacent_visits" in observation:
+        lines.insert(3, f"Arrivals at this position: {observation['position_visits']}. "
+                     "Arrivals at adjacent positions: " + ", ".join(
+                         f"{direction}={count}" for direction, count in observation["adjacent_visits"].items()))
+    for kind in ("tree", "table", "stone", "water"):
+        resources = sorted(
+            (item for item in observation["known_resources"] if item["tile"] == kind),
+            key=lambda item: (abs(item["position_xy"][0] - x) + abs(item["position_xy"][1] - y),
+                              item["position_xy"]),
+        )[:6]
+        descriptions = []
+        for resource in resources:
+            rx, ry = resource["position_xy"]
+            seen = ("visible now" if resource["last_seen_turn"] == observation["turn"]
+                    else f"last seen turn {resource['last_seen_turn']}")
+            offset = []
+            if rx != x:
+                offset.append(f"{abs(rx-x)} tile(s) {'east' if rx > x else 'west'}")
+            if ry != y:
+                offset.append(f"{abs(ry-y)} tile(s) {'south' if ry > y else 'north'}")
+            descriptions.append(f"{' and '.join(offset) or 'here'} ({seen})")
+        lines.append(f"{kind}: " + (", ".join(descriptions) or "none observed"))
+    near_table = any("table" in row[3:6] for row in grid[2:5])
+    lines.extend([
+        f"Table within crafting distance: {'yes' if near_table else 'no'}.",
+        "Last action result: " + observation["feedback"],
+    ])
+    return "\n".join(lines)
+
+
+def decision_request(case: str, model: str, observation: dict[str, Any],
+                     actions: dict[str, str], history: list[dict]) -> dict[str, Any]:
+    """Build a request without filtering candidates or selecting an action."""
+    recent = [{"action": entry["action"], "feedback": entry["feedback"]} for entry in history[-8:]]
+    instructions = (
+        "Choose the next available action using the current view, measurements, and recent "
+        "feedback. Actions execute exactly as described; the environment is paused while "
+        "you choose. Do not finish before the goal is achieved."
+    )
+    state: Any = {"goal": CASES[case]["goal"], "observation": observation, "recent_actions": recent}
+    if case == "crafter" and "position_xy" in observation:
+        state = crafter_state(observation)
+        state += "\nRecent turns:\n" + ("\n".join(entry["feedback"] for entry in recent) or "None.")
+        instructions = CRAFTER_RULES + "\nSelect the single next action that advances the unfinished goal while staying alive."
+        actions = {key: (description + " " + observation.get("action_context", {}).get(key, "")).rstrip()
+                   for key, description in actions.items()}
+    elif case == "doom" and "hitcount" in observation:
+        state = doom_state(observation)
+        state += "\nRecent actions:\n" + ("\n".join(entry["feedback"] for entry in recent) or "None.")
+        instructions = DOOM_RULES
+    return {
+        "model": model, "state": state,
+        "questions": {"action": {"type": "choice", "instructions": instructions, "criteria": actions}},
+    }
+
+
+def focus_crafter_request(client: DecisionClient, request: dict[str, Any],
+                          observation: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Let the checkpoint choose an immediate objective before its native action."""
+    inventory, achievements = observation["inventory"], observation["achievements"]
+    needed = (0 if achievements["place_table"] else 2) + (0 if inventory["wood_pickaxe"] else 1)
+    shortfall = max(0, needed - inventory["wood"])
+    criteria = {
+        "gather_wood": (
+            "Gather additional wood from trees for the unfinished recipes. "
+            f"Carrying {inventory['wood']} wood; still need {shortfall} MORE wood."
+        ),
+        "build_table": (
+            "Build a crafting table on an empty tile, using two wood. "
+            f"Tables already placed: {achievements['place_table']}; carrying {inventory['wood']} wood."
+        ),
+        "craft_pickaxe": (
+            "Reach a crafting table and make a wood pickaxe, using one wood. "
+            f"Pickaxes already owned: {inventory['wood_pickaxe']}; carrying {inventory['wood']} wood."
+        ),
+        "gather_stone": (
+            "Find stone, stand adjacent to it, face it, and mine it with a wood pickaxe. "
+            f"Pickaxes owned: {inventory['wood_pickaxe']}; stone already collected: {achievements['collect_stone']}."
+        ),
+        "survive": (
+            "Deal with an immediate survival need, such as an attacking enemy, thirst, hunger, or exhaustion. "
+            + ", ".join(f"{key}={inventory[key]}/9" for key in ("health", "food", "drink", "energy"))
+        ),
+    }
+    for objective, resource in (("gather_wood", "tree"), ("gather_stone", "stone")):
+        if not any(item["tile"] == resource for item in observation["known_resources"]):
+            criteria[objective] += f" No {resource} has been observed; explore new ground to locate it."
+    plan_request = {
+        "model": request["model"], "state": request["state"],
+        "questions": {"priority": {
+            "type": "choice",
+            "instructions": (
+                "Choose the immediate objective for the next game action. Respect recipe prerequisites "
+                "and the current inventory. Completed equipment can be reused. Additional wood can "
+                "still be required after the first wood-collection achievement. "
+                "Prioritize an unfinished prerequisite over a later objective whose materials or tools are missing."
+            ),
+            "criteria": criteria,
+        }},
+    }
+    if "media" in request:
+        plan_request["media"] = request["media"]
+    answer = validate_response(plan_request, client(plan_request))["answers"]["priority"]
+    choice = answer["choice"]
+    focused = {
+        **request,
+        "state": f"Current objective chosen by the checkpoint: {choice}: {criteria[choice]}\n\n" + request["state"],
+        "questions": {"action": {
+            **request["questions"]["action"],
+            "instructions": request["questions"]["action"]["instructions"] + (
+                "\nChoose the one native action for the CURRENT objective above. "
+                "Navigate to an adjacent resource before interacting; Interact cannot reach distant tiles. "
+                "Avoid repeating a move that just took you back to the same position unless returning to a needed resource."
+            ),
+        }},
+    }
+    return focused, answer

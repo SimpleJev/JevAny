@@ -1,0 +1,624 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a1114">
+<title>Deploy a checkpoint — JevAny</title><link rel="stylesheet" href="../styles.css"><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"></head>
+<body class="docs-page"><a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header wrap"><a class="brand" href="../index.html"><img src="../assets/favicon.svg" width="30" height="30" alt=""><span>JevAny<span class="brand-period">.</span></span></a>
+<nav aria-label="Main navigation"><a href="../index.html#benchmarks">Benchmarks</a><a href="../index.html#models">Models</a><a href="../index.html#get-started">Get started</a></nav></header>
+<div class="docs-layout wrap"><aside class="docs-sidebar"><a class="text-link" href="../index.html">← Project homepage</a><nav aria-label="Documentation"><a href="quickstart.html">Quickstart</a><a href="TRAINING.html">Training</a><a href="DATA.html">Data</a><a href="DEPLOYMENT.html" aria-current="page">Deployment</a><a href="API.html">API reference</a><a href="examples.html">Examples</a><a href="CASES.html">Cases</a><a href="EVALUATION.html">Evaluation</a><a href="ALGORITHM.html">Method</a><a href="INTEGRATIONS.html">Integrations</a><a href="zh.html">中文文档</a></nav>
+<details class="doc-toc"><summary>On this page</summary><div class="toc">
+<ul>
+<li><a href="#python">Python</a></li>
+<li><a href="#http">HTTP</a></li>
+<li><a href="#a-complete-local-deployment">A complete local deployment</a><ul>
+<li><a href="#prerequisites">Prerequisites</a></li>
+</ul>
+</li>
+<li><a href="#inference-settings">Inference settings</a><ul>
+<li><a href="#optional-cuda-acceleration">Optional CUDA acceleration</a></li>
+</ul>
+</li>
+<li><a href="#a-lightweight-http-client">A lightweight HTTP client</a><ul>
+<li><a href="#http-failures">HTTP failures</a></li>
+</ul>
+</li>
+<li><a href="#use-the-official-sdk">Use the official SDK</a></li>
+<li><a href="#checkpoints-and-hardware">Checkpoints and hardware</a><ul>
+<li><a href="#several-gpus">Several GPUs</a></li>
+</ul>
+</li>
+<li><a href="#native-media-and-limits">Native media and limits</a></li>
+<li><a href="#extend-backbone-support">Extend backbone support</a></li>
+</ul>
+</div>
+</details></aside>
+<main id="content" class="doc-content"><p class="eyebrow">JEVANY / DOCUMENTATION</p><h1>Deploy a checkpoint</h1><p>Install from the checkout using Python 3.12 or newer. The <code>local</code> extra loads
+weights in Python; <code>serve</code> includes the same runtime plus FastAPI and Uvicorn.
+Both use the adapter's recorded base model and temperature.
+Training and serving resolve the same saved backbone adapter, tokenizer,
+decision tokens and branch layout. Changing model families does not change
+the request or response schema.</p>
+<h2 id="python">Python</h2>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m pip install -e '.[local,multimodal]'
+</code></pre>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-python">from jevany import Choice, JevModel
+
+model = JevModel.from_pretrained(
+    &quot;SimpleJev/JevAny-Qwen3.8-27B-LoRA&quot;, device=&quot;cuda&quot;, dtype=&quot;bf16&quot;
+)
+result = model.system_one(
+    state=&quot;I was charged twice.&quot;,
+    questions={
+        &quot;department&quot;: Choice(
+            instructions=&quot;Which team should handle this?&quot;,
+            criteria={&quot;billing&quot;: &quot;Payment problems&quot;, &quot;shipping&quot;: &quot;Delivery problems&quot;},
+        )
+    },
+)
+print(result[&quot;answers&quot;][&quot;department&quot;])
+</code></pre>
+<p>Use <code>JevModel.from_pretrained("runs/my-jev", model_name="my-jev")</code> for your
+own checkpoint. Loading happens once; reuse the object between requests.
+The common runtime serializes model/processor access and reuses eligible
+state prefixes. Calling <code>model(request_dict)</code> accepts the complete HTTP body.</p>
+<p>Configure inference without changing the checkpoint:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-python">from jevany import InferenceOptions, JevModel
+
+model = JevModel.from_pretrained(
+    &quot;runs/my-jev&quot;,
+    device=&quot;cuda&quot;,
+    inference_options=InferenceOptions(
+        max_state_tokens=2048,
+        max_branch_tokens=4096,
+        max_packed_tokens=8192,
+        prefix_cache_size=4,
+        prefix_min_tokens=384,
+    ),
+)
+print(model.describe())
+model.clear_cache()
+</code></pre>
+<p><code>describe()</code> reports the resolved adapter, branch layout, context window, media
+types, effective token limits and cache statistics. <code>clear_cache()</code> releases
+prefixes and resets those statistics. Unknown architectures run without prefix
+caching unless their adapter declares support; this optimization is optional.</p>
+<h2 id="http">HTTP</h2>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m pip install -e '.[serve,multimodal]'
+jevany serve --checkpoint SimpleJev/JevAny-Qwen3.8-27B-LoRA \
+  --device cuda --dtype bf16 --port 8008
+</code></pre>
+<p>To deploy your training output:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany serve --checkpoint runs/my-jev --model-name my-jev --port 8008
+</code></pre>
+<p>In another terminal:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany decide examples/request.json
+curl http://127.0.0.1:8008/health
+curl http://127.0.0.1:8008/v1/models
+</code></pre>
+<p>The model name in responses identifies the configured deployment, even when the
+request uses an alias. Omit <code>model</code> or send <code>jevany-latest</code> to select the loaded
+checkpoint; its exact reported ID is also accepted. Other IDs return HTTP 422.
+This is a single-model server, and the request cannot load another checkpoint.
+Missing checkpoints fail startup.</p>
+<p>The server binds to loopback and has no authentication. Use <code>--host 0.0.0.0</code>
+only inside a deployment with suitable network access controls; terminate
+TLS and authentication at your gateway if exposing the API beyond a trusted host.</p>
+<p>For an application embedding the server:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-python">from jevany.serve import create_app
+
+app = create_app(&quot;runs/my-jev&quot;, device=&quot;cuda&quot;, model_name=&quot;my-jev&quot;)
+</code></pre>
+<p>The ASGI lifespan loads weights once at startup and releases the runtime on
+shutdown. Alternatively, <code>create_app(model=model)</code> shares an existing <code>JevModel</code>,
+including its lock and cache, with local callers. Each app has its own configured
+runtime. <code>/health</code> returns 200 when ready and 503 when no runtime is loaded;
+decision and model-discovery requests also return 503 while unavailable.
+Use one Uvicorn worker per device: each worker loads a full model.</p>
+<h2 id="a-complete-local-deployment">A complete local deployment</h2>
+<p>Every command below is copyable as-is. It downloads a released checkpoint at a
+pinned revision, starts one server, checks it, calls it from the command line and
+from Python, scores it, and connects the Playground to it. Replace
+<code>SimpleJev/JevAny-Qwen3.5-4B-LoRA@...</code> with <code>runs/my-jev</code> to deploy your own
+training output; nothing else changes.</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m pip install -e '.[serve]'
+</code></pre>
+<p>Download the adapter into the Hugging Face cache, pinned to the revision this
+release was published at. No account or token is needed:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">hf download SimpleJev/JevAny-Qwen3.5-4B-LoRA \
+  --revision 1c7aa9bab14ac347aeb917c0bcd757838a8a78ce
+</code></pre>
+<p>The base model is fetched on first load at the revision the checkpoint records,
+so it needs no separate pin. To prefetch it, or to mirror it for an offline host:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">hf download Qwen/Qwen3.5-4B --revision 851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a
+</code></pre>
+<p>Start one server. <code>--device cpu --dtype bf16</code> works for a functional check;
+<code>--device cuda</code> is the deployment path:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany serve \
+  --checkpoint SimpleJev/JevAny-Qwen3.5-4B-LoRA@1c7aa9bab14ac347aeb917c0bcd757838a8a78ce \
+  --model-name jevany-qwen3.5-4b --device cuda --dtype bf16 --host 127.0.0.1 --port 8008
+</code></pre>
+<p>Weights load during ASGI startup, so wait for <code>/health</code> before sending traffic:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">until curl -sf http://127.0.0.1:8008/health; do sleep 2; done
+curl -s http://127.0.0.1:8008/v1/models
+</code></pre>
+<p><code>/health</code> answers 200 <code>{"status":"ready"}</code> once the runtime is loaded and 503
+<code>{"status":"loading"}</code> before that. <code>/v1/models</code> reports the served id and
+aliases, the base model, the device, the readout, the effective token limits and
+whether media is enabled.</p>
+<p>One request from the command line, then the same request from Python:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">cat &gt; /tmp/request.json &lt;&lt;'JSON'
+{&quot;state&quot;: &quot;I was charged twice for order 4182.&quot;,
+ &quot;model&quot;: &quot;jevany-qwen3.5-4b&quot;,
+ &quot;questions&quot;: {&quot;department&quot;: {&quot;type&quot;: &quot;choice&quot;,
+   &quot;instructions&quot;: &quot;Which team should handle this?&quot;,
+   &quot;criteria&quot;: {&quot;billing&quot;: &quot;Payment problems&quot;, &quot;shipping&quot;: &quot;Delivery problems&quot;}}}}
+JSON
+jevany decide /tmp/request.json --base-url http://127.0.0.1:8008
+</code></pre>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python - &lt;&lt;'PY'
+from jevany import Choice, JevClient
+
+client = JevClient(&quot;http://127.0.0.1:8008&quot;, model=&quot;jevany-qwen3.5-4b&quot;)
+print(client.system_one(
+    &quot;I was charged twice for order 4182.&quot;,
+    {&quot;department&quot;: Choice(instructions=&quot;Which team should handle this?&quot;,
+                          criteria={&quot;billing&quot;: &quot;Payment problems&quot;, &quot;shipping&quot;: &quot;Delivery problems&quot;})},
+)[&quot;answers&quot;][&quot;department&quot;])
+PY
+</code></pre>
+<p>Score the running endpoint on labelled data, without loading a second copy of
+the weights:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany data init --out data/starter
+jevany eval --remote http://127.0.0.1:8008 --remote-model jevany-qwen3.5-4b \
+  --data data/starter/development.jsonl --out /tmp/eval-remote
+</code></pre>
+<p>Finally, drive it from the browser:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany demo
+</code></pre>
+<p>Enter <code>http://127.0.0.1:8008</code> in the Playground's model panel and choose
+<strong>Test and connect</strong>. See <a href="PLAYGROUND.html">PLAYGROUND.md</a> for image input and the
+custom decision form.</p>
+<h3 id="prerequisites">Prerequisites</h3>
+<p>The server needs the backbone's weights in memory plus room for activations. Use
+two bytes per base parameter for BF16 and four for FP32, from the table in
+<a href="#checkpoints-and-hardware">Checkpoints and hardware</a>:</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Checkpoint</th>
+<th style="text-align: right;">BF16 weights</th>
+<th>GPU to plan for</th>
+<th>CPU/BF16 RAM to plan for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>JevAny-Qwen3.5-4B-LoRA</code> (and Direct-Token)</td>
+<td style="text-align: right;">~8 GB</td>
+<td>one 16 GB card</td>
+<td>~12 GB free</td>
+</tr>
+<tr>
+<td><code>JevAny-Gemma-4B-LoRA</code></td>
+<td style="text-align: right;">~16 GB</td>
+<td>one 24 GB card</td>
+<td>~20 GB free</td>
+</tr>
+<tr>
+<td><code>JevAny-Qwen3.8-27B-LoRA</code> (default)</td>
+<td style="text-align: right;">~54 GB</td>
+<td>one 80 GB card, or <code>--device-map</code> over several</td>
+<td>~64 GB free</td>
+</tr>
+<tr>
+<td><code>JevAny-Muse-Glimmer-30B-LoRA</code></td>
+<td style="text-align: right;">~59 GB</td>
+<td>one 80 GB card, or <code>--device-map</code> over several</td>
+<td>~70 GB free</td>
+</tr>
+</tbody>
+</table></div>
+<p>The RAM column adds headroom for activations, the adapter and the tokenizer to
+the weight estimate; measure your own workload before sizing a deployment. A BF16
+CPU load of the 4B release above, answering single-question requests, peaked near
+8.3 GiB of resident memory. CPU and MPS are supported for backbones that fit and
+are useful for functional checks, not for latency: the published latency figures
+in this document are GPU measurements and do not transfer to CPU. Python 3.12 or
+newer is required. One
+Uvicorn worker loads one full model, so size per worker and keep one worker per
+device. Downloading 4B needs roughly 8 GB of cache and 27B roughly 54 GB; set
+<code>HF_HOME</code> to place it on a large enough filesystem.</p>
+<h2 id="inference-settings">Inference settings</h2>
+<p>Python and HTTP use <code>InferenceOptions</code>. Both <code>jevany serve</code> and local
+<code>jevany decide --checkpoint</code> accept the corresponding CLI flags:</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Python field</th>
+<th>CLI flag</th>
+<th>Environment variable</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>max_state_tokens</code></td>
+<td><code>--max-state-tokens</code></td>
+<td><code>JEVANY_MAX_STATE_TOKENS</code></td>
+<td>8192</td>
+</tr>
+<tr>
+<td><code>max_branch_tokens</code></td>
+<td><code>--max-branch-tokens</code></td>
+<td><code>JEVANY_MAX_BRANCH_TOKENS</code></td>
+<td>8192</td>
+</tr>
+<tr>
+<td><code>max_packed_tokens</code></td>
+<td><code>--max-packed-tokens</code></td>
+<td><code>JEVANY_MAX_PACKED_TOKENS</code></td>
+<td>8192</td>
+</tr>
+<tr>
+<td><code>prefix_cache_size</code></td>
+<td><code>--prefix-cache-size</code></td>
+<td><code>JEVANY_PREFIX_CACHE</code></td>
+<td>4</td>
+</tr>
+<tr>
+<td><code>prefix_min_tokens</code></td>
+<td><code>--prefix-min-tokens</code></td>
+<td><code>JEVANY_PREFIX_MIN_TOKENS</code></td>
+<td>384</td>
+</tr>
+</tbody>
+</table></div>
+<p>A branch includes its shared state. State and branch limits are capped at the
+backbone's context window; the packed limit covers the complete request, including
+all branches. Oversized inputs are rejected without truncation. Set the cache size
+to zero to disable reuse. Native media requests bypass the text prefix cache.
+Prefix reuse is limited to validated FP32 backbones. BF16/FP16 models and the
+recurrent Qwen3.5/3.8 architecture use complete forward passes. The runtime reports
+the effective cache capability; requesting a cache size does not override it.</p>
+<p>Explicit CLI flags override environment values. Passing an <code>InferenceOptions</code>
+object in Python uses that whole object; otherwise settings are read from the
+environment when loading. Invalid values fail before weights load. Weight-loading
+controls remain in <code>jevany.checkpoint.LoadOptions</code>, shared with training and
+evaluation.</p>
+<h3 id="optional-cuda-acceleration">Optional CUDA acceleration</h3>
+<p>The serving controls below are independent. Published benchmark scores use the
+exact checkpoint path unless their report says otherwise.</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Control</th>
+<th>Values</th>
+<th>4B recommendation</th>
+<th>27B recommendation</th>
+<th>What it changes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--dtype</code> / <code>JEVANY_DTYPE</code></td>
+<td><code>fp32</code>, <code>fp16</code>, <code>bf16</code></td>
+<td><code>bf16</code></td>
+<td><code>bf16</code></td>
+<td>Backbone arithmetic and memory use</td>
+</tr>
+<tr>
+<td><code>JEVANY_MERGE_BF16</code></td>
+<td><code>0</code>, <code>1</code></td>
+<td><code>1</code> for serving</td>
+<td><code>1</code> for serving</td>
+<td>Permits an approximate BF16 LoRA merge</td>
+</tr>
+<tr>
+<td><code>JEVANY_ATTN</code></td>
+<td><code>sdpa</code>, <code>eager</code></td>
+<td><code>sdpa</code></td>
+<td><code>sdpa</code></td>
+<td>Backend for the full-attention layers</td>
+</tr>
+<tr>
+<td><code>JEVANY_COMPILE</code></td>
+<td><code>0</code>, <code>default</code>, <code>reduce-overhead</code>, <code>max-autotune</code>, <code>max-autotune-no-cudagraphs</code></td>
+<td><code>0</code> when direct graphs are enabled</td>
+<td><code>0</code></td>
+<td>Optional <code>torch.compile</code>; it cannot be combined with direct CUDA Graphs</td>
+</tr>
+<tr>
+<td><code>JEVANY_CUDA_GRAPHS</code> / <code>--cuda-graphs</code></td>
+<td><code>0</code>, <code>1</code></td>
+<td><code>1</code> for single-question serving</td>
+<td><code>1</code> for single-question serving</td>
+<td>Replays whole-backbone CUDA graphs on one GPU</td>
+</tr>
+<tr>
+<td><code>JEVANY_CUDA_GRAPH_MAX_TOKENS</code> / <code>--cuda-graph-max-tokens</code></td>
+<td>positive integer</td>
+<td><code>2048</code></td>
+<td><code>2048</code></td>
+<td>Longer rows stay on eager inference instead of being padded into a slower graph</td>
+</tr>
+</tbody>
+</table></div>
+<p>Qwen3.5 and Qwen3.8 mix full-attention layers with Gated DeltaNet layers.
+<code>JEVANY_ATTN</code> controls only the full-attention layers. Install
+<code>flash-linear-attention</code> to accelerate the DeltaNet layers. Transformers detects
+it automatically and otherwise uses its slower PyTorch implementation.
+<code>causal-conv1d</code> is also detected automatically, but an H200 prefill test did not
+find a latency benefit from it.</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m pip install -e '.[local,fast]'   # flash-linear-attention
+# causal-conv1d picks a prebuilt wheel for the torch it builds against; disable
+# build isolation so that is the installed torch (and set
+# CAUSAL_CONV1D_SKIP_CUDA_BUILD=TRUE on machines without nvcc).
+python -m pip install --no-build-isolation causal-conv1d
+</code></pre>
+<p>A wheel built for another torch fails to import, and Transformers then falls
+back to the PyTorch path with only a log warning. <code>describe()</code> and <code>GET /v1/models</code>
+report whether the two optional packages import under
+<code>acceleration.linear_attention_kernels</code> for hybrid backbones (<code>null</code> otherwise).
+Use a profiler to prove which kernels execute; package availability alone is not
+that proof. Keep CUDA-only <code>causal-conv1d</code> out of CPU serving and test
+environments; Transformers may select the installed extension even for CPU
+inputs.</p>
+<p>On an H200 with a BF16 Qwen3.5-4B backbone, batch size 1 and SDPA, FLA reduced
+long-request GPU p90 from 82.81 ms to 47.62 ms. Short-request p90 changed from
+51.35 ms to 47.88 ms. Adding <code>causal-conv1d</code> to FLA added about 1 ms in that
+prefill-only test. SDPA was about 2% faster than eager. These are warmed GPU
+forward measurements, not HTTP latency. On an A100-40GB, FLA with causal-conv1d
+kept JevAny-Qwen3.5-4B's development-suite accuracy within one question and
+reduced median Transfer latency from 105 ms to 94 ms and JevBench p90 from
+475 ms to 282 ms.</p>
+<p>The exact BF16 path keeps LoRA weights separate. For latency-sensitive serving,
+merge them into the BF16 backbone at load time:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">JEVANY_MERGE_BF16=1 jevany serve \
+  --checkpoint SimpleJev/JevAny-Qwen3.8-27B-LoRA --device cuda --dtype bf16
+</code></pre>
+<p>On one H200, this reduced warmed Qwen3.8-27B forward latency by 31–33% in the
+measured short and long requests. The merge changes BF16 rounding: in the full
+release checks it changed two predictions on each of Transfer-v9 and public
+JevBench. Leave it disabled when reproducing published metrics.</p>
+<p><code>torch.compile</code> is also opt-in. Its <code>reduce-overhead</code> mode uses CUDA Graphs for
+compatible graph segments:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">JEVANY_COMPILE=reduce-overhead jevany serve \
+  --checkpoint SimpleJev/JevAny-Qwen3.5-4B-LoRA --device cuda --dtype bf16
+</code></pre>
+<p>Compilation requires the Triton version declared by the installed PyTorch
+package. JevAny checks that pair before loading model weights. The first request
+can spend about a minute compiling, and new shapes may trigger more work. In the
+H200 measurements it improved warmed 4B forwards by roughly 15–21%, but did not
+materially improve 27B latency. Use it for a persistent 4B service with recurring
+shapes, not for short evaluation jobs. Set <code>JEVANY_COMPILE=default</code> to compile
+without requesting CUDA Graphs, or <code>JEVANY_COMPILE=0</code> to disable compilation.</p>
+<p>A separate native CUDA Graph microbenchmark measured fixed 96-token and
+512-token 4B forwards at 8.91 ms and 16.44 ms, compared with eager execution at
+47.03 ms and 46.08 ms. Capture took about 1.1 seconds per shape and retained
+about 64 MiB per graph. The inputs, tensor addresses and shapes were fixed, and
+the measurement excluded tokenization, transfers and HTTP work.</p>
+<p><code>--cuda-graphs</code> (<code>JEVANY_CUDA_GRAPHS=1</code>, <code>LoadOptions(cuda_graphs=True)</code>) exposes
+this direct capture for serving. When the model loads it records the complete
+backbone forward once per padded length, using one shared memory pool, and
+replays the smallest bucket that fits each single-question request. Capture is
+limited to 2,048 tokens by default because padding longer requests erased the
+latency gain in the H200 tests:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany serve --checkpoint SimpleJev/JevAny-Qwen3.5-4B-LoRA --device cuda \
+  --dtype bf16 --cuda-graphs --cuda-graph-max-tokens 2048
+</code></pre>
+<p>It applies to row-mode backbones (Qwen3.5/3.8, Gemma and the other hybrid or
+sliding-window families) with the whole model on one CUDA device. Requests are
+right-padded; every layer of these backbones is causal, so padding never reaches
+a real token. Multi-question requests and rows above the configured limit run
+eagerly. Checkpoints with trainable token embeddings are rejected before capture
+because their PEFT embedding adapter allocates tensors during each forward.
+<code>describe()</code> reports the lengths, capture time and how many calls replayed or ran
+eagerly under <code>acceleration.cuda_graphs</code>. Direct graphs cannot be combined with
+<code>JEVANY_COMPILE</code>.</p>
+<p>Padded shapes select different kernels, so probabilities are close to, not
+identical with, the eager path. On an A100-40GB with FLA and causal-conv1d
+installed and SDPA, over every request of the development suites, median
+forward latency on Transfer fell from 92 ms to 25 ms for JevAny-Qwen3.5-4B
+(accuracy 78.78% before, 78.87% after; JevBench 181/231 both), from 95 ms to
+26 ms for the Direct-Token model and from 98 ms to 32 ms for JevAny-Gemma-4B.
+The same 231-request JevBench development panel was also measured on one H200
+with BF16 merged LoRA, SDPA and FLA. With the 2,048-token capture limit, direct
+graphs reduced 4B end-to-end median latency from 60.29 ms to 9.70 ms and mean
+latency from 60.18 ms to 22.10 ms. Its p95 fell from 75.75 ms to 70.18 ms. For
+27B, median latency fell from 113.54 ms to 30.53 ms and mean latency from
+138.49 ms to 81.20 ms; p95 was effectively unchanged at 279.17 versus 281.52
+ms. Capture took 6.27 seconds for 4B and 9.88 seconds for 27B. On the matched
+BF16-merged paths, 4B changed from 187 to 185 correct answers with three argmax
+changes, while 27B stayed at 207 with no argmax changes. Maximum probability
+changes were 0.0160 and 0.0146 respectively. These serving measurements do not
+replace the exact benchmark scores reported by the model cards.</p>
+<p><code>scripts/benchmark_latency.py</code> accepts <code>--cuda-graphs</code>,
+<code>--cuda-graph-max-tokens</code>, <code>--max-packed</code> and <code>--serving-kernels</code>. The last
+option keeps the fused SDPA kernels used by <code>jevany serve</code> instead of selecting
+the math kernel used for fp32-exact evaluation.</p>
+<p>For a latency-oriented 27B deployment, keep compilation off and cap direct
+graphs at 2,048 tokens:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">JEVANY_MERGE_BF16=1 JEVANY_ATTN=sdpa JEVANY_COMPILE=0 \
+  jevany serve --checkpoint SimpleJev/JevAny-Qwen3.8-27B-LoRA \
+  --device cuda --dtype bf16 --cuda-graphs --cuda-graph-max-tokens 2048
+</code></pre>
+<h2 id="a-lightweight-http-client">A lightweight HTTP client</h2>
+<p>The base package installs the schema, HTTP client and starter-data tools without
+PyTorch. A caller connecting to another machine's server needs only:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m pip install -e .
+</code></pre>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-python">from jevany import JevClient, Noul
+
+client = JevClient(&quot;http://127.0.0.1:8008&quot;)
+result = client.system_one(&quot;The job has finished.&quot;, {&quot;done&quot;: Noul(instructions=&quot;Is the job complete?&quot;)})
+print(result[&quot;answers&quot;][&quot;done&quot;][&quot;noul&quot;])
+</code></pre>
+<p><code>JevClient</code> requires HTTPS for non-loopback endpoints. Pass <code>api_key</code> for your
+gateway or the official hosted API. Invalid requests and responses raise
+<code>ValueError</code>; connection failures propagate from <code>urllib</code>.
+Calls have a configurable 120-second default timeout and no automatic retries.</p>
+<p><code>client.models()</code> performs one <code>GET /v1/models</code>, so it both reports what the
+endpoint serves and proves it is reachable and ready.</p>
+<p>The base package also covers the command line against a remote server. Neither
+of these needs PyTorch; only <code>--checkpoint</code> loads a model in-process:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany decide --help
+jevany decide /tmp/request.json --base-url http://127.0.0.1:8008
+</code></pre>
+<h3 id="http-failures">HTTP failures</h3>
+<p>An HTTP failure raises <code>jevany.client.DecisionHTTPError</code>, a subclass of
+<code>urllib.error.HTTPError</code> that reports the server's own explanation:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-python">import urllib.error
+
+try:
+    client.system_one(&quot;state&quot;, {&quot;department&quot;: Choice(criteria={&quot;billing&quot;: None})}, model=&quot;wrong&quot;)
+except urllib.error.HTTPError as error:
+    print(error)            # HTTP Error 422: Unprocessable Entity: unknown model 'wrong'; this deployment serves 'sft'
+    print(error.code)       # 422
+    print(error.detail)     # unknown model 'wrong'; this deployment serves 'sft'
+    print(error.read())     # the raw response body
+</code></pre>
+<p><code>code</code>, <code>status</code>, <code>msg</code>, <code>reason</code>, <code>headers</code> and <code>read()</code> behave as they do on
+<code>urllib.error.HTTPError</code>, so existing <code>except urllib.error.HTTPError</code> handlers and
+any code already reading the body keep working. <code>detail</code> holds the server's
+<code>detail</code>, <code>message</code> or <code>error</code> field; a non-JSON body (a gateway's HTML page, for
+example) is reported as a single trimmed line instead. Request headers, including
+<code>Authorization</code>, are never part of the message. <code>jevany decide</code> prints the same
+text, so a rejected model name, a disabled media root or an oversized request
+says which input to change.</p>
+<h2 id="use-the-official-sdk">Use the official SDK</h2>
+<p>The text request and answer envelopes follow the TypeSafe Jev API:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m pip install typesafe-sdk
+</code></pre>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-python">from typesafe_sdk import Choice, TypeSafeClient
+
+with TypeSafeClient(
+    api_key=&quot;local&quot;, base_url=&quot;http://127.0.0.1:8008&quot;, model=&quot;jevany-latest&quot;
+) as client:
+    result = client.system_one(
+        &quot;I was charged twice.&quot;,
+        {&quot;department&quot;: Choice(criteria={&quot;billing&quot;: &quot;Payments&quot;, &quot;shipping&quot;: &quot;Delivery&quot;})},
+    )
+    print(result.choices[&quot;department&quot;].choice)
+</code></pre>
+<p>The official SDK has typed response objects. JevAny's Python clients return
+ordinary dictionaries with the same wire fields. <a href="API.html">API.md</a> describes
+compatibility and the fields specific to JevAny.</p>
+<h2 id="checkpoints-and-hardware">Checkpoints and hardware</h2>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Checkpoint</th>
+<th>Base model</th>
+<th style="text-align: right;">Estimated BF16 weight memory</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SimpleJev/JevAny-Gemma-4B-LoRA</code></td>
+<td><a href="https://huggingface.co/google/gemma-4-E4B-it">google/gemma-4-E4B-it</a></td>
+<td style="text-align: right;">~16 GB</td>
+</tr>
+<tr>
+<td><code>SimpleJev/JevAny-Qwen3.5-4B-LoRA</code></td>
+<td><a href="https://huggingface.co/Qwen/Qwen3.5-4B">Qwen/Qwen3.5-4B</a></td>
+<td style="text-align: right;">~8 GB</td>
+</tr>
+<tr>
+<td><code>SimpleJev/JevAny-Qwen3.5-4B-Direct-Token-LoRA</code></td>
+<td><a href="https://huggingface.co/Qwen/Qwen3.5-4B">Qwen/Qwen3.5-4B</a></td>
+<td style="text-align: right;">~8 GB</td>
+</tr>
+<tr>
+<td><code>SimpleJev/JevAny-Qwen3.8-27B-LoRA</code> (default)</td>
+<td><a href="https://huggingface.co/Qwen/Qwen3.8-27B">Qwen/Qwen3.8-27B</a></td>
+<td style="text-align: right;">~54 GB</td>
+</tr>
+<tr>
+<td><code>SimpleJev/JevAny-Muse-Glimmer-30B-LoRA</code></td>
+<td><a href="https://huggingface.co/meta-models/Muse-Glimmer-30B">meta-models/Muse-Glimmer-30B</a></td>
+<td style="text-align: right;">~59 GB</td>
+</tr>
+</tbody>
+</table></div>
+<p>These estimates use two bytes per base parameter. Allow additional memory for
+the adapter and inference activations. Gemma E4B has about 8B total parameters
+including its embedding tables; E4B refers to its effective parameter count.
+For your own training output, use the parameter count of the base you selected.</p>
+<p>First loading downloads both the adapter and its separately distributed base,
+unless already cached.
+Use <code>owner/repo@revision</code> to pin an adapter. For offline deployment, prepopulate
+the Hugging Face cache and set <code>HF_HUB_OFFLINE=1</code>. <code>JEVANY_BASE_LOAD_PATH</code> can point
+to a local base mirror while retaining the checkpoint's canonical provenance.</p>
+<p>By default the runtime loads one full backbone on one device.
+CPU/MPS are available for backbones that fit, including smaller models you train.
+Quantization is not implemented. BF16-trained checkpoints retain their recorded
+loading behavior.</p>
+<h3 id="several-gpus">Several GPUs</h3>
+<p>When a base does not fit on one card, <code>device_map</code> splits its layers over every
+visible GPU with Accelerate:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">CUDA_VISIBLE_DEVICES=0,1 jevany serve --checkpoint SimpleJev/JevAny-Qwen3.8-27B-LoRA \
+  --device cuda --device-map auto --max-memory-gib 31
+</code></pre>
+<p>Python callers pass <code>LoadOptions(device_map="auto", max_memory_gib=31)</code>; the
+command-line tools also read <code>JEVANY_DEVICE_MAP</code> and <code>JEVANY_MAX_MEMORY_GIB</code>.
+<code>device_map</code> accepts Accelerate's <code>auto</code>, <code>balanced</code>, <code>balanced_low_0</code> and
+<code>sequential</code> strategies. <code>max_memory_gib</code> caps the weights placed on each GPU;
+leave headroom for the activations of long requests. JevAny rejects placements
+that spill adapter or direct-token readout weights to disk because those weights
+cannot be restored safely after Accelerate dispatch. Increase <code>max_memory_gib</code>
+or expose another GPU instead.</p>
+<p>This is pipeline placement, not tensor parallelism: layers still run one after
+another, so it adds memory rather than throughput. The readout head stays on
+<code>device</code> and hidden states return there before it. Sharded models always run
+complete forward passes (no prefix cache). <code>describe()</code> and <code>GET /v1/models</code>
+report <code>device_map</code> and the <code>devices</code> holding parameters.</p>
+<p>Splitting changes where tensors live, not the arithmetic: JevAny-Qwen3.5-4B
+forced onto two GPUs gave the same per-question probabilities as one GPU on all
+231 JevBench questions. On 3×A100-40GB (<code>--max-memory-gib 22</code>), the step 22,160
+JevAny-Qwen3.8-27B release scored 85.66% on Transfer (published for that step:
+85.76%) with a 240 ms median forward pass.</p>
+<h2 id="native-media-and-limits">Native media and limits</h2>
+<p>For the server, install the <code>multimodal</code> extra and set <code>JEVANY_MEDIA_ROOT</code> to a
+directory of inputs before startup. Paths in requests resolve inside that root;
+network URLs, path escapes and oversized files are rejected. A media request
+contains one question for the built-in adapters. In-process inference accepts
+trusted local paths directly. Accepted media types come from the saved backbone
+adapter; setting a media root does not enable vision in a text checkpoint.</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">JEVANY_MEDIA_ROOT=&quot;$PWD/media&quot; jevany serve \
+  --checkpoint SimpleJev/JevAny-Qwen3.8-27B-LoRA --device cuda
+</code></pre>
+<p>See <a href="DATA.html#native-media">DATA.md</a> for the request format and
+<code>GET /v1/models</code> for the active limits and capabilities. The default packed limit is 8,192 tokens;
+evaluation covers the 2,048-token training window.
+Confidence thresholds may need recalibration on your domain.</p>
+<h2 id="extend-backbone-support">Extend backbone support</h2>
+<p>Serving uses the same <code>backbone_adapter = "my_package.adapters:MyAdapter"</code> saved
+by training. Install that trusted package in the serving environment; no HTTP
+handler or client changes are needed. See <a href="TRAINING.html#backbone-support">TRAINING.md</a>
+for model-loading and media hooks.</p>
+<p>An adapter's <code>inference_capabilities(config)</code> returns
+<code>jevany.backbones.InferenceCapabilities</code>. It declares the context window,
+prefix-cache support, accepted media types, and optional media question limit.
+The built-in implementation reads the context window from the decoder config
+and media types from the adapter. For example, a custom decoder can disable cache
+reuse while retaining the other constraints:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-python">from dataclasses import replace
+from jevany.backbones import BackboneAdapter
+
+class MyAdapter(BackboneAdapter):
+    def inference_capabilities(self, config):
+        return replace(super().inference_capabilities(config), prefix_cache=False)
+</code></pre>
+<p>Only opt into caching after validating <code>new_cache()</code>, cache copying and batch
+reordering, plus cropping for packed branches. Unknown text architectures use
+independent rows and uncached inference by default. A model with a different
+context layout should report its usable window explicitly.</p>
+<p>The offline serving tests cover the seven maintained families, including recurrent
+and MoE text models, Gemma 4 Unified and GLM native vision checkpoints, plus a
+GPT-2 fixture for the generic adapter contract and a custom
+adapter without cache support. They use tiny real architectures and native
+processors to check Python/HTTP parity, media, cache behavior, limits and
+lifecycle handling.</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m pytest tests/test_serving.py -q
+</code></pre></main></div>
+<footer class="site-footer wrap"><a href="../index.html">← Back to JevAny</a><a href="license.html">Apache-2.0 code</a></footer></body></html>

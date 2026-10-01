@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a1114">
+<title>Acknowledgements — JevAny</title><link rel="stylesheet" href="../styles.css"><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"></head>
+<body class="docs-page"><a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header wrap"><a class="brand" href="../index.html"><img src="../assets/favicon.svg" width="30" height="30" alt=""><span>JevAny<span class="brand-period">.</span></span></a>
+<nav aria-label="Main navigation"><a href="../index.html#benchmarks">Benchmarks</a><a href="../index.html#models">Models</a><a href="../index.html#get-started">Get started</a></nav></header>
+<div class="docs-layout wrap"><aside class="docs-sidebar"><a class="text-link" href="../index.html">← Project homepage</a><nav aria-label="Documentation"><a href="quickstart.html">Quickstart</a><a href="TRAINING.html">Training</a><a href="DATA.html">Data</a><a href="DEPLOYMENT.html">Deployment</a><a href="API.html">API reference</a><a href="examples.html">Examples</a><a href="CASES.html">Cases</a><a href="EVALUATION.html">Evaluation</a><a href="ALGORITHM.html">Method</a><a href="INTEGRATIONS.html">Integrations</a><a href="zh.html">中文文档</a></nav>
+<details class="doc-toc"><summary>On this page</summary><div class="toc">
+<ul></ul>
+</div>
+</details></aside>
+<main id="content" class="doc-content"><p class="eyebrow">JEVANY / DOCUMENTATION</p><h1>Acknowledgements</h1><p>JevAny includes modified infrastructure code from <a href="https://github.com/jaredpalmer/kev">Kev</a>, created by Jared Palmer and released under Apache-2.0. The required attribution is also recorded in <code>NOTICE</code> and in derived source files.</p>
+<p>JevAny develops a separate research direction around calibration-aware reinforcement learning for decision models. Tianxin Wei created the current training system, RLCR implementation, checkpoints, evaluation, release tooling, and product roadmap.</p>
+<p>The architecture was informed by the public analysis in <a href="https://archerhume.com/posts/jevs-architecture-unmasked">Jev's Architecture Unmasked</a> and the public System One API.</p>
+<p>RLCR follows the reward proposed in <em>Beyond Binary Rewards: Training LMs to Reason about Their Uncertainty</em> by Damani et al. JevAny adapts it to a prefill-only pointer model.</p>
+<p>Qwen3.8-27B is produced by the Qwen team. The adapters in this project require its separately distributed base weights.</p>
+<p>The Phi-4 vision conversion helper adapts configuration and weight-name mappings from Hugging Face Transformers under Apache-2.0. It merges Microsoft's pretrained vision LoRA before JevAny training.</p>
+<p>The native Phi-4 Reasoning Vision adapter follows Microsoft's <a href="https://huggingface.co/microsoft/Phi-4-reasoning-vision-15B/tree/c3e4fac79ddace21976ced56fbf1564b8bd8c89f">published model layout and image preprocessing</a>, released under MIT. Its weights are downloaded separately from Microsoft.</p>
+<p>The README teaser uses Lucide icons. The <a href="../files/docs/icons/sources.json">source records</a> and <a href="../files/docs/icons/LICENSE">license notices</a> accompany the editable SVG.</p>
+<p>The supported-model cards use logos from <a href="https://github.com/lobehub/lobe-icons">Lobe Icons</a> under MIT. Their <a href="../files/docs/model-logos/sources.json">source records</a> and <a href="../files/docs/model-logos/LICENSE">license</a> accompany the SVG. Model and publisher marks belong to their respective owners.</p></main></div>
+<footer class="site-footer wrap"><a href="../index.html">← Back to JevAny</a><a href="license.html">Apache-2.0 code</a></footer></body></html>

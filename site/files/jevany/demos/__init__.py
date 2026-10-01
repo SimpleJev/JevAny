@@ -1,0 +1,61 @@
+"""Local browser demos; simulation and model dependencies load only on request."""
+from typing import Any, Protocol
+
+
+class DemoEnvironment(Protocol):
+    ACTION_LOOKUP: dict[str, str]
+    done: bool
+    success: bool
+    feedback: str
+    frames: list[Any]
+
+    def reset(self, seed: int | None = None) -> dict[str, Any]: ...
+    def observe(self) -> dict[str, Any]: ...
+    def get_all_actions(self) -> list[str]: ...
+    def step(self, action: str) -> tuple[dict, float, bool, dict]: ...
+    def render(self) -> Any: ...
+    def close(self) -> None: ...
+
+CASES = {
+    "doom": {
+        "title": "Doom corridor",
+        "category": "3D GAME",
+        "description": "Clear the final room, then move forward through it.",
+        "goal": "Kill both enemies in the final room: one on the left and one on the right. After both are dead, move forward through the cleared room.",
+        "package": "vizdoom",
+        "extra": "demo",
+        "limit": 160,
+    },
+    "crafter": {
+        "title": "Crafter survival",
+        "category": "2D GAME",
+        "description": "Gather materials, build tools, and survive a changing world.",
+        "goal": "Collect wood, place a crafting table, make a wood pickaxe, and collect stone while staying alive.",
+        "package": "crafter",
+        "extra": "demo",
+        "limit": 200,
+    },
+    "arm": {
+        "title": "Robot peg insertion",
+        "category": "ROBOTICS",
+        "description": "Move a gripper along XYZ, grasp a peg, and release it in the cyan socket.",
+        "goal": "Lift the green peg, align it with the cyan socket, lower it, and release it upright inside the socket.",
+        "package": "pybullet",
+        "extra": "robotics",
+        "limit": 120,
+    },
+}
+
+
+def make_environment(case: str, seed: int = 17) -> DemoEnvironment:
+    """Create a CPU environment with reset/step/render and finite named actions."""
+    if case not in CASES:
+        raise ValueError(f"unknown environment {case!r}; choose {', '.join(CASES)}")
+    if case == "arm":
+        from .arm import PegInsertion
+        return PegInsertion(seed)
+    if case == "crafter":
+        from .games import Crafter
+        return Crafter(seed)
+    from .games import Doom
+    return Doom(seed)

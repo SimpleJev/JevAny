@@ -1,0 +1,33 @@
+{
+  "jevany-*.svg": {
+    "used_for": "All JevAny checkpoints",
+    "project_mark": "../title.svg#jevany-logo",
+    "base_marks": "sources.json",
+    "design": "JevAny project mark with a base-model logo at bottom right",
+    "generated_by": "../../scripts/plot_evaluation_overview.py"
+  },
+  "typesafe.png": {
+    "used_for": "Jev 1.13.0",
+    "owner": "TypeSafe",
+    "page": "https://typesafe.ai/",
+    "source": "https://framerusercontent.com/images/aNFzSFxM4fjICmnibw7npfZjcQ.png",
+    "retrieved": "2026-09-30",
+    "modifications": "None"
+  },
+  "laya.svg": {
+    "used_for": "Laya",
+    "owner": "Nandha Kishor M",
+    "source": "https://raw.githubusercontent.com/NandhaKishorM/laya/6d942c92081fbc139e736bbd9ac0023223c29b7f/assets/logo-mark.svg",
+    "revision": "6d942c92081fbc139e736bbd9ac0023223c29b7f",
+    "license": "Apache-2.0; see LICENSE-laya",
+    "modifications": "None"
+  },
+  "kev.svg": {
+    "used_for": [
+      "Kev-4B",
+      "Kev-27B"
+    ],
+    "source": "Created for this figure",
+    "design": "K monogram"
+  }
+}

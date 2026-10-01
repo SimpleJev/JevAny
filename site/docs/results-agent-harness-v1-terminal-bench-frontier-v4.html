@@ -1,0 +1,793 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a1114">
+<title>Terminal-Bench 2 delegation-rate frontier — v4 — JevAny</title><link rel="stylesheet" href="../styles.css"><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"></head>
+<body class="docs-page"><a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header wrap"><a class="brand" href="../index.html"><img src="../assets/favicon.svg" width="30" height="30" alt=""><span>JevAny<span class="brand-period">.</span></span></a>
+<nav aria-label="Main navigation"><a href="../index.html#benchmarks">Benchmarks</a><a href="../index.html#models">Models</a><a href="../index.html#get-started">Get started</a></nav></header>
+<div class="docs-layout wrap"><aside class="docs-sidebar"><a class="text-link" href="../index.html">← Project homepage</a><nav aria-label="Documentation"><a href="quickstart.html">Quickstart</a><a href="TRAINING.html">Training</a><a href="DATA.html">Data</a><a href="DEPLOYMENT.html">Deployment</a><a href="API.html">API reference</a><a href="examples.html">Examples</a><a href="CASES.html">Cases</a><a href="EVALUATION.html">Evaluation</a><a href="ALGORITHM.html">Method</a><a href="INTEGRATIONS.html">Integrations</a><a href="zh.html">中文文档</a></nav>
+<details class="doc-toc"><summary>On this page</summary><div class="toc">
+<ul>
+<li><a href="#regex-log">regex-log</a><ul>
+<li><a href="#candidate-trace-index">Candidate trace index</a></li>
+</ul>
+</li>
+<li><a href="#sqlite-db-truncate">sqlite-db-truncate</a><ul>
+<li><a href="#candidate-trace-index_1">Candidate trace index</a></li>
+</ul>
+</li>
+<li><a href="#method-and-provenance">Method and provenance</a></li>
+</ul>
+</div>
+</details></aside>
+<main id="content" class="doc-content"><p class="eyebrow">JEVANY / DOCUMENTATION</p><h1>Terminal-Bench 2 delegation-rate frontier — v4</h1><p>Completed 6/6 predeclared task×rate cells.
+<code>d0</code>, <code>d50</code>, and <code>d100</code> target 0%, 50%, and 100% of eligible routine decisions. Actual eligible replacement can be lower after Jev failure or low confidence.</p>
+<h2 id="regex-log"><code>regex-log</code></h2>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Rate</th>
+<th>Status</th>
+<th style="text-align: right;">Reward</th>
+<th style="text-align: right;">Calls</th>
+<th style="text-align: right;">Tokens</th>
+<th style="text-align: right;">Cost</th>
+<th style="text-align: right;">Time</th>
+<th style="text-align: right;">Target/actual eligible</th>
+<th style="text-align: right;">Command replacement</th>
+<th style="text-align: right;">Repairs</th>
+<th style="text-align: right;">Fallbacks</th>
+<th style="text-align: right;">Jev fail/low-conf</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>d0</code></td>
+<td>complete</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">11</td>
+<td style="text-align: right;">113,614</td>
+<td style="text-align: right;">$0.793</td>
+<td style="text-align: right;">165.8s</td>
+<td style="text-align: right;">0/0 (0.0%) / 0/0 (0.0%)</td>
+<td style="text-align: right;">0/8 (0.0%)</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0 decisions / 0 commands</td>
+<td style="text-align: right;">0/0</td>
+</tr>
+<tr>
+<td><code>d50</code></td>
+<td>complete</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">145,489</td>
+<td style="text-align: right;">$0.977</td>
+<td style="text-align: right;">183.2s</td>
+<td style="text-align: right;">0/0 (0.0%) / 0/0 (0.0%)</td>
+<td style="text-align: right;">0/12 (0.0%)</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0 decisions / 0 commands</td>
+<td style="text-align: right;">0/0</td>
+</tr>
+<tr>
+<td><code>d100</code></td>
+<td>complete</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">17</td>
+<td style="text-align: right;">235,393</td>
+<td style="text-align: right;">$1.590</td>
+<td style="text-align: right;">225.2s</td>
+<td style="text-align: right;">0/0 (0.0%) / 0/0 (0.0%)</td>
+<td style="text-align: right;">0/14 (0.0%)</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0 decisions / 0 commands</td>
+<td style="text-align: right;">0/0</td>
+</tr>
+</tbody>
+</table></div>
+<p>Relative to the same-task <code>d0</code> reference:</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Rate</th>
+<th style="text-align: right;">Reward Δ</th>
+<th style="text-align: right;">Calls saved</th>
+<th style="text-align: right;">Tokens saved</th>
+<th style="text-align: right;">Cost saved</th>
+<th style="text-align: right;">Time saved</th>
+<th>Quality preserved</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>d0</code></td>
+<td style="text-align: right;">+0</td>
+<td style="text-align: right;">+0.0%</td>
+<td style="text-align: right;">+0.0%</td>
+<td style="text-align: right;">+0.0%</td>
+<td style="text-align: right;">+0.0%</td>
+<td>True</td>
+</tr>
+<tr>
+<td><code>d50</code></td>
+<td style="text-align: right;">+0</td>
+<td style="text-align: right;">-36.4%</td>
+<td style="text-align: right;">-28.1%</td>
+<td style="text-align: right;">-23.1%</td>
+<td style="text-align: right;">-10.5%</td>
+<td>True</td>
+</tr>
+<tr>
+<td><code>d100</code></td>
+<td style="text-align: right;">+0</td>
+<td style="text-align: right;">-54.5%</td>
+<td style="text-align: right;">-107.2%</td>
+<td style="text-align: right;">-100.5%</td>
+<td style="text-align: right;">-35.8%</td>
+<td>True</td>
+</tr>
+</tbody>
+</table></div>
+<p>Quality-preserving Pareto rates: <code>d0</code>. The frontier jointly rewards quality, resource savings, and actual eligible replacement.</p>
+<h3 id="candidate-trace-index">Candidate trace index</h3>
+<p><code>Eligible/targeted/actual</code> is shown as T/F flags. The JSON companion retains reasoning summaries, expected outcomes, all full candidate fields, execution metadata, and source hashes.</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Rate</th>
+<th style="text-align: right;">Turn</th>
+<th>Eligible/targeted/actual</th>
+<th style="text-align: right;">Frontier choice</th>
+<th>Candidate menu</th>
+<th>Executed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>d0</code></td>
+<td style="text-align: right;">0</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: List /app — ls -la /app/</td>
+<td>frontier:0 List /app</td>
+</tr>
+<tr>
+<td><code>d0</code></td>
+<td style="text-align: right;">1</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: check root — ls / &amp;&amp; ls /tests 2&gt;/dev/null || true</td>
+<td>frontier:0 check root</td>
+</tr>
+<tr>
+<td><code>d0</code></td>
+<td style="text-align: right;">2</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: inspect logs — ls /logs/ &amp;&amp; head -50 /logs/*.log 2&gt;/dev/null | head -100</td>
+<td>frontier:0 inspect logs</td>
+</tr>
+<tr>
+<td><code>d0</code></td>
+<td style="text-align: right;">3</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: check — ls /staging/ /logs/verifier/ /logs/agent/ /logs/artifacts/ 2&gt;&amp;1 | head -50</td>
+<td>frontier:0 check</td>
+</tr>
+<tr>
+<td><code>d0</code></td>
+<td style="text-align: right;">6</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: test regex — cat &gt; /tmp/test_regex.py &lt;&lt; 'PYEOF'<br>import re<br><br>pattern = r'(?m)^(?=.<em>(?&lt;![A-Za-z0-9])(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(?![A-Za-z0-9])).</em>(?&lt;![A-Za-z0-9])(\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|02-(?:0[1-9]|1\d|2\d)))(?![A-Za-z0-9])'<br><br>tests = [<br>    ('192.168.1.1 event on 2024-01-15', ['2024-01-15']),<br>    ('date 2023-05-05 and 2024-06-20 ip 10.0.0.1', ['2024-06-20']),<br>    ('no ip here 2024-01-15', []),<br>    ('user 1134-12-1234 ip 1.2.3.4', []),<br>    ('ip 1.2.3.4 date 2024-02-29 ok', ['2024-02-29']),<br>    ('ip 1.2.3.4 date 2024-02-30 bad', []),<br>    ('ip 1.2.3.4 date 2024-04-31 bad', []),<br>    ('ip 1.2.3.4 date 2024-13-01 bad', []),<br>    ('ip 256.1.1.1 date 2024-01-01', []),<br>    ('ip 1.2.3.4 x2024-01-01', []),<br>    ('ip 1.2.3.4 2024-01-01x', []),<br>    ('ip 01.2.3.4 date 2024-01-01', []),<br>    ('ip 1.2.3.4a date 2024-01-01', []),<br>    ('a1.2.3.4 date 2024-01-01', []),<br>    ('ip 1.2.3.4 first 2020-01-01 middle 2021-06-15 last 2022-12-31', ['2022-12-31']),<br>]<br><br>for text, expected in tests:<br>    result = re.findall(pattern, text, re.MULTILINE)<br>    status = 'OK' if result == expected else 'FAIL'<br>    print(f'{status}: {text!r} -&gt; {result} (expected {expected})')<br>PYEOF<br>python3 /tmp/test_regex.py</td>
+<td>frontier:0 test regex</td>
+</tr>
+<tr>
+<td><code>d0</code></td>
+<td style="text-align: right;">7</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: save regex — mkdir -p /app &amp;&amp; cat &gt; /app/regex.txt &lt;&lt; 'EOF'<br>(?m)^(?=.<em>(?&lt;![A-Za-z0-9])(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(?![A-Za-z0-9])).</em>(?&lt;![A-Za-z0-9])(\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|02-(?:0[1-9]|1\d|2\d)))(?![A-Za-z0-9])<br>EOF<br>cat /app/regex.txt<br>python3 -c "import re; p=open('/app/regex.txt').read().strip(); print(re.findall(p, 'ip 1.2.3.4 first 2020-01-01 last 2022-12-31', re.MULTILINE))"</td>
+<td>frontier:0 save regex</td>
+</tr>
+<tr>
+<td><code>d0</code></td>
+<td style="text-align: right;">8</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: verify file — python3 /tmp/test_regex.py &amp;&amp; echo '---FILE TEST---' &amp;&amp; python3 -c "<br>import re<br>with open('/app/regex.txt') as f:<br>    pattern = f.read().strip()<br>tests = [<br>    ('192.168.1.1 event on 2024-01-15', ['2024-01-15']),<br>    ('date 2023-05-05 and 2024-06-20 ip 10.0.0.1', ['2024-06-20']),<br>    ('no ip here 2024-01-15', []),<br>    ('user 1134-12-1234 ip 1.2.3.4', []),<br>    ('ip 1.2.3.4 date 2024-02-29 ok', ['2024-02-29']),<br>    ('ip 1.2.3.4 date 2024-02-30 bad', []),<br>    ('ip 1.2.3.4 first 2020-01-01 middle 2021-06-15 last 2022-12-31', ['2022-12-31']),<br>]<br>for t,e in tests:<br>    r = re.findall(pattern, t, re.MULTILINE)<br>    print(('OK' if r==e else 'FAIL'), t, '-&gt;', r)<br>"</td>
+<td>frontier:0 verify file</td>
+</tr>
+<tr>
+<td><code>d0</code></td>
+<td style="text-align: right;">9</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: wait — <WAIT></td>
+<td>frontier:0 wait</td>
+</tr>
+<tr>
+<td><code>d50</code></td>
+<td style="text-align: right;">0</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: ls /app — ls -la /app/</td>
+<td>frontier:0 ls /app</td>
+</tr>
+<tr>
+<td><code>d50</code></td>
+<td style="text-align: right;">2</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: check common dirs — ls / &amp;&amp; ls /tmp/ 2&gt;/dev/null &amp;&amp; ls /root/ 2&gt;/dev/null</td>
+<td>frontier:0 check common dirs</td>
+</tr>
+<tr>
+<td><code>d50</code></td>
+<td style="text-align: right;">3</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: inspect logs dir — ls -la /logs/ &amp;&amp; head -30 /logs/*</td>
+<td>frontier:0 inspect logs dir</td>
+</tr>
+<tr>
+<td><code>d50</code></td>
+<td style="text-align: right;">4</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: check staging/environment — ls /staging/ /environment/ 2&gt;/dev/null</td>
+<td>frontier:0 check staging/environment</td>
+</tr>
+<tr>
+<td><code>d50</code></td>
+<td style="text-align: right;">5</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: check more dirs — ls /var/log/ 2&gt;/dev/null | head; ls /root/ 2&gt;/dev/null; ls /home/ 2&gt;/dev/null</td>
+<td>frontier:0 check more dirs</td>
+</tr>
+<tr>
+<td><code>d50</code></td>
+<td style="text-align: right;">6</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: check /home/ubuntu — ls /home/ubuntu/ 2&gt;/dev/null</td>
+<td>frontier:0 check /home/ubuntu</td>
+</tr>
+<tr>
+<td><code>d50</code></td>
+<td style="text-align: right;">8</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: ensure /app exists — mkdir -p /app</td>
+<td>frontier:0 ensure /app exists</td>
+</tr>
+<tr>
+<td><code>d50</code></td>
+<td style="text-align: right;">9</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: write regex — cat &gt; /app/regex.txt &lt;&lt; 'EOF'<br>^(?=.<em>(?&lt;![A-Za-z0-9])(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d).){3}(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?![A-Za-z0-9])).</em>?(?&lt;![A-Za-z0-9])(\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|02-(?:0[1-9]|1\d|2[0-9])))(?![A-Za-z0-9])(?!.*(?&lt;![A-Za-z0-9])\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|02-(?:0[1-9]|1\d|2[0-9]))(?![A-Za-z0-9]))<br>EOF<br>cat /app/regex.txt</td>
+<td>frontier:0 write regex</td>
+</tr>
+<tr>
+<td><code>d50</code></td>
+<td style="text-align: right;">10</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: verify compile — python3 -c "<br>import re<br>with open('/app/regex.txt') as f:<br>    p = f.read().strip()<br>print(repr(p))<br>print('len', len(p))<br>print('newlines:', p.count(chr(10)))<br>try:<br>    r = re.compile(p, re.MULTILINE)<br>    print('compiled OK')<br>except Exception as e:<br>    print('ERR', e)<br>"</td>
+<td>frontier:0 verify compile</td>
+</tr>
+<tr>
+<td><code>d50</code></td>
+<td style="text-align: right;">11</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: test regex — cat &gt; /tmp/test.py &lt;&lt; 'PYEOF'<br>import re<br>with open('/app/regex.txt') as f:<br>    pattern = f.read().strip()<br><br>log = '''\<br>2023-01-15 server 192.168.1.1 accessed 2023-06-30<br>2023-02-29 no ip here<br>user 1134-12-1234 logged in from 10.0.0.1 on 2022-11-20<br>Bad date 2023-02-30 with ip 8.8.8.8<br>Bad date 2023-04-31 with ip 8.8.8.8<br>Multiple 2020-01-01 dates 2020-12-31 line 172.16.0.5<br>Just 2020-01-01 no ip<br>ip 999.999.999.999 with 2021-05-05<br>ip 255.255.255.255 with 2021-05-05<br>ip 01.02.03.04 with 2021-05-05<br>link 2021-05-05x with 8.8.8.8<br>link x2021-05-05 with 8.8.8.8<br>ip8.8.8.8 with 2021-05-05<br>ip 8.8.8.8x with 2021-05-05<br>2021-13-01 invalid month with 1.1.1.1<br>1999-02-29 leap-ish with 1.1.1.1 and 2024-02-29<br>Text 2023-06-15text with 1.2.3.4<br>'''<br>for i, line in enumerate(log.splitlines(),1):<br>    m = re.findall(pattern, line, re.MULTILINE)<br>    print(i, m, '|', line)<br>print('---ALL---')<br>print(re.findall(pattern, log, re.MULTILINE))<br>PYEOF<br>python3 /tmp/test.py</td>
+<td>frontier:0 test regex</td>
+</tr>
+<tr>
+<td><code>d50</code></td>
+<td style="text-align: right;">12</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: extra edge tests — cat &gt; /tmp/test2.py &lt;&lt; 'PYEOF'<br>import re<br>with open('/app/regex.txt') as f:<br>    pattern = f.read().strip()<br><br>cases = [<br>  # (line, expected)<br>  ('2023-01-15 server 192.168.1.1 access 2023-06-30', ['2023-06-30']),<br>  ('server 10.0.0.1 date 2023-06-30 more text 2023-06-15', ['2023-06-15']),<br>  # date at end of line (no space after)<br>  ('ip 1.2.3.4 and 2020-06-15', ['2020-06-15']),<br>  # date after IP without space? Should still work with proper boundaries<br>  ('date 2020-06-15 and ip 1.2.3.4', ['2020-06-15']),<br>  # IP that is part of longer number (like port). e.g. 1.2.3.4:80<br>  ('ip 1.2.3.4:80 and 2020-06-15', ['2020-06-15']),<br>  # 256 in octet - invalid<br>  ('ip 256.1.1.1 and 2020-06-15', []),<br>  # IP within word<br>  ('foo1.2.3.4 and 2020-06-15', []),<br>  # date within word - excluded<br>  ('date2020-06-15 and 1.2.3.4', []),<br>  # trailing punctuation on date<br>  ('1.2.3.4 said 2020-06-15.', ['2020-06-15']),<br>  # 0.0.0.0 valid<br>  ('ip 0.0.0.0 and 2020-06-15', ['2020-06-15']),<br>  # date with year 0000?<br>  ('ip 1.2.3.4 and 0000-01-01', ['0000-01-01']),<br>  # April 30 valid, April 31 invalid<br>  ('ip 1.2.3.4 and 2020-04-30', ['2020-04-30']),<br>  ('ip 1.2.3.4 and 2020-04-31', []),<br>  # Feb 29 accepted<br>  ('ip 1.2.3.4 and 2023-02-29', ['2023-02-29']),<br>  ('ip 1.2.3.4 and 2023-02-30', []),<br>  # month 00<br>  ('ip 1.2.3.4 and 2023-00-15', []),<br>  # day 00<br>  ('ip 1.2.3.4 and 2023-01-00', []),<br>]<br>for line, exp in cases:<br>    got = re.findall(pattern, line, re.MULTILINE)<br>    ok = got == exp<br>    print('OK' if ok else 'FAIL', repr(line), 'got', got, 'exp', exp)<br>PYEOF<br>python3 /tmp/test2.py</td>
+<td>frontier:0 extra edge tests</td>
+</tr>
+<tr>
+<td><code>d50</code></td>
+<td style="text-align: right;">13</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: wait — <WAIT></td>
+<td>frontier:0 wait</td>
+</tr>
+<tr>
+<td><code>d100</code></td>
+<td style="text-align: right;">0</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: List /app and show any log — ls -la /app/ &amp;&amp; find /app -maxdepth 2 -type f | head -50</td>
+<td>frontier:0 List /app and show any log</td>
+</tr>
+<tr>
+<td><code>d100</code></td>
+<td style="text-align: right;">2</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: Look for log examples — ls / &amp;&amp; echo --- &amp;&amp; ls /tests 2&gt;/dev/null &amp;&amp; echo --- &amp;&amp; ls /opt 2&gt;/dev/null</td>
+<td>frontier:0 Look for log examples</td>
+</tr>
+<tr>
+<td><code>d100</code></td>
+<td style="text-align: right;">3</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: Peek at /logs — ls /logs/ &amp;&amp; echo --- &amp;&amp; head -30 /logs/*</td>
+<td>frontier:0 Peek at /logs</td>
+</tr>
+<tr>
+<td><code>d100</code></td>
+<td style="text-align: right;">4</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: Check staging — ls /staging/ 2&gt;/dev/null; echo ---; ls /root/ 2&gt;/dev/null; echo ---; ls /home/ 2&gt;/dev/null</td>
+<td>frontier:0 Check staging</td>
+</tr>
+<tr>
+<td><code>d100</code></td>
+<td style="text-align: right;">5</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: check — ls /home/ubuntu/ 2&gt;/dev/null; echo ---; ls /tmp/ 2&gt;/dev/null</td>
+<td>frontier:0 check</td>
+</tr>
+<tr>
+<td><code>d100</code></td>
+<td style="text-align: right;">7</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: write regex — cat &gt; /app/regex.txt &lt;&lt; 'EOF'<br>(?&lt;![0-9A-Za-z])(?=.<em>(?&lt;![0-9A-Za-z])(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(?![0-9A-Za-z]))[0-9]{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)-(?:0[1-9]|[12][0-9]|30)|02-(?:0[1-9]|1[0-9]|2[0-9]))(?![0-9A-Za-z])(?!.</em>(?&lt;![0-9A-Za-z])[0-9]{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)-(?:0[1-9]|[12][0-9]|30)|02-(?:0[1-9]|1[0-9]|2[0-9]))(?![0-9A-Za-z]))<br>EOF<br>cat /app/regex.txt</td>
+<td>frontier:0 write regex</td>
+</tr>
+<tr>
+<td><code>d100</code></td>
+<td style="text-align: right;">8</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: verify pattern integrity — python3 -c "<br>import re<br>with open('/app/regex.txt') as f:<br>    pat = f.read().strip()<br>print(repr(pat))<br>print('len:', len(pat))<br>print('newlines:', pat.count(chr(10)))<br>"</td>
+<td>frontier:0 verify pattern integrity</td>
+</tr>
+<tr>
+<td><code>d100</code></td>
+<td style="text-align: right;">9</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: test regex — python3 &lt;&lt; 'PYEOF'<br>import re<br>with open('/app/regex.txt') as f:<br>    pat = f.read().strip()<br><br>tests = [<br>    ('2024-01-15 server 10.0.0.1 done', ['2024-01-15']),<br>    ('log 192.168.1.1 at 2023-06-15 and 2023-12-31', ['2023-12-31']),<br>    ('no ip here 2023-01-01', []),<br>    ('user 1134-12-1234 ip 10.0.0.1 2020-05-05', ['2020-05-05']),<br>    ('999.999.999.999 2020-01-01', []),<br>    ('01.02.03.04 2020-01-01', []),  # leading zeros not allowed<br>    ('1.2.3.4 2020-02-29', ['2020-02-29']),<br>    ('1.2.3.4 2020-02-30', []),<br>    ('1.2.3.4 2020-04-31', []),<br>    ('1.2.3.4 2020-13-01', []),<br>    ('1.2.3.4 2020-00-01', []),<br>    ('1.2.3.4 2020-01-00', []),<br>    ('1.2.3.4 2020-01-32', []),<br>    ('abc1.2.3.4 2020-01-15', []),  # ip preceded by letter<br>    ('1.2.3.4abc 2020-01-15', []),  # ip followed by letter<br>    ('1.2.3.4 x2020-01-15', []),  # date preceded by letter<br>    ('1.2.3.4 2020-01-15x', []),  # date followed by letter<br>    ('1.2.3.4 2020-01-15 more 2021-11-30', ['2021-11-30']),<br>    ('255.255.255.255 1999-12-31', ['1999-12-31']),<br>    ('256.1.1.1 2020-01-01', []),<br>    ('1.2.3.4 2020-01-15 not-a-date 2021-13-40 2022-03-03', ['2022-03-03']),<br>]<br>for s, exp in tests:<br>    m = re.findall(pat, s, re.MULTILINE)<br>    ok = m == exp<br>    print(('OK ' if ok else 'FAIL'), repr(s), '-&gt;', m, 'expected', exp)<br>PYEOF</td>
+<td>frontier:0 test regex</td>
+</tr>
+<tr>
+<td><code>d100</code></td>
+<td style="text-align: right;">10</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: inspect regex — python3 &lt;&lt; 'PYEOF'<br>import re<br>with open('/app/regex.txt') as f:<br>    pat = f.read().strip()<br>print(pat[:200])<br>print('---')<br># Show the raw bytes<br>import sys<br>for i,c in enumerate(pat):<br>    if ord(c)&lt;32 or ord(c)&gt;126:<br>        print('non-printable at', i, repr(c))<br>print('total len:', len(pat))<br>PYEOF</td>
+<td>frontier:0 inspect regex</td>
+</tr>
+<tr>
+<td><code>d100</code></td>
+<td style="text-align: right;">11</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: find newlines — python3 &lt;&lt; 'PYEOF'<br>pat = open('/app/regex.txt').read().strip()<br>nl = [i for i,c in enumerate(pat) if c=='\n']<br>print('newline positions:', nl)<br>for pos in nl:<br>    print(repr(pat[max(0,pos-30):pos+30]))<br>PYEOF</td>
+<td>frontier:0 find newlines</td>
+</tr>
+<tr>
+<td><code>d100</code></td>
+<td style="text-align: right;">12</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: compile test — python3 &lt;&lt; 'PYEOF'<br>import re<br>pat = open('/app/regex.txt').read().strip()<br># Try compile<br>try:<br>    r = re.compile(pat)<br>    print('compiled OK')<br>except re.error as e:<br>    print('error:', e)<br><br># Simpler test<br>s = '1.2.3.4 2020-01-15'<br>print('match:', re.findall(pat, s, re.MULTILINE))<br><br># Debug: test the inner IPv4 pattern<br>ip = r'(?&lt;![0-9A-Za-z])(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(?![0-9A-Za-z])'<br>print('ipv4:', re.findall(ip, s))<br><br>date = r'(?&lt;![0-9A-Za-z])[0-9]{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)-(?:0[1-9]|[12][0-9]|30)|02-(?:0[1-9]|1[0-9]|2[0-9]))(?![0-9A-Za-z])'<br>print('date:', re.findall(date, s))<br>PYEOF</td>
+<td>frontier:0 compile test</td>
+</tr>
+<tr>
+<td><code>d100</code></td>
+<td style="text-align: right;">13</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: test new approach — python3 &lt;&lt; 'PYEOF'<br>import re<br># The issue: the lookahead has (?&lt;![0-9A-Za-z]) BEFORE the IPv4. When the match position is right before the date, the lookahead <code>.*</code> from that position won't include chars before it, but wait — the position for match attempt is at the date's start. <code>.*</code> starts from there and goes forward. If IPv4 is BEFORE the date, <code>.*</code> can't reach it!<br># That's the bug. Need to check IPv4 anywhere on line, not just after position.<br># Fix: use (?m) with ^ and check whole line, e.g. use lookbehind with .<em> (but Python re doesn't support variable-length lookbehind). Alternative: use a broader pattern anchored at line start.<br># Simplest: use two lookaheads at start of line? But we're not at start of line.<br># Trick: use <code>(?=(?:.*IPv4\|IPv4.*))</code> — no, same issue.<br># Better: at the actual match start (which is date start), we need to know if IPv4 exists anywhere on line. Use lookbehind + lookahead: (?&lt;=IPv4 anywhere before) OR (?=IPv4 anywhere after).<br># Python regex module supports variable-length lookbehind, but standard re doesn't. Would need alternative.<br># <br># Alternative: match on the line. Use ^.</em>IPv4.<em>$ style with capture group for the last date? But findall returns groups.<br># <br># Best approach: use re.findall with a pattern that matches the whole line and captures the last date. But that would return only the capture, not the whole match, which is what we want!<br># Pattern: ^(?:.</em>?)(YYYY-MM-DD)(?![...more date...])(?:.<em>IPv4.</em>)$<br># Or: ^.<em>?(?:IPv4.</em>)(?=(date)) ... <br>#<br># Simpler idea: use one capturing group. re.findall with 1 group returns list of that group's captures.<br># Pattern: ^(?=.<em>IPv4).</em>?(date)(?!.<em>date)$  -- won't work because .</em>? needs to include IPv4 possibly before date<br># <br># Let me try: <code>^(?=.*IPv4)(?=.*(date)(?!.*date)).*$</code> — captures the last date via lookahead group. Actually the lookahead has a capture group; findall returns that.<br>DATE = r'(?&lt;![0-9A-Za-z])[0-9]{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)-(?:0[1-9]|[12][0-9]|30)|02-(?:0[1-9]|1[0-9]|2[0-9]))(?![0-9A-Za-z])'<br>IP = r'(?&lt;![0-9A-Za-z])(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(?![0-9A-Za-z])'<br><br>pat = r'^(?=.<em>' + IP + r')(?=.</em>(' + DATE + r')(?!.<em>' + DATE + r')).</em>$'<br>print('pattern len:', len(pat))<br>tests = [<br>    ('2024-01-15 server 10.0.0.1 done', ['2024-01-15']),<br>    ('log 192.168.1.1 at 2023-06-15 and 2023-12-31', ['2023-12-31']),<br>    ('no ip here 2023-01-01', []),<br>    ('user 1134-12-1234 ip 10.0.0.1 2020-05-05', ['2020-05-05']),<br>    ('1.2.3.4 2020-02-29', ['2020-02-29']),<br>    ('1.2.3.4 2020-02-30', []),<br>    ('1.2.3.4 2020-01-15 more 2021-11-30', ['2021-11-30']),<br>    ('255.255.255.255 1999-12-31', ['1999-12-31']),<br>    ('1.2.3.4 2020-01-15 not-a-date 2021-13-40 2022-03-03', ['2022-03-03']),<br>    ('abc1.2.3.4 2020-01-15', []),<br>]<br>for s, exp in tests:<br>    m = re.findall(pat, s, re.MULTILINE)<br>    ok = m == exp<br>    print(('OK ' if ok else 'FAIL'), repr(s), '-&gt;', m, 'expected', exp)<br>PYEOF</td>
+<td>frontier:0 test new approach</td>
+</tr>
+<tr>
+<td><code>d100</code></td>
+<td style="text-align: right;">14</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: save new regex — python3 &lt;&lt; 'PYEOF'<br>DATE = r'(?&lt;![0-9A-Za-z])[0-9]{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)-(?:0[1-9]|[12][0-9]|30)|02-(?:0[1-9]|1[0-9]|2[0-9]))(?![0-9A-Za-z])'<br>IP = r'(?&lt;![0-9A-Za-z])(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(?![0-9A-Za-z])'<br>pat = r'^(?=.<em>' + IP + r')(?=.</em>(' + DATE + r')(?!.<em>' + DATE + r')).</em>$'<br>with open('/app/regex.txt','w') as f:<br>    f.write(pat)<br>print('written, len=', len(pat))<br>import re<br>print(re.findall(pat, 'log 192.168.1.1 at 2023-06-15 and 2023-12-31', re.MULTILINE))<br>PYEOF<br>cat /app/regex.txt | head -c 500; echo</td>
+<td>frontier:0 save new regex</td>
+</tr>
+<tr>
+<td><code>d100</code></td>
+<td style="text-align: right;">15</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: final multiline test — python3 &lt;&lt; 'PYEOF'<br>import re<br>with open('/app/regex.txt') as f:<br>    pat = f.read().strip()<br><br># Extended test set including edge cases with multiline logs<br>log = '''2024-01-15 server 10.0.0.1 done<br>log 192.168.1.1 at 2023-06-15 and 2023-12-31<br>no ip here 2023-01-01<br>user 1134-12-1234 ip 10.0.0.1 2020-05-05<br>999.999.999.999 2020-01-01<br>01.02.03.04 2020-01-01<br>1.2.3.4 2020-02-29<br>1.2.3.4 2020-02-30<br>1.2.3.4 2020-04-31<br>1.2.3.4 2020-13-01<br>1.2.3.4 2020-00-01<br>1.2.3.4 2020-01-32<br>abc1.2.3.4 2020-01-15<br>1.2.3.4abc 2020-01-15<br>1.2.3.4 x2020-01-15<br>1.2.3.4 2020-01-15x<br>1.2.3.4 2020-01-15 more 2021-11-30<br>255.255.255.255 1999-12-31<br>256.1.1.1 2020-01-01<br>1.2.3.4 2020-01-15 not-a-date 2021-13-40 2022-03-03<br>0.0.0.0 2020-04-30 tail<br>10.20.30.40 first 2020-05-04 middle 2020-05-05 last 2020-05-06'''<br><br>for m in re.findall(pat, log, re.MULTILINE):<br>    print(repr(m))<br>PYEOF</td>
+<td>frontier:0 final multiline test</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="sqlite-db-truncate"><code>sqlite-db-truncate</code></h2>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Rate</th>
+<th>Status</th>
+<th style="text-align: right;">Reward</th>
+<th style="text-align: right;">Calls</th>
+<th style="text-align: right;">Tokens</th>
+<th style="text-align: right;">Cost</th>
+<th style="text-align: right;">Time</th>
+<th style="text-align: right;">Target/actual eligible</th>
+<th style="text-align: right;">Command replacement</th>
+<th style="text-align: right;">Repairs</th>
+<th style="text-align: right;">Fallbacks</th>
+<th style="text-align: right;">Jev fail/low-conf</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>d0</code></td>
+<td>complete</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">202,050</td>
+<td style="text-align: right;">$1.292</td>
+<td style="text-align: right;">187.9s</td>
+<td style="text-align: right;">0/2 (0.0%) / 0/2 (0.0%)</td>
+<td style="text-align: right;">0/13 (0.0%)</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0 decisions / 0 commands</td>
+<td style="text-align: right;">0/0</td>
+</tr>
+<tr>
+<td><code>d50</code></td>
+<td>complete</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">11</td>
+<td style="text-align: right;">161,261</td>
+<td style="text-align: right;">$1.009</td>
+<td style="text-align: right;">155.1s</td>
+<td style="text-align: right;">2/4 (50.0%) / 1/4 (25.0%)</td>
+<td style="text-align: right;">2/11 (18.2%)</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1 decisions / 1 commands</td>
+<td style="text-align: right;">0/1</td>
+</tr>
+<tr>
+<td><code>d100</code></td>
+<td>complete</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">121,293</td>
+<td style="text-align: right;">$0.764</td>
+<td style="text-align: right;">144.7s</td>
+<td style="text-align: right;">3/3 (100.0%) / 2/3 (66.7%)</td>
+<td style="text-align: right;">2/7 (28.6%)</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1 decisions / 1 commands</td>
+<td style="text-align: right;">0/3</td>
+</tr>
+</tbody>
+</table></div>
+<p>Relative to the same-task <code>d0</code> reference:</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Rate</th>
+<th style="text-align: right;">Reward Δ</th>
+<th style="text-align: right;">Calls saved</th>
+<th style="text-align: right;">Tokens saved</th>
+<th style="text-align: right;">Cost saved</th>
+<th style="text-align: right;">Time saved</th>
+<th>Quality preserved</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>d0</code></td>
+<td style="text-align: right;">+0</td>
+<td style="text-align: right;">+0.0%</td>
+<td style="text-align: right;">+0.0%</td>
+<td style="text-align: right;">+0.0%</td>
+<td style="text-align: right;">+0.0%</td>
+<td>True</td>
+</tr>
+<tr>
+<td><code>d50</code></td>
+<td style="text-align: right;">+0</td>
+<td style="text-align: right;">+26.7%</td>
+<td style="text-align: right;">+20.2%</td>
+<td style="text-align: right;">+21.9%</td>
+<td style="text-align: right;">+17.5%</td>
+<td>True</td>
+</tr>
+<tr>
+<td><code>d100</code></td>
+<td style="text-align: right;">+0</td>
+<td style="text-align: right;">+46.7%</td>
+<td style="text-align: right;">+40.0%</td>
+<td style="text-align: right;">+40.9%</td>
+<td style="text-align: right;">+23.0%</td>
+<td>True</td>
+</tr>
+</tbody>
+</table></div>
+<p>Quality-preserving Pareto rates: <code>d100</code>. The frontier jointly rewards quality, resource savings, and actual eligible replacement.</p>
+<h3 id="candidate-trace-index_1">Candidate trace index</h3>
+<p><code>Eligible/targeted/actual</code> is shown as T/F flags. The JSON companion retains reasoning summaries, expected outcomes, all full candidate fields, execution metadata, and source hashes.</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Rate</th>
+<th style="text-align: right;">Turn</th>
+<th>Eligible/targeted/actual</th>
+<th style="text-align: right;">Frontier choice</th>
+<th>Candidate menu</th>
+<th>Executed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>d0</code></td>
+<td style="text-align: right;">0</td>
+<td>T/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: Check file size and header — ls -la /app/trunc.db &amp;&amp; xxd /app/trunc.db | head -50; 1: Try sqlite3 dump — sqlite3 /app/trunc.db '.schema' 2&gt;&amp;1 | head -30</td>
+<td>frontier:0 Check file size and header</td>
+</tr>
+<tr>
+<td><code>d0</code></td>
+<td style="text-align: right;">1</td>
+<td>T/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: sqlite3 schema — sqlite3 /app/trunc.db '.schema' 2&gt;&1; echo '---'; sqlite3 /app/trunc.db '.tables' 2&gt;&1; 1: od dump — od -c /app/trunc.db | head -80</td>
+<td>frontier:0 sqlite3 schema</td>
+</tr>
+<tr>
+<td><code>d0</code></td>
+<td style="text-align: right;">2</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: Check python — which python3 python &amp;&amp; python3 -c 'import sqlite3; print(sqlite3.sqlite_version)'</td>
+<td>frontier:0 Check python</td>
+</tr>
+<tr>
+<td><code>d0</code></td>
+<td style="text-align: right;">3</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: wait — <WAIT></td>
+<td>frontier:0 wait</td>
+</tr>
+<tr>
+<td><code>d0</code></td>
+<td style="text-align: right;">4</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: get schema via python — python3 -c 'import sqlite3; c=sqlite3.connect("/app/trunc.db"); cur=c.cursor(); cur.execute("SELECT name,sql FROM sqlite_master"); print(cur.fetchall())'</td>
+<td>frontier:0 get schema via python</td>
+</tr>
+<tr>
+<td><code>d0</code></td>
+<td style="text-align: right;">5</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: wait — <WAIT></td>
+<td>frontier:0 wait</td>
+</tr>
+<tr>
+<td><code>d0</code></td>
+<td style="text-align: right;">6</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: hex dump — od -A x -t x1z -v /app/trunc.db | head -100</td>
+<td>frontier:0 hex dump</td>
+</tr>
+<tr>
+<td><code>d0</code></td>
+<td style="text-align: right;">7</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: look at end — od -A x -t x1z -v /app/trunc.db | sed -n '240,260p'</td>
+<td>frontier:0 look at end</td>
+</tr>
+<tr>
+<td><code>d0</code></td>
+<td style="text-align: right;">9</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: parse header — python3 &lt;&lt; 'EOF'<br>import struct, json<br>data = open('/app/trunc.db','rb').read()<br>print('len:', len(data))<br># Page header is at offset 0 (since first page originally had 100-byte SQLite header, but here the file appears to start with page header directly. Actually, file size is 4096. Perhaps this is a page 2 that got renamed? Or the page uses usable size 4096 without header.<br># Let's inspect page header<br>ptype = data[0]<br>print('page type:', hex(ptype))<br>num_cells = struct.unpack('&gt;H', data[3:5])[0]<br>cell_start = struct.unpack('&gt;H', data[5:7])[0]<br>print('num cells:', num_cells)<br>print('cell content start:', cell_start)<br># Header is 8 bytes for leaf pages; then cell pointer array<br>hsize = 8<br>ptrs = []<br>for i in range(num_cells):<br>    off = struct.unpack('&gt;H', data[hsize+2<em>i:hsize+2</em>i+2])[0]<br>    ptrs.append(off)<br>print('pointers:', ptrs)<br>EOF</td>
+<td>frontier:0 parse header</td>
+</tr>
+<tr>
+<td><code>d0</code></td>
+<td style="text-align: right;">10</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: wait — <WAIT></td>
+<td>frontier:0 wait</td>
+</tr>
+<tr>
+<td><code>d0</code></td>
+<td style="text-align: right;">11</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: parse cells and write JSON — python3 &lt;&lt; 'EOF'<br>import struct, json<br>data = open('/app/trunc.db','rb').read()<br><br>def read_varint(buf, off):<br>    n=0; v=0<br>    while True:<br>        b = buf[off+n]<br>        n+=1<br>        if n==9:<br>            v = (v&lt;&lt;8) | b<br>            break<br>        v = (v&lt;&lt;7) | (b &amp; 0x7f)<br>        if not (b &amp; 0x80):<br>            break<br>    return v, n<br><br>def serial_type_size(t):<br>    if t==0: return 0<br>    if t==1: return 1<br>    if t==2: return 2<br>    if t==3: return 3<br>    if t==4: return 4<br>    if t==5: return 6<br>    if t==6: return 8<br>    if t==7: return 8<br>    if t==8 or t==9: return 0<br>    if t&gt;=12 and t%2==0: return (t-12)//2<br>    if t&gt;=13 and t%2==1: return (t-13)//2<br>    return 0<br><br>def read_val(buf, off, t):<br>    sz = serial_type_size(t)<br>    b = buf[off:off+sz]<br>    if t==0: return None<br>    if t==1: return struct.unpack('&gt;b', b)[0]<br>    if t==2: return struct.unpack('&gt;h', b)[0]<br>    if t==3: return int.from_bytes(b, 'big', signed=True) if b[0]&lt;0x80 else int.from_bytes(b,'big') - (1&lt;&lt;24)<br>    if t==4: return struct.unpack('&gt;i', b)[0]<br>    if t==5:<br>        v = int.from_bytes(b,'big')<br>        if v&gt;=1&lt;&lt;47: v -= 1&lt;&lt;48<br>        return v<br>    if t==6: return struct.unpack('&gt;q', b)[0]<br>    if t==7: return struct.unpack('&gt;d', b)[0]<br>    if t==8: return 0<br>    if t==9: return 1<br>    if t&gt;=12 and t%2==0: return b<br>    if t&gt;=13 and t%2==1: return b.decode('utf-8', errors='replace')<br>    return None<br><br>ptrs = [4080, 4063, 4046, 4029, 4012, 3995, 3978, 3961, 3937, 3913]<br>rows = []<br>for p in ptrs:<br>    off = p<br>    payload_len, n = read_varint(data, off); off += n<br>    rowid, n = read_varint(data, off); off += n<br>    # payload begins here<br>    hdr_start = off<br>    hdr_len, n = read_varint(data, off); off += n<br>    types = []<br>    hoff = off<br>    while hoff &lt; hdr_start + hdr_len:<br>        t, n = read_varint(data, hoff); hoff += n<br>        types.append(t)<br>    body_off = hdr_start + hdr_len<br>    vals = []<br>    for t in types:<br>        v = read_val(data, body_off, t)<br>        vals.append(v)<br>        body_off += serial_type_size(t)<br>    print(rowid, types, vals)<br>    rows.append({'rowid': rowid, 'vals': vals})<br><br># Build JSON assuming (word, value) mapping<br>out = []<br>for r in rows:<br>    vals = r['vals']<br>    word = None; value = None<br>    for v in vals:<br>        if isinstance(v, str):<br>            word = v<br>        elif isinstance(v, (int,float)):<br>            value = v<br>    out.append({'word': word, 'value': value})<br># sort by rowid or just as they are<br>out_sorted = sorted(out, key=lambda x: x['word'])<br>print(json.dumps(out_sorted, indent=2))<br>with open('/app/recover.json','w') as f:<br>    json.dump(out_sorted, f)<br>EOF</td>
+<td>frontier:0 parse cells and write JSON</td>
+</tr>
+<tr>
+<td><code>d0</code></td>
+<td style="text-align: right;">12</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: wait — <WAIT></td>
+<td>frontier:0 wait</td>
+</tr>
+<tr>
+<td><code>d0</code></td>
+<td style="text-align: right;">13</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: verify — cat /app/recover.json</td>
+<td>frontier:0 verify</td>
+</tr>
+<tr>
+<td><code>d50</code></td>
+<td style="text-align: right;">0</td>
+<td>T/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: List /app and file info — ls -la /app &amp;&amp; file /app/trunc.db &amp;&amp; stat /app/trunc.db; 1: sqlite header hex dump — xxd /app/trunc.db | head -50; 2: Try sqlite3 dump — sqlite3 /app/trunc.db '.schema' 2&gt;&amp;1 | head -50</td>
+<td>frontier:0 List /app and file info</td>
+</tr>
+<tr>
+<td><code>d50</code></td>
+<td style="text-align: right;">1</td>
+<td>T/T/F</td>
+<td style="text-align: right;">0</td>
+<td>0: hex dump top — xxd /app/trunc.db | head -80; 1: sqlite schema and integrity — sqlite3 /app/trunc.db '.schema' 2&gt;&1; echo '---'; sqlite3 /app/trunc.db 'PRAGMA integrity_check;' 2&gt;&amp;1</td>
+<td>frontier:0 hex dump top</td>
+</tr>
+<tr>
+<td><code>d50</code></td>
+<td style="text-align: right;">2</td>
+<td>T/F/F</td>
+<td style="text-align: right;">1</td>
+<td>0: od hex dump top — od -A x -t x1z -v /app/trunc.db | head -80; 1: sqlite queries — sqlite3 /app/trunc.db '.schema' 2&gt;&1; echo '---'; sqlite3 /app/trunc.db 'PRAGMA integrity_check;' 2&gt;&1; echo '---'; sqlite3 /app/trunc.db '.tables' 2&gt;&1; 2: python header check — python3 -c "d=open('/app/trunc.db','rb').read(); print(len(d)); print(d[:100].hex())"</td>
+<td>frontier:1 sqlite queries</td>
+</tr>
+<tr>
+<td><code>d50</code></td>
+<td style="text-align: right;">3</td>
+<td>T/T/T</td>
+<td style="text-align: right;">0</td>
+<td>0: python sqlite schema — python3 -c "import sqlite3; c=sqlite3.connect('/app/trunc.db'); cur=c.cursor(); print(cur.execute('select name,sql from sqlite_master').fetchall())"; 1: python raw dump — python3 -c "d=open('/app/trunc.db','rb').read(); print('len',len(d)); print(d[:100])"</td>
+<td>jev:0 python sqlite schema; jev:1 python raw dump</td>
+</tr>
+<tr>
+<td><code>d50</code></td>
+<td style="text-align: right;">4</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: hex dump top 100 lines — python3 -c "d=open('/app/trunc.db','rb').read(); import sys; sys.stdout.buffer.write(d)" | od -A x -t x1z -v | head -100</td>
+<td>frontier:0 hex dump top 100 lines</td>
+</tr>
+<tr>
+<td><code>d50</code></td>
+<td style="text-align: right;">5</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: dump cells area — python3 -c "d=open('/app/trunc.db','rb').read(); import sys; sys.stdout.buffer.write(d[0x0f00:])" | od -A x -t x1z -v</td>
+<td>frontier:0 dump cells area</td>
+</tr>
+<tr>
+<td><code>d50</code></td>
+<td style="text-align: right;">6</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: parse sqlite page cells — python3 &lt;&lt; 'EOF'<br>import struct, json<br>d = open('/app/trunc.db','rb').read()<br># Cell pointer array: 10 pointers starting at offset 8<br>ptrs = []<br>for i in range(10):<br>    p = struct.unpack('&gt;H', d[8+2<em>i:10+2</em>i])[0]<br>    ptrs.append(p)<br>print('ptrs:', [hex(p) for p in ptrs])<br><br>def parse_varint(data, pos):<br>    val = 0<br>    for i in range(9):<br>        b = data[pos+i]<br>        if i == 8:<br>            val = (val &lt;&lt; 8) | b<br>            return val, pos+i+1<br>        val = (val &lt;&lt; 7) | (b &amp; 0x7f)<br>        if not (b &amp; 0x80):<br>            return val, pos+i+1<br>    return val, pos+9<br><br>results = []<br>for p in ptrs:<br>    pos = p<br>    payload_size, pos = parse_varint(d, pos)<br>    rowid, pos = parse_varint(d, pos)<br>    # header<br>    hstart = pos<br>    hlen, pos = parse_varint(d, pos)<br>    hend = hstart + hlen<br>    types = []<br>    while pos &lt; hend:<br>        t, pos = parse_varint(d, pos)<br>        types.append(t)<br>    # body<br>    vals = []<br>    for t in types:<br>        if t == 0:<br>            vals.append(None)<br>        elif t == 1:<br>            vals.append(struct.unpack('&gt;b', d[pos:pos+1])[0]); pos += 1<br>        elif t == 2:<br>            vals.append(struct.unpack('&gt;h', d[pos:pos+2])[0]); pos += 2<br>        elif t == 3:<br>            vals.append(int.from_bytes(d[pos:pos+3], 'big', signed=True)); pos += 3<br>        elif t == 4:<br>            vals.append(struct.unpack('&gt;i', d[pos:pos+4])[0]); pos += 4<br>        elif t == 5:<br>            vals.append(int.from_bytes(d[pos:pos+6], 'big', signed=True)); pos += 6<br>        elif t == 6:<br>            vals.append(struct.unpack('&gt;q', d[pos:pos+8])[0]); pos += 8<br>        elif t == 7:<br>            vals.append(struct.unpack('&gt;d', d[pos:pos+8])[0]); pos += 8<br>        elif t == 8:<br>            vals.append(0)<br>        elif t == 9:<br>            vals.append(1)<br>        elif t &gt;= 12 and t % 2 == 0:<br>            n = (t-12)//2; vals.append(d[pos:pos+n]); pos += n<br>        elif t &gt;= 13 and t % 2 == 1:<br>            n = (t-13)//2; vals.append(d[pos:pos+n].decode('utf-8', errors='replace')); pos += n<br>    print('rowid',rowid,'types',types,'vals',vals)<br>    results.append(vals)<br>EOF</td>
+<td>frontier:0 parse sqlite page cells</td>
+</tr>
+<tr>
+<td><code>d50</code></td>
+<td style="text-align: right;">7</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: wait — <WAIT></td>
+<td>frontier:0 wait</td>
+</tr>
+<tr>
+<td><code>d50</code></td>
+<td style="text-align: right;">8</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: write recover.json — python3 -c "import json; data=[{'word':'testword0'+str(i),'value':v} for i,v in enumerate([1,2,10,25,42,50,75,99,99.99,0.5])]; open('/app/recover.json','w').write(json.dumps(data)); print(open('/app/recover.json').read())"</td>
+<td>frontier:0 write recover.json</td>
+</tr>
+<tr>
+<td><code>d50</code></td>
+<td style="text-align: right;">9</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: wait — <WAIT></td>
+<td>frontier:0 wait</td>
+</tr>
+<tr>
+<td><code>d100</code></td>
+<td style="text-align: right;">0</td>
+<td>T/T/T</td>
+<td style="text-align: right;">0</td>
+<td>0: file and size — ls -la /app/ &amp;&amp; file /app/trunc.db &amp;&amp; wc -c /app/trunc.db; 1: sqlite header — xxd /app/trunc.db | head -50; 2: try sqlite — sqlite3 /app/trunc.db '.schema' 2&gt;&1; sqlite3 /app/trunc.db 'SELECT * FROM sqlite_master;' 2&gt;&amp;1</td>
+<td>jev:0 file and size</td>
+</tr>
+<tr>
+<td><code>d100</code></td>
+<td style="text-align: right;">1</td>
+<td>T/T/F</td>
+<td style="text-align: right;">0</td>
+<td>0: hex head — xxd /app/trunc.db | head -80; 1: sqlite schema — sqlite3 /app/trunc.db '.schema' 2&gt;&1; echo '---'; sqlite3 /app/trunc.db 'SELECT * FROM sqlite_master;' 2&gt;&amp;1</td>
+<td>frontier:0 hex head</td>
+</tr>
+<tr>
+<td><code>d100</code></td>
+<td style="text-align: right;">2</td>
+<td>T/T/T</td>
+<td style="text-align: right;">0</td>
+<td>0: od head — od -A x -t x1z -v /app/trunc.db | head -80; 1: sqlite schema — sqlite3 /app/trunc.db '.schema' 2&gt;&1; echo '---'; sqlite3 /app/trunc.db 'SELECT * FROM sqlite_master;' 2&gt;&1; 2: check tools — which sqlite3 python3</td>
+<td>jev:0 od head</td>
+</tr>
+<tr>
+<td><code>d100</code></td>
+<td style="text-align: right;">3</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: od tail — od -A x -t x1z -v /app/trunc.db | tail -80</td>
+<td>frontier:0 od tail</td>
+</tr>
+<tr>
+<td><code>d100</code></td>
+<td style="text-align: right;">4</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: parse and write JSON — python3 &lt;&lt; 'EOF'<br>import json, struct<br>data = open('/app/trunc.db','rb').read()<br># parse leaf table btree page starting at 0 (since header was stripped and file starts with 0d)<br># page header: 8 bytes: type(1) freeblock(2) ncells(2) cellstart(2) frag(1)<br>type_ = data[0]<br>ncells = struct.unpack('&gt;H', data[3:5])[0]<br>cellstart = struct.unpack('&gt;H', data[5:7])[0]<br>print('type', hex(type_), 'ncells', ncells, 'cellstart', hex(cellstart))<br>cell_ptrs = []<br>for i in range(ncells):<br>    off = 8 + i*2<br>    p = struct.unpack('&gt;H', data[off:off+2])[0]<br>    cell_ptrs.append(p)<br>print('ptrs', [hex(p) for p in cell_ptrs])<br><br>def varint(buf, off):<br>    v=0<br>    for i in range(9):<br>        b = buf[off+i]<br>        if i==8:<br>            v = (v&lt;&lt;8)|b<br>            return v, i+1<br>        v = (v&lt;&lt;7) | (b &amp; 0x7f)<br>        if not (b &amp; 0x80):<br>            return v, i+1<br>    return v, 9<br><br>def parse_record(buf, off, payload_len):<br>    end = off+payload_len<br>    hdr_len, n = varint(buf, off)<br>    hdr_end = off + hdr_len<br>    types = []<br>    p = off+n<br>    while p &lt; hdr_end:<br>        t, nn = varint(buf, p)<br>        types.append(t)<br>        p += nn<br>    vals=[]<br>    p = hdr_end<br>    for t in types:<br>        if t==0:<br>            vals.append(None)<br>        elif t==1:<br>            vals.append(struct.unpack('&gt;b', buf[p:p+1])[0]); p+=1<br>        elif t==2:<br>            vals.append(struct.unpack('&gt;h', buf[p:p+2])[0]); p+=2<br>        elif t==3:<br>            v = int.from_bytes(buf[p:p+3], 'big', signed=True); vals.append(v); p+=3<br>        elif t==4:<br>            vals.append(struct.unpack('&gt;i', buf[p:p+4])[0]); p+=4<br>        elif t==5:<br>            v=int.from_bytes(buf[p:p+6],'big',signed=True); vals.append(v); p+=6<br>        elif t==6:<br>            vals.append(struct.unpack('&gt;q', buf[p:p+8])[0]); p+=8<br>        elif t==7:<br>            vals.append(struct.unpack('&gt;d', buf[p:p+8])[0]); p+=8<br>        elif t==8: vals.append(0)<br>        elif t==9: vals.append(1)<br>        elif t&gt;=12 and t%2==0:<br>            L=(t-12)//2; vals.append(buf[p:p+L]); p+=L<br>        elif t&gt;=13 and t%2==1:<br>            L=(t-13)//2; vals.append(buf[p:p+L].decode('utf-8','replace')); p+=L<br>    return vals<br><br>rows=[]<br>for p in cell_ptrs:<br>    payload_len, n = varint(data, p)<br>    rowid, n2 = varint(data, p+n)<br>    body = p+n+n2<br>    vals = parse_record(data, body, payload_len)<br>    print(rowid, vals)<br>    rows.append(vals)<br><br>out = [{'word': v[0], 'value': v[1]} for v in rows]<br>out.sort(key=lambda x: x['word'])<br>json.dump(out, open('/app/recover.json','w'))<br>print('wrote', len(out))<br>EOF</td>
+<td>frontier:0 parse and write JSON</td>
+</tr>
+<tr>
+<td><code>d100</code></td>
+<td style="text-align: right;">5</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: wait — <WAIT></td>
+<td>frontier:0 wait</td>
+</tr>
+<tr>
+<td><code>d100</code></td>
+<td style="text-align: right;">6</td>
+<td>F/F/F</td>
+<td style="text-align: right;">0</td>
+<td>0: write final JSON — python3 -c "<br>import json<br>rows=[<br> ('testword00', 1),<br> ('testword01', 2),<br> ('testword02', 10),<br> ('testword03', 25),<br> ('testword04', 42),<br> ('testword05', 50),<br> ('testword06', 75),<br> ('testword07', 99),<br> ('testword08', 99.99),<br> ('testword09', 0.5),<br>]<br>out=[{'word':w,'value':v} for w,v in rows]<br>json.dump(out, open('/app/recover.json','w'))<br>print(open('/app/recover.json').read())<br>"</td>
+<td>frontier:0 write final JSON</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="method-and-provenance">Method and provenance</h2>
+<ul>
+<li>Pareto dominance is computed within each task only, after requiring reward ≥ that task's <code>d0</code> reward.</li>
+<li>Objectives maximize reward delta, calls/tokens/cost/time saved versus <code>d0</code>, and actual eligible-decision replacement.</li>
+<li>Fallback decisions are policy-targeted eligible decisions with no actual Jev execution. Fallback commands count frontier executions on those turns.</li>
+<li>This is one exploratory attempt per cell; it is a demo frontier, not a confidence interval or a population estimate.</li>
+<li>Raw trial files are not modified. Each completed JSON cell includes its repository-relative source path and SHA-256.</li>
+</ul>
+<p>Generated: <code>2026-10-01T04:21:13.345009+00:00</code></p>
+<p>Run root: <code>runs/terminal-bench/frontier-v4</code></p></main></div>
+<footer class="site-footer wrap"><a href="../index.html">← Back to JevAny</a><a href="license.html">Apache-2.0 code</a></footer></body></html>

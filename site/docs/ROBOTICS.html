@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a1114">
+<title>Cartesian peg insertion with Jev — JevAny</title><link rel="stylesheet" href="../styles.css"><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"></head>
+<body class="docs-page"><a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header wrap"><a class="brand" href="../index.html"><img src="../assets/favicon.svg" width="30" height="30" alt=""><span>JevAny<span class="brand-period">.</span></span></a>
+<nav aria-label="Main navigation"><a href="../index.html#benchmarks">Benchmarks</a><a href="../index.html#models">Models</a><a href="../index.html#get-started">Get started</a></nav></header>
+<div class="docs-layout wrap"><aside class="docs-sidebar"><a class="text-link" href="../index.html">← Project homepage</a><nav aria-label="Documentation"><a href="quickstart.html">Quickstart</a><a href="TRAINING.html">Training</a><a href="DATA.html">Data</a><a href="DEPLOYMENT.html">Deployment</a><a href="API.html">API reference</a><a href="examples.html">Examples</a><a href="CASES.html">Cases</a><a href="EVALUATION.html">Evaluation</a><a href="ALGORITHM.html">Method</a><a href="INTEGRATIONS.html">Integrations</a><a href="zh.html">中文文档</a></nav>
+<details class="doc-toc"><summary>On this page</summary><div class="toc">
+<ul>
+<li><a href="#what-the-harness-supplies">What the harness supplies</a></li>
+<li><a href="#motion-and-playback">Motion and playback</a></li>
+<li><a href="#historical-recorded-evaluation">Historical recorded evaluation</a></li>
+<li><a href="#using-the-harness-directly">Using the harness directly</a></li>
+</ul>
+</div>
+</details></aside>
+<main id="content" class="doc-content"><p class="eyebrow">JEVANY / DOCUMENTATION</p><h1>Cartesian peg insertion with Jev</h1><p>The Franka Panda demo uses 14 motor commands: ±X, ±Y and ±Z translation by
+1 cm or 5 cm, plus opening and closing the fingers in place. The gripper
+orientation stays fixed. The gripper moves through motor commands, and contact
+and gravity determine how it grasps and carries the object.</p>
+<p>The <a href="examples.html#play-locally-or-connect-your-model">playground guide</a>
+shows how to run it with camera images and a local model server.</p>
+<p><video class="doc-video" controls playsinline preload="none" aria-label="Recorded Jev run with primitive controls and measured subgoals" poster="../assets/media/docs/playground-arm.webp"><source src="../assets/media/docs/playground-arm.webm" type="video/webm"><source src="../assets/media/docs/playground-arm.mp4" type="video/mp4">Your browser does not support video.</video></p>
+<h2 id="what-the-harness-supplies">What the harness supplies</h2>
+<p><a href="../files/jevany/demos/arm_policy.py"><code>ArmHarness</code></a> tracks open, align, descend, grasp,
+lift, transport, lower and release stages. It supplies a target pose and finger
+state for the current stage. Jev selects from all 14 unranked actions, and the
+environment executes its choice. The harness supplies the task plan.</p>
+<p>Each model request contains the current camera image and a compact numerical
+observation: current and target XYZ in centimetres, signed target-minus-current
+error, required and observed finger state, current two-finger contact, and the
+last three actions with feedback. It also identifies an axis to finish before
+switching coordinates. The prompt uses 5 cm moves for errors of at least
+4.45 cm, then 1 cm moves, and explicitly leaves errors within 0.55 cm alone.
+This avoids repeatedly reversing a motor command to chase an acceptable pose.</p>
+<p>The grasp target is 8.5 cm above the table; transport height is 31 cm and the
+release target is 14 cm. Position transitions use a 0.55 cm tolerance per axis.
+The harness advances from grasp only after measured contact confirms that the
+peg is held. If contact disappears during lifting or transport, it returns to
+opening and alignment. Current contact measurements determine whether the peg
+is held. The harness provides recovery goals, and Jev selects the actions.</p>
+<p>The simulator accepts commands within X=[0.20, 0.75], Y=[-0.40, 0.40] and
+Z=[0.045, 0.50] metres. Commands beyond those bounds are clipped and reported.
+An episode ends at success or 120 decisions. Success requires prior two-finger
+contact, centering in the cyan socket, insertion depth, upright orientation,
+open fingers and a settled peg.</p>
+<h2 id="motion-and-playback">Motion and playback</h2>
+<p>Each translation follows a quintic trajectory with zero commanded velocity and
+acceleration at its endpoints. A 5 cm move takes 0.5 seconds; a 1 cm move takes
+about 0.18 seconds. Translation settling takes another 8 physics ticks
+(0.033 seconds), replacing the previous 84-tick pause. Opening and closing
+retain 0.95 seconds of physical settling time to check contact and release.
+The gripper still stops for each decision; live inference latency is separate
+from this simulation time.</p>
+<p>The environment records actual physics frames at 30 fps. The browser uses this
+timing and removes the additional pause between arm steps. It shows the selected
+action while playing the recorded physics frames.</p>
+<p>All three Playground GIFs use the same browser renderer, crop, 1120 × 900 canvas,
+25 fps sampling and 1.5× playback speed, with no added loop-boundary pauses.
+To regenerate all three, start <code>jevany demo</code>, install Pillow, Playwright and its
+Chromium browser, then run:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python scripts/render_demo_gifs.py
+</code></pre>
+<p>The renderer reads the packaged replays and writes all three GIFs and their
+shared format manifest. A regression check rejects inconsistent formats or
+GIFs whose decision counts no longer match their recordings. Keep diagnostic
+visualizations separate from these three public assets.</p>
+<h2 id="historical-recorded-evaluation">Historical recorded evaluation</h2>
+<p>The archived runs below used the predecessor <code>tianxinwei/JevAny-27B-SFT</code> at revision
+<code>ad7b48b7056a9742f54aacc9b98b6b46dc2ce167</code>, camera images, and argmax selection
+from the full action set. The environment executed the model-selected motor
+commands. Responses confirmed that nonempty image tensors reached the model.
+These results are retained with their original checkpoint identity and are not
+presented as runs of the current
+<a href="https://huggingface.co/SimpleJev/JevAny-Qwen3.8-27B-LoRA">JevAny-Qwen3.8-27B</a>
+release.</p>
+<p>Four harness designs were first compared on seeds 17 and 29:</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Information supplied</th>
+<th style="text-align: right;">Completed</th>
+<th>Decisions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Stage and target pose</td>
+<td style="text-align: right;">2/2</td>
+<td>58, 58</td>
+</tr>
+<tr>
+<td>Stage, target pose and signed error</td>
+<td style="text-align: right;">2/2</td>
+<td>48, 50</td>
+</tr>
+<tr>
+<td>Above, plus each action's predicted position error</td>
+<td style="text-align: right;">2/2</td>
+<td>48, 48</td>
+</tr>
+<tr>
+<td>Above, plus a specified coordinate to correct first</td>
+<td style="text-align: right;">2/2</td>
+<td>45, 45</td>
+</tr>
+</tbody>
+</table></div>
+<p>The initial harness used stage, target pose and signed error. The smoother
+version adds axis continuity, explicit tolerance instructions and the motion
+timing above. Both completed the same eight additional seeds on Python 3.12
+and PyBullet 3.2.7, with all six checks passing in every run:</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th style="text-align: right;">Seed</th>
+<th style="text-align: right;">Initial decisions</th>
+<th style="text-align: right;">Smoother decisions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">41</td>
+<td style="text-align: right;">58</td>
+<td style="text-align: right;">48</td>
+</tr>
+<tr>
+<td style="text-align: right;">53</td>
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">46</td>
+</tr>
+<tr>
+<td style="text-align: right;">67</td>
+<td style="text-align: right;">47</td>
+<td style="text-align: right;">46</td>
+</tr>
+<tr>
+<td style="text-align: right;">79</td>
+<td style="text-align: right;">48</td>
+<td style="text-align: right;">48</td>
+</tr>
+<tr>
+<td style="text-align: right;">101</td>
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">48</td>
+</tr>
+<tr>
+<td style="text-align: right;">113</td>
+<td style="text-align: right;">46</td>
+<td style="text-align: right;">46</td>
+</tr>
+<tr>
+<td style="text-align: right;">127</td>
+<td style="text-align: right;">46</td>
+<td style="text-align: right;">46</td>
+</tr>
+<tr>
+<td style="text-align: right;">137</td>
+<td style="text-align: right;">46</td>
+<td style="text-align: right;">46</td>
+</tr>
+</tbody>
+</table></div>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Measure across these eight runs</th>
+<th style="text-align: right;">Initial</th>
+<th style="text-align: right;">Smoother</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Mean simulated execution time, excluding inference</td>
+<td style="text-align: right;">41.86 s</td>
+<td style="text-align: right;">20.03 s</td>
+</tr>
+<tr>
+<td>Direction reversals within a stage</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">5</td>
+</tr>
+<tr>
+<td>Axis switches within a stage</td>
+<td style="text-align: right;">94</td>
+<td style="text-align: right;">32</td>
+</tr>
+<tr>
+<td>Redundant finger commands</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">0</td>
+</tr>
+</tbody>
+</table></div>
+<p>Reversals compare consecutive translation commands on the same axis within
+one stage; intentional lift/lower transitions are excluded. Five runs still
+overshoot once and correct by 1 cm. The showcased seed 41 has no such reversal.
+These measurements describe the joint execution and model choices, before
+any GIF playback acceleration.</p>
+<p>The packaged replay shows the smoother seed 41 run, the first additional seed. The
+<a href="../files/docs/demos/arm-checkpoint-runs.json.gz">compressed decision archive</a> retains all
+24 trials, their requests, probabilities and before/after measurements.
+These seeds vary the peg's initial X coordinate by a few millimetres, evaluating
+action selection within the supplied peg-insertion plan and fixture.</p>
+<h2 id="using-the-harness-directly">Using the harness directly</h2>
+<p><code>PegInsertion.decision_request(model, history)</code> returns the model's structured
+choice request. Attach an image from <code>env.render()</code> using the client's media
+interface, submit the request, and pass the returned action to <code>env.step()</code>.
+<code>reset()</code> resets both the physical environment and its harness.</p>
+<p>The browser does this automatically. With <code>--media-root</code>, it writes a temporary
+PNG beneath the model server's <code>JEVANY_MEDIA_ROOT</code>, keeps it available during
+the request, and removes it on success or error. Both processes must share
+that filesystem path. The server's existing file validation remains in effect.</p></main></div>
+<footer class="site-footer wrap"><a href="../index.html">← Back to JevAny</a><a href="license.html">Apache-2.0 code</a></footer></body></html>

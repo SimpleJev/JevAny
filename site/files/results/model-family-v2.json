@@ -1,0 +1,202 @@
+{
+  "schema_version": 1,
+  "release": "model-family-v2",
+  "training_data": {
+    "records": 1772725,
+    "questions": 2180242,
+    "categories": [
+      "preference",
+      "agent and tool decisions",
+      "reasoning",
+      "classification",
+      "safety"
+    ]
+  },
+  "training_compute": {
+    "hardware": "NVIDIA H200",
+    "scope": "training through each released checkpoint; excludes ablations, evaluation, and later training",
+    "calculation": "elapsed wall-clock hours multiplied by DDP world size",
+    "total_gpu_hours": 2081.6701764987984,
+    "maximum_parallel_gpus_per_run": 40,
+    "models": {
+      "SimpleJev/JevAny-Gemma-4B-LoRA": {
+        "released_step": 2771,
+        "parallel_gpus": 32,
+        "wall_seconds": 11802.619868,
+        "wall_hours": 3.28,
+        "gpu_hours": 104.9,
+        "estimated": true,
+        "estimate_basis": "run start and checkpoint timestamps"
+      },
+      "SimpleJev/JevAny-Qwen3.5-4B-LoRA": {
+        "released_step": 13850,
+        "parallel_gpus": 32,
+        "wall_seconds": 37187.75734710693,
+        "wall_hours": 10.33,
+        "gpu_hours": 330.6,
+        "estimated": false
+      },
+      "SimpleJev/JevAny-Qwen3.5-4B-Direct-Token-LoRA": {
+        "released_step": 9695,
+        "parallel_gpus": 32,
+        "wall_seconds": 30270.641902685165,
+        "wall_hours": 8.41,
+        "gpu_hours": 269.1,
+        "estimated": false
+      },
+      "SimpleJev/JevAny-Qwen3.8-27B-LoRA": {
+        "released_step": 44319,
+        "parallel_gpus": 32,
+        "wall_seconds": 141946.27644968033,
+        "wall_hours": 39.43,
+        "gpu_hours": 1261.7,
+        "estimated": true,
+        "estimate_basis": "cumulative seconds-per-record telemetry at checkpoint"
+      },
+      "SimpleJev/JevAny-Muse-Glimmer-30B-LoRA": {
+        "released_step": 3324,
+        "parallel_gpus": 40,
+        "wall_seconds": 10384.479430913925,
+        "wall_hours": 2.88,
+        "gpu_hours": 115.4,
+        "estimated": false
+      }
+    }
+  },
+  "protocols": {
+    "transfer_v9": {
+      "headline_population": "clean knowable decisions",
+      "questions": 1046,
+      "evaluated_requests": 1264,
+      "suite_sha256": "3c4f0be94509a3612678bfd3a30fd99a8d0ca3c47ddfe7318075d95b2fa365e4"
+    },
+    "jevbench_public": {
+      "claim": "public development diagnostic; not a sealed Benchmark Heaven score",
+      "questions": 231,
+      "suite": "jevbench-public-v1.4.2.2",
+      "suite_sha256": "b6d6eb34fdbbf46ec11be8657da5e513e3538990d7a00ca5582c55d8bd7941c6"
+    }
+  },
+  "released_models": [
+    {
+      "repository": "SimpleJev/JevAny-Gemma-4B-LoRA",
+      "readout": "pointer",
+      "transfer_v9_accuracy": 0.7084130019120459,
+      "transfer_v9_nll": 0.7064284258952175,
+      "transfer_v9_brier": 0.36852287218822294,
+      "transfer_v9_ece": 0.056389513378074366,
+      "jevbench_public_accuracy": 0.7748917748917749,
+      "jevbench_public_nll": 0.5356955213393567,
+      "jevbench_public_brier": 0.30912978849416195,
+      "jevbench_public_ece": 0.043041233745124516,
+      "jevbench_tiers": {"easy": 1.0, "original": 0.9583333333333334, "hard": 0.5585585585585585}
+    },
+    {
+      "repository": "SimpleJev/JevAny-Qwen3.5-4B-LoRA",
+      "readout": "pointer",
+      "transfer_v9_accuracy": 0.7868068833652008,
+      "transfer_v9_nll": 0.5868780845820413,
+      "transfer_v9_brier": 0.2965183466659115,
+      "transfer_v9_ece": 0.03479245011625781,
+      "jevbench_public_accuracy": 0.8008658008658008,
+      "jevbench_public_nll": 0.45545655640750665,
+      "jevbench_public_brier": 0.2585838755503942,
+      "jevbench_public_ece": 0.037181470023707135,
+      "jevbench_tiers": {"easy": 1.0, "original": 0.9583333333333334, "hard": 0.6126126126126126}
+    },
+    {
+      "repository": "SimpleJev/JevAny-Qwen3.5-4B-Direct-Token-LoRA",
+      "readout": "direct-token",
+      "transfer_v9_accuracy": 0.7820267686424475,
+      "transfer_v9_nll": 0.5641673018758349,
+      "transfer_v9_brier": 0.29084246078427645,
+      "transfer_v9_ece": 0.02915343336941378,
+      "jevbench_public_accuracy": 0.8095238095238095,
+      "jevbench_public_nll": 0.43291971261362416,
+      "jevbench_public_brier": 0.25567839211017723,
+      "jevbench_public_ece": 0.051267072125221205,
+      "jevbench_tiers": {"easy": 1.0, "original": 0.9861111111111112, "hard": 0.6126126126126126}
+    },
+    {
+      "repository": "SimpleJev/JevAny-Qwen3.8-27B-LoRA",
+      "readout": "pointer",
+      "transfer_v9_accuracy": 0.8604206500956023,
+      "transfer_v9_nll": 0.38782967075925884,
+      "transfer_v9_brier": 0.19524463105141282,
+      "transfer_v9_ece": 0.026304156956950514,
+      "jevbench_public_accuracy": 0.9004329004329005,
+      "jevbench_public_nll": 0.26504695855468874,
+      "jevbench_public_brier": 0.14556199524820898,
+      "jevbench_public_ece": 0.02122154456035335,
+      "jevbench_tiers": {"easy": 1.0, "original": 0.9722222222222222, "hard": 0.8108108108108109}
+    },
+    {
+      "repository": "SimpleJev/JevAny-Muse-Glimmer-30B-LoRA",
+      "readout": "pointer",
+      "transfer_v9_accuracy": 0.8346080305927343,
+      "transfer_v9_nll": 0.46413265214637384,
+      "transfer_v9_brier": 0.22851810579582135,
+      "transfer_v9_ece": 0.03179001642085391,
+      "jevbench_public_accuracy": 0.8744588744588745,
+      "jevbench_public_nll": 0.31583730444802954,
+      "jevbench_public_brier": 0.17380141586146722,
+      "jevbench_public_ece": 0.027182352142815645,
+      "jevbench_tiers": {"easy": 1.0, "original": 0.9722222222222222, "hard": 0.7567567567567568}
+    }
+  ],
+  "references": [
+    {
+      "model": "Kev-4B",
+      "provenance": "local public-checkpoint runs",
+      "transfer_v9_accuracy": 0.7418738049713193,
+      "transfer_v9_nll": 0.8580147290006348,
+      "transfer_v9_brier": 0.38005011920774834,
+      "transfer_v9_ece": 0.12542821527771447,
+      "jevbench_public_accuracy": 0.7532467532467533,
+      "jevbench_public_nll": 0.5368825467858797,
+      "jevbench_public_brier": 0.3102279679461231,
+      "jevbench_public_ece": 0.02145783397617339,
+      "jevbench_tiers": {"easy": 1.0, "original": 0.9444444444444444, "hard": 0.5225225225225225}
+    },
+    {
+      "model": "Kev-27B",
+      "revision": "01b81998019be550f0ae858727df49bac9511195",
+      "provenance": "local pinned-revision runs",
+      "transfer_v9_accuracy": 0.8231357552581262,
+      "transfer_v9_nll": 0.5331871655212505,
+      "transfer_v9_brier": 0.2646017171032617,
+      "transfer_v9_ece": 0.05024319561491112,
+      "jevbench_public_accuracy": 0.8528138528138528,
+      "jevbench_public_nll": 0.3667328890993281,
+      "jevbench_public_brier": 0.20117176376882528,
+      "jevbench_public_ece": 0.05628527784638471,
+      "jevbench_tiers": {"easy": 1.0, "original": 1.0, "hard": 0.6936936936936937}
+    },
+    {
+      "model": "Jev 1.13.0",
+      "provenance": "local API Transfer-v9 run and published JevBench reference",
+      "transfer_v9_accuracy": 0.8537284894837476,
+      "transfer_v9_nll": 0.643853776029141,
+      "transfer_v9_brier": 0.21211354829169302,
+      "transfer_v9_ece": 0.03348542789269361,
+      "jevbench_public_accuracy": 0.8658008658008658,
+      "jevbench_public_calibration": null,
+      "jevbench_public_calibration_note": "Published reference contains correct counts but no prediction probabilities.",
+      "jevbench_tiers": {"easy": 1.0, "original": 0.9861111111111112, "hard": 0.7297297297297297}
+    },
+    {
+      "model": "Laya",
+      "revision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+      "provenance": "local pinned-revision runs",
+      "transfer_v9_accuracy": 0.5229445506692161,
+      "transfer_v9_nll": 1.2636412807288386,
+      "transfer_v9_brier": 0.6145620496187834,
+      "transfer_v9_ece": 0.12735834098363863,
+      "jevbench_public_accuracy": 0.5800865800865801,
+      "jevbench_public_nll": 0.9271438041053799,
+      "jevbench_public_brier": 0.5328013064653653,
+      "jevbench_public_ece": 0.09498413486666232,
+      "jevbench_tiers": {"easy": 0.9583333333333334, "original": 0.7083333333333334, "hard": 0.3333333333333333}
+    }
+  ]
+}

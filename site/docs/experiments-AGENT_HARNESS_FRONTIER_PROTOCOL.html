@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a1114">
+<title>Agent-harness task and delegation ladder — JevAny</title><link rel="stylesheet" href="../styles.css"><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"></head>
+<body class="docs-page"><a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header wrap"><a class="brand" href="../index.html"><img src="../assets/favicon.svg" width="30" height="30" alt=""><span>JevAny<span class="brand-period">.</span></span></a>
+<nav aria-label="Main navigation"><a href="../index.html#benchmarks">Benchmarks</a><a href="../index.html#models">Models</a><a href="../index.html#get-started">Get started</a></nav></header>
+<div class="docs-layout wrap"><aside class="docs-sidebar"><a class="text-link" href="../index.html">← Project homepage</a><nav aria-label="Documentation"><a href="quickstart.html">Quickstart</a><a href="TRAINING.html">Training</a><a href="DATA.html">Data</a><a href="DEPLOYMENT.html">Deployment</a><a href="API.html">API reference</a><a href="examples.html">Examples</a><a href="CASES.html">Cases</a><a href="EVALUATION.html">Evaluation</a><a href="ALGORITHM.html">Method</a><a href="INTEGRATIONS.html">Integrations</a><a href="zh.html">中文文档</a></nav>
+<details class="doc-toc"><summary>On this page</summary><div class="toc">
+<ul>
+<li><a href="#two-independent-axes">Two independent axes</a><ul>
+<li><a href="#task-tiers">Task tiers</a><ul>
+<li><a href="#why-alfworld-is-not-the-high-difficulty-endpoint">Why ALFWorld is not the high-difficulty endpoint</a></li>
+<li><a href="#why-webarena-should-not-be-increased-now">Why WebArena should not be increased now</a></li>
+</ul>
+</li>
+<li><a href="#delegation-levels">Delegation levels</a></li>
+</ul>
+</li>
+<li><a href="#required-efficiencyperformance-table">Required efficiency/performance table</a></li>
+<li><a href="#pareto-frontier-and-demo-selection">Pareto-frontier and demo selection</a></li>
+<li><a href="#existing-evidence-snapshot">Existing evidence snapshot</a><ul>
+<li><a href="#exploratory-v4-delegation-rate-sweep">Exploratory v4 delegation-rate sweep</a></li>
+</ul>
+</li>
+<li><a href="#minimal-next-matrix">Minimal next matrix</a></li>
+</ul>
+</div>
+</details></aside>
+<main id="content" class="doc-content"><p class="eyebrow">JEVANY / DOCUMENTATION</p><h1>Agent-harness task and delegation ladder</h1><p>Status: protocol design plus an evidence snapshot from 2026-09-30. A result is called
+validated only when the referenced run already exists; proposed levels and pending
+runs are not presented as results.</p>
+<h2 id="two-independent-axes">Two independent axes</h2>
+<p>Task difficulty and Jev autonomy are different variables. A difficult task can use no
+delegation, and a simple task can delegate almost every action. Results should therefore
+be indexed by <code>(task tier, delegation level, frontier model, Jev checkpoint, protocol
+version)</code> instead of placing all experiments on one ambiguous "easy to hard" ladder.</p>
+<h3 id="task-tiers">Task tiers</h3>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Environment</th>
+<th>What it tests</th>
+<th>Current examples</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T0: controlled mechanism</td>
+<td>Small, deterministic state/action space</td>
+<td>Selection correctness, regressions, paired-seed sensitivity</td>
+<td>FrozenLake, Sokoban</td>
+</tr>
+<tr>
+<td>T1: bounded language/simulator</td>
+<td>Longer language-conditioned plans, but finite affordances and resettable simulator state</td>
+<td>Subgoal ordering and state tracking</td>
+<td>ALFWorld; other games only as diagnostics</td>
+</tr>
+<tr>
+<td>T2: structured interactive product</td>
+<td>Open-text query plus bounded page controls and a task-specific verifier</td>
+<td>Search/refinement under interface state</td>
+<td>WebShop</td>
+</tr>
+<tr>
+<td>T3: dynamic real web</td>
+<td>Heterogeneous sites, popups, accounts, navigation, semantic page state</td>
+<td>Robust browser interaction</td>
+<td>WebArena frozen six-task sample</td>
+</tr>
+<tr>
+<td>T4: open terminal</td>
+<td>Open command space, persistent side effects, diagnosis, editing, and explicit verification</td>
+<td>General software/system task completion</td>
+<td>Terminal-Bench 2 easy/medium/hard strata</td>
+</tr>
+</tbody>
+</table></div>
+<p>These labels describe environment openness, not a guaranteed total order for every
+individual task. Baseline success and historical pass rate remain the empirical
+difficulty measures.</p>
+<h4 id="why-alfworld-is-not-the-high-difficulty-endpoint">Why ALFWorld is not the high-difficulty endpoint</h4>
+<p>ALFWorld can be difficult because it requires a multi-step plan, object-state tracking,
+and recovery from a wrong subgoal. It is nevertheless a bounded text simulator: actions
+come from a small templated grammar, observations are compact, resets are deterministic,
+and there is no live UI, authentication, package state, arbitrary file editing, or open
+shell command space. It belongs at T1 as a useful compositional-planning test, not above
+WebArena or Terminal-Bench as evidence of open-world harness capability. Existing
+ALFWorld runs are excluded from difficulty claims until a predeclared sample and verifier
+policy are recorded.</p>
+<h4 id="why-webarena-should-not-be-increased-now">Why WebArena should not be increased now</h4>
+<p>The WebArena benchmark row is the already predeclared task set
+<code>[264, 278, 300, 158, 4, 763]</code>. The popup-aware run reuses task 264 and is a mechanism
+demo; it is not a seventh benchmark task. Adding tasks after seeing Jev outcomes would
+change the estimand and invite selection bias. Any future expansion must be a separately
+versioned, predeclared sample and must not overwrite the six-task row. Breadth should now
+come from the already declared Terminal-Bench strata, not from silently growing
+WebArena.</p>
+<p>Terminal-Bench occupies T4 and keeps its internal historical strata:</p>
+<ul>
+<li>easy (4/4 historical pass): <code>regex-log</code>, <code>sqlite-db-truncate</code></li>
+<li>medium (2/4): <code>configure-git-webserver</code>, <code>llm-inference-batching-scheduler</code></li>
+<li>hard (0/4): <code>query-optimize</code>, <code>path-tracing</code></li>
+</ul>
+<p>The historical rate is used only to predeclare strata; it is not a claim about results
+from the new candidate-selection harness.</p>
+<h3 id="delegation-levels">Delegation levels</h3>
+<p>At every level the frontier LLM owns task interpretation, reasoning, candidate
+generation, exception recovery, verification, and the final completion decision. Jev
+selects only among bounded options supplied by the LLM; it never invents a shell command
+or browser action.</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Level</th>
+<th>Jev role</th>
+<th>Execution policy</th>
+<th style="text-align: right;">Expected eligible-decision coverage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>D0: direct baseline</td>
+<td>None</td>
+<td>LLM emits options and its <code>frontier_choice</code> executes</td>
+<td style="text-align: right;">0%</td>
+</tr>
+<tr>
+<td>D1: shadow judge</td>
+<td>Chooses, but choice is logged and not executed</td>
+<td>LLM choice executes; agreement and regret are measured</td>
+<td style="text-align: right;">0% executed</td>
+</tr>
+<tr>
+<td>D2: selective delegation</td>
+<td>Chooses only when the LLM explicitly opts in</td>
+<td>One bounded action; frontier fallback on low confidence/error</td>
+<td style="text-align: right;">1–50%</td>
+</tr>
+<tr>
+<td>D3: basic-decision default</td>
+<td>Chooses every eligible routine/reversible decision</td>
+<td>Normally one action; at most two only when the LLM declares the sequence composable</td>
+<td style="text-align: right;">50–85%</td>
+</tr>
+<tr>
+<td>D4: bounded subgoal harness</td>
+<td>Repeatedly chooses within an LLM-authored option library until a stop/exception condition</td>
+<td>Several actions without a fresh frontier call; LLM resumes on novelty, risk, or verification</td>
+<td style="text-align: right;">85–100% of eligible decisions</td>
+</tr>
+</tbody>
+</table></div>
+<p>Coverage bands are reporting bins, not success criteria. The configured policy level and
+the realized coverage must both be shown. The current Terminal-Bench candidate protocol
+is in the D3 family: routine decisions go to Jev, precise non-routine edits can execute
+directly, and composable execution is capped at two commands. The existing cross-domain
+optional-delegation matrix is D2 because the frontier autonomously gates delegation.
+D1 and D4 are proposed ablations and have no result yet.</p>
+<p>An <strong>eligible decision</strong> is a low-risk, reversible action for which the LLM produced at
+least two locally valid options. Examples include inspection commands, waiting versus
+polling, choosing the next page control, or choosing among equivalent verification
+steps. Precise file content, irreversible actions, security-sensitive operations,
+singleton commands, and final completion are ineligible and remain with the frontier.</p>
+<p>In the current implementation, <code>routine</code>/non-routine eligibility is declared by the
+frontier model. The harness locally enforces the response schema, multi-option rule,
+confidence fallback, short sequence cap, and narrow command-policy checks; it does not
+semantically prove that arbitrary shell commands are reversible or safe. The
+Terminal-Bench container limits task-side effects, but the harness is not a general
+shell sandbox.</p>
+<p>Report both:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-text">all-command replacement = Jev-executed commands / (Jev-executed + frontier-executed commands)
+eligible coverage        = Jev-executed eligible decisions / all executed eligible decisions
+</code></pre>
+<p>The first metric is available in the current Terminal-Bench logs. The second requires an
+explicit <code>eligible</code> field and should be added to future result schemas. Neither metric is
+the same as frontier-call savings: D3 still calls the LLM to generate each choice set.
+D4 is the level that can directly avoid repeated frontier calls by amortizing one LLM
+subgoal/options response across several Jev decisions.</p>
+<h2 id="required-efficiencyperformance-table">Required efficiency/performance table</h2>
+<p>Every row must report quality and resource use together:</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Group</th>
+<th>Required fields</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Identity</td>
+<td>task tier, benchmark/task ID, frontier model, Jev checkpoint, protocol version, seed/attempt</td>
+</tr>
+<tr>
+<td>Quality</td>
+<td>verifier reward/success, completion reason, quality delta versus D0</td>
+</tr>
+<tr>
+<td>Frontier efficiency</td>
+<td>frontier calls, input/output/total tokens, estimated API cost</td>
+</tr>
+<tr>
+<td>End-to-end efficiency</td>
+<td>wall time, Jev calls and latency, separately reported Jev GPU/runtime cost when available</td>
+</tr>
+<tr>
+<td>Delegation</td>
+<td>configured level, all-command replacement, eligible coverage, direct/delegated commands, mean delegated horizon</td>
+</tr>
+<tr>
+<td>Robustness</td>
+<td>protocol repairs, Jev failures, low-confidence fallbacks, invalid actions, paired confidence interval when sample size permits</td>
+</tr>
+</tbody>
+</table></div>
+<p>All savings use <code>1 - optional / baseline</code>; positive means saved. A row must never hide a
+negative metric behind an average score. Cold-start exclusions and unpriced cache/GPU
+cost must be called out.</p>
+<h2 id="pareto-frontier-and-demo-selection">Pareto-frontier and demo selection</h2>
+<p>Compute frontiers only within the same task, frontier model, checkpoint, and evaluation
+protocol. A point is dominated if another point has no worse verifier quality and no
+higher frontier calls, tokens, estimated API cost, or end-to-end time, with at least one
+strict improvement. Jev runtime cost should be a separate axis until it is monetized.
+Delegation coverage is a color/annotation, not an objective to maximize: more delegation
+is useful only if quality and efficiency survive.</p>
+<p>The publication rule is:</p>
+<ol>
+<li>Freeze the sample and protocol before inspecting outcomes; retain and display every
+   attempted cell, including failures and aborted infrastructure runs.</li>
+<li>Require optional verifier success and no quality regression for an efficiency demo.
+   A quality-recovery demo may instead require <code>optional &gt; baseline</code>, but must disclose
+   every resource regression.</li>
+<li>For a validated headline, require paired repetitions and uncertainty intervals. A
+   one-task or one-attempt result is explicitly a mechanism/demo, never a benchmark win.</li>
+<li>Among eligible demos, rank by quality delta, then frontier-call reduction, token
+   reduction, API-cost reduction, and wall-time reduction. Break ties with fewer repairs
+   and fallbacks.</li>
+<li>A runnable decision demo additionally requires the complete LLM option set, Jev's
+   chosen index/confidence, executed action, observation, and the LLM's final verification.</li>
+</ol>
+<p>Recommended showcase panels based on evidence available now:</p>
+<ul>
+<li><strong>Validated controlled efficiency:</strong> GPT-5.6-sol + 27B Jev on FrozenLake, with success
+  100% to 100%, 64.4% calls saved, 63.1% tokens saved, and 37.6% time saved. Label it T0
+  mechanism evidence, not general-agent difficulty.</li>
+<li><strong>Real-web mechanism:</strong> WebArena task 264 popup-aware smoke, where both passed and the
+  observed trace reduced Opus calls 8 to 2 and tokens 76,674 to 13,407. Label it a
+  single-task smoke; the frozen six-task aggregate is 50% to 50% with worse calls/tokens.</li>
+<li><strong>Open-terminal candidate trace:</strong> reserve this panel for a completed final-protocol
+  paired run with full candidate logging. The v3 <code>regex-log</code> run is an exploratory
+  quality-recovery candidate (0 to 1 reward and 30 to 18 calls), but tokens rose and v3
+  did not retain the complete candidate list required for the final demo.</li>
+</ul>
+<h2 id="existing-evidence-snapshot">Existing evidence snapshot</h2>
+<p>The validated cross-domain matrix contains 96 paired comparisons (192 agent episodes)
+across ten cells. Its
+mixed results are important: the GPT/FrozenLake cell is a clear multi-metric win, while
+several Sokoban cells get more expensive and the six-task WebArena aggregate has equal
+success but no efficiency win. WebShop improves from 50% to 60% in one ten-pair cell,
+but its confidence intervals cross zero. See
+<a href="results-agent-harness-v1-formal-matrix.html"><code>results/agent-harness-v1/formal-matrix.md</code></a>.</p>
+<p>Terminal-Bench development history demonstrates why the delegation level must be
+controlled rather than maximized:</p>
+<ul>
+<li>v1 <code>regex-log</code>: both verifier rewards were 1, but optional delegation increased calls
+  20 to 30 and tokens 231,070 to 395,501; this is an over-delegation failure.</li>
+<li>v2 <code>regex-log</code>: both rewards were 1, with calls 14 to 12 and tokens 159,509 to 147,212.</li>
+<li>v2 <code>sqlite-db-truncate</code>: both rewards were 1, but calls rose 15 to 17 and tokens
+  152,107 to 268,907. The same harness can help one task and hurt another.</li>
+</ul>
+<p>The v3 sample is complete: 12 task-mode trials across the six predeclared tasks.</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Stratum/task</th>
+<th style="text-align: right;">D0 reward / calls / tokens</th>
+<th style="text-align: right;">D3 reward / calls / tokens</th>
+<th style="text-align: right;">D3 command replacement</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>easy / <code>regex-log</code></td>
+<td style="text-align: right;">0 / 30 / 186,712</td>
+<td style="text-align: right;">1 / 18 / 196,687</td>
+<td style="text-align: right;">5 / 10 = 50.0%</td>
+<td>exploratory pair complete</td>
+</tr>
+<tr>
+<td>easy / <code>sqlite-db-truncate</code></td>
+<td style="text-align: right;">1 / 17 / 202,102</td>
+<td style="text-align: right;">1 / 15 / 222,728</td>
+<td style="text-align: right;">9 / 13 = 69.2%</td>
+<td>exploratory pair complete</td>
+</tr>
+<tr>
+<td>medium / <code>configure-git-webserver</code></td>
+<td style="text-align: right;">0 / 30 / 267,467</td>
+<td style="text-align: right;">0 / 30 / 308,860</td>
+<td style="text-align: right;">23 / 31 = 74.2%</td>
+<td>exploratory pair complete</td>
+</tr>
+<tr>
+<td>medium / <code>llm-inference-batching-scheduler</code></td>
+<td style="text-align: right;">0 / 30 / 572,053</td>
+<td style="text-align: right;">0 / 30 / 600,218</td>
+<td style="text-align: right;">19 / 24 = 79.2%</td>
+<td>exploratory pair complete</td>
+</tr>
+<tr>
+<td>hard / <code>query-optimize</code></td>
+<td style="text-align: right;">0 / 30 / 366,138</td>
+<td style="text-align: right;">1 / 29 / 348,370</td>
+<td style="text-align: right;">27 / 29 = 93.1%</td>
+<td>exploratory pair complete</td>
+</tr>
+<tr>
+<td>hard / <code>path-tracing</code></td>
+<td style="text-align: right;">0 / 30 / 574,798</td>
+<td style="text-align: right;">0 / 30 / 361,174</td>
+<td style="text-align: right;">17 / 26 = 65.4%</td>
+<td>exploratory pair complete</td>
+</tr>
+</tbody>
+</table></div>
+<p>Across all six tasks, success was 1/6 for D0 and 3/6 for D3, with 9.0% frontier-call,
+6.0% token, 6.9% estimated Bedrock-cost, and 1.5% wall-time savings. These are single
+stochastic attempts and protocol-development evidence, not formal performance estimates.
+v3 also spent many frontier calls repairing candidate schemas.
+The implementation after v3 accepts valid singleton/non-routine proposals and records
+complete candidate sets. At the time of that snapshot, no v4 outcome existed.</p>
+<h3 id="exploratory-v4-delegation-rate-sweep">Exploratory v4 delegation-rate sweep</h3>
+<p>A later six-cell mechanism sweep sampled two easy Terminal-Bench tasks at configured
+eligible-decision rates 0%, 50%, and 100%. All six verifier runs passed. The useful
+frontier came from <code>sqlite-db-truncate</code>:</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th style="text-align: right;">Target rate</th>
+<th style="text-align: right;">Actual eligible coverage</th>
+<th style="text-align: right;">Frontier calls</th>
+<th style="text-align: right;">Tokens</th>
+<th style="text-align: right;">Cost</th>
+<th style="text-align: right;">Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">0%</td>
+<td style="text-align: right;">0/2 (0.0%)</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">202,050</td>
+<td style="text-align: right;">$1.292</td>
+<td style="text-align: right;">187.9s</td>
+</tr>
+<tr>
+<td style="text-align: right;">50%</td>
+<td style="text-align: right;">1/4 (25.0%)</td>
+<td style="text-align: right;">11</td>
+<td style="text-align: right;">161,261</td>
+<td style="text-align: right;">$1.009</td>
+<td style="text-align: right;">155.1s</td>
+</tr>
+<tr>
+<td style="text-align: right;">100%</td>
+<td style="text-align: right;">2/3 (66.7%)</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">121,293</td>
+<td style="text-align: right;">$0.764</td>
+<td style="text-align: right;">144.7s</td>
+</tr>
+</tbody>
+</table></div>
+<p>Relative to 0%, the 100% target preserved reward while saving 46.7% of frontier calls,
+40.0% of tokens, 40.9% of estimated Bedrock cost, and 23.0% of wall time. Actual
+coverage stayed below target because low-confidence Jev returns fell back to the
+frontier. This is a single-attempt demonstration, not a confidence-qualified result.</p>
+<p>The <code>regex-log</code> sweep also passed all three rates, but the model mislabeled all basic
+steps as non-routine singletons, so realized Jev coverage was 0% and higher configured
+rates merely produced stochastic trajectory regressions. That row is retained as a
+negative protocol diagnostic, not presented as a Jev comparison. The post-run parser
+now rejects routine singleton menus, and the prompt explicitly requires basic
+inspection/navigation/wait/compile/verification steps to expose 2-4 real options.
+See <a href="results-agent-harness-v1-terminal-bench-frontier-v4.html"><code>results/agent-harness-v1/terminal-bench-frontier-v4.md</code></a>
+for all rows and full candidate traces.</p>
+<h2 id="minimal-next-matrix">Minimal next matrix</h2>
+<p>Do not run every benchmark in full. First run the predeclared six Terminal-Bench tasks at
+D0 and D3 with the final protocol, preserving v1-v3. Add D1 shadow cheaply from the same
+candidate traces where possible. Run D4 only on one easy and one medium task after D3 is
+stable. This yields a useful task-by-delegation grid without expanding WebArena or
+mistaking ALFWorld for the hard tier.</p></main></div>
+<footer class="site-footer wrap"><a href="../index.html">← Back to JevAny</a><a href="license.html">Apache-2.0 code</a></footer></body></html>

@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a1114">
+<title>Games, robotics, and application examples — JevAny</title><link rel="stylesheet" href="../styles.css"><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"></head>
+<body class="docs-page"><a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header wrap"><a class="brand" href="../index.html"><img src="../assets/favicon.svg" width="30" height="30" alt=""><span>JevAny<span class="brand-period">.</span></span></a>
+<nav aria-label="Main navigation"><a href="../index.html#benchmarks">Benchmarks</a><a href="../index.html#models">Models</a><a href="../index.html#get-started">Get started</a></nav></header>
+<div class="docs-layout wrap"><aside class="docs-sidebar"><a class="text-link" href="../index.html">← Project homepage</a><nav aria-label="Documentation"><a href="quickstart.html">Quickstart</a><a href="TRAINING.html">Training</a><a href="DATA.html">Data</a><a href="DEPLOYMENT.html">Deployment</a><a href="API.html">API reference</a><a href="examples.html" aria-current="page">Examples</a><a href="CASES.html">Cases</a><a href="EVALUATION.html">Evaluation</a><a href="ALGORITHM.html">Method</a><a href="INTEGRATIONS.html">Integrations</a><a href="zh.html">中文文档</a></nav>
+<details class="doc-toc"><summary>On this page</summary><div class="toc">
+<ul>
+<li><a href="#open-the-playground">Open the playground</a></li>
+<li><a href="#play-locally-or-connect-your-model">Play locally or connect your model</a><ul>
+<li><a href="#platform-requirements">Platform requirements</a></li>
+</ul>
+</li>
+<li><a href="#doom-corridor-3d">Doom corridor (3D)</a></li>
+<li><a href="#crafter-survival-2d">Crafter survival (2D)</a></li>
+<li><a href="#robot-peg-insertion">Robot peg insertion</a></li>
+<li><a href="#environment-api">Environment API</a></li>
+<li><a href="#command-line-application-examples">Command-line application examples</a></li>
+</ul>
+</div>
+</details></aside>
+<main id="content" class="doc-content"><p class="eyebrow">JEVANY / DOCUMENTATION</p><h1>Games, robotics, and application examples</h1><h2 id="open-the-playground">Open the playground</h2>
+<p>From the repository root, after creating the Python environment in the
+<a href="quickstart.html#quickstart">installation guide</a>:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m pip install -e .
+jevany demo
+</code></pre>
+<p>Open <code>http://127.0.0.1:8090</code> if your browser does not open automatically.
+Replays work offline and need no GPU, model weights, Docker, or cloud account.
+Use <code>--port 8091</code> to change the port or <code>--no-open</code> on a remote machine. For a
+remote host, forward the chosen port to your computer before opening the URL.</p>
+<p>The playground has three modes:</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>What runs</th>
+<th>Requirements</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Replay</strong></td>
+<td>Packaged frames and action records, with pause, step and seek controls</td>
+<td>Base installation</td>
+</tr>
+<tr>
+<td><strong>Play yourself</strong></td>
+<td>Your button presses execute native environment actions on CPU</td>
+<td>The environment's optional extra</td>
+</tr>
+<tr>
+<td><strong>Run model</strong></td>
+<td>JevAny receives the camera image, measured state and recent actions, chooses an action, and displays its probabilities</td>
+<td>Optional extra and a running JevAny server</td>
+</tr>
+</tbody>
+</table></div>
+<p>All three replays are archived runs from an earlier compatible checkpoint, with the recorded
+option probabilities. Crafter uses model-selected objectives before each native
+action; the robot uses primitive Cartesian controls and a measured subgoal
+harness. Fresh runs execute and record the model's choices and their outcomes.</p>
+<h2 id="play-locally-or-connect-your-model">Play locally or connect your model</h2>
+<p>For both games:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m pip install -e '.[demo]'
+jevany demo
+</code></pre>
+<p>Choose <strong>Play yourself</strong> and click the action controls. No inference server is
+needed. Change the seed and start a new run to change the initial world.</p>
+<p>For multimodal decisions, start the model server with a shared image directory:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">mkdir -p /tmp/jevany-media
+JEVANY_MEDIA_ROOT=/tmp/jevany-media jevany serve \
+  --checkpoint SimpleJev/JevAny-Qwen3.8-27B-LoRA --device cuda --dtype bf16
+</code></pre>
+<p>In a second terminal on the same host:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany demo --base-url http://127.0.0.1:8008 --media-root /tmp/jevany-media
+</code></pre>
+<p>Choose <strong>Run model</strong>, then <strong>One decision</strong> or <strong>Run automatically</strong>. Use
+<strong>Pause after this step</strong> to stop after the current request finishes. The
+environment pauses while inference runs; Doom does not keep advancing while
+waiting for the model. Each action then executes a bounded amount of simulation.
+The browser shows the result of the model's action and the returned probability
+for every candidate.</p>
+<p>The demo writes each camera image under <code>--media-root</code> while inference runs,
+then removes the file. The model server must see that directory at the same
+path. A compatible server accepting inline images can omit <code>--media-root</code>.
+Use <code>--text-only</code> to send measurements without images; images remain visible
+in the browser. See the <a href="quickstart.html#deployment">server setup</a> for prerequisites.
+Use <code>--model MODEL_ID</code> to set the request's model identity and <code>--timeout 300</code>
+if your server needs longer than the default 120 seconds per request.
+Hardware requirements belong to the model server; the playground itself runs
+on CPU. <strong>Download trace</strong> saves the states, actions and distributions from the
+current run. Live trace exports do not include image frames.</p>
+<h3 id="platform-requirements">Platform requirements</h3>
+<p>The base replay viewer uses only the ordinary JevAny client installation.
+For live games, ViZDoom's prebuilt wheels support recent Linux, Apple Silicon
+macOS and x86-64 Windows. Older Linux distributions may fall back to a source
+build; use a recent Linux environment to avoid that step. On Intel macOS,
+install <code>vizdoom==1.2.4</code> together with the game extra.</p>
+<p>The optional robot environment is installed separately:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m pip install -e '.[robotics]'
+</code></pre>
+<p>PyBullet 3.2.7 has no Python 3.12 wheels on PyPI, so this step requires a C++
+build toolchain and can take several minutes. This does not affect robot
+replays or either game. The game and robot extras can coexist with the training
+and serving extras.</p>
+<h2 id="doom-corridor-3d">Doom corridor (3D)</h2>
+<p><a href="https://github.com/Farama-Foundation/ViZDoom">ViZDoom</a> runs a focused version of
+<code>deadly_corridor</code> with the included Freedoom assets. The player starts in the
+final room with its original two enemies; enemies in earlier rooms are removed.
+No commercial Doom installation or separate WAD download is required. The
+instruction given to the model is: <strong>kill the enemy on the left and the enemy on
+the right, then move forward through the cleared room.</strong></p>
+<p>Eight controls cover forward/backward movement, strafing, turning, shooting and
+waiting. A move or shot advances eight game ticks; a turn advances four.
+Observations contain the current screenshot, health, ammunition, visible enemies'
+positions relative to the crosshair, and the previous action's actual hits and
+kills. Corpses are identified separately. Success requires hitting and killing
+both enemies, then advancing through the room; reaching armor alone does not
+complete the task. An episode is limited to 160 decisions.</p>
+<p><video class="doc-video" controls playsinline preload="none" aria-label="Checkpoint replay: kill the left and right enemies, then advance" poster="../assets/media/docs/playground-doom.webp"><source src="../assets/media/docs/playground-doom.webm" type="video/webm"><source src="../assets/media/docs/playground-doom.mp4" type="video/mp4">Your browser does not support video.</video></p>
+<h2 id="crafter-survival-2d">Crafter survival (2D)</h2>
+<p><a href="https://github.com/danijar/crafter">Crafter</a> is a pixel-art survival game with
+17 native actions. This task asks for a complete crafting sequence: gather wood,
+place a table, make a wood pickaxe, and mine stone while remaining alive.
+Movement, crafting, food, health and resource use are handled by the game.</p>
+<p>The adapter preserves all native actions, including unavailable crafting
+attempts that consume a turn. The checkpoint sees the current screenshot,
+inventory, recipe requirements, a 9 × 7 visible map, and remembered locations
+from earlier views. It first chooses an immediate objective, then chooses one
+of the 17 native actions using the same screenshot. Position history and actual
+action effects provide feedback for the next turn. Runs stop at goal completion,
+death or 200 decisions. The included model replay completes the crafting sequence.</p>
+<p><video class="doc-video" controls playsinline preload="none" aria-label="Accelerated checkpoint replay of Crafter gathering wood, crafting and mining stone" poster="../assets/media/docs/playground-crafter.webp"><source src="../assets/media/docs/playground-crafter.webm" type="video/webm"><source src="../assets/media/docs/playground-crafter.mp4" type="video/mp4">Your browser does not support video.</video></p>
+<h2 id="robot-peg-insertion">Robot peg insertion</h2>
+<p>This task adapts JevAny's existing Franka Panda
+<a href="CASES.html#robotics-assembly-and-laboratory-automation">peg-insertion case</a>.
+The 14 controls move the gripper along ±X, ±Y and ±Z in 1 cm or 5 cm increments,
+or close and open its fingers in place. PyBullet contact and gravity determine
+whether the peg is grasped, carried and inserted.</p>
+<p>A deterministic harness supplies the current pick-and-place subgoal, target
+coordinates, signed position error and current grasp feedback. Jev receives
+these measurements with the camera image and chooses every primitive action
+from the full set. This example tests action selection with supplied subgoals;
+the harness provides the task plan.</p>
+<p>Success requires a prior two-finger grasp, alignment with the cyan socket,
+correct insertion depth, an upright peg, released fingers and a settled object.
+An empty grasp or a peg left outside the socket fails these checks. Runs have
+a 120-decision limit. See <a href="ROBOTICS.html">the harness and recorded results</a>
+for its stages, recovery behavior and evaluation conditions.</p>
+<p><video class="doc-video" controls playsinline preload="none" aria-label="Accelerated local browser replay of the Franka peg-insertion task with recorded model probabilities" poster="../assets/media/docs/playground-arm.webp"><source src="../assets/media/docs/playground-arm.webm" type="video/webm"><source src="../assets/media/docs/playground-arm.mp4" type="video/mp4">Your browser does not support video.</video></p>
+<h2 id="environment-api">Environment API</h2>
+<p>The implementations live in <a href="../files/jevany/demos/index.html"><code>jevany/demos</code></a>. Optional engines
+load only when a live environment is created:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-python">from jevany.demos import make_environment
+
+env = make_environment(&quot;crafter&quot;, seed=17)
+try:
+    state = env.observe()
+    actions = env.get_all_actions()
+    state, reward, done, info = env.step(&quot;move_right&quot;)
+    image = env.render()  # RGB array
+finally:
+    env.close()
+</code></pre>
+<p>Environments implement <code>reset</code>, <code>step</code>, <code>get_all_actions</code>, <code>render</code> and <code>close</code>,
+and provide <code>ACTION_LOOKUP</code> descriptions. They can also be used with
+<a href="../files/jevany/agent.py"><code>jevany.agent.run_episode</code></a>, whose default request contains
+structured state only. The browser adds camera images and game-specific context.
+Crafter makes two checkpoint calls per turn; the arm's
+<code>decision_request(model, history)</code> method supplies its measured subgoals.</p>
+<p>The viewer serves packaged HTML, CSS, JavaScript and frames without a frontend
+build or CDN. To record fresh game replays, connect the recorder to your running
+model server:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python scripts/record_demo_previews.py \
+  --base-url http://127.0.0.1:8008 --model SimpleJev/JevAny-Qwen3.8-27B-LoRA \
+  --media-root /tmp/jevany-media --out /tmp/jevany-replays
+</code></pre>
+<p>The recorder uses the same harness as the browser and saves all run outcomes.
+Recorded game imagery and upstream notices are described in
+<a href="../files/jevany/demos/recordings/LICENSES.txt"><code>recordings/LICENSES.txt</code></a>.</p>
+<h2 id="command-line-application-examples">Command-line application examples</h2>
+<p>Run from the repository root after <a href="DEPLOYMENT.html">starting a server</a>.
+These examples adapt three scenarios from the existing
+<a href="CASES.html">showcase</a> into small, text-only applications.</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m examples.inbox
+python -m examples.sql_repair
+python -m examples.service_recovery
+</code></pre>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Example</th>
+<th>What happens</th>
+<th>Local effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../files/examples/inbox.py">Inbox</a></td>
+<td>Three messages are classified with choice and binary questions</td>
+<td>Prints decisions; does not send or move mail</td>
+</tr>
+<tr>
+<td><a href="../files/examples/sql_repair.py">SQL repair</a></td>
+<td>The model picks a provided query; SQLite runs it; an independent calculation checks totals</td>
+<td>In-memory database</td>
+</tr>
+<tr>
+<td><a href="../files/examples/service_recovery.py">Service recovery</a></td>
+<td>A bounded agent selects, prepares, canaries and promotes a replica</td>
+<td>Local simulator, at most 12 decisions</td>
+</tr>
+</tbody>
+</table></div>
+<p>The SQL and recovery programs execute and report the model's choices, and exit
+with status 1 if their checks fail. Results can vary between runs.</p>
+<p>Use your own server or load a checkpoint directly, with the same application code:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m examples.sql_repair --base-url http://127.0.0.1:8008
+python -m examples.sql_repair --checkpoint runs/my-jev --device cuda
+python -m examples.service_recovery \
+  --checkpoint SimpleJev/JevAny-Qwen3.8-27B-LoRA --device cuda --dtype bf16
+</code></pre>
+<p><code>--checkpoint</code> needs the <code>local</code> extra; the released vision-capable checkpoint
+also needs <code>multimodal</code>. The full base model must fit on the chosen device.</p>
+<p>For your own environment, reuse <code>jevany.agent.run_episode</code>. It takes a callable
+client, a goal, and an environment implementing <code>reset</code>, <code>step</code>, and
+<code>get_all_actions</code>. The environment supplies finite actions and owns execution.
+The <a href="../files/examples/service_recovery.py">recovery example</a> shows this protocol.</p>
+<p><a href="../files/examples/request.json"><code>request.json</code></a> is a ready-to-send request:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany decide examples/request.json
+jevany decide examples/request.json --checkpoint runs/my-jev
+</code></pre>
+<p>The Bedrock <a href="../files/examples/bedrock_harness.py">harness</a> and
+<a href="../files/examples/bedrock_symbolic.py">symbolic tree</a> examples use an LLM planner to construct
+bounded decisions. See
+<a href="INTEGRATIONS.html">INTEGRATIONS.md</a> for their additional dependencies.</p></main></div>
+<footer class="site-footer wrap"><a href="../index.html">← Back to JevAny</a><a href="license.html">Apache-2.0 code</a></footer></body></html>

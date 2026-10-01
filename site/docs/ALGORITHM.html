@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a1114">
+<title>Algorithm — JevAny</title><link rel="stylesheet" href="../styles.css"><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"></head>
+<body class="docs-page"><a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header wrap"><a class="brand" href="../index.html"><img src="../assets/favicon.svg" width="30" height="30" alt=""><span>JevAny<span class="brand-period">.</span></span></a>
+<nav aria-label="Main navigation"><a href="../index.html#benchmarks">Benchmarks</a><a href="../index.html#models">Models</a><a href="../index.html#get-started">Get started</a></nav></header>
+<div class="docs-layout wrap"><aside class="docs-sidebar"><a class="text-link" href="../index.html">← Project homepage</a><nav aria-label="Documentation"><a href="quickstart.html">Quickstart</a><a href="TRAINING.html">Training</a><a href="DATA.html">Data</a><a href="DEPLOYMENT.html">Deployment</a><a href="API.html">API reference</a><a href="examples.html">Examples</a><a href="CASES.html">Cases</a><a href="EVALUATION.html">Evaluation</a><a href="ALGORITHM.html" aria-current="page">Method</a><a href="INTEGRATIONS.html">Integrations</a><a href="zh.html">中文文档</a></nav>
+<details class="doc-toc"><summary>On this page</summary><div class="toc">
+<ul>
+<li><a href="#decision-model">Decision Model</a></li>
+<li><a href="#supervised-fine-tuning">Supervised Fine-Tuning</a></li>
+<li><a href="#rlcr">RLCR</a></li>
+<li><a href="#training-data-strategy">Training Data Strategy</a></li>
+</ul>
+</div>
+</details></aside>
+<main id="content" class="doc-content"><p class="eyebrow">JEVANY / DOCUMENTATION</p><h1>Algorithm</h1><h2 id="decision-model">Decision Model</h2>
+<p>JevAny receives a shared state and one or more typed questions. Each question defines its candidate answers explicitly. It does not decode an answer string.</p>
+<p>The encoder reuses existing Qwen delimiters where available. Other tokenizers
+receive five decision tokens with trainable embeddings. Both use the same layout:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-text">&lt;state&gt; state
+&lt;question&gt; instruction &lt;option&gt; a &lt;/option&gt; ... &lt;decide&gt;
+</code></pre>
+<p>For recurrent backbones such as Qwen3.8, sliding-window backbones, and architectures
+without validated packed-mask support, each question is a separate causal row
+that repeats the state. This prevents one question from changing another
+question's representation. Supported full-attention backbones can use the
+equivalent packed block-causal mask.</p>
+<p>Let <code>h_d</code> be the hidden state at <code>&lt;decide&gt;</code> and <code>h_i</code> the hidden state at the end
+of option <code>i</code>. The released pointer head computes</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-text">q = Q(h_d), k_i = K(h_i)
+z_i = k_i · q / sqrt(d_p) + R(k_i * q)
+p_i = softmax(z)_i
+</code></pre>
+<p>Here <code>d_p=256</code>, <code>*</code> is elementwise multiplication, and <code>R</code> is a
+256-wide Linear/GELU/Linear residual scorer with a zero-initialized output layer.
+Temperature scaling divides <code>z</code> by a scalar fitted on a separate calibration
+partition. It does not change the selected answer.</p>
+<p>The direct-token readout assigns a fixed single-token label to each candidate.
+At <code>&lt;decide&gt;</code>, it selects those labels' logits from the frozen LM output head
+and normalizes them over the supplied candidates. It supports up to 255 choices.</p>
+<h2 id="supervised-fine-tuning">Supervised Fine-Tuning</h2>
+<p>For a hard target <code>y</code>, SFT minimizes <code>-log p_y</code>. A row may instead carry a
+normalized soft target <code>t</code>, in which case the loss is <code>-Σ t_i log p_i</code>.
+Pointer training normalizes probabilities over the candidate options;
+direct-token training normalizes over the full vocabulary and uses the
+candidates' label tokens as targets. Soft targets represent ambiguity or
+missing information as a distribution over the options.</p>
+<p>The released models use LoRA rank 8 over each backbone's supported
+linear projections. Pointer checkpoints train the residual head with the adapter;
+the direct-token checkpoint keeps the base LM head frozen. The base weights
+remain frozen in both cases.</p>
+<h2 id="rlcr">RLCR</h2>
+<p>RLCR is an experimental continuation after SFT.</p>
+<p>The paper <em>Beyond Binary Rewards: Training LMs to Reason About Their Uncertainty</em> introduces Reinforcement Learning with Calibration Rewards. Its reward augments correctness with a proper scoring rule:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-text">r(c, q) = c - (q - c)²
+</code></pre>
+<p>Here <code>c</code> is answer correctness and <code>q</code> is confidence in the selected answer. A confidently correct decision approaches <code>1</code>; a confidently wrong decision approaches <code>-1</code>.</p>
+<p>JevAny adapts that idea to a pointer model:</p>
+<ol>
+<li>Compute the option logits <code>z</code>.</li>
+<li>Draw a group of 32 zero-mean Gaussian perturbations around <code>z</code>.</li>
+<li>For each proposal, take its highest-probability option and that option's probability as confidence.</li>
+<li>Compute the RLCR reward and subtract the group mean to form advantages.</li>
+<li>Apply a score-function gradient to the proposal distribution.</li>
+<li>Weight the policy and supervised cross-entropy terms explicitly to control decision drift.</li>
+</ol>
+<p>For proposal <code>z'</code>, the location score uses the isotropic Gaussian log density</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-text">log q(z' | z) = constant - Σᵢ (z'ᵢ - zᵢ)² / (2σ²)
+</code></pre>
+<p>The sum is over option dimensions. Averaging over options would make the policy gradient weaker as the choice set grows, which is especially harmful for the many-choice tasks in the RL mixture. Gradients are clipped to norm 1 after distributed synchronization. Training logs the total objective, the policy term, cross-entropy, reward, Brier penalty, and the gradient norm before clipping.</p>
+<p>The <a href="../files/recipes/rlcr.toml">starter RLCR recipe</a> decays exploration standard
+deviation from <code>0.4</code> to <code>0.1</code>, weights the policy term by <code>0.25</code>, and weights
+the supervised anchor by <code>0.5</code>.</p>
+<p>JevAny applies the paper's calibration reward and group-relative baseline to a policy over perturbed pointer logits. Optimization operates on these logits, without reasoning rollouts, confidence tokens, a critic, or a reference-model KL term.</p>
+<h2 id="training-data-strategy">Training Data Strategy</h2>
+<p>We trained the released LoRA adapters with SFT on 1,772,725 text records containing
+2,180,242 labelled decisions across preference, agent/tool decisions, reasoning,
+classification and safety. See <a href="DATA.html#current-release-scale">DATA.md</a> for the
+data description and <a href="TRAINING.html">the training guide</a> to build your own dataset.</p></main></div>
+<footer class="site-footer wrap"><a href="../index.html">← Back to JevAny</a><a href="license.html">Apache-2.0 code</a></footer></body></html>

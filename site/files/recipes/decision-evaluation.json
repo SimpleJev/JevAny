@@ -1,0 +1,476 @@
+{
+  "version": 1,
+  "frozen_at": "2026-09-27",
+  "sources": {
+    "kev": {
+      "repository": "jaredpalmer/kev",
+      "revision": "5920c5fe4ca8e0970ed4209ac2c9b8e18bea5109"
+    },
+    "jevbench": {
+      "repository": "fstandhartinger/jevbench",
+      "revision": "d06ee95988da1350eb8ae5511daa0e06bfffe911"
+    }
+  },
+  "models": [
+    {
+      "id": "jevany-27b-sft",
+      "backend": "jevany",
+      "checkpoint": "tianxinwei/JevAny-27B-SFT@ad7b48b7056a9742f54aacc9b98b6b46dc2ce167",
+      "release": "main"
+    },
+    {
+      "id": "jevany-27b-rlcr",
+      "backend": "jevany",
+      "checkpoint": "tianxinwei/JevAny-27B-RLCR@078883b2edbab687585bc86fe5508059756c7f09",
+      "release": "main"
+    },
+    {
+      "id": "kev-0.5b",
+      "backend": "kev",
+      "checkpoint": "jaredpalmer/kev-0.5b@9ce2fd39db3a397c89733f94af948e3d1fdfffcd",
+      "release": "main",
+      "aliases": [
+        "jaredpalmer/kev-0.5b@main",
+        "jaredpalmer/kev-0.5b@v0.1"
+      ],
+      "weights": [
+        {
+          "name": "adapter_model.safetensors",
+          "lfs": {
+            "sha256": "04facd5e97cebce2f00c6525136ff21ac96623c3a9e44b4c590e138dd7587318",
+            "size": 35235088,
+            "pointerSize": 133
+          },
+          "blobId": "e50710b6d613b946e217df9c27d633c8c0d40ea9",
+          "size": 35235088
+        },
+        {
+          "name": "head.pt",
+          "lfs": {
+            "sha256": "0d59bd4608e38f32b4f86c85eb29e8187e14f2117ca99fe765e799b290c52a66",
+            "size": 1839295,
+            "pointerSize": 132
+          },
+          "blobId": "0704e9812873f9221655500e3c31a3e9707f8e74",
+          "size": 1839295
+        }
+      ]
+    },
+    {
+      "id": "kev-0.6b",
+      "backend": "kev",
+      "checkpoint": "jaredpalmer/kev-0.6b@dece6dba8d43f0f7ded45e9f5b9df12474d90843",
+      "release": "main",
+      "aliases": [
+        "jaredpalmer/kev-0.6b@main",
+        "jaredpalmer/kev-0.6b@qwen3"
+      ],
+      "weights": [
+        {
+          "name": "adapter_model.safetensors",
+          "lfs": {
+            "sha256": "deaab63b61f95d628503831e8b336e1c3e334b9a42d3530d979a5149b429c492",
+            "size": 40419816,
+            "pointerSize": 133
+          },
+          "blobId": "c532ad3c01ed06b568708d0827d059e4f6750dc1",
+          "size": 40419816
+        },
+        {
+          "name": "head.pt",
+          "lfs": {
+            "sha256": "ce6cd9ffc54db41c179b65a33d60973dc8280c29e886218eb3ec07dc28d6f28b",
+            "size": 2102399,
+            "pointerSize": 132
+          },
+          "blobId": "b2306e936179d9be3e518483004c08d2064baa27",
+          "size": 2102399
+        }
+      ]
+    },
+    {
+      "id": "kev-0.8b",
+      "backend": "kev",
+      "checkpoint": "jaredpalmer/kev-0.8b@9a45d25eb2ab761841196625383fa1dff0e56c1e",
+      "release": "main",
+      "aliases": [
+        "jaredpalmer/kev-0.8b@main"
+      ],
+      "weights": [
+        {
+          "name": "adapter_model.safetensors",
+          "lfs": {
+            "sha256": "9b908623acb162118575f4e7a94524f9c139c335be4bfb74d6cfceca01e1885a",
+            "size": 43338624,
+            "pointerSize": 133
+          },
+          "blobId": "3c552e9a779d2ce122304cd5c8d760a81bf441f0",
+          "size": 43338624
+        },
+        {
+          "name": "head.pt",
+          "lfs": {
+            "sha256": "f400bd12802b2b105ae45d6b03774a158a3db4fccff42413734ddca2e5c920b6",
+            "size": 2103999,
+            "pointerSize": 132
+          },
+          "blobId": "877500c2f6d97ac201139bea37e95af0432b86ea",
+          "size": 2103999
+        }
+      ]
+    },
+    {
+      "id": "kev-0.8b-night2-du-release",
+      "backend": "kev",
+      "checkpoint": "jaredpalmer/kev-0.8b@20768323abc27a24a7a5e9723a36eaec4a103318",
+      "release": "night2-du-release",
+      "aliases": [
+        "jaredpalmer/kev-0.8b@night2-du-release"
+      ],
+      "weights": [
+        {
+          "name": "adapter_model.safetensors",
+          "lfs": {
+            "sha256": "c81d5716f0af7622d8d2b97013c333d48263ca01113f9a7cf4526e96f6ac0b26",
+            "size": 43338624,
+            "pointerSize": 133
+          },
+          "blobId": "ca104055bb99cb4e0062d05b70ae79f1009d516c",
+          "size": 43338624
+        },
+        {
+          "name": "head.pt",
+          "lfs": {
+            "sha256": "39f4343ccccc65e583bbfff0de0e11bfedb849fcfaaf94b50ac4f2b73bc79c65",
+            "size": 2103103,
+            "pointerSize": 132
+          },
+          "blobId": "e65a7dbdec707f160fff92b05a3939942481d2c7",
+          "size": 2103103
+        }
+      ]
+    },
+    {
+      "id": "kev-0.8b-v7-base",
+      "backend": "kev",
+      "checkpoint": "jaredpalmer/kev-0.8b@f9bd9f47d6ab83797e69704971d6538cf1402cdf",
+      "release": "v7-base",
+      "aliases": [
+        "jaredpalmer/kev-0.8b@v7-base"
+      ],
+      "weights": [
+        {
+          "name": "adapter_model.safetensors",
+          "lfs": {
+            "sha256": "d9fa619fd3b0490122454c386bfa1b53c23850189d1b5c4346962162e2e39a64",
+            "size": 43338624,
+            "pointerSize": 133
+          },
+          "blobId": "f4a8710b8a477710b7a076ecaf5f81d224b95d55",
+          "size": 43338624
+        },
+        {
+          "name": "head.pt",
+          "lfs": {
+            "sha256": "8610dac1c30a64bbcea7715f20a258f4d084d7b862c10f96a1625c732049a32a",
+            "size": 2102399,
+            "pointerSize": 132
+          },
+          "blobId": "be9ec92009977e5b2a14c5daa1b5b3a2e2d11e4c",
+          "size": 2102399
+        }
+      ]
+    },
+    {
+      "id": "kev-27b",
+      "backend": "kev",
+      "checkpoint": "jaredpalmer/kev-27b@01b81998019be550f0ae858727df49bac9511195",
+      "release": "main",
+      "aliases": [
+        "jaredpalmer/kev-27b@main"
+      ],
+      "weights": [
+        {
+          "name": "adapter_model.safetensors",
+          "lfs": {
+            "sha256": "41bf5af0f81ea58fba73eb0c168cc8fcaa8458d28a566592daabbc01fc04c47e",
+            "size": 467041728,
+            "pointerSize": 134
+          },
+          "blobId": "65a3456c3c854ede69f9691aa1d5b69b54224c2d",
+          "size": 467041728
+        },
+        {
+          "name": "head.pt",
+          "lfs": {
+            "sha256": "1322189d3a31eaacd12758791ffe952371062bfc34be3b9281bcf7b5f87671d2",
+            "size": 10492223,
+            "pointerSize": 133
+          },
+          "blobId": "148c202ea92812c23b613c95abd7c895763ede2d",
+          "size": 10492223
+        }
+      ]
+    },
+    {
+      "id": "kev-4b",
+      "backend": "kev",
+      "checkpoint": "jaredpalmer/kev-4b@139fdd94f1b6a6ad80cc15e08fcb99cac885a101",
+      "release": "main",
+      "aliases": [
+        "jaredpalmer/kev-4b@main"
+      ],
+      "weights": [
+        {
+          "name": "adapter_model.safetensors",
+          "lfs": {
+            "sha256": "90e817356246e7f18bfa7ca3d31794cd4fbeb3332a66a84cb51d9ceae925f2b2",
+            "size": 129924032,
+            "pointerSize": 134
+          },
+          "blobId": "efcc553500df019ea7957460d200a406c7f41572",
+          "size": 129924032
+        },
+        {
+          "name": "head.pt",
+          "lfs": {
+            "sha256": "dd633435998ecc751ac538717a3742e32149500fabf7d7276287dbf0693f347c",
+            "size": 5249791,
+            "pointerSize": 132
+          },
+          "blobId": "6204a1c6e0bc7680dd69a2e7929e2b37d6d004f8",
+          "size": 5249791
+        }
+      ]
+    },
+    {
+      "id": "kev-4b-night2-du-release",
+      "backend": "kev",
+      "checkpoint": "jaredpalmer/kev-4b@485ace8703592fcf405488b262449990824cfed1",
+      "release": "night2-du-release",
+      "aliases": [
+        "jaredpalmer/kev-4b@night2-du-release"
+      ],
+      "weights": [
+        {
+          "name": "adapter_model.safetensors",
+          "lfs": {
+            "sha256": "9797de69a42188e411b17b7b4fcb66a23374dcebc21d71a7a66f836b5d34df2b",
+            "size": 129924032,
+            "pointerSize": 134
+          },
+          "blobId": "499e1b8bd4b185d05284cc3f5fb1414d7969c090",
+          "size": 129924032
+        },
+        {
+          "name": "head.pt",
+          "lfs": {
+            "sha256": "d8f796da36ff7bd7c0fb9496b452139bb7851af4fc82b07b500b682d3f721d6a",
+            "size": 5248767,
+            "pointerSize": 132
+          },
+          "blobId": "994cc9d07261f66e54144853f363a5b1f4c05377",
+          "size": 5248767
+        }
+      ]
+    },
+    {
+      "id": "kev-4b-qwen3",
+      "backend": "kev",
+      "checkpoint": "jaredpalmer/kev-4b@c113c66d2ca8ae40d2d52d918015f77a7a8a7dc0",
+      "release": "qwen3",
+      "aliases": [
+        "jaredpalmer/kev-4b@qwen3"
+      ],
+      "weights": [
+        {
+          "name": "adapter_model.safetensors",
+          "lfs": {
+            "sha256": "3fa10d8646f567e884ea47841b2f3d5f2d135b81a4447a8ea79a6fc94e9c6ae1",
+            "size": 132184864,
+            "pointerSize": 134
+          },
+          "blobId": "dc24bdf6de2e20dc8298d9dda7c791a442775634",
+          "size": 132184864
+        },
+        {
+          "name": "head.pt",
+          "lfs": {
+            "sha256": "dad87f7e60c8b3f1eec8bee83858a5429c6ab06dc96385a935bc88e6b468a45d",
+            "size": 5248127,
+            "pointerSize": 132
+          },
+          "blobId": "988e686b94c6fc39707a91f0c9d585258d336a95",
+          "size": 5248127
+        }
+      ]
+    },
+    {
+      "id": "kev-4b-r8-documents-release",
+      "backend": "kev",
+      "checkpoint": "jaredpalmer/kev-4b@238c172f86e7f722e01d6739d183a39338f866a1",
+      "release": "r8-documents-release",
+      "aliases": [
+        "jaredpalmer/kev-4b@r8-documents-release"
+      ],
+      "weights": [
+        {
+          "name": "adapter_model.safetensors",
+          "lfs": {
+            "sha256": "c2c99077b58cd4a604304b743b7db5391187ef1d58e575f90c554c744aa23d65",
+            "size": 129924032,
+            "pointerSize": 134
+          },
+          "blobId": "9a00c78dac629b1cd41ad2c8e8b246a93aada266",
+          "size": 129924032
+        },
+        {
+          "name": "head.pt",
+          "lfs": {
+            "sha256": "9a3051c3676f0be29d885935b6f50c287f7acf04e3cb29a6fed82ca3e5540b7e",
+            "size": 5249727,
+            "pointerSize": 132
+          },
+          "blobId": "201a36eab6a835dd893ac5c088f555eb0d9f593c",
+          "size": 5249727
+        }
+      ]
+    },
+    {
+      "id": "kev-4b-v7-base",
+      "backend": "kev",
+      "checkpoint": "jaredpalmer/kev-4b@c1b3758b14b30d9e0e7f2e90aa12a1823ff2df46",
+      "release": "v7-base",
+      "aliases": [
+        "jaredpalmer/kev-4b@v7-base"
+      ],
+      "weights": [
+        {
+          "name": "adapter_model.safetensors",
+          "lfs": {
+            "sha256": "20e798d1670df3c680d9b18aa1cad85d7bd6f25d57b2eed1a1621673d04f62a9",
+            "size": 129924032,
+            "pointerSize": 134
+          },
+          "blobId": "bb757b7a08336f1dbe3919b1f039768676dc5f50",
+          "size": 129924032
+        },
+        {
+          "name": "head.pt",
+          "lfs": {
+            "sha256": "0976cae95ae97515c11fc324713e29218d39556a20f6d8bcc7d0c8a16738ea27",
+            "size": 5248127,
+            "pointerSize": 132
+          },
+          "blobId": "95ed18b0711a1bc2385ff8c0947f49e2c51c42e5",
+          "size": 5248127
+        }
+      ]
+    },
+    {
+      "id": "kev-8b",
+      "backend": "kev",
+      "checkpoint": "jaredpalmer/kev-8b@c80773da7f383f93c4dbff0c0b008e0463f9145a",
+      "release": "main",
+      "aliases": [
+        "jaredpalmer/kev-8b@main",
+        "jaredpalmer/kev-8b@qwen3"
+      ],
+      "weights": [
+        {
+          "name": "adapter_model.safetensors",
+          "lfs": {
+            "sha256": "fee56a07b92adbf151887142adde89d75f7979f00afd46960a5d2b4e65524a5f",
+            "size": 174652512,
+            "pointerSize": 134
+          },
+          "blobId": "b85fb2daa0437677cf0b411888e56ded6f5384ba",
+          "size": 174652512
+        },
+        {
+          "name": "head.pt",
+          "lfs": {
+            "sha256": "35ebe2a18c16ebd74f8c2090e7b2de8c2b007856fde96908c3a83459a2ca32bd",
+            "size": 8393855,
+            "pointerSize": 132
+          },
+          "blobId": "b92d26c3427700e01726c6eaa30d981f4f547323",
+          "size": 8393855
+        }
+      ]
+    },
+    {
+      "id": "kev-9b",
+      "backend": "kev",
+      "checkpoint": "jaredpalmer/kev-9b@2629c06a5aeb0feb3b9783bafed17ed8f39ecf5c",
+      "release": "main",
+      "aliases": [
+        "jaredpalmer/kev-9b@main"
+      ],
+      "weights": [
+        {
+          "name": "adapter_model.safetensors",
+          "lfs": {
+            "sha256": "c02d0d1a70367b5779deb23b28153284b59c067038323cc17ddab5b92dfce72f",
+            "size": 173178096,
+            "pointerSize": 134
+          },
+          "blobId": "7e85c2f0bbeaca6ef6a031be18dd60d1c5c8bc1b",
+          "size": 173178096
+        },
+        {
+          "name": "head.pt",
+          "lfs": {
+            "sha256": "5528f777437f561cb4a9d56b0278a42b6ae6edd373e7921e52b13adaac988c9f",
+            "size": 8394495,
+            "pointerSize": 132
+          },
+          "blobId": "8de5586832c0bb0a68388acb9d780d846cd19d30",
+          "size": 8394495
+        }
+      ]
+    },
+    {
+      "id": "kev-9b-v7-base",
+      "backend": "kev",
+      "checkpoint": "jaredpalmer/kev-9b@4cc35fded308e19c1025990383b24ccfafc624ad",
+      "release": "v7-base",
+      "aliases": [
+        "jaredpalmer/kev-9b@v7-base"
+      ],
+      "weights": [
+        {
+          "name": "adapter_model.safetensors",
+          "lfs": {
+            "sha256": "27990417abd61b9798c2eef278f4f742f8154bf913087169b7e501823d85b52a",
+            "size": 173178096,
+            "pointerSize": 134
+          },
+          "blobId": "3a32dfd246012ac68dbae15082f59ab685a7d520",
+          "size": 173178096
+        },
+        {
+          "name": "head.pt",
+          "lfs": {
+            "sha256": "55898a792efd8ed6656cc3374b28c7fef9258afdee0364834694b47d71ad43a8",
+            "size": 8393855,
+            "pointerSize": 132
+          },
+          "blobId": "86f24cfcaf94ee536d0193b8c52cbb5d6f2a7d3d",
+          "size": 8393855
+        }
+      ]
+    }
+  ],
+  "excluded_unreleased_branches": [
+    {
+      "checkpoint": "jaredpalmer/kev-4b@night2-du",
+      "reason": "unreleased development branch; release tag/main included"
+    },
+    {
+      "checkpoint": "jaredpalmer/kev-9b@night2-du",
+      "reason": "unreleased development branch; release tag/main included"
+    }
+  ],
+  "scope": "All public nonempty Kev development/test partitions and published diagnostics; all JevBench public tiers; no train/calibration scoring or sealed-data claims."
+}

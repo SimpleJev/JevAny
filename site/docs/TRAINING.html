@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a1114">
+<title>Train your own decision model — JevAny</title><link rel="stylesheet" href="../styles.css"><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"></head>
+<body class="docs-page"><a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header wrap"><a class="brand" href="../index.html"><img src="../assets/favicon.svg" width="30" height="30" alt=""><span>JevAny<span class="brand-period">.</span></span></a>
+<nav aria-label="Main navigation"><a href="../index.html#benchmarks">Benchmarks</a><a href="../index.html#models">Models</a><a href="../index.html#get-started">Get started</a></nav></header>
+<div class="docs-layout wrap"><aside class="docs-sidebar"><a class="text-link" href="../index.html">← Project homepage</a><nav aria-label="Documentation"><a href="quickstart.html">Quickstart</a><a href="TRAINING.html" aria-current="page">Training</a><a href="DATA.html">Data</a><a href="DEPLOYMENT.html">Deployment</a><a href="API.html">API reference</a><a href="examples.html">Examples</a><a href="CASES.html">Cases</a><a href="EVALUATION.html">Evaluation</a><a href="ALGORITHM.html">Method</a><a href="INTEGRATIONS.html">Integrations</a><a href="zh.html">中文文档</a></nav>
+<details class="doc-toc"><summary>On this page</summary><div class="toc">
+<ul>
+<li><a href="#start-with-a-small-backbone">Start with a small backbone</a></li>
+<li><a href="#recipes-and-overrides">Recipes and overrides</a><ul>
+<li><a href="#pointer-and-direct-token-readouts">Pointer and direct-token readouts</a></li>
+</ul>
+</li>
+<li><a href="#data-beyond-the-starter">Data beyond the starter</a></li>
+<li><a href="#multiple-gpus-and-hosts">Multiple GPUs and hosts</a></li>
+<li><a href="#evaluation-and-checkpoints">Evaluation and checkpoints</a><ul>
+<li><a href="#resume-an-interrupted-experiment">Resume an interrupted experiment</a></li>
+</ul>
+</li>
+<li><a href="#backbone-support">Backbone support</a><ul>
+<li><a href="#native-multimodal-training">Native multimodal training</a></li>
+<li><a href="#short-compatibility-checks">Short compatibility checks</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</details></aside>
+<main id="content" class="doc-content"><p class="eyebrow">JEVANY / DOCUMENTATION</p><h1>Train your own decision model</h1><p>The trainer fits a LoRA adapter with either a pointer or direct-token readout over a frozen open backbone.
+Training rows use the same <code>state</code> and <code>questions</code> as inference, plus labels.
+The output directory can immediately be loaded by <code>JevModel</code> or <code>jevany serve</code>.
+For a complete train/evaluate/resume example and loss/head ablations, see the
+<a href="RESEARCH.html">small research experiment</a>.</p>
+<h2 id="start-with-a-small-backbone">Start with a small backbone</h2>
+<p>From the repository root, with Python 3.12 or newer:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m pip install -e '.[train]'
+jevany data init --out data/starter
+jevany data validate data/starter/train.jsonl
+jevany train --config recipes/sft.toml --dry-run
+jevany train --config recipes/sft.toml
+</code></pre>
+<p>The starter has 24 original synthetic training tickets and 8 separate development
+tickets, each covering <code>choice</code>, <code>noul</code>, and <code>score</code>, to demonstrate the workflow.</p>
+<p>The recipe uses <code>Qwen/Qwen3.5-0.8B</code>, BF16 CUDA weights, LoRA rank 16 and three epochs.
+Replace <code>data</code> with your own labelled JSONL and choose a backbone that fits your
+device. For a CPU experiment, override the CUDA settings:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany train --config recipes/sft.toml \
+  --device cpu --dtype fp32 --weights-dtype fp32 --out runs/cpu-jev
+</code></pre>
+<p>CPU training is practical for small experiments, and can be slow. The full frozen backbone,
+adapters, activations and optimizer memory must fit on each device. DDP keeps
+a full model copy on each GPU and increases throughput by distributing records.</p>
+<h2 id="recipes-and-overrides">Recipes and overrides</h2>
+<p>Recipes are flat TOML files containing the trainer's argument names. Paths are
+relative to the <strong>current working directory</strong>. Command-line flags override recipe
+values. Unknown keys, invalid types, invalid labels and existing output directories
+fail before weights load. <code>--dry-run</code> also checks local base paths and evaluation
+suite partitions. Token limits and backbone compatibility are checked when
+training starts; these startup checks finish before the output directory is
+created, so a corrected input can reuse the intended output path.</p>
+<p><code>data_admission.json</code> records the input, admitted and rejected row counts, with
+the ID and reason for each row rejected by context limits. Other encoding errors
+stop the run. <code>training_metrics.json</code> repeats the input-scale counts as
+<code>input_records</code>, <code>admitted_records</code> and <code>rejected_records</code>. <code>requested_records</code>
+is the planned number of input presentations across all configured epochs;
+<code>records_seen</code> counts the examples actually processed, including augmentations
+and distributed padding. These differ when a run stops early.</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Recipe</th>
+<th>Starting point</th>
+<th>Output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../files/recipes/sft.toml"><code>sft.toml</code></a></td>
+<td>Open Qwen3.5-0.8B base</td>
+<td><code>runs/my-jev</code></td>
+</tr>
+<tr>
+<td><a href="../files/recipes/finetune.toml"><code>finetune.toml</code></a></td>
+<td>Released Qwen3.8-27B LoRA adapter</td>
+<td><code>runs/domain-jev</code></td>
+</tr>
+<tr>
+<td><a href="../files/recipes/rlcr.toml"><code>rlcr.toml</code></a></td>
+<td><code>runs/my-jev</code> from the small SFT recipe</td>
+<td><code>runs/my-jev-rlcr</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>Fine-tune the released checkpoint with your data:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m pip install -e '.[train,multimodal]'
+jevany train --config recipes/finetune.toml \
+  --data data/my-domain.jsonl --out runs/domain-jev
+</code></pre>
+<p><code>init_from</code> restores the adapter and head into a new training run, with a new
+optimizer and schedule. The base revision,
+LoRA rank and targets, head dimension, and multimodal settings must match.
+The released checkpoint uses the native vision path even for text requests.</p>
+<p>For Python applications:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-python">from jevany.training import train
+
+checkpoint = train(&quot;recipes/sft.toml&quot;, output_dir=&quot;runs/python-jev&quot;)
+</code></pre>
+<p>All trainer arguments are available through <code>jevany train --help</code>
+and <code>python -m jevany.train</code>. Both <code>--head_dim</code> and <code>--head-dim</code> spellings work.</p>
+<h3 id="pointer-and-direct-token-readouts">Pointer and direct-token readouts</h3>
+<p>The default <code>--decision-mode pointer</code> projects the decision-marker state and
+each option representation through a compact learned head. It supports more
+than 255 choices, with the practical limit set by the context window, and only
+computes logits for the supplied options.</p>
+<p><code>--decision-mode lm_token</code> prefixes options with a frozen table of 255 distinct
+single-token labels and scores those labels through the base model's original
+frozen output head. It gives the highest JevBench accuracy among the released 4B
+models, but training is slower because cross-entropy is normalized over the full
+vocabulary. It supports at most 255 choices. Both readouts use one backbone prefill
+without answer-token generation, so their inference speed should be similar for
+comparable inputs.</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany train --config recipes/sft.toml --decision-mode lm_token \
+  --lora 8 --lora-dropout 0 --out runs/direct-token-jev
+</code></pre>
+<h2 id="data-beyond-the-starter">Data beyond the starter</h2>
+<p>The installable builders convert public sources into the same JSONL format:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany data build-sft --help
+jevany data build-rlcr --help
+</code></pre>
+<p>The SFT builder covers HelpSteer3, Hermes tool decisions, ARC, QASC,
+CommonsenseQA, ScienceQA, A-OKVQA, and VideoFeedback, with AI2D/MMMU reserved
+for evaluation. It downloads upstream data and writes source revisions,
+licenses, split counts and checksums in its manifest. Defaults include large
+datasets and media; inspect its options before starting a build.</p>
+<p>A text-only build with 500 examples from ARC/QASC/CommonsenseQA:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany data build-sft --out data/text \
+  --helpsteer 0 --agent 0 --hard-text 500 \
+  --scienceqa 0 --aokvqa 0 --video 0 --eval-per-source 0 \
+  --tokenizer Qwen/Qwen3.5-0.8B
+jevany train --config recipes/sft.toml \
+  --data data/text/train.jsonl --out runs/text-jev
+</code></pre>
+<p>This command writes only a training split; bring a separate evaluation set.
+Training from <code>--suite</code> additionally requires the base revision to be pinned
+by the suite or by <code>--base-revision</code>. Full data fields, licenses and the
+release mixtures are documented in <a href="DATA.html">DATA.md</a>.</p>
+<h2 id="multiple-gpus-and-hosts">Multiple GPUs and hosts</h2>
+<p>Use one process per visible GPU on a workstation:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">bash infra/train.sh --config recipes/sft.toml --out runs/distributed-jev
+</code></pre>
+<p>The same launcher works inside a scheduler allocation. On every host, set
+<code>NNODES</code>, its distinct <code>NODE_RANK</code>, and <code>MASTER_ADDR</code> to the rank-0 host.
+Mount the same input data, base weights and output directory on all hosts.
+Keep the GPU visibility assigned by the scheduler.</p>
+<p>The launcher defaults to all visible GPUs and prints the process topology.
+Each worker reports its rank, world size, CUDA device and visible device mask.
+When using fewer processes, set <code>PROCESSES_PER_HOST</code> and <code>GPU_SHORTFALL_REASON</code>.
+Check each worker's device binding against the scheduler allocation.</p>
+<p>Allocate resources on your workstation or scheduler before running the launcher.
+Select SFT or RLCR with the same
+<a href="#recipes-and-overrides"><code>recipes</code></a> used for a single GPU.</p>
+<h2 id="evaluation-and-checkpoints">Evaluation and checkpoints</h2>
+<p>Add <code>--checkpoint-every-steps 100</code> to save progress every 100 optimizer steps.
+Saving works independently of evaluation, so a validation suite is optional.</p>
+<p>For your own labelled validation data, add:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany train --config recipes/sft.toml \
+  --eval-data data/starter/development.jsonl --eval-every-steps 10 \
+  --checkpoint-every-steps 5 --out runs/validated-jev
+</code></pre>
+<p>Validation JSONL uses the same format as training data. It must contain held-out
+requests; overlapping training requests are rejected. This path reports the
+model's probabilities directly, without fitting temperature on the validation
+set. <code>calibration_fitted</code> is false and the additional temperature is 1.
+Overlong validation records are listed as rejected in evaluation coverage; use
+those counts when comparing results across different context limits.</p>
+<p>For a frozen suite, use <code>--eval-suite data/eval-suite --eval-every-steps 100</code>.
+The suite needs a manifest plus separate calibration and development splits.
+Temperature is fitted on calibration and measured on development.
+Use <code>--early-stop-patience 3</code> for early stopping and <code>--wandb-project</code> for optional
+W&amp;B logging.</p>
+<p>The final directory contains the adapter, tokenizer, <code>head.pt</code>,
+<code>training_config.json</code>, <code>data_admission.json</code>, and <code>training_metrics.json</code>. If early stopping selects a
+different checkpoint, <code>selection.json</code> records that path; the root directory
+always holds the final weights. Serve the selected path explicitly.</p>
+<h3 id="resume-an-interrupted-experiment">Resume an interrupted experiment</h3>
+<p>New checkpoints also contain <code>trainer_state.pt</code> and <code>trainer_state.json</code>.
+They preserve the optimizer, learning-rate scheduler, shuffle order, next batch,
+per-rank random state and accumulated metrics. Saving happens at a complete
+optimizer step, after all accumulated gradients have been applied.</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany train --resume runs/validated-jev/checkpoints/step-000005 \
+  --out runs/validated-jev-resumed
+</code></pre>
+<p>The saved recipe is restored automatically. Choose a new output directory to
+retain the original experiment and its checkpoints. The remaining schedule uses
+the original total step count, learning rates, data, augmentations and evaluation
+settings. You can change the checkpoint interval, W&amp;B settings and local base
+mirror path. The world size and device type must stay the same; use the same
+software and hardware for reproducible numerical results.</p>
+<p>Resume checks the admitted records, labels, local media contents and checkpoint
+weights against saved fingerprints. Keep local media at their original paths;
+paths are part of the saved data identity. Remote media URLs must continue to identify
+the same content. If early stopping previously selected another checkpoint, keep
+that directory available: a resumed run can still select those earlier weights.
+Older weights-only checkpoints and completed schedules can start a new
+experiment with <code>--init-from</code>; they cannot resume an unfinished schedule.</p>
+<p>The Python entry point <code>jevany.training.train(config)</code> accepts <code>resume</code> in its
+TOML recipe as well. Invalid settings raise <code>ValueError</code>, so notebooks and
+experiment drivers can catch them without exiting the interpreter.</p>
+<p>SFT is the default recipe. RLCR is an experimental continuation with calibration
+rewards. Measure task accuracy and calibration on your own held-out data before selecting
+a checkpoint. See <a href="ALGORITHM.html">the objective</a> and <a href="EVALUATION.html">release results</a>.</p>
+<h2 id="backbone-support">Backbone support</h2>
+<p>The implementation uses PyTorch, Transformers and PEFT. The text adapter loads
+the base component of a Transformers causal language model, adds a pointer head,
+and trains LoRA plus any newly added decision-token embeddings. The same trainer,
+checkpoint format and serving API apply across model families.</p>
+<p>The <a href="../files/docs/supported-models.json">model catalog</a> pins 26 official
+checkpoints across seven families. It records each repository, revision, series,
+size and native image/video support. Base, Thinking and quantized variants are
+not additional entries in this catalog.</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Family</th>
+<th>Models</th>
+<th style="text-align: right;">Checkpoints</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Qwen</td>
+<td>Qwen3.8-27B; Qwen3.6-27B; Qwen3.6-35B-A3B; Qwen3.5-0.8B; Qwen3.5-2B; Qwen3.5-4B; Qwen3.5-9B; Qwen3.5-27B; Qwen3.5-35B-A3B</td>
+<td style="text-align: right;">9</td>
+</tr>
+<tr>
+<td>Gemma</td>
+<td>gemma-4-E4B-it; gemma-4-12B-it; gemma-4-31B-it</td>
+<td style="text-align: right;">3</td>
+</tr>
+<tr>
+<td>Muse</td>
+<td>Muse-Glimmer-30B</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr>
+<td>Mistral</td>
+<td>Ministral-3-3B-Instruct-2512-BF16; Ministral-3-8B-Instruct-2512-BF16; Ministral-3-14B-Instruct-2512-BF16; Devstral-Small-2-24B-Instruct-2512</td>
+<td style="text-align: right;">4</td>
+</tr>
+<tr>
+<td>GLM</td>
+<td>GLM-4.7-Flash; GLM-4.6V-Flash</td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr>
+<td>Nemotron</td>
+<td>NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16; NVIDIA-Nemotron-3-Nano-4B-BF16; NVIDIA-Nemotron-3-Nano-30B-A3B-BF16</td>
+<td style="text-align: right;">3</td>
+</tr>
+<tr>
+<td>Llama</td>
+<td>Llama-3.2-1B-Instruct; Llama-3.2-3B-Instruct; Llama-3.2-11B-Vision-Instruct; Llama-3.1-8B-Instruct</td>
+<td style="text-align: right;">4</td>
+</tr>
+</tbody>
+</table></div>
+<p>All families share <code>BackboneAdapter</code>, recipe flags, checkpoint loading and the
+serving API. Choose a publisher repository or a local weights directory with
+<code>--base</code>; there is no family-specific trainer. Native media selection reads
+<code>config.json</code>, so local snapshots work without depending on repository names.
+Gemma 4 Unified and GLM 4.6V use their native Transformers models and processors.</p>
+<p>Every GPU holds the full base, including all MoE experts. Estimate weight memory
+from total parameter count. The small starter remains
+<code>Qwen/Qwen3.5-0.8B</code>. Gated repositories require the publisher's license acceptance
+and Hugging Face access before downloading; local snapshots need no account.</p>
+<p>Phi, Qwen 2.5/3/3-VL/3-Coder, Gemma 3/3n, Pixtral and older Mistral/Magistral releases are outside
+the maintained scope. The Phi conversion utilities and legacy media adapter names
+have been removed. The generic text adapter and custom adapter interface are
+available for experimenting with other architectures.</p>
+<p>The released JevAny adapters identify <code>Qwen/Qwen3.8-27B</code> in their release manifest
+and adapter configuration. Its Transformers architecture is <code>qwen3_5</code>.
+Load each adapter with its recorded base and revision.</p>
+<p>Select the base in the existing recipe or on the command line:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany train --config recipes/sft.toml \
+  --base zai-org/GLM-4.7-Flash --out runs/glm-decisions
+</code></pre>
+<p>The optional adapter settings are:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-toml">backbone_adapter = &quot;auto&quot; # chooses the native media adapter when multimodal=true
+branch_mode = &quot;auto&quot;      # packed where supported; independent causal rows otherwise
+lora_targets = &quot;all&quot;     # supported linear modules, preserving the existing Qwen layout
+# lora_target_modules = &quot;q_proj,v_proj&quot; # explicit names override the preset
+</code></pre>
+<p><code>rows</code> repeats the shared state for each question. It preserves isolation without
+requiring a custom attention mask and supports sliding-window and recurrent
+backbones. <code>packed</code> requires an adapter that declares support for that mask;
+unsupported combinations fail before training. Option isolation requires packed
+mode. Prefix caching is enabled only for validated FP32 backbones. BF16/FP16
+models and Qwen's <code>qwen3_5_text</code> recurrent architecture use full-forward inference:
+real Qwen 27B and Llama 8B checks found excessive BF16 drift when reusing prefix
+states. Serving selects full-forward inference automatically; unsupported direct
+prefix-cache calls fail explicitly.</p>
+<p><code>attn</code> includes GLM's low-rank query/key/value projections, Nemotron's Mamba
+input projection, and fused QKV projections. A fused QKV layer
+cannot apply the <code>qv</code> preset to Q and V independently; use <code>attn</code>, <code>all</code>, or explicit
+module names. Explicit names are checked against the loaded model, so a misspelled
+target does not silently produce a partial adapter.</p>
+<p>LoRA targets are resolved from actual <code>nn.Linear</code> and <code>Conv1D</code> modules. Fused
+expert tensors and GLM/Nemotron routers stay frozen. Nemotron's Mamba <code>out_proj</code>
+is excluded because its fused training kernel bypasses the module's forward
+method. With PEFT 0.21, GLM's dense/shared MLP projection names are remapped to
+fused expert parameters even when fully qualified; GLM therefore uses attention
+LoRA for <code>all</code>, <code>dense</code>, and <code>attn</code>. Explicit requests for these incompatible
+targets fail with an error. Neither model enables packed masks or prefix reuse.
+Nemotron can use Transformers' PyTorch Mamba fallback without optional CUDA
+kernels; large runs benefit from the upstream optimized kernels.</p>
+<p>Non-Qwen tokenizers receive five <code>&lt;|jev_*|&gt;</code> tokens. Their embeddings are
+initialized from the base embedding mean and trained automatically, including
+when the base has spare vocabulary rows. Other embedding rows stay frozen.
+Checkpoints save the tokenizer and learned token rows along with LoRA and the
+pointer head. Loading restores that tokenizer before constructing the model.
+Gemma E4B also has a frozen per-layer token table. New rows in that table use its
+original mean embedding on both initial training and checkpoint reload.
+Older Qwen checkpoints continue to use their original delimiters and metadata
+defaults.</p>
+<p>For another architecture, first try the text adapter. Unknown architectures use
+independent rows by default. To customize loading, LoRA selection, packed-mask
+support, cache construction, or native media processing, subclass
+<a href="../files/jevany/backbones.py"><code>BackboneAdapter</code></a> in an installed Python module:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-python">from jevany.backbones import BackboneAdapter
+
+class MyAdapter(BackboneAdapter):
+    def supports_packed(self, config):
+        return False
+</code></pre>
+<p>Set <code>backbone_adapter = "my_package.adapters:MyAdapter"</code> in the recipe. The import
+path is saved in the checkpoint; install the same trusted adapter package in the
+serving environment. Text backbones must accept token IDs, position IDs and an
+attention mask and expose <code>last_hidden_state</code> and input embeddings. Native
+media processing is handled by the vision adapters below.</p>
+<h3 id="native-multimodal-training">Native multimodal training</h3>
+<p>Set <code>multimodal = true</code> and choose a native vision base. The data format, training
+loop, LoRA settings and checkpoint loading stay the same:</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Family</th>
+<th>Vision base</th>
+<th>Adapter</th>
+<th>Media</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Qwen</td>
+<td>All nine Qwen 3.5, 3.6 and 3.8 catalog entries</td>
+<td><code>qwen_vl</code></td>
+<td>Images, video</td>
+</tr>
+<tr>
+<td>Gemma</td>
+<td>Gemma 4 E4B, 12B Unified, 31B IT</td>
+<td><code>gemma4_vision</code></td>
+<td>Images, video</td>
+</tr>
+<tr>
+<td>Muse</td>
+<td><code>meta-models/Muse-Glimmer-30B</code></td>
+<td><code>muse_vision</code></td>
+<td>Images, video</td>
+</tr>
+<tr>
+<td>Mistral</td>
+<td>Ministral 3 3B/8B/14B, Devstral Small 2 24B</td>
+<td><code>mistral_vision</code></td>
+<td>Images</td>
+</tr>
+<tr>
+<td>Llama</td>
+<td><code>meta-llama/Llama-3.2-11B-Vision-Instruct</code></td>
+<td><code>llama_vision</code></td>
+<td>Images</td>
+</tr>
+<tr>
+<td>GLM</td>
+<td><code>zai-org/GLM-4.6V-Flash</code></td>
+<td><code>glm_vision</code></td>
+<td>Images, video</td>
+</tr>
+</tbody>
+</table></div>
+<p><code>auto</code> selects from the base's configuration. A text-only variant does not gain
+vision support by setting the flag. Unsupported media types fail with an error.
+Audio is not part of the current training/request format.
+Muse's native processor expands image/video placeholders and supplies frame
+timestamps. Its adapter caps images at 512 merged tokens per record and videos
+at eight sampled frames with a per-frame token budget. Processor metadata is used
+during encoding and is not passed to the decoder.</p>
+<p>For example, on a local CUDA GPU:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m pip install -e '.[train,multimodal]'
+jevany train --config recipes/sft.toml --multimodal \
+  --base google/gemma-4-31B-it --data data/images.jsonl --out runs/gemma-vision \
+  --lr 0.00002 --head-lr 0.00002
+</code></pre>
+<p>Each media record contains one question. Native media records do not support
+<code>option_isolation</code> or prefix-cache reuse. Relative media paths resolve against the
+JSONL file; use the same labelled request format as text training:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-json">{&quot;state&quot;:&quot;Inspect the sample.&quot;,&quot;media&quot;:[{&quot;type&quot;:&quot;image&quot;,&quot;uri&quot;:&quot;red.png&quot;}],&quot;questions&quot;:{&quot;color&quot;:{&quot;type&quot;:&quot;choice&quot;,&quot;instructions&quot;:&quot;What color is the sample?&quot;,&quot;criteria&quot;:{&quot;red&quot;:&quot;Red&quot;,&quot;blue&quot;:&quot;Blue&quot;},&quot;label&quot;:&quot;red&quot;}}}
+</code></pre>
+<p>Training freezes the existing vision encoder and projector, and fits the language
+decoder's LoRA, decision head and added decision-token embeddings. The native
+processor handles image token expansion and model-specific inputs such as
+Llama's cross-attention mask and Gemma's token types. Checkpoints save the complete
+processor and selected adapter, so serving and subsequent training use the same
+encoding. Text-only and image records can share a run; DDP accounts for Llama's
+cross-attention parameters being unused on text-only records.</p>
+<p>Devstral's official FP8 weights are dequantized for BF16 LoRA training, including
+on A100 GPUs. Ministral's listed release already contains BF16 weights. Both use
+the upstream tokenizer regex correction. The text adapter can extract a language
+decoder from a composite vision base for text-only training.</p>
+<p>For another native vision architecture, subclass <code>VisionAdapter</code> from
+<code>jevany.backbones</code>. Set <code>media_types</code> and <code>language_model_path</code>; override
+<code>process_media</code> or <code>forward_media</code> for another processor/model protocol.
+<code>encode_media</code> can handle architectures needing different readout positions.
+Set <code>conditional_parameters = True</code> if some trainable decoder paths are absent
+on text-only records. Select the installed class through the existing
+<code>backbone_adapter = "my_package.adapters:MyVisionAdapter"</code> setting. Models return
+token hidden states for the shared decision head; the trainer does not contain
+family-specific forward branches.</p>
+<p>Both local training and <code>torchrun</code> use these interfaces without a cloud account
+or resource-provider SDK.</p>
+<h3 id="short-compatibility-checks">Short compatibility checks</h3>
+<p>The <a href="../files/results/model-support-v1.json">pretrained validation record</a> includes all
+26 current catalog checkpoints with 80 passing input/objective checks. The
+original 37-checkpoint record is retained as historical evidence, including
+models since removed from the maintained scope. It includes
+revisions, learning rates, precision, reload errors, serving checks and failed
+attempts. Most SFT checks use 12 steps, followed by two RLCR steps. The Gemma 4
+12B video check uses 48 SFT steps, <code>--dtype fp32</code>, <code>--lr 2e-7</code> and
+<code>--head-lr 1e-4</code>, with BF16 frozen weights.</p>
+<p>The catalog contract test checks that every maintained checkpoint has matching
+revision, modality, SFT, RLCR, reload and Python/HTTP serving evidence. Media
+checks include mixed text records.</p>
+<p>The offline tests use real, tiny Transformers architectures for the selected
+families, plus a GPT-2 fixture for the generic custom-backbone contract. They
+cover sliding-window and recurrent layers, MoE forwards, LoRA selection and gradients, added-token embeddings,
+branch isolation, supported cache reuse, native media, checkpoint reload, and
+SFT-to-RLCR continuation:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m pytest tests/test_model_support.py tests/test_backbones.py -q
+python -m pytest tests/test_multimodal_backbones.py tests/test_serving.py tests/test_smoke_backbone.py -q
+</code></pre>
+<p>To run a short pretrained-weight check:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m pip install -e '.[dev]'
+python -m scripts.smoke_backbone \
+  --base Qwen/Qwen3.5-0.8B --steps 12 --out runs/smoke-qwen
+
+TORCH_NCCL_USE_COMM_NONBLOCKING=0 \
+torchrun --standalone --nproc_per_node=2 --module scripts.smoke_backbone \
+  --base Qwen/Qwen3.8-27B --steps 12 --lr 0.00002 --head-lr 0.00002 \
+  --out runs/smoke-qwen-ddp
+</code></pre>
+<p>Use <code>--revision</code> to pin weights and <code>--device cpu</code> for a sufficiently small base.
+Use <code>--base-load-path /path/to/snapshot</code> to load a predownloaded copy while keeping
+the official <code>--base</code> and <code>--revision</code> in the checkpoint.
+The smoke script exposes <code>--lr</code> and <code>--head-lr</code> for bases with different gradient
+scales; its default head learning rate is <code>1e-4</code>.
+Use <code>--dtype fp32</code> to disable training autocast while retaining BF16 frozen
+weights on CUDA; the report records this separately from the checkpoint's weight dtype.
+The script runs the actual trainer, measures uncalibrated NLL before and during
+training, reloads the checkpoint, and checks predictions through both the Python
+runtime and the FastAPI application. The HTTP checks exercise health, model
+description, repeated typed requests, and rejection of invalid requests. It checks
+prefix-cache parity where supported and explicit rejection elsewhere.
+It writes <code>smoke.json</code>, per-rank GPU identity, and the trainer's evaluation
+history. A passing SFT run requires finite adapter weights, updated LoRA weights,
+lower final NLL, and successful prediction checks. Its small evaluation probe
+reuses training examples to check optimization and compatibility.
+The probe covers all eight training rows,
+including both media and text rows when <code>--mixed-text</code> is enabled. Media probes
+score each row in both choice orders, matching the trainer's option permutation.</p>
+<p>To check RLCR continuation and serving from the resulting checkpoint:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m scripts.smoke_backbone --base Qwen/Qwen3.5-0.8B \
+  --init-from runs/smoke-qwen/checkpoint --rlcr --steps 2 --out runs/smoke-qwen-rlcr
+</code></pre>
+<p>RLCR must update the saved LoRA tensors and retain finite losses and predictions.
+Its combined reward objective does not require the supervised NLL to decrease.</p>
+<p>For native media, the same smoke script generates its own image or video files:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m scripts.smoke_backbone --base Qwen/Qwen3.8-27B \
+  --media image --mixed-text --steps 12 --lr 0.00002 --head-lr 0.00002 \
+  --out runs/smoke-qwen-vision
+</code></pre>
+<p>Use <code>--media video</code> for a video-capable base, or run the same module under
+<code>torchrun</code>. The media check also requires predictions to change when the media
+changes while the question and state stay fixed.</p>
+<p>For PyTorch 2.6 / CUDA 12.6, use <code>TORCH_NCCL_USE_COMM_NONBLOCKING=0</code>.
+<a href="../files/infra/train.sh"><code>infra/train.sh</code></a> sets this default before starting workers
+and preserves an explicit override.
+PyTorch 2.6 uses DDP's standard initial parameter synchronization; newer versions
+with <code>init_sync</code> support can avoid broadcasting the frozen base.</p>
+<p>The runtime admits up to 2,048 packed training tokens by default. Multimodal rows
+contain one question and require a native vision-capable base and
+<code>multimodal = true</code>. Model weights and third-party data keep their upstream
+licenses. The complete frozen suites and raw media from the release are not
+included, so the default builder alone does not reproduce the published run.</p></main></div>
+<footer class="site-footer wrap"><a href="../index.html">← Back to JevAny</a><a href="license.html">Apache-2.0 code</a></footer></body></html>

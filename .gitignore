@@ -13,6 +13,7 @@ release/
 *.log
 .DS_Store
 data/
+!/site/assets/data/
 dist/
 build/
 /docs/drafts/

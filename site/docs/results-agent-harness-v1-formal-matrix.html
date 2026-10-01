@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a1114">
+<title>Jev optional-delegation agent benchmark — JevAny</title><link rel="stylesheet" href="../styles.css"><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"></head>
+<body class="docs-page"><a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header wrap"><a class="brand" href="../index.html"><img src="../assets/favicon.svg" width="30" height="30" alt=""><span>JevAny<span class="brand-period">.</span></span></a>
+<nav aria-label="Main navigation"><a href="../index.html#benchmarks">Benchmarks</a><a href="../index.html#models">Models</a><a href="../index.html#get-started">Get started</a></nav></header>
+<div class="docs-layout wrap"><aside class="docs-sidebar"><a class="text-link" href="../index.html">← Project homepage</a><nav aria-label="Documentation"><a href="quickstart.html">Quickstart</a><a href="TRAINING.html">Training</a><a href="DATA.html">Data</a><a href="DEPLOYMENT.html">Deployment</a><a href="API.html">API reference</a><a href="examples.html">Examples</a><a href="CASES.html">Cases</a><a href="EVALUATION.html">Evaluation</a><a href="ALGORITHM.html">Method</a><a href="INTEGRATIONS.html">Integrations</a><a href="zh.html">中文文档</a></nav>
+<details class="doc-toc"><summary>On this page</summary><div class="toc">
+<ul>
+<li><a href="#evidence-backed-reading">Evidence-backed reading</a></li>
+<li><a href="#provenance">Provenance</a></li>
+</ul>
+</div>
+</details></aside>
+<main id="content" class="doc-content"><p class="eyebrow">JEVANY / DOCUMENTATION</p><h1>Jev optional-delegation agent benchmark</h1><p>Validated 96 paired seeds across 10 model/benchmark/checkpoint cells.
+The frontier model autonomously chose between direct action and bounded Jev delegation.</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Frontier model</th>
+<th>Benchmark</th>
+<th>Jev</th>
+<th style="text-align: right;">n</th>
+<th style="text-align: right;">Success base → optional</th>
+<th style="text-align: right;">Calls saved</th>
+<th style="text-align: right;">Tokens saved</th>
+<th style="text-align: right;">Bedrock $ saved</th>
+<th style="text-align: right;">Time saved</th>
+<th style="text-align: right;">Jev calls/episode</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>us.anthropic.claude-opus-4-7</code></td>
+<td><code>frozen_lake</code></td>
+<td>4B</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">100% → 90%</td>
+<td style="text-align: right;">+55.9%</td>
+<td style="text-align: right;">+51.4%</td>
+<td style="text-align: right;">+45.6%</td>
+<td style="text-align: right;">-14.0%</td>
+<td style="text-align: right;">0.70</td>
+</tr>
+<tr>
+<td><code>us.anthropic.claude-opus-4-7</code></td>
+<td><code>frozen_lake</code></td>
+<td>27B</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">100% → 90%</td>
+<td style="text-align: right;">+51.5%</td>
+<td style="text-align: right;">+44.6%</td>
+<td style="text-align: right;">+38.3%</td>
+<td style="text-align: right;">-21.8%</td>
+<td style="text-align: right;">0.70</td>
+</tr>
+<tr>
+<td><code>us.anthropic.claude-opus-4-7</code></td>
+<td><code>sokoban</code></td>
+<td>4B</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">100% → 100%</td>
+<td style="text-align: right;">-2.1%</td>
+<td style="text-align: right;">-33.2%</td>
+<td style="text-align: right;">-31.7%</td>
+<td style="text-align: right;">-28.7%</td>
+<td style="text-align: right;">0.70</td>
+</tr>
+<tr>
+<td><code>us.anthropic.claude-opus-4-7</code></td>
+<td><code>sokoban</code></td>
+<td>27B</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">100% → 100%</td>
+<td style="text-align: right;">-29.5%</td>
+<td style="text-align: right;">-84.4%</td>
+<td style="text-align: right;">-76.2%</td>
+<td style="text-align: right;">-51.0%</td>
+<td style="text-align: right;">0.60</td>
+</tr>
+<tr>
+<td><code>us.anthropic.claude-opus-4-7</code></td>
+<td><code>webarena</code></td>
+<td>27B</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">50% → 50%</td>
+<td style="text-align: right;">-5.6%</td>
+<td style="text-align: right;">-28.2%</td>
+<td style="text-align: right;">-26.8%</td>
+<td style="text-align: right;">+0.4%</td>
+<td style="text-align: right;">0.17</td>
+</tr>
+<tr>
+<td><code>us.anthropic.claude-opus-4-7</code></td>
+<td><code>webshop</code></td>
+<td>27B</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">50% → 60%</td>
+<td style="text-align: right;">+7.7%</td>
+<td style="text-align: right;">+2.9%</td>
+<td style="text-align: right;">+3.4%</td>
+<td style="text-align: right;">+6.1%</td>
+<td style="text-align: right;">0.70</td>
+</tr>
+<tr>
+<td><code>us.anthropic.claude-sonnet-4-6</code></td>
+<td><code>frozen_lake</code></td>
+<td>27B</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">100% → 100%</td>
+<td style="text-align: right;">+36.6%</td>
+<td style="text-align: right;">+34.4%</td>
+<td style="text-align: right;">+28.1%</td>
+<td style="text-align: right;">-14.1%</td>
+<td style="text-align: right;">0.80</td>
+</tr>
+<tr>
+<td><code>us.anthropic.claude-sonnet-4-6</code></td>
+<td><code>sokoban</code></td>
+<td>27B</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">90% → 90%</td>
+<td style="text-align: right;">-10.1%</td>
+<td style="text-align: right;">-14.8%</td>
+<td style="text-align: right;">-14.0%</td>
+<td style="text-align: right;">+3.8%</td>
+<td style="text-align: right;">0.60</td>
+</tr>
+<tr>
+<td><code>us.openai.gpt-5.6-sol</code></td>
+<td><code>frozen_lake</code></td>
+<td>27B</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">100% → 100%</td>
+<td style="text-align: right;">+64.4%</td>
+<td style="text-align: right;">+63.1%</td>
+<td style="text-align: right;">n/a</td>
+<td style="text-align: right;">+37.6%</td>
+<td style="text-align: right;">0.70</td>
+</tr>
+<tr>
+<td><code>us.openai.gpt-5.6-sol</code></td>
+<td><code>sokoban</code></td>
+<td>27B</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">100% → 100%</td>
+<td style="text-align: right;">-26.2%</td>
+<td style="text-align: right;">-122.0%</td>
+<td style="text-align: right;">n/a</td>
+<td style="text-align: right;">-7.5%</td>
+<td style="text-align: right;">0.90</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="evidence-backed-reading">Evidence-backed reading</h2>
+<ul>
+<li>Clear multi-metric win: <code>us.openai.gpt-5.6-sol</code> on <code>frozen_lake</code> with SimpleJev/JevAny-Qwen3.8-27B-LoRA@09c9e9102d5b8cc7d56558d25da1202a761b6c0d: success 100.0% → 100.0%, calls saved 64.4%, tokens saved 63.1%, and time saved 37.6%. Paired bootstrap intervals for calls, tokens, and latency exclude zero.</li>
+<li>Other cells are mixed or negative and remain in the table; they are not presented as wins.</li>
+<li>Dollar figures are estimated Bedrock list-price costs, not Cost Explorer billing. <code>n/a</code> means the run used cached tokens whose applicable price could not be verified.</li>
+<li>Jev GPU rental/energy cost is not monetized. One already-allocated H200 served the 27B matrix; cold start was excluded after readiness, while per-request Jev latency remains in wall time.</li>
+<li>FrozenLake and Sokoban are controlled mechanism tests. WebShop and WebArena are external interactive-agent checks; the WebArena row is a predeclared six-task sample, not the full benchmark.</li>
+</ul>
+<h2 id="provenance">Provenance</h2>
+<p>Generated: <code>2026-10-01T04:21:13.150018+00:00</code></p>
+<p>Pricing basis: <code>2026-09-30</code></p>
+<p>Every row retains the raw JSON path, SHA-256, exact model IDs, seeds, paired deltas, and bootstrap intervals in the machine-readable matrix.</p></main></div>
+<footer class="site-footer wrap"><a href="../index.html">← Back to JevAny</a><a href="license.html">Apache-2.0 code</a></footer></body></html>

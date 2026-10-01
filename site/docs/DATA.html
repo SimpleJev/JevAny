@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a1114">
+<title>Data — JevAny</title><link rel="stylesheet" href="../styles.css"><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"></head>
+<body class="docs-page"><a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header wrap"><a class="brand" href="../index.html"><img src="../assets/favicon.svg" width="30" height="30" alt=""><span>JevAny<span class="brand-period">.</span></span></a>
+<nav aria-label="Main navigation"><a href="../index.html#benchmarks">Benchmarks</a><a href="../index.html#models">Models</a><a href="../index.html#get-started">Get started</a></nav></header>
+<div class="docs-layout wrap"><aside class="docs-sidebar"><a class="text-link" href="../index.html">← Project homepage</a><nav aria-label="Documentation"><a href="quickstart.html">Quickstart</a><a href="TRAINING.html">Training</a><a href="DATA.html" aria-current="page">Data</a><a href="DEPLOYMENT.html">Deployment</a><a href="API.html">API reference</a><a href="examples.html">Examples</a><a href="CASES.html">Cases</a><a href="EVALUATION.html">Evaluation</a><a href="ALGORITHM.html">Method</a><a href="INTEGRATIONS.html">Integrations</a><a href="zh.html">中文文档</a></nav>
+<details class="doc-toc"><summary>On this page</summary><div class="toc">
+<ul>
+<li><a href="#question-types">Question Types</a><ul>
+<li><a href="#choice">Choice</a></li>
+<li><a href="#noul">Noul</a></li>
+<li><a href="#score">Score</a></li>
+</ul>
+</li>
+<li><a href="#soft-targets">Soft Targets</a></li>
+<li><a href="#native-media">Native Media</a></li>
+<li><a href="#full-record">Full Record</a></li>
+<li><a href="#current-release-scale">Current Release Scale</a></li>
+<li><a href="#evaluation-separation">Evaluation Separation</a></li>
+</ul>
+</div>
+</details></aside>
+<main id="content" class="doc-content"><p class="eyebrow">JEVANY / DOCUMENTATION</p><h1>Data</h1><p>Training and inference share one JSON structure. Training rows add <code>label</code> and may add <code>target</code>. Store one object per line in UTF-8 JSONL.</p>
+<p>For a dataset you can use immediately, run <code>jevany data init --out data/starter</code>.
+It copies 24 original synthetic training records and 8 development records from
+the installed package, with all three question types and provenance. This starter
+is for learning the workflow. Validate it with
+<code>jevany data validate data/starter/train.jsonl</code>.</p>
+<p>For larger data, <code>jevany data build-sft</code> and <code>jevany data build-rlcr</code> expose the
+public-source builders from an installed package. See <a href="TRAINING.html">TRAINING.md</a>
+for a text-only build and recipe commands.</p>
+<h2 id="question-types">Question Types</h2>
+<h3 id="choice">Choice</h3>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-json">{
+  &quot;type&quot;: &quot;choice&quot;,
+  &quot;instructions&quot;: &quot;Which team should handle this?&quot;,
+  &quot;criteria&quot;: {
+    &quot;billing&quot;: &quot;Charges and payment problems&quot;,
+    &quot;shipping&quot;: &quot;Delivery delays&quot;
+  },
+  &quot;label&quot;: &quot;billing&quot;
+}
+</code></pre>
+<p>The label is one key from <code>criteria</code>.</p>
+<h3 id="noul">Noul</h3>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-json">{
+  &quot;type&quot;: &quot;noul&quot;,
+  &quot;instructions&quot;: &quot;Is manual review required?&quot;,
+  &quot;label&quot;: true
+}
+</code></pre>
+<p><code>noul</code> is a binary probability. Its label is <code>true</code> or <code>false</code>.</p>
+<h3 id="score">Score</h3>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-json">{
+  &quot;type&quot;: &quot;score&quot;,
+  &quot;instructions&quot;: &quot;How urgent is this?&quot;,
+  &quot;criteria&quot;: [&quot;low&quot;, &quot;normal&quot;, &quot;high&quot;],
+  &quot;label&quot;: 2
+}
+</code></pre>
+<p>The label is the zero-based level index.</p>
+<h2 id="soft-targets">Soft Targets</h2>
+<p>Use a soft target when the evidence does not support one certain answer:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-json">{
+  &quot;type&quot;: &quot;noul&quot;,
+  &quot;instructions&quot;: &quot;Is the parcel late under the promised service level?&quot;,
+  &quot;label&quot;: false,
+  &quot;target&quot;: {&quot;false&quot;: 0.5, &quot;true&quot;: 0.5}
+}
+</code></pre>
+<p>The <code>label</code> remains required for evaluation compatibility. Training uses <code>target</code> when present. Values are normalized after loading. Targets may omit zero-weight options; unknown keys, negative or nonfinite weights, and zero total mass are rejected, along with labels outside the question's options.</p>
+<h2 id="native-media">Native Media</h2>
+<p>Attach native image or video evidence at the request level. A multimodal request currently contains exactly one isolated question.</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-json">{
+  &quot;state&quot;: {&quot;study&quot;: &quot;Inspect the diagram before answering.&quot;},
+  &quot;media&quot;: [{&quot;type&quot;: &quot;image&quot;, &quot;uri&quot;: &quot;cases/diagram.png&quot;}],
+  &quot;questions&quot;: {
+    &quot;answer&quot;: {
+      &quot;type&quot;: &quot;choice&quot;,
+      &quot;instructions&quot;: &quot;Which component is connected to the battery?&quot;,
+      &quot;criteria&quot;: {&quot;a&quot;: &quot;Motor&quot;, &quot;b&quot;: &quot;Lamp&quot;},
+      &quot;label&quot;: &quot;b&quot;
+    }
+  }
+}
+</code></pre>
+<p>Training and frozen suites resolve relative paths against the JSONL directory. The HTTP server requires <code>JEVANY_MEDIA_ROOT</code> to enable media and accepts only local files inside that directory. Network URLs are rejected. File bytes, total request bytes, pixels, and declared video frames have configurable caps; videos without a declared frame count are rejected. Use a dedicated upload directory as the media root.</p>
+<h2 id="full-record">Full Record</h2>
+<p>See <a href="../files/examples/train.jsonl"><code>examples/train.jsonl</code></a>. <code>state</code> and <code>instructions</code> may be strings, objects, arrays, numbers, booleans, or null. Object field names are preserved as text labels. Every question should be answerable from the state and instructions alone.</p>
+<p>When creating data:</p>
+<ul>
+<li>keep option keys stable and descriptions specific;</li>
+<li>include cases where information is genuinely missing;</li>
+<li>distinguish ambiguity from label noise;</li>
+<li>keep train and evaluation sources separate, then check normalized text hashes;</li>
+<li>preserve source, generator, prompt, verifier, and license metadata outside the model-facing fields;</li>
+<li>audit generated labels and counterfactual pairs before training.</li>
+</ul>
+<h2 id="current-release-scale">Current Release Scale</h2>
+<p>The five LoRA SFT releases listed in the README's Pretrained Models table
+belong to <code>model-family-v2</code>. They were trained with supervised fine-tuning on
+<strong>1,772,725 text records</strong> containing <strong>2,180,242 labelled decisions</strong>. See the
+<a href="../files/results/model-family-v2.json">release metadata</a> for the recorded counts and
+model list. At a high level, the corpus covers:</p>
+<ul>
+<li>preference and ranking decisions;</li>
+<li>agent, tool-use, and action selection;</li>
+<li>general and domain reasoning;</li>
+<li>classification and policy decisions; and</li>
+<li>safety-sensitive choices.</li>
+</ul>
+<p>These are the same aggregate counts and task families reported in the project
+README and the <a href="../files/reports/JevAny_Tech_Report.pdf">technical report</a>.</p>
+<p>JevAny also supports native image and video records through the same request
+schema. Media are resolved and passed to each compatible backbone's native
+processor; support is declared by the loaded checkpoint rather than inferred
+from a filename or prompt.</p>
+<p>The bundled <code>build-sft</code> and <code>build-rlcr</code> commands remain reference builders for
+public experiments and custom training. They do not reconstruct the current
+release corpus. Review upstream licenses before downloading, training on, or
+redistributing any converted data.</p>
+<h2 id="evaluation-separation">Evaluation Separation</h2>
+<p>Keep training, calibration, and evaluation records separate. Fit calibration
+parameters only on the calibration partition, preserve group identifiers for
+related questions, and check normalized text hashes before evaluation. Current
+release metrics and suite hashes are recorded in
+<a href="../files/results/model-family-v2.json"><code>results/model-family-v2.json</code></a>; protocol notes
+are in <a href="EVALUATION.html">EVALUATION.md</a>.</p></main></div>
+<footer class="site-footer wrap"><a href="../index.html">← Back to JevAny</a><a href="license.html">Apache-2.0 code</a></footer></body></html>

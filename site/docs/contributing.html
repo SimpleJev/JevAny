@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a1114">
+<title>Contributing — JevAny</title><link rel="stylesheet" href="../styles.css"><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"></head>
+<body class="docs-page"><a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header wrap"><a class="brand" href="../index.html"><img src="../assets/favicon.svg" width="30" height="30" alt=""><span>JevAny<span class="brand-period">.</span></span></a>
+<nav aria-label="Main navigation"><a href="../index.html#benchmarks">Benchmarks</a><a href="../index.html#models">Models</a><a href="../index.html#get-started">Get started</a></nav></header>
+<div class="docs-layout wrap"><aside class="docs-sidebar"><a class="text-link" href="../index.html">← Project homepage</a><nav aria-label="Documentation"><a href="quickstart.html">Quickstart</a><a href="TRAINING.html">Training</a><a href="DATA.html">Data</a><a href="DEPLOYMENT.html">Deployment</a><a href="API.html">API reference</a><a href="examples.html">Examples</a><a href="CASES.html">Cases</a><a href="EVALUATION.html">Evaluation</a><a href="ALGORITHM.html">Method</a><a href="INTEGRATIONS.html">Integrations</a><a href="zh.html">中文文档</a></nav>
+<details class="doc-toc"><summary>On this page</summary><div class="toc">
+<ul></ul>
+</div>
+</details></aside>
+<main id="content" class="doc-content"><p class="eyebrow">JEVANY / DOCUMENTATION</p><h1>Contributing</h1><p>Install the development dependencies with Python 3.12 or newer:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m pip install -e '.[dev]'
+python -m pytest tests -m 'not server' -q
+</code></pre>
+<p>To reproduce CI on a CPU machine, use Python 3.12 and uv 0.11.28:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">uv venv --python 3.12
+uv pip install --torch-backend cpu -e '.[dev]'
+uv pip check
+OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 .venv/bin/python -m pytest tests -m 'not server' -q -ra --strict-config --strict-markers
+.venv/bin/python -m build
+</code></pre>
+<p>CI tests both the latest allowed dependencies and the minimum supported
+PyTorch, torchvision and Transformers versions. For the latter, add
+<code>-c .github/constraints/minimum.txt</code> to the install command in a fresh
+environment. Both jobs run the full CPU test suite and build the package;
+their artifacts include the resolved dependency versions and JUnit test
+results. Keep the constraints aligned with the lower bounds in
+<code>pyproject.toml</code> when changing the supported ML versions.</p>
+<p>The integration tests create a tiny local Qwen backbone, run SFT and RLCR
+updates, reload the saved adapter, and check Python/HTTP/official-SDK contracts.
+The unit tests also use a Qwen2.5 tokenizer, downloaded on first use.
+Released-weight tests are optional and require <code>JEVANY_TEST_CHECKPOINT</code>.
+Video tests decode local clips with PyAV, which is included in the
+<code>multimodal</code> and <code>dev</code> extras, and retain each model processor's frame sampling.</p>
+<p>For tests against an existing server:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">JEVANY_BASE_URL=http://127.0.0.1:8008 python -m pytest tests/test_api.py -q
+</code></pre>
+<p>Keep JSON request/response compatibility when changing inference. Add labels only
+to training records and keep them out of model-facing inputs. Data converters
+should record source revisions and preserve evaluation separation.</p>
+<p>The code is organized around user entry points:</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Location</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>jevany/client.py</code>, <code>api.py</code></td>
+<td>Lightweight Python client and wire schema</td>
+</tr>
+<tr>
+<td><code>jevany/runtime.py</code>, <code>serve.py</code></td>
+<td>Shared local inference and HTTP deployment</td>
+</tr>
+<tr>
+<td><code>jevany/training.py</code>, <code>train.py</code></td>
+<td>Recipes, Python training entry point and training loop</td>
+</tr>
+<tr>
+<td><code>jevany/datasets/</code>, <code>data.py</code></td>
+<td>Bundled starter, public-source builders and JSONL validation</td>
+</tr>
+<tr>
+<td><code>recipes/</code>, <code>infra/</code></td>
+<td>Training configurations and scheduler-neutral launcher</td>
+</tr>
+<tr>
+<td><code>examples/</code></td>
+<td>Small applications using the public interfaces</td>
+</tr>
+<tr>
+<td><code>scripts/</code>, <code>results/</code></td>
+<td>Research/release tools and recorded measurements</td>
+</tr>
+<tr>
+<td><code>docs/</code></td>
+<td>Guides, evaluation records and showcase assets</td>
+</tr>
+</tbody>
+</table></div>
+<p>Build a distributable package with <code>python -m build</code>. Keep generated weights,
+runs, downloaded data and build outputs outside source control.</p></main></div>
+<footer class="site-footer wrap"><a href="../index.html">← Back to JevAny</a><a href="license.html">Apache-2.0 code</a></footer></body></html>

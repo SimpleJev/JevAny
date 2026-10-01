@@ -63,16 +63,13 @@ const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 const motionButton = document.querySelector("#motion-toggle");
 const replay = document.querySelector("#replay-video");
 const videoExtension = replay.canPlayType('video/webm; codecs="vp9"') ? "webm" : "mp4";
-const ambientVideos = [...document.querySelectorAll(".ambient-video")];
+const ambientVideo = document.querySelector(".ambient-video");
+const portraitBackground = window.matchMedia("(max-aspect-ratio: 3/4)");
 let motionEnabled = !reduceMotion.matches && !navigator.connection?.saveData;
 let replayVisible = false;
 let selectedCase = "peg_insertion";
-let ambientCases = [];
-let ambientIndex = 0;
-let activeLayer = 0;
-let ambientTimer;
-let transitionPending = false;
 let manuallyPausedReplay = false;
+let caseOrder = Object.keys(caseDetails);
 
 function play(video) {
   // Autoplay may be denied by the browser; the poster and native controls remain.
@@ -84,68 +81,38 @@ function canAnimate() {
   return motionEnabled && !document.hidden;
 }
 
-function scheduleBackground() {
-  clearTimeout(ambientTimer);
-  if (canAnimate() && ambientCases.length > 1) {
-    ambientTimer = setTimeout(advanceBackground, 16000);
-  }
-}
-
-function advanceBackground() {
-  if (!canAnimate() || transitionPending) return;
-  transitionPending = true;
-  const nextLayer = 1 - activeLayer;
-  const next = ambientVideos[nextLayer];
-  ambientIndex = (ambientIndex + 1) % ambientCases.length;
-  next.src = `assets/media/ambient/${ambientCases[ambientIndex]}.${videoExtension}`;
-  let loadGuard;
-  const ready = () => {
-    clearTimeout(loadGuard);
-    next.removeEventListener("loadeddata", ready);
-    next.removeEventListener("error", failed);
-    transitionPending = false;
-    if (!canAnimate()) return;
-    play(next);
-    next.classList.add("is-visible");
-    ambientVideos[activeLayer].classList.remove("is-visible");
-    activeLayer = nextLayer;
-    scheduleBackground();
-  };
-  const failed = () => {
-    clearTimeout(loadGuard);
-    next.removeEventListener("loadeddata", ready);
-    next.removeEventListener("error", failed);
-    transitionPending = false;
-    scheduleBackground();
-  };
-  next.addEventListener("loadeddata", ready, { once: true });
-  next.addEventListener("error", failed, { once: true });
-  loadGuard = setTimeout(failed, 8000);
-  next.load();
-}
-
 function syncMotion() {
   motionButton.setAttribute("aria-pressed", String(!motionEnabled));
-  motionButton.querySelector(".motion-label").textContent = motionEnabled ? "Pause motion" : "Resume motion";
+  motionButton.querySelector(".motion-label").textContent = motionEnabled ? "Pause animation" : "Resume animation";
   motionButton.querySelector(".motion-icon").textContent = motionEnabled ? "Ⅱ" : "▷";
-  document.documentElement.classList.toggle("motion-paused", !motionEnabled);
-  clearTimeout(ambientTimer);
+  document.documentElement.classList.toggle("motion-paused", !canAnimate());
+  syncBackground();
   if (canAnimate()) {
-    if (!ambientVideos[activeLayer].getAttribute("src") && ambientCases.length) {
-      ambientVideos[activeLayer].src = `assets/media/ambient/${ambientCases[0]}.${videoExtension}`;
-      ambientVideos[activeLayer].classList.add("is-visible");
-    }
-    if (ambientVideos[activeLayer].getAttribute("src")) play(ambientVideos[activeLayer]);
     if (replayVisible && !manuallyPausedReplay) {
       if (!replay.getAttribute("src")) replay.src = `assets/media/${selectedCase}.${videoExtension}`;
-      play(replay);
+      if (replay.paused) play(replay);
     }
-    scheduleBackground();
   } else {
-    ambientVideos.forEach(video => video.pause());
     replay.pause();
   }
 }
+
+function syncBackground() {
+  const layout = portraitBackground.matches ? "grid-mobile" : "grid";
+  if (ambientVideo.dataset.layout !== layout) {
+    ambientVideo.classList.remove("is-ready");
+    if (canAnimate()) {
+      ambientVideo.dataset.layout = layout;
+      ambientVideo.src = `assets/media/ambient/${layout}.${videoExtension}`;
+    }
+  }
+  if (canAnimate()) {
+    if (ambientVideo.paused) play(ambientVideo);
+  } else ambientVideo.pause();
+}
+ambientVideo.addEventListener("loadeddata", () => ambientVideo.classList.add("is-ready"));
+ambientVideo.addEventListener("error", () => ambientVideo.classList.remove("is-ready"));
+portraitBackground.addEventListener("change", syncBackground);
 
 motionButton.hidden = false;
 motionButton.addEventListener("click", () => {
@@ -157,9 +124,20 @@ reduceMotion.addEventListener("change", () => {
   syncMotion();
 });
 document.addEventListener("visibilitychange", syncMotion);
-ambientVideos.forEach(video => video.addEventListener("transitionend", () => {
-  if (!video.classList.contains("is-visible")) video.pause();
-}));
+
+// Three groups keep wide viewports filled through the end of each loop.
+const modelTrack = document.querySelector(".model-track");
+for (let i = 0; i < 2; i += 1) {
+  const duplicateModels = modelTrack.firstElementChild.cloneNode(true);
+  duplicateModels.setAttribute("aria-hidden", "true");
+  duplicateModels.querySelectorAll("a").forEach(link => { link.tabIndex = -1; });
+  modelTrack.append(duplicateModels);
+}
+document.documentElement.classList.add("motion-ready");
+const modelObserver = new IntersectionObserver(entries => {
+  document.documentElement.classList.toggle("models-offscreen", !entries[entries.length - 1].isIntersecting);
+});
+modelObserver.observe(document.querySelector(".model-ribbon"));
 
 // Load only the selected replay, and only when it approaches the viewport.
 const observer = new IntersectionObserver(entries => {
@@ -173,44 +151,101 @@ const observer = new IntersectionObserver(entries => {
 }, { rootMargin: "100px" });
 observer.observe(replay);
 
-document.querySelectorAll(".replay-choice").forEach((button, index) => {
-  button.addEventListener("click", () => {
+document.querySelectorAll("[data-case]").forEach(button => {
+  button.addEventListener("click", event => {
+    // When the catalog is unavailable, gallery links still open local MP4s.
+    if (!caseDetails[button.dataset.case]) return;
+    event.preventDefault();
     selectedCase = button.dataset.case;
     const details = caseDetails[selectedCase];
-    document.querySelectorAll(".replay-choice").forEach(choice => {
-      const selected = choice === button;
+    document.querySelectorAll("[data-case]").forEach(choice => {
+      const selected = choice.dataset.case === selectedCase;
       choice.classList.toggle("is-active", selected);
-      choice.setAttribute("aria-pressed", String(selected));
+      if (choice.tagName === "BUTTON") choice.setAttribute("aria-pressed", String(selected));
     });
     replay.pause();
     replay.poster = `assets/media/${selectedCase}.webp`;
     replay.src = `assets/media/${selectedCase}.${videoExtension}`;
     replay.setAttribute("aria-label", `Archived JevAny replay: ${details.title}`);
-    document.querySelector("#replay-category").textContent = details.category;
     document.querySelector("#replay-description").textContent = details.description;
-    document.querySelector("#replay-number").textContent = `${String(index + 1).padStart(2, "0")} / 06`;
+    document.querySelector("#replay-number").textContent = `${String(caseOrder.indexOf(selectedCase) + 1).padStart(2, "0")} / ${caseOrder.length}`;
     manuallyPausedReplay = false;
     if (canAnimate()) play(replay);
+    if (button.classList.contains("case-card")) {
+      document.querySelector("#in-action").scrollIntoView();
+      replay.focus({ preventScroll: true });
+    }
   });
 });
 
 // Preserve a pause made with the video's native controls across viewport changes.
 replay.addEventListener("pause", () => {
-  if (canAnimate() && replayVisible && !replay.seeking) manuallyPausedReplay = true;
+  if (canAnimate() && replayVisible && !replay.seeking && replay.readyState >= 2) manuallyPausedReplay = true;
 });
 replay.addEventListener("play", () => { manuallyPausedReplay = false; });
 
-fetch("assets/media/backgrounds.json")
+fetch("assets/data/cases.json")
   .then(response => {
-    if (!response.ok) throw new Error("Background catalog unavailable");
+    if (!response.ok) throw new Error("Case catalog unavailable");
     return response.json();
   })
   .then(cases => {
-    ambientCases = cases;
-    syncMotion();
+    cases.forEach(details => { caseDetails[details.id] = details; });
+    caseOrder = cases.map(details => details.id);
+    document.querySelector("#replay-number").textContent = `${String(caseOrder.indexOf(selectedCase) + 1).padStart(2, "0")} / ${caseOrder.length}`;
   })
-  .catch(() => { /* Keep the local static background if decorative media fails. */ });
+  .catch(() => { /* Gallery links and the six featured selectors remain usable. */ });
 syncMotion();
+
+// Open disclosures before following links into the case library or model catalog.
+function revealAnchor() {
+  const target = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+  if (!target) return;
+  const details = target.closest("details");
+  if (details) {
+    details.open = true;
+    target.scrollIntoView();
+  }
+}
+window.addEventListener("hashchange", revealAnchor);
+revealAnchor();
+document.querySelectorAll('a[href^="#"]').forEach(link => {
+  link.addEventListener("click", () => {
+    const target = document.getElementById(link.hash.slice(1));
+    if (target?.closest("details")) target.closest("details").open = true;
+  });
+});
+
+const metricDefinitions = {
+  jevbench_public_accuracy: ["JevBench accuracy", "231 public development items", true],
+  transfer_v9_accuracy: ["Transfer accuracy", "1,046 clean, knowable decisions", true],
+  transfer_v9_nll: ["Negative log-likelihood", "Transfer · Penalizes low probability on the correct answer", false],
+  transfer_v9_brier: ["Brier score", "Transfer · Squared error of the predicted probabilities", false],
+  transfer_v9_ece: ["Expected calibration error", "Transfer · Gap between confidence and observed accuracy", false],
+};
+const metricButtons = [...document.querySelectorAll("[data-metric]")];
+const chart = document.querySelector(".benchmark-chart");
+metricButtons.forEach(button => button.addEventListener("click", () => {
+  const key = button.dataset.metric;
+  const [title, description, accuracy] = metricDefinitions[key];
+  const rows = [...chart.children];
+  const value = row => Number(row.getAttribute(`data-${key.replaceAll("_", "-")}`));
+  const maximum = accuracy ? 1 : Math.ceil(Math.max(...rows.map(value)) * 10) / 10;
+  const format = number => accuracy ? `${(number * 100).toFixed(2)}%` : number.toFixed(3);
+  rows.sort((a, b) => accuracy ? value(b) - value(a) : value(a) - value(b));
+  rows.forEach(row => {
+    row.querySelector(".benchmark-track i").style.width = `${value(row) / maximum * 100}%`;
+    row.querySelector(".benchmark-value").textContent = format(value(row));
+    chart.append(row);
+  });
+  metricButtons.forEach(tab => tab.setAttribute("aria-pressed", String(tab === button)));
+  document.querySelector("#chart-title").textContent = title;
+  document.querySelector("#chart-description").textContent = `${description} · ${accuracy ? "Higher" : "Lower"} is better`;
+  document.querySelector(".chart-axis > span:first-child").textContent = accuracy ? "0%" : "0";
+  document.querySelector("#chart-axis-end").textContent = accuracy ? "100%" : maximum.toFixed(1);
+  document.querySelector("#metric-status").textContent = `${title}. Sorted ${accuracy ? "highest" : "lowest"} first.`;
+}));
+document.querySelector(".metric-buttons").hidden = false;
 
 const tabs = [...document.querySelectorAll("[data-recipe]")];
 function selectRecipe(tab) {

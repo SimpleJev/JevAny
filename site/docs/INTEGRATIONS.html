@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a1114">
+<title>Harness and symbolic control — JevAny</title><link rel="stylesheet" href="../styles.css"><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"></head>
+<body class="docs-page"><a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header wrap"><a class="brand" href="../index.html"><img src="../assets/favicon.svg" width="30" height="30" alt=""><span>JevAny<span class="brand-period">.</span></span></a>
+<nav aria-label="Main navigation"><a href="../index.html#benchmarks">Benchmarks</a><a href="../index.html#models">Models</a><a href="../index.html#get-started">Get started</a></nav></header>
+<div class="docs-layout wrap"><aside class="docs-sidebar"><a class="text-link" href="../index.html">← Project homepage</a><nav aria-label="Documentation"><a href="quickstart.html">Quickstart</a><a href="TRAINING.html">Training</a><a href="DATA.html">Data</a><a href="DEPLOYMENT.html">Deployment</a><a href="API.html">API reference</a><a href="examples.html">Examples</a><a href="CASES.html">Cases</a><a href="EVALUATION.html">Evaluation</a><a href="ALGORITHM.html">Method</a><a href="INTEGRATIONS.html" aria-current="page">Integrations</a><a href="zh.html">中文文档</a></nav>
+<details class="doc-toc"><summary>On this page</summary><div class="toc">
+<ul></ul>
+</div>
+</details></aside>
+<main id="content" class="doc-content"><p class="eyebrow">JEVANY / DOCUMENTATION</p><h1>Harness and symbolic control</h1><p>Jev-Harness uses an external LLM to compile tasks into typed questions. The planner sees an evidence schema by default. The caller retains control of the state, which passes unchanged to JevAny for the bounded decision.</p>
+<p>With the JevAny server running, install the Bedrock adapter:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m pip install -e '.[bedrock]'
+</code></pre>
+<p>Use standard AWS credentials with access to the chosen Bedrock model. This example uses the same planner model as the <a href="../files/docs/demos/jev-harness.json">recorded harness run</a>:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-python">from jevany.bedrock import BedrockGenerator
+from jevany.harness import HTTPDecisionClient, JevHarness
+
+planner = BedrockGenerator(&quot;us.anthropic.claude-opus-4-7&quot;)
+harness = JevHarness(planner, HTTPDecisionClient(&quot;http://127.0.0.1:8008&quot;))
+result = harness.run(
+    &quot;Choose an execution mode and decide whether rollback is required.&quot;,
+    {&quot;environment&quot;: &quot;staging&quot;, &quot;tests&quot;: &quot;passed&quot;, &quot;snapshot&quot;: &quot;available&quot;},
+)
+print(result[&quot;decision&quot;][&quot;answers&quot;])
+</code></pre>
+<p>Jev-Symbolic asks an LLM to write a compact decision tree, validates branch coverage and acyclicity, then sends each internal node to JevAny. Every result records the outcome ID and complete branch trace.</p>
+<p>For command-line entry points, see <a href="../files/examples/bedrock_harness.py">the harness example</a> and <a href="../files/examples/bedrock_symbolic.py">the symbolic example</a>. The saved <a href="../files/docs/demos/jev-harness.json">harness</a> and <a href="../files/docs/demos/jev-symbolic.json">symbolic</a> outputs include the compiled requests and decisions.</p></main></div>
+<footer class="site-footer wrap"><a href="../index.html">← Back to JevAny</a><a href="license.html">Apache-2.0 code</a></footer></body></html>

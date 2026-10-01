@@ -1,0 +1,182 @@
+[
+  {
+    "id": "assembly",
+    "title": "Robot assembly",
+    "description": "Commission an inspection rover with a 24 V bus, a 5 V camera rail, inspection firmware, fresh wiring measurements and camera calibration. Mechanical access, power isolation and test validity constrain the order of work.",
+    "category": "Robotics, assembly and laboratory automation"
+  },
+  {
+    "id": "lab",
+    "title": "Laboratory automation",
+    "description": "Calibrate the pipette, transfer 40 µL blue and 20 µL red into B3, and mix without contaminating the stocks. Calibration after a transfer does not repair a wrong dose; excessive mixing speed spills liquid.",
+    "category": "Robotics, assembly and laboratory automation"
+  },
+  {
+    "id": "quality",
+    "title": "Circuit-board inspection",
+    "description": "Distinguish cosmetic surface marks from electrical discontinuity before diverting a board. Optical inspection and measured resistance must lead to the correct shipment, without discarding intact boards.",
+    "category": "Robotics, assembly and laboratory automation"
+  },
+  {
+    "id": "drawer_opening",
+    "title": "Drawer manipulation",
+    "description": "Reach and grasp the handle, pull the drawer open by 14.86 cm, then release it. The close view exposes the sliding mechanism.",
+    "category": "Robotics, assembly and laboratory automation"
+  },
+  {
+    "id": "peg_insertion",
+    "title": "Peg insertion",
+    "description": "Grasp the green peg, lift it over the cyan socket, lower it and release it to settle inside the opening.",
+    "category": "Robotics, assembly and laboratory automation"
+  },
+  {
+    "id": "conveyor_sorting",
+    "title": "Conveyor sorting",
+    "description": "Advance and stop the belt, grasp the green parcel, and place it in the matching bin.",
+    "category": "Robotics, assembly and laboratory automation"
+  },
+  {
+    "id": "obstacle_push",
+    "title": "Contact manipulation",
+    "description": "Choose a contact path around the barrier from seven persistent motion controls. Touching the obstacle counts against the run even if the part later reaches the target.",
+    "category": "Robotics, assembly and laboratory automation"
+  },
+  {
+    "id": "control_panel",
+    "title": "Physical control panel",
+    "description": "Use short and long physical button presses to isolate power, bleed pressure, clamp and commission a fixture at 20–30 kPa. Loaded clamping and overpressure create faults. Button travel is Bullet physics; pressure and interlocks use an explicit state model.",
+    "category": "Robotics, assembly and laboratory automation"
+  },
+  {
+    "id": "block_stacking",
+    "title": "Block stacking",
+    "description": "Grasp and lift the green block, seat it on the blue base, and release the stack. The side view makes the contact height visible.",
+    "category": "Robotics, assembly and laboratory automation"
+  },
+  {
+    "id": "drone",
+    "title": "Drone delivery",
+    "description": "Plan for route energy, pad occupancy, waiting and landing, then deliver with at least 12 energy units in reserve. Waiting consumes energy; releasing before landing loses the payload.",
+    "category": "Mobility and fulfillment"
+  },
+  {
+    "id": "warehouse",
+    "title": "Warehouse fulfillment",
+    "description": "Navigate to the rack, load the matching SKU, scan its barcode and secure the fragile parcel before padded dispatch. Wrong cargo and transit damage persist into the receipt.",
+    "category": "Mobility and fulfillment"
+  },
+  {
+    "id": "lane_change",
+    "title": "Roadworks bypass",
+    "description": "Choose among eight persistent controls using measured geometry. Drive around the roadworks, return and stop without obstacle contact.",
+    "category": "Mobility and fulfillment"
+  },
+  {
+    "id": "warehouse_rover",
+    "title": "Warehouse navigation",
+    "description": "Choose among eight waypoints from the current pose and shelf geometry. The Husky must reach its dock without contact; candidate names do not reveal the safe sequence.",
+    "category": "Mobility and fulfillment"
+  },
+  {
+    "id": "crosswalk",
+    "title": "Pedestrian yielding",
+    "description": "The pedestrian moves independently as simulated time advances. Choose where to wait and for how long; entering while occupied remains a violation after the pedestrian clears.",
+    "category": "Mobility and fulfillment"
+  },
+  {
+    "id": "fleet",
+    "title": "Fleet dispatch",
+    "description": "Coordinate payload, cold-chain temperature, range budget and bridge clearance. Repeated dispatches consume resources, so a correct vehicle assignment alone does not complete both deliveries.",
+    "category": "Mobility and fulfillment"
+  },
+  {
+    "id": "driving",
+    "title": "City-road driving",
+    "description": "Treat crosswalk clearance and the rear-lane gap as separate observations. Use a current gap measurement to merge safely, reach the north exit and stop.",
+    "category": "Mobility and fulfillment"
+  },
+  {
+    "id": "reverse_parking",
+    "title": "Reverse parking",
+    "description": "Choose incremental reverse or forward motions using measured bay and vehicle bounds. The entire vehicle must fit between the parked cars, rather than only its reference point.",
+    "category": "Mobility and fulfillment"
+  },
+  {
+    "id": "satellite",
+    "title": "Geospatial change analysis",
+    "description": "Register the offset images, mask clouds and measure vegetation change before classification. Export the correct region and coordinate reference as actual GeoJSON.",
+    "category": "Geospatial analysis, services and tactical decisions"
+  },
+  {
+    "id": "security",
+    "title": "Selective threat response",
+    "description": "An abusive source IP also carries five legitimate sessions. Compare session policies and replay traffic before deployment, preserving both browser and non-browser legitimate clients.",
+    "category": "Geospatial analysis, services and tactical decisions"
+  },
+  {
+    "id": "service",
+    "title": "Service recovery",
+    "description": "One current replica lacks full-load capacity; another has stale data. Prepare a replica, test a canary, promote traffic, probe the full load and drain the failed primary without losing the rollout error budget.",
+    "category": "Geospatial analysis, services and tactical decisions"
+  },
+  {
+    "id": "chess",
+    "title": "Tactical chess",
+    "description": "Find a forced mate in two in a nine-piece position. All legal moves are available without checkmate labels; a defending search chooses a legal reply that avoids mate when possible.",
+    "category": "Geospatial analysis, services and tactical decisions"
+  },
+  {
+    "id": "procurement",
+    "title": "Procurement browsing",
+    "description": "Compare hardware, commercial licensing, stock, shipping cost and a three-day deadline against a 650 total budget. Changing the product invalidates the prior quote assumptions.",
+    "category": "Browser work and productivity"
+  },
+  {
+    "id": "calendar",
+    "title": "Calendar coordination",
+    "description": "Convert attendee time zones and include 15-minute buffers. Coordinate room occupancy, capacity and a portable display kit, refreshing availability after each draft change.",
+    "category": "Browser work and productivity"
+  },
+  {
+    "id": "research",
+    "title": "Web research",
+    "description": "Resolve conflicting documentation versions, cite both the current reference and release notes, and run the local command-argument checker before saving the evidence.",
+    "category": "Browser work and productivity"
+  },
+  {
+    "id": "inbox",
+    "title": "Inbox triage",
+    "description": "Read the latest reply and verify the sender before filing. An urgent subject may already be resolved; a receipt subject may conceal a failed payment and deadline.",
+    "category": "Browser work and productivity"
+  },
+  {
+    "id": "spreadsheet",
+    "title": "Spreadsheet cleanup",
+    "description": "Keep the latest order revision, parse each row using its own locale and reconcile missing quantities with a shipping ledger. Validate the revenue and export the real cleaned CSV.",
+    "category": "Browser work and productivity"
+  },
+  {
+    "id": "frontend",
+    "title": "Frontend repair",
+    "description": "Repair card width, shrinking child elements and touch-target size separately. Chromium measures visibility, overflow and 44 px targets at 320, 390 and 680 px; stale measurements cannot authorize publication.",
+    "category": "Software and data workflows"
+  },
+  {
+    "id": "sql",
+    "title": "SQL repair",
+    "description": "Repair aggregation on actual SQLite data containing equal order amounts, NULLs, drafts and one-to-many lines. Both EXISTS and pre-aggregation can work; SUM(DISTINCT) loses legitimate equal-value orders.",
+    "category": "Software and data workflows"
+  },
+  {
+    "id": "ci",
+    "title": "Build and release recovery",
+    "description": "Package the entry point, settings and selected locale assets, then execute the bundle smoke test. A configuration change after testing requires a fresh build and test before staging.",
+    "category": "Software and data workflows"
+  },
+  {
+    "id": "performance",
+    "title": "Database performance",
+    "description": "Preserve the fresh, complete SQLite result with at most six queries and 24 rows per fetch. A single large batch violates the memory bound; stale caches and limited results fail correctness. Chunking and streaming are both supported.",
+    "category": "Software and data workflows"
+  }
+]

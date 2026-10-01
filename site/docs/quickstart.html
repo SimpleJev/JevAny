@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a1114">
+<title>Get started with JevAny — JevAny</title><link rel="stylesheet" href="../styles.css"><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"></head>
+<body class="docs-page"><a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header wrap"><a class="brand" href="../index.html"><img src="../assets/favicon.svg" width="30" height="30" alt=""><span>JevAny<span class="brand-period">.</span></span></a>
+<nav aria-label="Main navigation"><a href="../index.html#benchmarks">Benchmarks</a><a href="../index.html#models">Models</a><a href="../index.html#get-started">Get started</a></nav></header>
+<div class="docs-layout wrap"><aside class="docs-sidebar"><a class="text-link" href="../index.html">← Project homepage</a><nav aria-label="Documentation"><a href="quickstart.html" aria-current="page">Quickstart</a><a href="TRAINING.html">Training</a><a href="DATA.html">Data</a><a href="DEPLOYMENT.html">Deployment</a><a href="API.html">API reference</a><a href="examples.html">Examples</a><a href="CASES.html">Cases</a><a href="EVALUATION.html">Evaluation</a><a href="ALGORITHM.html">Method</a><a href="INTEGRATIONS.html">Integrations</a><a href="zh.html">中文文档</a></nav>
+<details class="doc-toc"><summary>On this page</summary><div class="toc">
+<ul>
+<li><a href="#results-and-demos">🎮 Results and Demos</a><ul>
+<li><a href="#jev-inside-llm-agent-loops">⚡ Jev inside LLM agent loops</a></li>
+</ul>
+</li>
+<li><a href="#table-of-contents">📑 Table of Contents</a></li>
+<li><a href="#1-quickstart">⚡ 1. Quickstart</a><ul>
+<li><a href="#11-jevany-training">🛠️ 1.1 JevAny Training</a></li>
+<li><a href="#12-jevany-deployment">🚀 1.2 JevAny Deployment</a></li>
+</ul>
+</li>
+<li><a href="#2-pretrained-models">🤗 2. Pretrained Models</a></li>
+<li><a href="#3-benchmark-results">📊 3. Benchmark Results</a></li>
+<li><a href="#4-examples-test-environments">🕹️ 4. Examples &amp; Test Environments</a><ul>
+<li><a href="#41-robot-peg-insertion">🤖 4.1 Robot peg insertion</a></li>
+<li><a href="#42-doom-corridor-3d">🔫 4.2 Doom corridor · 3D</a></li>
+<li><a href="#43-crafter-survival-2d">⛏️ 4.3 Crafter survival · 2D</a></li>
+<li><a href="#44-try-the-playground">🎮 4.4 Try the playground</a></li>
+</ul>
+</li>
+<li><a href="#5-supported-model-families">🧩 5. Supported Model Families</a></li>
+<li><a href="#6-documentation-and-contributing">📚 6. Documentation and Contributing</a></li>
+</ul>
+</div>
+</details></aside>
+<main id="content" class="doc-content"><p class="eyebrow">JEVANY / DOCUMENTATION</p><h1>Get started with JevAny</h1><p><strong>JevAny is open infra for System 1 decision model training and deployment</strong>,
+covering data preparation, model adaptation and evaluation. Use a released
+model or train on your own data to route support tickets, select tools, or
+choose a robot's next action. One API takes the state, question and candidate
+options, then directly returns a choice and its probabilities.</p>
+<p align="center">
+  <img loading="lazy" src="../files/docs/hero.png" alt="JevAny infra for System 1 decision model training, deployment and application integration" width="100%">
+</p>
+
+<h2 id="results-and-demos">🎮 Results and Demos <a name="results-and-demos"></a><a name="demos"></a></h2>
+<p><a href="../index.html#benchmarks">Explore interactive benchmark results</a></p>
+<p><a href="#evaluation">Full benchmark results and evaluation details</a>.</p>
+<p>The following 30 examples are archived replays from an earlier compatible
+JevAny checkpoint. The current default release is
+<a href="https://huggingface.co/SimpleJev/JevAny-Qwen3.8-27B-LoRA">JevAny-Qwen3.8-27B</a>.
+<a href="CASES.html">Explore the cases</a>, or <a href="#try-the-playground">try the playground</a> to inspect
+recorded actions and option probabilities.</p>
+<p><a href="../index.html#case-library">Explore all 30 application replays →</a></p>
+<h3 id="jev-inside-llm-agent-loops">⚡ Jev inside LLM agent loops</h3>
+<blockquote>
+<p><strong>Key takeaway:</strong> the LLM plans; the environment or LLM supplies a short menu;
+Jev picks the routine action; the LLM verifies and finishes the task.</p>
+</blockquote>
+<p><strong>1 · SQLite recovery — choose the inspection that unlocks the task</strong></p>
+<p><video class="doc-video" controls playsinline preload="none" aria-label="Jev choosing raw-page inspection from three SQLite recovery actions, followed by LLM parsing and verification" poster="../assets/media/docs/jev-agent-harness-sqlite.webp"><source src="../assets/media/docs/jev-agent-harness-sqlite.webm" type="video/webm"><source src="../assets/media/docs/jev-agent-harness-sqlite.mp4" type="video/mp4">Your browser does not support video.</video></p>
+<p><strong>2 · WebShop — one paired result: reward 0 → 1, LLM calls 11 → 5</strong></p>
+<p><video class="doc-video" controls playsinline preload="none" aria-label="Jev selecting the required black product option, followed by the LLM choosing size 11.5 and completing the purchase" poster="../assets/media/docs/jev-agent-harness-webshop.webp"><source src="../assets/media/docs/jev-agent-harness-webshop.webm" type="video/webm"><source src="../assets/media/docs/jev-agent-harness-webshop.mp4" type="video/mp4">Your browser does not support video.</video></p>
+<p><strong>3 · FrozenLake — repeated navigation decisions</strong></p>
+<p><video class="doc-video" controls playsinline preload="none" aria-label="Jev choosing four state-dependent navigation actions after one LLM plan in FrozenLake" poster="../assets/media/docs/jev-agent-harness-frozen-lake.webp"><source src="../assets/media/docs/jev-agent-harness-frozen-lake.webm" type="video/webm"><source src="../assets/media/docs/jev-agent-harness-frozen-lake.mp4" type="video/mp4">Your browser does not support video.</video></p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Task</th>
+<th style="text-align: right;">Success</th>
+<th style="text-align: right;">Efficiency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GPT-5.6-sol · FrozenLake · 10 pairs</td>
+<td style="text-align: right;">100% → 100%</td>
+<td style="text-align: right;">LLM calls −64.4% · tokens −63.1% · time −37.6%</td>
+</tr>
+<tr>
+<td>WebShop · 10 pairs</td>
+<td style="text-align: right;">50% → 60%</td>
+<td style="text-align: right;">LLM calls −7.7% · tokens −2.9% · time −6.1%</td>
+</tr>
+<tr>
+<td>WebArena · 6 pairs</td>
+<td style="text-align: right;">50% → 50%</td>
+<td style="text-align: right;">LLM calls +5.6% · tokens +28.2% · time −0.4%</td>
+</tr>
+<tr>
+<td>Terminal-Bench · 6 pairs</td>
+<td style="text-align: right;">1/6 → 3/6</td>
+<td style="text-align: right;">LLM calls −9.0%</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Use Jev for:</strong> 2–4 bounded, reversible choices with an immediate observation.</p>
+<p><strong>Keep with the LLM:</strong> planning, exact edits, recovery, and the final answer.</p>
+<p><a href="reports-JevAny_Tech_Report_Agent_Harness_Appendix.html">Full results</a> ·
+<a href="../assets/media/docs/jev-agent-harness.mp4">combined demo</a> ·
+<a href="experiments-AGENT_HARNESS_FRONTIER_PROTOCOL.html">task/delegation levels</a> ·
+<a href="../files/reports/JevAny_Tech_Report_with_Agent_Harness.pdf">combined technical report</a></p>
+<h2 id="table-of-contents">📑 Table of Contents</h2>
+<ul>
+<li><a href="#results-and-demos">🎮 Results and Demos</a></li>
+<li><a href="#quickstart">⚡ 1. Quickstart</a></li>
+<li><a href="#training">🛠️ 1.1 JevAny Training</a></li>
+<li><a href="#deployment">🚀 1.2 JevAny Deployment</a></li>
+<li><a href="#pretrained-models">🤗 2. Pretrained Models</a></li>
+<li><a href="#evaluation">📊 3. Benchmark Results</a></li>
+<li><a href="#examples--test-environments">🕹️ 4. Examples &amp; Test Environments</a></li>
+<li><a href="#supported-model-families">🧩 5. Supported Model Families</a></li>
+<li><a href="#documentation-and-contributing">📚 6. Documentation and Contributing</a></li>
+</ul>
+<h2 id="1-quickstart">⚡ 1. Quickstart <a name="quickstart"></a></h2>
+<p>Use Python 3.12 or newer. Clone the repository and install the lightweight package:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">git clone https://github.com/SimpleJev/JevAny.git
+cd JevAny
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e .
+</code></pre>
+<p>Keep this environment active and work from the repository root. Choose
+<a href="#training">Training</a> to build your own model or <a href="#deployment">Deployment</a> to
+use a released checkpoint. For a preview on CPU, <a href="#try-the-playground">try the playground</a>.</p>
+<h3 id="11-jevany-training">🛠️ 1.1 JevAny Training <a name="training"></a></h3>
+<p>Train your own System 1 model on the same <code>state</code> and <code>questions</code> you send at
+inference, with a label for each question. Start with the bundled synthetic
+support tickets, then train on your own labelled data. The starter recipe uses
+Qwen3.5-0.8B on CUDA with BF16 and writes <code>runs/my-jev</code>:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m pip install -e '.[train]'
+jevany data init --out data/starter
+jevany data validate data/starter/train.jsonl
+jevany train --config recipes/sft.toml --dry-run
+jevany train --config recipes/sft.toml
+</code></pre>
+<p>After training, try the checkpoint on the included ticket request:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany decide examples/request.json --checkpoint runs/my-jev
+</code></pre>
+<p>Pass <code>--data</code> to train on your own <a href="DATA.html">JSONL data</a>, or use
+<a href="../files/recipes/finetune.toml"><code>recipes/finetune.toml</code></a> to adapt the released 27B model.
+See the <a href="TRAINING.html">training guide</a> for CPU settings, multimodal data and
+standard <code>torchrun</code> launches. For image/video training or fine-tuning the released
+27B model, install <code>.[train,multimodal]</code>.</p>
+<p>After SFT, you can continue with experimental <a href="ALGORITHM.html#rlcr">RLCR</a>,
+which rewards correctness and probability calibration:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany train --config recipes/rlcr.toml
+</code></pre>
+<h3 id="12-jevany-deployment">🚀 1.2 JevAny Deployment <a name="deployment"></a></h3>
+<p>Install the serving dependencies and start the released Qwen 4B model on a CUDA
+GPU. See the <a href="DEPLOYMENT.html#checkpoints-and-hardware">hardware and loading guide</a>
+for memory requirements.</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m pip install -e '.[serve,multimodal]'
+jevany serve --checkpoint SimpleJev/JevAny-Qwen3.5-4B-LoRA \
+  --device cuda --dtype bf16 --port 8008
+</code></pre>
+<p>The default path favors reproducibility. CUDA deployments can opt into BF16
+LoRA merging, SDPA and <code>torch.compile</code>; the useful settings differ between 4B
+and 27B. See the <a href="DEPLOYMENT.html#optional-cuda-acceleration">inference acceleration guide</a>
+for commands, H200 measurements and accuracy caveats.</p>
+<p>To serve your training output, replace the checkpoint ID with <code>runs/my-jev</code>.
+Keep the server running. In a Python session using the same environment, send
+a ticket and the departments that can handle it:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-python">from jevany import Choice, JevClient
+
+jev = JevClient(&quot;http://127.0.0.1:8008&quot;)
+result = jev.system_one(
+    state={&quot;ticket&quot;: &quot;I was charged twice. Please help.&quot;},
+    questions={
+        &quot;department&quot;: Choice(
+            instructions=&quot;Which team should handle this?&quot;,
+            criteria={&quot;billing&quot;: &quot;Payment problems&quot;, &quot;shipping&quot;: &quot;Delivery problems&quot;},
+        ),
+    },
+)
+answer = result[&quot;answers&quot;][&quot;department&quot;]
+print(&quot;Selected team:&quot;, answer[&quot;choice&quot;])
+print(&quot;Probabilities:&quot;, answer[&quot;probabilities&quot;])
+</code></pre>
+<p><code>choice</code> is one of the department names; <code>probabilities</code> maps each name to its
+probability. Your application can use these fields to route the ticket or ask
+for review when the decision is uncertain. Use <code>Noul</code> for yes/no questions,
+such as whether a ticket needs urgent review,
+and <code>Score</code> for ordered levels, such as low, normal and high priority.
+See the <a href="API.html">API reference</a> for all three question types.</p>
+<p>For in-process inference, <a href="DEPLOYMENT.html#python">load a model in Python</a>
+and use the same interface. For image and video inputs, follow the
+<a href="DEPLOYMENT.html#native-media-and-limits">media setup</a>.</p>
+<h2 id="2-pretrained-models">🤗 2. Pretrained Models <a name="pretrained-models"></a></h2>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Readout</th>
+<th>Intended use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://huggingface.co/SimpleJev/JevAny-Gemma-4B-LoRA"><img loading="lazy" src="../files/docs/model-logos/jevany-gemma.svg" width="24" height="24" align="middle" alt="">&nbsp;JevAny-Gemma-4B</a></td>
+<td>Pointer</td>
+<td>Compact Gemma release</td>
+</tr>
+<tr>
+<td><a href="https://huggingface.co/SimpleJev/JevAny-Qwen3.5-4B-LoRA"><img loading="lazy" src="../files/docs/model-logos/jevany-qwen.svg" width="24" height="24" align="middle" alt="">&nbsp;JevAny-Qwen3.5-4B</a></td>
+<td>Pointer</td>
+<td>Compact, flexible choice count</td>
+</tr>
+<tr>
+<td><a href="https://huggingface.co/SimpleJev/JevAny-Qwen3.5-4B-Direct-Token-LoRA"><img loading="lazy" src="../files/docs/model-logos/jevany-qwen.svg" width="24" height="24" align="middle" alt="">&nbsp;JevAny-Qwen3.5-4B-Direct-Token</a></td>
+<td>Direct-token</td>
+<td>Best released 4B JevBench accuracy</td>
+</tr>
+<tr>
+<td><a href="https://huggingface.co/SimpleJev/JevAny-Qwen3.8-27B-LoRA"><img loading="lazy" src="../files/docs/model-logos/jevany-qwen.svg" width="24" height="24" align="middle" alt="">&nbsp;JevAny-Qwen3.8-27B</a></td>
+<td>Pointer</td>
+<td>Default; highest released accuracy</td>
+</tr>
+<tr>
+<td><a href="https://huggingface.co/SimpleJev/JevAny-Muse-Glimmer-30B-LoRA"><img loading="lazy" src="../files/docs/model-logos/jevany-muse.svg" width="24" height="24" align="middle" alt="">&nbsp;JevAny-Muse-Glimmer-30B</a></td>
+<td>Pointer</td>
+<td>Muse Glimmer alternative</td>
+</tr>
+</tbody>
+</table></div>
+<p>These LoRA adapters were trained with SFT on 1,772,725 text records containing
+2,180,242 labelled decisions; see <a href="../files/reports/JevAny_Tech_Report.pdf">training compute and experiments</a>
+for the setup. Full-parameter SFT and further post-training improvements are planned.</p>
+<p>The corresponding base model is loaded separately and its license and access
+terms apply. Allow roughly twice the base parameter count in bytes for BF16
+weights, plus runtime memory. See the
+<a href="DEPLOYMENT.html#checkpoints-and-hardware">hardware and loading guide</a>.</p>
+<p>Pointer and direct-token models share the same API. Pointer supports up to
+4,096 options within the context limit; direct-token supports up to 255.
+See <a href="TRAINING.html#pointer-and-direct-token-readouts">readout choices</a> for
+training and accuracy tradeoffs.</p>
+<h2 id="3-benchmark-results">📊 3. Benchmark Results <a name="evaluation"></a></h2>
+<p>JevAny-Qwen3.8-27B leads both benchmarks and has the lowest NLL and Brier.
+Among 4B releases, direct-token leads on JevBench; pointer leads on Transfer.</p>
+<p><a href="../index.html#benchmarks">Explore interactive benchmark results</a></p>
+<div align="center">
+
+| Model | Transfer ↑ | JevBench ↑ | NLL ↓ | Brier ↓ | ECE ↓ |
+|:---|---:|---:|---:|---:|---:|
+| [<img loading="lazy" src="../files/docs/model-logos/kev.svg" width="24" height="24" align="middle" alt="">&nbsp;Kev-4B](https://huggingface.co/jaredpalmer/kev-4b) | 74.19% | 75.32% | 0.858 | 0.380 | 0.125 |
+| [<img loading="lazy" src="../files/docs/model-logos/kev.svg" width="24" height="24" align="middle" alt="">&nbsp;Kev-27B](https://huggingface.co/jaredpalmer/kev-27b) | 82.31% | 85.28% | 0.533 | 0.265 | 0.050 |
+| [<img loading="lazy" src="../files/docs/model-logos/typesafe.png" width="24" height="24" align="middle" alt="">&nbsp;Jev 1.13.0](https://docs.typesafe.ai/models) | 85.37% | 86.58% | 0.644 | 0.212 | 0.033 |
+| [<img loading="lazy" src="../files/docs/model-logos/laya.svg" width="24" height="24" align="middle" alt="">&nbsp;Laya](https://huggingface.co/convaiinnovations/laya) | 52.29% | 58.01% | 1.264 | 0.615 | 0.127 |
+| **JevAny releases** |  |  |  |  |  |
+| [<img loading="lazy" src="../files/docs/model-logos/jevany-gemma.svg" width="24" height="24" align="middle" alt="">&nbsp;JevAny-Gemma-4B](https://huggingface.co/SimpleJev/JevAny-Gemma-4B-LoRA) | 70.84% | 77.49% | 0.706 | 0.369 | 0.056 |
+| [<img loading="lazy" src="../files/docs/model-logos/jevany-qwen.svg" width="24" height="24" align="middle" alt="">&nbsp;JevAny-Qwen3.5-4B](https://huggingface.co/SimpleJev/JevAny-Qwen3.5-4B-LoRA) | 78.68% | 80.09% | 0.587 | 0.297 | 0.035 |
+| [<img loading="lazy" src="../files/docs/model-logos/jevany-qwen.svg" width="24" height="24" align="middle" alt="">&nbsp;JevAny-Qwen3.5-4B-Direct-Token](https://huggingface.co/SimpleJev/JevAny-Qwen3.5-4B-Direct-Token-LoRA) | 78.20% | 80.95% | 0.564 | 0.291 | **0.029** |
+| [<img loading="lazy" src="../files/docs/model-logos/jevany-muse.svg" width="24" height="24" align="middle" alt="">&nbsp;JevAny-Muse-Glimmer-30B](https://huggingface.co/SimpleJev/JevAny-Muse-Glimmer-30B-LoRA) | 83.46% | 87.45% | 0.464 | 0.229 | 0.032 |
+| [<img loading="lazy" src="../files/docs/model-logos/jevany-qwen.svg" width="24" height="24" align="middle" alt="">&nbsp;**JevAny-Qwen3.8-27B**](https://huggingface.co/SimpleJev/JevAny-Qwen3.8-27B-LoRA) | **86.04%** | **90.04%** | **0.388** | **0.195** | **0.026** |
+
+NLL, Brier and ECE are measured on Transfer.
+
+</div>
+
+<p><a href="EVALUATION.html#model-family-v2">Full results and protocols</a> ·
+<a href="../files/results/model-family-v2.json">Machine-readable results</a> ·
+<a href="../files/reports/JevAny_Tech_Report.pdf">Method and ablation report</a></p>
+<h2 id="4-examples-test-environments">🕹️ 4. Examples &amp; Test Environments <a name="examples--test-environments"></a></h2>
+<p>The playground includes the three environments below. These GIFs preserve
+historical model actions and option probabilities; run the current
+<a href="https://huggingface.co/SimpleJev/JevAny-Qwen3.8-27B-LoRA">JevAny-Qwen3.8-27B</a>
+checkpoint with the commands in the playground guide.</p>
+<h3 id="41-robot-peg-insertion">🤖 4.1 <a href="examples.html#robot-peg-insertion">Robot peg insertion</a> <a name="robot-peg-insertion"></a></h3>
+<p>Use a Franka gripper to grasp, align and insert a peg, checked by PyBullet contact physics.</p>
+<p><video class="doc-video" controls playsinline preload="none" aria-label="Robot browser replay showing the Franka arm inserting a peg, recorded model probabilities and physical success checks" poster="../assets/media/docs/playground-arm.webp"><source src="../assets/media/docs/playground-arm.webm" type="video/webm"><source src="../assets/media/docs/playground-arm.mp4" type="video/mp4">Your browser does not support video.</video></p>
+<h3 id="42-doom-corridor-3d">🔫 4.2 <a href="examples.html#doom-corridor-3d">Doom corridor · 3D</a> <a name="doom-corridor-3d"></a></h3>
+<p>Clear the final room by defeating the enemies on the left and right, then move
+forward. The environment uses ViZDoom and the included Freedoom assets.</p>
+<p><video class="doc-video" controls playsinline preload="none" aria-label="Doom checkpoint replay: kill both enemies, then advance" poster="../assets/media/docs/playground-doom.webp"><source src="../assets/media/docs/playground-doom.webm" type="video/webm"><source src="../assets/media/docs/playground-doom.mp4" type="video/mp4">Your browser does not support video.</video></p>
+<h3 id="43-crafter-survival-2d">⛏️ 4.3 <a href="examples.html#crafter-survival-2d">Crafter survival · 2D</a> <a name="crafter-survival-2d"></a></h3>
+<p>Gather wood, craft tools and mine stone while managing health and supplies.</p>
+<p><video class="doc-video" controls playsinline preload="none" aria-label="Crafter browser replay showing resource gathering, crafting actions and progress through four goal milestones" poster="../assets/media/docs/playground-crafter.webp"><source src="../assets/media/docs/playground-crafter.webm" type="video/webm"><source src="../assets/media/docs/playground-crafter.mp4" type="video/mp4">Your browser does not support video.</video></p>
+<h3 id="44-try-the-playground">🎮 4.4 Try the playground <a name="try-the-playground"></a></h3>
+<p>From the <a href="#quickstart">Quickstart</a> environment, start the playground:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany demo
+</code></pre>
+<p>Open <code>http://127.0.0.1:8090</code> and choose <strong>Replay</strong> to watch a recorded run.
+The bundled recordings play locally on CPU.</p>
+<p>To run your model, keep the server from <a href="#deployment">Deployment</a> running.
+Stop the replay viewer with Ctrl+C, install the optional game engines, then
+restart the playground with the server address:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m pip install -e '.[demo]'
+jevany demo --base-url http://127.0.0.1:8008 --text-only
+</code></pre>
+<p>Choose <strong>Run model</strong> in the browser, or <strong>Play yourself</strong> to control the game.
+Live control sends text state to the model. Robot control uses the
+<code>.[robotics]</code> extra. See the <a href="examples.html">playground guide</a> for platform
+requirements and environment APIs, or <a href="INTEGRATIONS.html">integrations</a> to
+combine JevAny decisions with an LLM planner.</p>
+<h2 id="5-supported-model-families">🧩 5. Supported Model Families <a name="supported-model-families"></a></h2>
+<p><a href="TRAINING.html#backbone-support">Model IDs, supported inputs and setup requirements</a>.</p>
+<p><a href="TRAINING.html#backbone-support"><img loading="lazy" alt="26 supported models across Qwen, Gemma, Muse, Mistral, GLM, Nemotron and Llama" src="../files/docs/supported-model-families.svg" /></a></p>
+<h2 id="6-documentation-and-contributing">📚 6. Documentation and Contributing <a name="documentation-and-contributing"></a></h2>
+<p><a href="TRAINING.html">Training</a> · <a href="DEPLOYMENT.html">Deployment</a> · <a href="API.html">API</a> · <a href="DATA.html">Data</a> · <a href="EVALUATION.html">Evaluation</a> · <a href="experiments-AGENT_HARNESS_FRONTIER_PROTOCOL.html">Agent harness protocol</a> · <a href="contributing.html">Contributing</a></p>
+<p>To contribute a model adapter, evaluation or application example, start with the
+<a href="contributing.html">contribution guide</a>. The
+<a href="../files/reports/JevAny_Tech_Report_with_Agent_Harness.pdf">combined technical report</a>
+describes model design, multimodal support, the agent-harness study, negative results,
+and open questions; the <a href="../files/reports/JevAny_Tech_Report.pdf">original release report</a> remains unchanged.</p>
+<p>Code and starter data are Apache-2.0. Some components are adapted from
+<a href="https://github.com/jaredpalmer/kev">Kev</a>; see <a href="../files/NOTICE">NOTICE</a> and
+<a href="ACKNOWLEDGEMENTS.html">ACKNOWLEDGEMENTS.md</a>. Base models and upstream datasets retain their own terms.</p></main></div>
+<footer class="site-footer wrap"><a href="../index.html">← Back to JevAny</a><a href="license.html">Apache-2.0 code</a></footer></body></html>

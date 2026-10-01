@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a1114">
+<title>Connect a model to the Playground — JevAny</title><link rel="stylesheet" href="../styles.css"><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"></head>
+<body class="docs-page"><a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header wrap"><a class="brand" href="../index.html"><img src="../assets/favicon.svg" width="30" height="30" alt=""><span>JevAny<span class="brand-period">.</span></span></a>
+<nav aria-label="Main navigation"><a href="../index.html#benchmarks">Benchmarks</a><a href="../index.html#models">Models</a><a href="../index.html#get-started">Get started</a></nav></header>
+<div class="docs-layout wrap"><aside class="docs-sidebar"><a class="text-link" href="../index.html">← Project homepage</a><nav aria-label="Documentation"><a href="quickstart.html">Quickstart</a><a href="TRAINING.html">Training</a><a href="DATA.html">Data</a><a href="DEPLOYMENT.html">Deployment</a><a href="API.html">API reference</a><a href="examples.html">Examples</a><a href="CASES.html">Cases</a><a href="EVALUATION.html">Evaluation</a><a href="ALGORITHM.html">Method</a><a href="INTEGRATIONS.html">Integrations</a><a href="zh.html">中文文档</a></nav>
+<details class="doc-toc"><summary>On this page</summary><div class="toc">
+<ul>
+<li><a href="#start-the-playground">Start the Playground</a></li>
+<li><a href="#connect-a-running-model">Connect a running model</a></li>
+<li><a href="#text-first-images-when-they-work">Text first, images when they work</a></li>
+<li><a href="#try-your-own-decision">Try your own decision</a></li>
+<li><a href="#without-a-browser">Without a browser</a></li>
+</ul>
+</div>
+</details></aside>
+<main id="content" class="doc-content"><p class="eyebrow">JEVANY / DOCUMENTATION</p><h1>Connect a model to the Playground</h1><p>The Playground (<code>jevany demo</code>) serves packaged replays, the optional CPU
+environments, and a form for your own decisions. Replays need no model, no GPU
+and no account. This page covers the part that needs a model: connecting one,
+confirming what it is, and asking it a question.</p>
+<p>The <a href="examples.html#play-locally-or-connect-your-model">playground guide</a>
+covers the environments themselves. <a href="DEPLOYMENT.html">DEPLOYMENT.md</a> covers the
+server.</p>
+<h2 id="start-the-playground">Start the Playground</h2>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m pip install -e .
+jevany demo
+</code></pre>
+<p>Open <code>http://127.0.0.1:8090</code> if the browser does not open by itself. The
+Playground binds to loopback only and accepts same-origin requests only.</p>
+<h2 id="connect-a-running-model">Connect a running model</h2>
+<p>Start a server in another terminal. A small checkpoint of your own is the
+cheapest option:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany serve --checkpoint runs/my-jev --model-name my-jev --port 8008
+curl http://127.0.0.1:8008/health
+curl http://127.0.0.1:8008/v1/models
+</code></pre>
+<p>In the Playground, put that address in <strong>YOUR MODEL URL</strong> and choose
+<strong>Test and connect</strong>:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-text">http://127.0.0.1:8008
+</code></pre>
+<p>Leave <strong>MODEL ID</strong> empty to use whatever the server reports. Fill it in only
+when one endpoint serves several identities, or to pin the exact id your
+requests should carry. An id the endpoint does not serve is rejected with the
+list of ids it does serve, rather than failing later with HTTP 422.</p>
+<p>Connecting runs one real <code>GET /v1/models</code>. The status line distinguishes three
+states:</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Status</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>No model configured</td>
+<td>Replays and manual play work; <strong>Run model</strong> is unavailable</td>
+</tr>
+<tr>
+<td>Configured but never tested</td>
+<td>A <code>--base-url</code> was passed on the command line and has not answered yet. Text decisions work; image input stays off until the endpoint is tested</td>
+</tr>
+<tr>
+<td>Connected: <code>&lt;id&gt;</code></td>
+<td><code>GET /v1/models</code> answered, and the line below reports the served id, aliases, base model, device, readout and accepted media</td>
+</tr>
+</tbody>
+</table></div>
+<p>A <code>--base-url</code> endpoint is usable for text immediately, so the command-line flow
+below still works unchanged. Its identity and media support are only known after a
+test, so press <strong>Test and connect</strong> before enabling image input. A connection is
+adopted only when the endpoint reports the fields the page uses; a descriptor with,
+say, a list where <code>capabilities</code> belongs is reported and the previous connection
+stays in use.</p>
+<p>A failed test never replaces a working connection: the previous model stays in
+use and the panel says the attempt failed. Common failures and what they mean:</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Message</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cannot reach http://127.0.0.1:8008</code></td>
+<td>No server on that port; start <code>jevany serve</code></td>
+</tr>
+<tr>
+<td><code>answered but rejected GET /v1/models: HTTP Error 503: ... model is not ready</code></td>
+<td>The server is still loading weights; retry</td>
+</tr>
+<tr>
+<td><code>it does not serve 'NAME'</code></td>
+<td>Use one of the listed ids, or leave the field empty</td>
+</tr>
+<tr>
+<td><code>non-loopback decision endpoints must use HTTPS</code></td>
+<td>Remote endpoints must be <code>https://</code>; this is the same rule <code>JevClient</code> applies in Python</td>
+</tr>
+</tbody>
+</table></div>
+<p>The browser sends requests to the local Playground, which forwards them through
+<code>JevClient</code>. The panel has no API-key field: for a gateway that needs a key, call
+it from Python with
+<code>JevClient(base_url, api_key=...)</code> as in <a href="DEPLOYMENT.html">DEPLOYMENT.md</a>, or put a
+loopback endpoint in front of it.</p>
+<h2 id="text-first-images-when-they-work">Text first, images when they work</h2>
+<p>A newly connected model starts text-only. <strong>Also send the current image</strong> is
+enabled only when four things hold:</p>
+<ol>
+<li><code>GET /v1/models</code> has answered, so the next two are known rather than assumed,</li>
+<li>the checkpoint accepts images (<code>capabilities.media_types</code> contains <code>image</code>),</li>
+<li>the server has <code>JEVANY_MEDIA_ROOT</code> set (<code>limits.media_enabled</code> is true), and</li>
+<li>the Playground can write where the server reads.</li>
+</ol>
+<p>The checkbox shows what a request would actually carry, so it stays clear while
+any of these is missing, and the note under it names the one to fix.</p>
+<p>The fourth condition means <code>--media-root</code> for an HTTP server, because a server
+rejects media that is not a file inside its own media root:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">mkdir -p /tmp/jevany-media
+JEVANY_MEDIA_ROOT=/tmp/jevany-media jevany serve \
+  --checkpoint SimpleJev/JevAny-Qwen3.5-4B-LoRA --device cuda --dtype bf16 --port 8008
+</code></pre>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany demo --base-url http://127.0.0.1:8008 --media-root /tmp/jevany-media
+</code></pre>
+<p>With those two commands, press <strong>Test and connect</strong> once and then tick the
+checkbox; the model answers text requests in the meantime. The environment image
+stays visible in the browser either way; only the request changes. <code>--text-only</code>
+starts with image input off; the checkbox can enable it after a successful
+connection test.</p>
+<p>Both processes need access to the same absolute file paths. If the Playground
+runs in Docker and the model server runs on the host, mount the media directory
+at the same path and run the container with the host user's UID/GID
+(<code>--user "$(id -u):$(id -g)"</code>). Each frame lives in a private temporary directory;
+a different user cannot read it.</p>
+<h2 id="try-your-own-decision">Try your own decision</h2>
+<p><strong>TRY YOUR OWN DECISION</strong> asks the connected model one <code>choice</code> question. Edit
+the state, the question and the candidate options, then choose <strong>Ask the
+model</strong>. The result shows the selected option, its confidence, and the
+probability of every candidate.</p>
+<p>It needs no game dependencies, no PyTorch in the Playground process and no JSON
+editing. It uses the same connected model, the same <code>POST /v1/systemone</code> body
+and the same answer validation as the environments, so a model that answers here
+answers the Python and HTTP examples in <a href="API.html">API.md</a> too.</p>
+<p>Limits: 2 to 12 options with distinct names, 6,000 characters of state and 2,000
+characters of question. The server's own token limits still apply; an oversized
+request is rejected with the server's explanation rather than truncated.</p>
+<h2 id="without-a-browser">Without a browser</h2>
+<p>The same endpoints are available for scripting against a running Playground:</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Request</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET /api/config</code></td>
+<td>cases, installed extras, and the current connection</td>
+</tr>
+<tr>
+<td><code>POST /api/connect</code> <code>{"base_url": ..., "model": ...}</code></td>
+<td>test and adopt an endpoint</td>
+</tr>
+<tr>
+<td><code>POST /api/images</code> <code>{"enabled": true}</code></td>
+<td>turn image input on or off</td>
+</tr>
+<tr>
+<td><code>POST /api/decide</code> <code>{"state": ..., "question": ..., "options": [...]}</code></td>
+<td>one custom choice question</td>
+</tr>
+<tr>
+<td><code>POST /api/start</code>, <code>POST /api/step</code></td>
+<td>the live environment controls</td>
+</tr>
+</tbody>
+</table></div>
+<p>They are loopback-only and same-origin, for the local page and local scripts.
+For an application, call the model directly with <code>JevClient</code> instead.</p>
+<p><a href="quickstart.html">Back to the README</a></p></main></div>
+<footer class="site-footer wrap"><a href="../index.html">← Back to JevAny</a><a href="license.html">Apache-2.0 code</a></footer></body></html>

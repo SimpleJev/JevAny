@@ -1,0 +1,10 @@
+{
+  "ibm-plex-sans-condensed-medium.woff2": {
+    "family": "IBM Plex Sans Condensed",
+    "weight": 500,
+    "style": "normal",
+    "source": "https://github.com/IBM/plex/tree/master/packages/plex-sans-condensed",
+    "modification": "Latin character subset; original glyph outlines retained",
+    "license": "ibm-plex-OFL.txt"
+  }
+}
