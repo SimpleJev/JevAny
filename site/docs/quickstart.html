@@ -340,95 +340,20 @@ NLL, Brier and ECE are measured on Transfer.
 <p><a href="EVALUATION.html#model-family-v2">Full results and protocols</a> ·
 <a href="../files/results/model-family-v2.json">Machine-readable results</a> ·
 <a href="../files/reports/JevAny_Tech_Report.pdf">Method and ablation report</a></p>
-<p>The public external comparison uses the same ten-model cohort on the complete
-2,000-decision Typed Decisions test split and the same 724 JevJudge text
-requests. JevJudge uses native inputs without truncation under a shared
-65,536-token context ceiling; every model answers 724/724. Typed Decisions
-measures agreement with teacher-derived soft gold, not objective correctness.</p>
-<p><a href="../files/docs/external-zero-shot.svg"><img loading="lazy" alt="Two-panel comparison of the same JevAny and locally rerun open-model cohort on Typed Decisions and the JevJudge common text set" src="../files/docs/external-zero-shot.svg" /></a></p>
-<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
-<thead>
-<tr>
-<th style="text-align: left;">Model</th>
-<th style="text-align: right;">Typed Decisions ↑</th>
-<th style="text-align: right;">JevJudge text ↑</th>
-<th style="text-align: left;">Source / status</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><strong>JevAny-Qwen3.8-27B</strong></td>
-<td style="text-align: right;"><strong>72.80%</strong></td>
-<td style="text-align: right;"><strong>66.44%</strong></td>
-<td style="text-align: left;">Ours; full-context rerun</td>
-</tr>
-<tr>
-<td style="text-align: left;">JevAny-Muse-Glimmer-30B</td>
-<td style="text-align: right;">69.95%</td>
-<td style="text-align: right;">62.57%</td>
-<td style="text-align: left;">Ours; full-context rerun</td>
-</tr>
-<tr>
-<td style="text-align: left;">JevAny-Qwen3.5-4B-Direct-Token</td>
-<td style="text-align: right;">67.20%</td>
-<td style="text-align: right;">58.56%</td>
-<td style="text-align: left;">Ours; full-context rerun</td>
-</tr>
-<tr>
-<td style="text-align: left;">JevAny-Qwen3.5-4B</td>
-<td style="text-align: right;">63.50%</td>
-<td style="text-align: right;">57.87%</td>
-<td style="text-align: left;">Ours; full-context rerun</td>
-</tr>
-<tr>
-<td style="text-align: left;">JevAny-Gemma-4B</td>
-<td style="text-align: right;">66.25%</td>
-<td style="text-align: right;">51.10%</td>
-<td style="text-align: left;">Ours; full-context rerun</td>
-</tr>
-<tr>
-<td style="text-align: left;">OpenDecider-small</td>
-<td style="text-align: right;">66.65%</td>
-<td style="text-align: right;">54.97%</td>
-<td style="text-align: left;">Open; full-context rerun</td>
-</tr>
-<tr>
-<td style="text-align: left;">Bongard-mini</td>
-<td style="text-align: right;">59.65%</td>
-<td style="text-align: right;">51.24%</td>
-<td style="text-align: left;">Open; full-context rerun</td>
-</tr>
-<tr>
-<td style="text-align: left;">Jeff-Gemma4-E2B</td>
-<td style="text-align: right;">57.95%</td>
-<td style="text-align: right;">46.69%</td>
-<td style="text-align: left;">Open; full-context rerun</td>
-</tr>
-<tr>
-<td style="text-align: left;">Jeff-Qwen3.5-2B</td>
-<td style="text-align: right;">55.45%</td>
-<td style="text-align: right;">42.82%</td>
-<td style="text-align: left;">Open; full-context rerun</td>
-</tr>
-<tr>
-<td style="text-align: left;">Jeff-Qwen3.5-0.8B</td>
-<td style="text-align: right;">49.15%</td>
-<td style="text-align: right;">43.51%</td>
-<td style="text-align: left;">Open; full-context rerun</td>
-</tr>
-</tbody>
-</table></div>
-<p>Qwen3.8-27B leads the strongest locally rerun external model by <strong>6.15 points</strong>
-on Typed Decisions and <strong>11.46 points</strong> on JevJudge text. Direct-Token 4B leads
-by 0.55 and 3.59 points; Pointer 4B trails by 3.15 points on Typed Decisions but
-leads by 2.90 on JevJudge text, while Gemma-4B does not beat the strongest
-external row. Published-only Decider 1 (76.8%) and Liquid d1 (74.2%) remain
-ahead of our 27B on Typed Decisions and have no matching JevJudge result.</p>
-<p>JevJudge text covers four roles and is a diagnostic, not the official
-five-role full-multimodal headline. Benchmark-trained specialist checkpoints
-are excluded from this zero-shot chart. Laya uses silent <code>max_len=512</code>
-truncation and is not full-context comparable; Laya, Kev and published-only
-rows remain clearly labeled in the supplemental external tables.</p>
+<p>The external comparison uses the complete Typed Decisions test split, the full
+3,220-record JevJudge multimodal suite, and its 724-record text slice. The same
+12 models stay in the same order; <code>—</code> means unsupported native input or no
+matching result.</p>
+<p><a href="../files/docs/external-zero-shot.svg"><img loading="lazy" alt="Typed Decisions, full JevJudge, and JevJudge text results for the same twelve-model cohort" src="../files/docs/external-zero-shot.svg" /></a></p>
+<ul>
+<li><strong>JevAny-Qwen3.8-27B:</strong> 72.8% Typed agreement, <strong>35.6%</strong> JevJudge <code>skill_role</code>, and 66.4% JevJudge text accuracy.</li>
+<li>All five JevAny releases completed 3,220/3,220 native text, image, and video records. Their <code>skill_role</code> scores range from 17.9% to 35.6%; the strongest complete open baseline scores 13.6%.</li>
+<li>On JevJudge text, Qwen3.8-27B scores 66.4% and Kev-27B scores 64.2%. Kev has no native image/video path, so its full result is <code>—</code>.</li>
+<li>Published-only Decider 1 (76.8%) and Liquid d1 (74.2%) remain above our 72.8% on Typed Decisions; neither has a JevJudge result.</li>
+</ul>
+<p>JevJudge's official <code>skill_role</code> removes each family's chance or majority-label floor and
+equally weights its five roles. Qwen3.8-27B has 62.27% plain full-suite accuracy
+and 35.55% <code>skill_role</code>; the two metrics answer different questions.</p>
 <p><a href="EXTERNAL_EVALUATION.html">Full external tables and reproducibility notes</a> ·
 <a href="../files/results/external-zero-shot-v1.json">Machine-readable chart results</a></p>
 <h3 id="31-inference-efficiency">⏱️ 3.1 Inference efficiency <a name="efficiency"></a></h3>

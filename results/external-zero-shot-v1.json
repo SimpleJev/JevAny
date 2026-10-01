@@ -1,5 +1,5 @@
 {
-  "artifact_version": 2,
+  "artifact_version": 3,
   "title": "External zero-shot decision evaluation",
   "generated_by": "scripts/plot_external_zero_shot.py",
   "provenance": {
@@ -32,6 +32,26 @@
         "laya.json": "abde9d49d8c100b8c6c09ec6b3aaea442f0f9b2f1350e34701d1b615e1651b90"
       },
       "supplemental_protocol": "Mixed audit protocols; these hashes are not covered by the no-truncation main-cohort claim."
+    },
+    "jevjudge_full_jevany": {
+      "local_run_path": "runs/jevjudge-full-current-20261001",
+      "summary_sha256": "fcc3025cd29ec057d869067edc5d45f5d154b8596f3281aabc4d0c83996b6609",
+      "final_audit_sha256": "ad0055609f1a3dd87210738acb45a8fce113c2ad0fc9b507af8ddce8d644d773",
+      "official_scorer_sha256": "477b39c76dd6e6200f0919fcb56e80045ffd29b66445496d5e6e70c3d1537141",
+      "bootstrap_scorer_sha256": "8f7413d70290bd1009acd398478bb26cbc98f89ebd19af298fc0930b7a763133",
+      "protocol": "native text/image/video inputs; 65,536-token ceiling; no token, option, or media truncation; 3,220/3,220 per model"
+    },
+    "jevjudge_full_open": {
+      "local_run_path": "worktrees/JevAny/jevjudge-full-open-20261001/runs/jevjudge-full-open-20261001-v2",
+      "original_summary_sha256": "f34fc4265b6cf5847d4f1bd46a5601111cc927f57c4e6178acbf61e496477c51",
+      "corrected_final_summary_sha256": "3c348c94f0494815ae4236ffb2524e92d6cdd3d237812d21465e64e18ddc00b3",
+      "compatibility_matrix_sha256": "128cc4d00520fa0515f3f5d5172bc4d704c08ebea63ba8b60f93f225db4ac98e",
+      "note": "Published headline values use returned-probability NLL and the final source-stratified group bootstrap; the original summary retained a raw-logit NLL diagnostic."
+    },
+    "jevjudge_kev_text": {
+      "local_run_path": "worktrees/JevAny/kev-jevjudge-20261001/runs/jevjudge-kev-full-context-20261001",
+      "summary_sha256": "4e1f448503983a13a14df9fc877cd876906c09915ef8173bc676778d52e06598",
+      "protocol": "724/724 text records; 65,536-token ceiling; 4,096-token chunked-KV prefill; no input truncation"
     }
   },
   "jevany_checkpoints": {
@@ -82,6 +102,8 @@
     "JevAny-Qwen3.5-4B-Direct-Token",
     "JevAny-Qwen3.5-4B",
     "JevAny-Gemma-4B",
+    "Kev-27B",
+    "Kev-4B",
     "OpenDecider-small",
     "Bongard-mini",
     "Jeff-Gemma4-E2B",
@@ -102,6 +124,8 @@
       {"model": "prima-ratio + Gemma4 12B", "kind": "published_only", "status": "published open result; not locally rerun", "accuracy": 0.702},
       {"model": "JevAny-Muse-Glimmer-30B", "checkpoint_id": "JevAny-Muse-Glimmer-30B", "kind": "ours", "status": "local full-split rerun", "accuracy": 0.6995, "kl": 0.24526825101571734, "brier": 0.11076614862515069, "ece": 0.027932146407057316, "median_ms_per_case": 265.92537853866816},
       {"model": "JevAny-Qwen3.5-4B-Direct-Token", "checkpoint_id": "JevAny-Qwen3.5-4B-Direct-Token", "kind": "ours", "status": "local full-split rerun", "accuracy": 0.672, "kl": 0.4349209967113214, "brier": 0.17878543329515909, "ece": 0.08238339723477661, "median_ms_per_case": 89.42042104899883},
+      {"model": "Kev-27B", "kind": "open_kev", "status": "no matching Typed Decisions result", "accuracy": null},
+      {"model": "Kev-4B", "kind": "open_kev", "status": "no matching Typed Decisions result", "accuracy": null},
       {"model": "OpenDecider-small", "kind": "open_rerun", "status": "local full-split rerun", "repository": "manjunathshiva/opendecider-small", "revision": "720ad2a630ab3011397a9f1d54d376cb4c075c25", "accuracy": 0.6665, "kl": 0.2099236548482815, "brier": 0.1169613214952737, "ece": 0.07510555694743767, "median_ms_per_case": 136.50422752834857},
       {"model": "JevAny-Gemma-4B", "checkpoint_id": "JevAny-Gemma-4B", "kind": "ours", "status": "local full-split rerun", "accuracy": 0.6625, "kl": 0.2715169187711413, "brier": 0.12813895549191406, "ece": 0.03607486958158731, "median_ms_per_case": 107.06288402434438},
       {"model": "JevAny-Qwen3.5-4B", "checkpoint_id": "JevAny-Qwen3.5-4B", "kind": "ours", "status": "local full-split rerun", "accuracy": 0.635, "kl": 0.4787718293268527, "brier": 0.21769431550066473, "ece": 0.11542953593789122, "median_ms_per_case": 85.49249148927629},
@@ -112,6 +136,34 @@
       {"model": "Laya", "kind": "open_rerun", "status": "local full-split rerun", "repository": "convaiinnovations/laya", "revision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851", "accuracy": 0.362, "kl": 0.5757992905951531, "brier": 0.3156945969140454, "ece": 0.17423100706995998, "median_ms_per_case": 19.658496603369713}
     ]
   },
+  "jevjudge_full": {
+    "benchmark": "HuanxinSheng/JevJudge-Public",
+    "revision": "4d576ded443e159c18d46558d233c80fdf353849",
+    "scope": "complete v0.3 test split: 3,220 records (724 text, 2,214 image, 282 video), 22 families and five roles",
+    "metric": "skill_role: chance-corrected family skill, averaged within each role and then equally over five roles",
+    "context": "native inputs; 65,536-token ceiling; no token, option, or media truncation; only complete 3,220/3,220 runs receive a score",
+    "official_headline": true,
+    "bootstrap": "1,000 source-stratified group_id cluster replicates; seed 20261001; percentile 95% CI",
+    "models": [
+      {"model": "JevAny-Qwen3.8-27B", "checkpoint_id": "JevAny-Qwen3.8-27B", "kind": "ours", "status": "local native-multimodal full-suite rerun", "skill_role": 0.35553525636955524, "skill_role_ci_95": [0.32841323685030027, 0.38176197524163447], "accuracy": 0.6226708074534162, "nll": 0.8782948258038192, "brier": 0.5000911066296662, "ece": 0.09371814352871538, "answered": 3220, "requested": 3220},
+      {"model": "JevAny-Muse-Glimmer-30B", "checkpoint_id": "JevAny-Muse-Glimmer-30B", "kind": "ours", "status": "local native-multimodal full-suite rerun", "skill_role": 0.29648844403141006, "skill_role_ci_95": [0.2671333745337393, 0.3231108867465619], "accuracy": 0.5869565217391305, "nll": 0.9114661962791302, "brier": 0.5277115788670403, "ece": 0.09999396980566182, "answered": 3220, "requested": 3220},
+      {"model": "JevAny-Qwen3.5-4B-Direct-Token", "checkpoint_id": "JevAny-Qwen3.5-4B-Direct-Token", "kind": "ours", "status": "local native-multimodal full-suite rerun", "skill_role": 0.23853983079967422, "skill_role_ci_95": [0.20959105387695398, 0.2670066680115797], "accuracy": 0.5493788819875777, "nll": 1.0052958748660827, "brier": 0.5731377334260498, "ece": 0.13055054095273322, "answered": 3220, "requested": 3220},
+      {"model": "JevAny-Qwen3.5-4B", "checkpoint_id": "JevAny-Qwen3.5-4B", "kind": "ours", "status": "local native-multimodal full-suite rerun", "skill_role": 0.23229601616481865, "skill_role_ci_95": [0.20493855648536144, 0.25839228637038486], "accuracy": 0.5475155279503106, "nll": 1.0509965504571777, "brier": 0.5861465151158306, "ece": 0.11717509999404728, "answered": 3220, "requested": 3220},
+      {"model": "JevAny-Gemma-4B", "checkpoint_id": "JevAny-Gemma-4B", "kind": "ours", "status": "local native-multimodal full-suite rerun", "skill_role": 0.17917943947092457, "skill_role_ci_95": [0.15249873484282317, 0.20371793429850354], "accuracy": 0.5149068322981366, "nll": 1.0028425261512495, "brier": 0.5778551921684769, "ece": 0.07752942794948892, "answered": 3220, "requested": 3220},
+      {"model": "Kev-27B", "kind": "open_kev", "status": "incompatible: pinned Kev runtime does not consume native image/video media", "skill_role": null, "accuracy": null, "repository": "jaredpalmer/kev-27b", "revision": "01b81998019be550f0ae858727df49bac9511195"},
+      {"model": "Kev-4B", "kind": "open_kev", "status": "incompatible: pinned Kev runtime does not consume native image/video media", "skill_role": null, "accuracy": null, "repository": "jaredpalmer/kev-4b", "revision": "139fdd94f1b6a6ad80cc15e08fcb99cac885a101"},
+      {"model": "OpenDecider-small", "kind": "open_rerun", "status": "incompatible: text-only architecture/runtime", "skill_role": null, "accuracy": null, "repository": "manjunathshiva/opendecider-small", "revision": "720ad2a630ab3011397a9f1d54d376cb4c075c25"},
+      {"model": "Bongard-mini", "kind": "open_rerun", "status": "incompatible: native text/image but no video input", "skill_role": null, "accuracy": null, "repository": "AgentBull/bongard-mini", "revision": "88bb70a7e6c3acec1d9c807305e8decf4904a07d"},
+      {"model": "Jeff-Gemma4-E2B", "kind": "open_rerun", "status": "incompatible: released Gemma4TextModel has no vision processor or weights", "skill_role": null, "accuracy": null, "repository": "mstrasser/Jeff-Gemma4-E2B", "revision": "e3de3e99a979f92afd995d4e526c7e3170ae49cf"},
+      {"model": "Jeff-Qwen3.5-2B", "kind": "open_rerun", "status": "local native-multimodal full-suite rerun", "skill_role": 0.1356762256608416, "skill_role_ci_95": [0.10796223918, 0.15991817014], "accuracy": 0.4822981366459627, "nll": 1.104812835484067, "brier": 0.6284539173581963, "ece": 0.13718677088324, "answered": 3220, "requested": 3220, "repository": "mstrasser/Jeff-Qwen3.5-2B", "revision": "00448e884cce9e34396d8c72e9a692b41383b1ee"},
+      {"model": "Jeff-Qwen3.5-0.8B", "kind": "open_rerun", "status": "local native-multimodal full-suite rerun", "skill_role": 0.11230390745037384, "skill_role_ci_95": [0.0865092905, 0.13437763715], "accuracy": 0.4795031055900621, "nll": 1.1177689175679113, "brier": 0.6291343727246733, "ece": 0.12263801060398193, "answered": 3220, "requested": 3220, "repository": "mstrasser/Jeff-Qwen3.5-0.8B", "revision": "51552f39a943d62e8387c4ea5e17026a1408729f"}
+    ],
+    "runtime_notes": [
+      "Gemma consumes all three decoded frames for the one clip shorter than its four-frame request; no source frame is dropped.",
+      "Jeff Qwen video evaluation uses the checkpoint's native Qwen3VLProcessor and video tower with PyAV decoding under Transformers 5.17.0.",
+      "Memory-efficient SDPA is used for two long eight-image records that exceed math-SDPA memory on Qwen3.8-27B and Muse-Glimmer-30B; inputs are unchanged."
+    ]
+  },
   "jevjudge_text": {
     "benchmark": "HuanxinSheng/JevJudge-Public",
     "revision": "4d576ded443e159c18d46558d233c80fdf353849",
@@ -120,11 +172,13 @@
     "context": "native inputs, no truncation, 65,536-token shared context ceiling",
     "official_headline": false,
     "models": [
-      {"model": "JevAny-Qwen3.8-27B", "checkpoint_id": "JevAny-Qwen3.8-27B", "kind": "ours", "status": "local full-context rerun", "accuracy": 0.664364640883978, "nll": 0.8239218556129507, "brier": 0.47613796709365513, "ece": 0.10262691318393291, "answered": 724, "requested": 724},
-      {"model": "JevAny-Muse-Glimmer-30B", "checkpoint_id": "JevAny-Muse-Glimmer-30B", "kind": "ours", "status": "local full-context rerun", "accuracy": 0.6256906077348067, "nll": 0.8734662744075471, "brier": 0.5030655344263703, "ece": 0.09939612495591732, "answered": 724, "requested": 724},
-      {"model": "JevAny-Qwen3.5-4B-Direct-Token", "checkpoint_id": "JevAny-Qwen3.5-4B-Direct-Token", "kind": "ours", "status": "local full-context rerun", "accuracy": 0.585635359116022, "nll": 0.9150156860899241, "brier": 0.5160014193658196, "ece": 0.08948690551090707, "answered": 724, "requested": 724},
-      {"model": "JevAny-Qwen3.5-4B", "checkpoint_id": "JevAny-Qwen3.5-4B", "kind": "ours", "status": "local full-context rerun", "accuracy": 0.5787292817679558, "nll": 0.9966079493815718, "brier": 0.5538440250611777, "ece": 0.07373506930233757, "answered": 724, "requested": 724},
-      {"model": "JevAny-Gemma-4B", "checkpoint_id": "JevAny-Gemma-4B", "kind": "ours", "status": "local full-context rerun", "accuracy": 0.511049723756906, "nll": 1.0301831332825968, "brier": 0.5899312858995799, "ece": 0.09974500833755866, "answered": 724, "requested": 724},
+      {"model": "JevAny-Qwen3.8-27B", "checkpoint_id": "JevAny-Qwen3.8-27B", "kind": "ours", "status": "local full-context rerun", "accuracy": 0.664364640883978, "nll": 0.8239218540887275, "brier": 0.47613796709365513, "ece": 0.10262691318393291, "answered": 724, "requested": 724},
+      {"model": "JevAny-Muse-Glimmer-30B", "checkpoint_id": "JevAny-Muse-Glimmer-30B", "kind": "ours", "status": "local full-context rerun", "accuracy": 0.6256906077348067, "nll": 0.873466275526263, "brier": 0.5030655344263703, "ece": 0.09939612495591732, "answered": 724, "requested": 724},
+      {"model": "JevAny-Qwen3.5-4B-Direct-Token", "checkpoint_id": "JevAny-Qwen3.5-4B-Direct-Token", "kind": "ours", "status": "local full-context rerun", "accuracy": 0.585635359116022, "nll": 0.9150156870112527, "brier": 0.5160014193658196, "ece": 0.08948690551090707, "answered": 724, "requested": 724},
+      {"model": "JevAny-Qwen3.5-4B", "checkpoint_id": "JevAny-Qwen3.5-4B", "kind": "ours", "status": "local full-context rerun", "accuracy": 0.5787292817679558, "nll": 0.9966079502888393, "brier": 0.5538440250611777, "ece": 0.07373506930233757, "answered": 724, "requested": 724},
+      {"model": "JevAny-Gemma-4B", "checkpoint_id": "JevAny-Gemma-4B", "kind": "ours", "status": "local full-context rerun", "accuracy": 0.511049723756906, "nll": 1.030183131898444, "brier": 0.5899312858995799, "ece": 0.09974500833755866, "answered": 724, "requested": 724},
+      {"model": "Kev-27B", "kind": "open_kev", "status": "local full-context 4,096-token chunked-KV rerun", "accuracy": 0.6422651933701657, "nll": 0.8774529517226382, "brier": 0.48251125757984015, "ece": 0.07166661519467314, "answered": 724, "requested": 724, "repository": "jaredpalmer/kev-27b", "revision": "01b81998019be550f0ae858727df49bac9511195"},
+      {"model": "Kev-4B", "kind": "open_kev", "status": "local full-context 4,096-token chunked-KV rerun", "accuracy": 0.5441988950276243, "nll": 1.0081763587900114, "brier": 0.5677827106366862, "ece": 0.09565783658930478, "answered": 724, "requested": 724, "repository": "jaredpalmer/kev-4b", "revision": "139fdd94f1b6a6ad80cc15e08fcb99cac885a101"},
       {"model": "OpenDecider-small", "kind": "open_rerun", "status": "local full-context rerun", "repository": "manjunathshiva/opendecider-small", "revision": "720ad2a630ab3011397a9f1d54d376cb4c075c25", "accuracy": 0.5497237569060773, "nll": 0.970672634974796, "brier": 0.5474356335430713, "ece": 0.033009544729216515, "answered": 724, "requested": 724},
       {"model": "Bongard-mini", "kind": "open_rerun", "status": "local full-context rerun", "repository": "AgentBull/bongard-mini", "revision": "88bb70a7e6c3acec1d9c807305e8decf4904a07d", "accuracy": 0.5124309392265194, "nll": 1.0477744894587386, "brier": 0.5935643485699964, "ece": 0.067800488203823, "answered": 724, "requested": 724},
       {"model": "Jeff-Gemma4-E2B", "kind": "open_rerun", "status": "local full-context rerun", "repository": "mstrasser/Jeff-Gemma4-E2B", "revision": "e3de3e99a979f92afd995d4e526c7e3170ae49cf", "accuracy": 0.46685082872928174, "nll": 1.2103380124372465, "brier": 0.6810848722445711, "ece": 0.18117140955426997, "answered": 724, "requested": 724},
@@ -132,15 +186,18 @@
       {"model": "Jeff-Qwen3.5-0.8B", "kind": "open_rerun", "status": "local full-context rerun", "repository": "mstrasser/Jeff-Qwen3.5-0.8B", "revision": "51552f39a943d62e8387c4ea5e17026a1408729f", "accuracy": 0.4350828729281768, "nll": 1.2561944568742545, "brier": 0.7029356882618679, "ece": 0.2114863587868956, "answered": 724, "requested": 724}
     ],
     "supplemental": [
-      {"model": "Kev-4B", "status": "full-context rerun; no matching Typed Decisions result", "accuracy": 0.5428176795580111, "answered": 724, "requested": 724},
-      {"model": "Kev-27B", "status": "legacy 8K-state/16K-packed-context audit; not full-context comparable", "accuracy": 0.38535911602209943, "answered": 724, "requested": 724},
       {"model": "Laya", "status": "not full-context comparable: runtime silently applies max_len=512 truncation", "accuracy": 0.3867403314917127, "answered": 724, "requested": 724}
+    ],
+    "superseded_diagnostics": [
+      {"model": "Kev-27B", "accuracy": 0.38535911602209943, "status": "invalid malformed-input path: only 7-63 effective tokens and the state/instructions were not encoded; retained for audit only"},
+      {"model": "Kev-4B", "accuracy": 0.5428176795580111, "status": "valid earlier single-pass full-context run; superseded by the shared 4,096-token chunked-KV protocol (three argmax changes)"}
     ]
   },
   "exclusions": [
     "Benchmark-trained specialist checkpoints such as OpenDecider-nano and the Laya typed-decisions fine-tune are not included in this zero-shot comparison.",
     "The base Laya checkpoint is supplemental on JevJudge because its runtime silently applies max_len=512 truncation.",
-    "The Kev-27B JevJudge row is a legacy limited-context audit and is excluded from the full-context comparison.",
+    "The old 38.54% Kev-27B JevJudge text row used a malformed 7-63-token effective input path and is retained only as a superseded diagnostic.",
+    "Kev has no native image/video input path, so its full 3,220-record JevJudge result is an em dash rather than a media-stripped score.",
     "JevJudge text is a four-role diagnostic subset, not the official five-role full-multimodal headline."
   ]
 }
