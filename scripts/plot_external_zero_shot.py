@@ -27,6 +27,12 @@ HATCHES = {
     "open_rerun": None,
     "published_only": "////",
 }
+EXTERNAL_API_MODEL = "Jev 1.13 (OpenRouter)"
+EXTERNAL_API_SOURCE_BY_SUITE = {
+    "typed_decisions": "published_only",
+    "jevjudge_full": "not_available",
+    "jevjudge_text": "api_rerun",
+}
 PANELS = (
     {
         "key": "typed_decisions",
@@ -154,6 +160,21 @@ def load_results(source: Path = SOURCE) -> dict:
                 raise ValueError(f"{panel['key']}: duplicate model {model}")
             if row.get("kind") not in COLORS:
                 raise ValueError(f"{panel['key']}: invalid kind for {model}")
+            kind = row["kind"]
+            if model == EXTERNAL_API_MODEL and kind != "external_api":
+                raise ValueError(f"{panel['key']}: {model} must use kind external_api")
+            if kind == "external_api":
+                if model != EXTERNAL_API_MODEL:
+                    raise ValueError(
+                        f"{panel['key']}: external_api kind is reserved for {EXTERNAL_API_MODEL}"
+                    )
+                expected_source = EXTERNAL_API_SOURCE_BY_SUITE[panel["key"]]
+                if row.get("result_source") != expected_source:
+                    raise ValueError(
+                        f"{panel['key']}: {model} result_source must be {expected_source}"
+                    )
+            elif "result_source" in row:
+                raise ValueError(f"{panel['key']}: unexpected result_source for {model}")
             by_model[model] = row
         missing = [model for model in order if model not in by_model]
         if missing:
