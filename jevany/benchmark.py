@@ -2,8 +2,11 @@
 # Derived from Kev by Jared Palmer under Apache-2.0. See NOTICE.
 """Score a predictor on a frozen suite partition (or your own labelled JSONL).
 
-    python -m jevany.benchmark --run models/JevAny-Qwen3.8-27B-LoRA --suite data/eval-suite --out runs/eval
-    uv run python -m jevany.benchmark --remote http://127.0.0.1:8008 --suite ... --out ...      # any System One endpoint
+    jevany eval --run models/JevAny-Qwen3.8-27B-LoRA --suite data/eval-suite --out runs/eval
+    jevany eval --run runs/my-jev --data data/starter/development.jsonl --out runs/my-jev/eval
+    jevany eval --remote http://127.0.0.1:8008 --suite ... --out ...        # any System One endpoint
+
+`python -m jevany.benchmark` takes the same arguments.
 
 Every prediction becomes one row per question (prediction_rows); jevany.metrics scores rows; evaluate_records writes
 predictions.jsonl, rows.json and report.json. Predictors live in jevany.predictors.
@@ -21,6 +24,7 @@ from jevany.checkpoint import LoadOptions
 from jevany.data import api_request, load_records
 from jevany.device import default_device
 from jevany.metrics import EPSILON, grouped_metrics, metrics, unknowable_report
+from jevany.model import ContextLengthError
 from jevany.predictors import LocalPredictor, RemotePredictor
 from jevany.suite import ENCODING, digest, load_split, read_manifest, record_digest, write_json
 
@@ -134,7 +138,7 @@ def evaluate_records(records, predictor, directory, temperature=1.0, heldout_sou
                 pred = predictor(record)
                 new_rows = prediction_rows(record, pred)
             except ValueError as error:
-                if skip_overlong and ("exceeds" in str(error) or "tokens" in str(error)):
+                if skip_overlong and isinstance(error, ContextLengthError):
                     coverage["rejected_records"] += 1; rejected.append({"id": record["_meta"]["id"], "error": str(error)}); continue
                 coverage["rejected_records"] += 1
                 write_json(directory / "failure.json", {"coverage": coverage, "record_id": record["_meta"]["id"], "error_type": type(error).__name__})
@@ -162,8 +166,21 @@ def evaluate_records(records, predictor, directory, temperature=1.0, heldout_sou
     return report, rows
 
 
-def main():
-    ap = argparse.ArgumentParser()
+EXAMPLES = """examples:
+  jevany eval --run runs/my-jev --data data/starter/development.jsonl --out runs/my-jev/eval
+  jevany eval --run SimpleJev/JevAny-Qwen3.5-4B-LoRA --suite data/eval-suite --out runs/eval
+  jevany eval --remote http://127.0.0.1:8008 --data my-labelled.jsonl --out runs/remote-eval
+
+--data scores your own labelled JSONL (jevany.data.load_records); --suite scores a
+frozen suite's development partition. Reports land in <out>/report.json, with
+per-question rows in rows.json and raw answers in predictions.jsonl. --out must not
+exist yet. Local scoring needs the 'local' extra; --remote needs no model locally."""
+
+
+def main(argv=None, prog=None):
+    ap = argparse.ArgumentParser(
+        prog=prog, formatter_class=argparse.RawDescriptionHelpFormatter, epilog=EXAMPLES,
+        description="Score a checkpoint or a running endpoint on a frozen suite or your own labelled JSONL.")
     ap.add_argument("--run", help="checkpoint dir or Hub id (local scoring)")
     ap.add_argument("--remote", help="base URL of a System One-compatible endpoint to score instead of a local checkpoint")
     ap.add_argument("--remote-model", default="jevany-latest")
@@ -173,7 +190,7 @@ def main():
     ap.add_argument("--device", choices=["cpu", "mps", "cuda"], default=default_device())
     ap.add_argument("--allow-test", action="store_true")
     ap.add_argument("--date_facts", action="store_true", help="apply jevany.api.with_date_facts to every state before scoring (the opt-in serving preprocessor); reported in report.json")
-    a = ap.parse_args()
+    a = ap.parse_args(argv)
     if bool(a.run) == bool(a.remote): ap.error("give exactly one of --run or --remote")
     if bool(a.suite) == bool(a.data): ap.error("give exactly one of --suite or --data")
     if a.data:

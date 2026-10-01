@@ -50,7 +50,8 @@ class ModelPredictor:
         enc = self.model.encode(self.tok, materialize(record), max_state=self.max_packed,
                                 max_branch=self.max_packed, strict=True)
         if len(enc["ids"]) > self.max_packed:
-            raise ValueError(f"packed request exceeds frozen {self.max_packed}-token limit")
+            from .model import ContextLengthError
+            raise ContextLengthError(f"packed request exceeds frozen {self.max_packed}-token limit")
         sync(self.device)
         start = time.perf_counter()
         logits = self.model.forward(enc)

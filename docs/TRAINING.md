@@ -3,6 +3,8 @@
 The trainer fits a LoRA adapter with either a pointer or direct-token readout over a frozen open backbone.
 Training rows use the same `state` and `questions` as inference, plus labels.
 The output directory can immediately be loaded by `JevModel` or `jevany serve`.
+For a complete train/evaluate/resume example and loss/head ablations, see the
+[small research experiment](RESEARCH.md).
 
 ## Start with a small backbone
 
@@ -37,8 +39,18 @@ a full model copy on each GPU and increases throughput by distributing records.
 Recipes are flat TOML files containing the trainer's argument names. Paths are
 relative to the **current working directory**. Command-line flags override recipe
 values. Unknown keys, invalid types, invalid labels and existing output directories
-fail before weights load. `--dry-run` validates configuration and data; token
-limits and backbone compatibility are checked when training starts.
+fail before weights load. `--dry-run` also checks local base paths and evaluation
+suite partitions. Token limits and backbone compatibility are checked when
+training starts; these startup checks finish before the output directory is
+created, so a corrected input can reuse the intended output path.
+
+`data_admission.json` records the input, admitted and rejected row counts, with
+the ID and reason for each row rejected by context limits. Other encoding errors
+stop the run. `training_metrics.json` repeats the input-scale counts as
+`input_records`, `admitted_records` and `rejected_records`. `requested_records`
+is the planned number of input presentations across all configured epochs;
+`records_seen` counts the examples actually processed, including augmentations
+and distributed padding. These differ when a run stops early.
 
 | Recipe | Starting point | Output |
 |---|---|---|
@@ -145,16 +157,65 @@ Select SFT or RLCR with the same
 
 ## Evaluation and checkpoints
 
-Training supports held-out suite evaluation, periodic checkpoints, early stopping,
-and optional W&B logging. For example, add `--eval-suite data/eval-suite
---eval-every-steps 100 --checkpoint-every-steps 100` to a run. The evaluation suite
-needs a manifest plus calibration and development splits. Use `--wandb-project`
-to enable W&B logging.
+Add `--checkpoint-every-steps 100` to save progress every 100 optimizer steps.
+Saving works independently of evaluation, so a validation suite is optional.
+
+For your own labelled validation data, add:
+
+```bash
+jevany train --config recipes/sft.toml \
+  --eval-data data/starter/development.jsonl --eval-every-steps 10 \
+  --checkpoint-every-steps 5 --out runs/validated-jev
+```
+
+Validation JSONL uses the same format as training data. It must contain held-out
+requests; overlapping training requests are rejected. This path reports the
+model's probabilities directly, without fitting temperature on the validation
+set. `calibration_fitted` is false and the additional temperature is 1.
+Overlong validation records are listed as rejected in evaluation coverage; use
+those counts when comparing results across different context limits.
+
+For a frozen suite, use `--eval-suite data/eval-suite --eval-every-steps 100`.
+The suite needs a manifest plus separate calibration and development splits.
+Temperature is fitted on calibration and measured on development.
+Use `--early-stop-patience 3` for early stopping and `--wandb-project` for optional
+W&B logging.
 
 The final directory contains the adapter, tokenizer, `head.pt`,
-`training_config.json`, and `training_metrics.json`. If early stopping selects a
+`training_config.json`, `data_admission.json`, and `training_metrics.json`. If early stopping selects a
 different checkpoint, `selection.json` records that path; the root directory
 always holds the final weights. Serve the selected path explicitly.
+
+### Resume an interrupted experiment
+
+New checkpoints also contain `trainer_state.pt` and `trainer_state.json`.
+They preserve the optimizer, learning-rate scheduler, shuffle order, next batch,
+per-rank random state and accumulated metrics. Saving happens at a complete
+optimizer step, after all accumulated gradients have been applied.
+
+```bash
+jevany train --resume runs/validated-jev/checkpoints/step-000005 \
+  --out runs/validated-jev-resumed
+```
+
+The saved recipe is restored automatically. Choose a new output directory to
+retain the original experiment and its checkpoints. The remaining schedule uses
+the original total step count, learning rates, data, augmentations and evaluation
+settings. You can change the checkpoint interval, W&B settings and local base
+mirror path. The world size and device type must stay the same; use the same
+software and hardware for reproducible numerical results.
+
+Resume checks the admitted records, labels, local media contents and checkpoint
+weights against saved fingerprints. Keep local media at their original paths;
+paths are part of the saved data identity. Remote media URLs must continue to identify
+the same content. If early stopping previously selected another checkpoint, keep
+that directory available: a resumed run can still select those earlier weights.
+Older weights-only checkpoints and completed schedules can start a new
+experiment with `--init-from`; they cannot resume an unfinished schedule.
+
+The Python entry point `jevany.training.train(config)` accepts `resume` in its
+TOML recipe as well. Invalid settings raise `ValueError`, so notebooks and
+experiment drivers can catch them without exiting the interpreter.
 
 SFT is the default recipe. RLCR is an experimental continuation with calibration
 rewards. Measure task accuracy and calibration on your own held-out data before selecting

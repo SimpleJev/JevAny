@@ -10,7 +10,7 @@ def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(prog="jevany", description="Train and deploy Jev-style decision models.")
     from . import __version__
     parser.add_argument("--version", action="version", version=__version__)
-    parser.add_argument("command", choices=["train", "serve", "decide", "data", "demo"])
+    parser.add_argument("command", choices=["train", "serve", "decide", "eval", "data", "demo"])
     if not argv or argv[0] in ("-h", "--help", "--version"):
         parser.parse_args(argv or ["--help"])
         return
@@ -23,6 +23,9 @@ def main(argv: list[str] | None = None) -> None:
         elif command == "serve":
             from .serve import main as serve
             serve(rest)
+        elif command == "eval":
+            from .benchmark import main as evaluate
+            evaluate(rest, prog="jevany eval")
         elif command == "data":
             data_main(rest)
         elif command == "demo":
@@ -37,10 +40,11 @@ def main(argv: list[str] | None = None) -> None:
 
 
 def decide_main(argv: list[str]) -> None:
+    # Only the --checkpoint branch loads the modelling stack: --help and
+    # --base-url work in the base installation, which has no PyTorch.
     from dataclasses import fields
-    from .checkpoint import add_placement_arguments, load_options_from_args
-    from .client import JevClient
     from .inference import InferenceOptions, add_inference_arguments, inference_options_from_args
+    from .placement import add_placement_arguments
 
     parser = argparse.ArgumentParser(prog="jevany decide")
     parser.add_argument("request", help="JSON request file; - reads stdin")
@@ -61,7 +65,7 @@ def decide_main(argv: list[str]) -> None:
     request = SystemOneRequest.model_validate_json(content)
     if args.checkpoint:
         from dataclasses import replace
-        from .checkpoint import LoadOptions
+        from .checkpoint import LoadOptions, load_options_from_args
         from .runtime import JevModel
         options = load_options_from_args(args)
         if args.cuda_graphs or args.cuda_graph_max_tokens is not None:
@@ -82,6 +86,7 @@ def decide_main(argv: list[str]) -> None:
                 or any(getattr(args, item.name) is not None for item in fields(InferenceOptions))):
             parser.error("device, dtype, placement, model-name, cuda-graphs and inference limit options require "
                          "--checkpoint")
+        from .client import JevClient
         client = JevClient(args.base_url)
     print(json.dumps(client(request), indent=2, ensure_ascii=False))
 

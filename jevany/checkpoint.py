@@ -21,6 +21,8 @@ import torch
 
 from .model import DecisionModel, load_preprocessor
 from .backbones import get_backbone_adapter
+# Re-exported: the lightweight tools import these without the modelling stack.
+from .placement import DEVICE_MAPS, add_placement_arguments
 
 HUB_ID = re.compile(r"[\w.-]+/[\w.-]+(@[\w.-]+)?")
 COMPILE_MODES = frozenset({"default", "reduce-overhead", "max-autotune", "max-autotune-no-cudagraphs"})
@@ -56,10 +58,6 @@ def _check_compile_runtime():
                 f"torch.compile is disabled: torch requires {requirement}, but Triton {installed} is installed"
             )
         return
-
-
-# Accelerate placement strategies accepted for LoadOptions.device_map.
-DEVICE_MAPS = ("auto", "balanced", "balanced_low_0", "sequential")
 
 
 def is_hub_id(run):
@@ -198,14 +196,6 @@ class LoadOptions:
                    max_memory_gib=float(env["JEVANY_MAX_MEMORY_GIB"]) if env.get("JEVANY_MAX_MEMORY_GIB") else None,
                    cuda_graphs=env.get("JEVANY_CUDA_GRAPHS", "0") == "1",
                    cuda_graph_max_tokens=int(env.get("JEVANY_CUDA_GRAPH_MAX_TOKENS", "2048")))
-
-
-def add_placement_arguments(parser):
-    """--device-map / --max-memory-gib for the command-line tools; explicit flags override the environment."""
-    parser.add_argument("--device-map", choices=DEVICE_MAPS, default=None,
-                        help="split the backbone over all visible GPUs (Accelerate); overrides JEVANY_DEVICE_MAP")
-    parser.add_argument("--max-memory-gib", type=float, default=None,
-                        help="per-GPU weight budget with --device-map; overrides JEVANY_MAX_MEMORY_GIB")
 
 
 def load_options_from_args(args, env=os.environ):

@@ -5,6 +5,13 @@ import tomllib
 from pathlib import Path
 
 
+class TrainingArgumentParser(argparse.ArgumentParser):
+    """Report invalid Python API configuration without exiting the interpreter."""
+
+    def error(self, message: str) -> None:
+        raise ValueError(message)
+
+
 def configure_parser(parser: argparse.ArgumentParser, argv: list[str] | None) -> argparse.Namespace:
     """Apply a flat TOML recipe, then CLI overrides; reject unknown or mistyped keys."""
     # Accept readable CLI spelling while preserving the original research scripts.
@@ -12,9 +19,10 @@ def configure_parser(parser: argparse.ArgumentParser, argv: list[str] | None) ->
         for flag in list(action.option_strings):
             if flag.startswith("--") and "_" in flag:
                 alias = flag.replace("_", "-")
-                action.option_strings.append(alias)
+                if alias not in action.option_strings:
+                    action.option_strings.append(alias)
                 parser._option_string_actions[alias] = action
-    probe = argparse.ArgumentParser(add_help=False)
+    probe = type(parser)(add_help=False)
     probe.add_argument("--config")
     config = probe.parse_known_args(argv)[0].config
     if config:
@@ -45,11 +53,14 @@ def train(config: str | Path, *, output_dir: str | Path | None = None) -> Path:
 
     Paths in recipes resolve from the current working directory, just like CLI
     arguments. Use torchrun for distributed training. Existing runs are never
-    overwritten. This starts a new optimizer, including when init_from is set.
+    overwritten. init_from starts a new optimizer; resume restores the original
+    schedule and requires a new output directory.
+
+    Invalid settings raise ValueError; missing input files raise OSError.
     """
     from .train import main
 
     argv = ["--config", str(config)]
     if output_dir is not None:
         argv += ["--out", str(output_dir)]
-    return main(argv)
+    return main(argv, parser_class=TrainingArgumentParser)

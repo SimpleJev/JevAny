@@ -19,6 +19,10 @@ BASE_VERBALIZERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01234567
 MAX_DECISION_OPTIONS = 255
 
 
+class ContextLengthError(ValueError):
+    """A valid request cannot fit the configured token limits."""
+
+
 def load_tokenizer(name, revision=None):
     return get_backbone_adapter("text").load_preprocessor(name, revision)
 
@@ -103,7 +107,7 @@ def encode(tok, rec, max_state=MAX_STATE, max_branch=MAX_BRANCH, strict=False, o
     """
     state_tokens = user_tokens(tok, rec["state"])
     if strict and len(state_tokens) + 1 > max_state:
-        raise ValueError(f"state exceeds {max_state} tokens: {len(state_tokens) + 1}")
+        raise ContextLengthError(f"state exceeds {max_state} tokens: {len(state_tokens) + 1}")
     special = decision_tokens(tok)
     S = [tok.convert_tokens_to_ids(special[0])] + state_tokens[: max_state - 1]
     ids, seg, pos, opt = list(S), [0] * len(S), list(range(len(S))), [OPT_NONE] * len(S)
@@ -114,7 +118,7 @@ def encode(tok, rec, max_state=MAX_STATE, max_branch=MAX_BRANCH, strict=False, o
         spans = [[o_id] + user_tokens(tok, o) + [c_id] for o in q["options"]]
         br = instr + [t for sp in spans for t in sp] + [d_id]
         if len(br) > max_branch - len(S):
-            raise ValueError(f"branch too long: {len(br)}")
+            raise ContextLengthError(f"branch too long: {len(S) + len(br)} tokens (limit: {max_branch})")
         base = len(ids); p0 = len(S)
         br_opt = [OPT_NONE] * len(instr) + [j for j, sp in enumerate(spans) for _ in sp] + [OPT_DECIDE]
         if option_isolation:
@@ -177,14 +181,14 @@ def encode_multimodal(processor, rec, max_state=MAX_STATE, max_branch=MAX_BRANCH
     state_len = question_starts[0]
     text_state_len = len(user_tokens(tok, rec["state"])) + 1
     if strict and text_state_len > max_state:
-        raise ValueError(f"multimodal text state exceeds {max_state} tokens: {text_state_len}")
+        raise ContextLengthError(f"multimodal text state exceeds {max_state} tokens: {text_state_len}")
     opt_idx, seg = [], [0] * state_len
     for index, (start, end, question) in enumerate(zip(question_starts, decide_idx, rec["questions"]), start=1):
         ends = [position for position in range(start, end) if ids[position] == close_id]
         if len(ends) != len(question["options"]):
             raise ValueError("multimodal option delimiter layout mismatch")
         if end - start + 1 + state_len > max_branch:
-            raise ValueError(f"multimodal branch exceeds {max_branch} tokens")
+            raise ContextLengthError(f"multimodal branch exceeds {max_branch} tokens")
         opt_idx.append(ends)
         seg.extend([index] * (end - start + 1))
     if len(seg) != len(ids):
@@ -201,7 +205,7 @@ def fits(rec, *tokenizers, max_state=MAX_STATE, max_branch=MAX_BRANCH, max_packe
     given (frozen suites are admitted against the tokenizers of all their pinned bases)."""
     try:
         return all(len(encode(tok, rec, max_state=max_state, max_branch=max_branch, strict=True)["ids"]) <= max_packed for tok in tokenizers)
-    except ValueError:
+    except ContextLengthError:
         return False
 
 

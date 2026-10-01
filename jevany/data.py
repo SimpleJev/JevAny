@@ -184,6 +184,11 @@ def materialize(request):
 def validate_dataset(path: str | Path) -> dict:
     """Validate labelled JSONL without loading weights; return counts by type/source."""
     records = load_records(path)
+    return _dataset_summary(records, path)
+
+
+def _dataset_summary(records: list[dict], path: str | Path) -> dict:
+    """Validate media and summarize records that already passed load_records."""
     missing = [item["uri"] for record in records for item in record.get("media", [])
                if "://" not in item["uri"] and not Path(item["uri"]).is_file()]
     if missing:
