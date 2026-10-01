@@ -31,6 +31,43 @@
       }
     }
   },
+  "jevany_checkpoints": {
+    "JevAny-Qwen3.8-27B": {
+      "base_repository": "Qwen/Qwen3.8-27B",
+      "base_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "base_config_sha256": "191e0af232104ed8b65258cf3fb2b842e288008baca7633c11b82a1ac7203aab",
+      "adapter_sha256": "f4b835f4f7be78a819067dac226feaad2fc7b9eb0b968c5e6e665ad5328e6731",
+      "head_sha256": "f78fa283f7e979ce418c5b137d24459350fecaea73e5766894532c1cd99684c7"
+    },
+    "JevAny-Muse-Glimmer-30B": {
+      "base_repository": "meta-models/Muse-Glimmer-30B",
+      "base_revision": "a4e59da52a7bc87ae7251dd5545c0dd437c44b68",
+      "base_config_sha256": "5a9df2d8a385b3d361ab6ae68d73586f4e775033933bd0cd863fb7f3820e6a14",
+      "adapter_sha256": "87434122ffa2cc9438baf1f0d6375fec75f47f246d070eb50eb2a543859c4832",
+      "head_sha256": "c19591f6293c52ab796f85e5db6e34fc08f5cfbec294614e16a76d2c476f69b1"
+    },
+    "JevAny-Qwen3.5-4B-Direct-Token": {
+      "base_repository": "Qwen/Qwen3.5-4B",
+      "base_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+      "base_config_sha256": "ddc63e1c717afa86c865bb5e01313d89d72bb53b97ad4a8a03ba8510c0621670",
+      "adapter_sha256": "b768d54b9e5e20204b2db9e24c18ae6b10fa310b241d1931bac6b8882f127c53",
+      "head_sha256": "d3909cffc156d077061114627c8aa22f60c7a8f1bdcfd20c489bb3bb009fc4a6"
+    },
+    "JevAny-Qwen3.5-4B": {
+      "base_repository": "Qwen/Qwen3.5-4B",
+      "base_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+      "base_config_sha256": "ddc63e1c717afa86c865bb5e01313d89d72bb53b97ad4a8a03ba8510c0621670",
+      "adapter_sha256": "5acbaec8d554517250bf9c626b3f4b9e2ec31fc67957f3486aa72e2c91ee907f",
+      "head_sha256": "e5ea982efd06ecaf71b493045ebccdbfdca39f6fe128de164bf636d73152cd44"
+    },
+    "JevAny-Gemma-4B": {
+      "base_repository": "google/gemma-4-E4B-it",
+      "base_revision": "ee0ef6023621cff504d758262d4e04895a5af4a2",
+      "base_config_sha256": "33b10c02df3c2e8536cf323d29d53262aaa2f4d11dbe19bc729373fbe90295d4",
+      "adapter_sha256": "2d78da4782b0ad1bc42161d8f78e6f5f4eaec88e4f2be6f593c1bfe0045b9c2c",
+      "head_sha256": "fb1205ec8b5c62d76f378ed4dbc798a0cd639a509659232f4798b451fdfdfcc7"
+    }
+  },
   "main_comparison_order": [
     "JevAny-Qwen3.8-27B",
     "JevAny-Muse-Glimmer-30B",
@@ -51,15 +88,15 @@
     "models": [
       {"model": "meraGPT Decider 1", "kind": "published_only", "status": "dataset-card result; not locally rerun", "accuracy": 0.768},
       {"model": "Liquid AI d1", "kind": "published_only", "status": "dataset-card result; not locally rerun", "accuracy": 0.742},
-      {"model": "JevAny-Qwen3.8-27B", "kind": "ours", "status": "local full-split rerun", "accuracy": 0.728, "kl": 0.29284607004173263, "brier": 0.13141516555965035, "ece": 0.05304485014212309, "median_ms_per_case": 279.846342978999},
+      {"model": "JevAny-Qwen3.8-27B", "checkpoint_id": "JevAny-Qwen3.8-27B", "kind": "ours", "status": "local full-split rerun", "accuracy": 0.728, "kl": 0.29284607004173263, "brier": 0.13141516555965035, "ece": 0.05304485014212309, "median_ms_per_case": 279.846342978999},
       {"model": "TypeSafe Jev 1.13.0", "kind": "published_only", "status": "dataset-card result; not locally rerun", "accuracy": 0.727},
       {"model": "Featherless Simple Jev", "kind": "published_only", "status": "dataset-card result; not locally rerun", "accuracy": 0.716},
       {"model": "prima-ratio + Gemma4 12B", "kind": "published_only", "status": "published open result; not locally rerun", "accuracy": 0.702},
-      {"model": "JevAny-Muse-Glimmer-30B", "kind": "ours", "status": "local full-split rerun", "accuracy": 0.6995, "kl": 0.24526825101571734, "brier": 0.11076614862515069, "ece": 0.027932146407057316, "median_ms_per_case": 265.92537853866816},
-      {"model": "JevAny-Qwen3.5-4B-Direct-Token", "kind": "ours", "status": "local full-split rerun", "accuracy": 0.672, "kl": 0.4349209967113214, "brier": 0.17878543329515909, "ece": 0.08238339723477661, "median_ms_per_case": 89.42042104899883},
+      {"model": "JevAny-Muse-Glimmer-30B", "checkpoint_id": "JevAny-Muse-Glimmer-30B", "kind": "ours", "status": "local full-split rerun", "accuracy": 0.6995, "kl": 0.24526825101571734, "brier": 0.11076614862515069, "ece": 0.027932146407057316, "median_ms_per_case": 265.92537853866816},
+      {"model": "JevAny-Qwen3.5-4B-Direct-Token", "checkpoint_id": "JevAny-Qwen3.5-4B-Direct-Token", "kind": "ours", "status": "local full-split rerun", "accuracy": 0.672, "kl": 0.4349209967113214, "brier": 0.17878543329515909, "ece": 0.08238339723477661, "median_ms_per_case": 89.42042104899883},
       {"model": "OpenDecider-small", "kind": "open_rerun", "status": "local full-split rerun", "revision": "720ad2a630ab3011397a9f1d54d376cb4c075c25", "accuracy": 0.6665, "kl": 0.2099236548482815, "brier": 0.1169613214952737, "ece": 0.07510555694743767, "median_ms_per_case": 136.50422752834857},
-      {"model": "JevAny-Gemma-4B", "kind": "ours", "status": "local full-split rerun", "accuracy": 0.6625, "kl": 0.2715169187711413, "brier": 0.12813895549191406, "ece": 0.03607486958158731, "median_ms_per_case": 107.06288402434438},
-      {"model": "JevAny-Qwen3.5-4B", "kind": "ours", "status": "local full-split rerun", "accuracy": 0.635, "kl": 0.4787718293268527, "brier": 0.21769431550066473, "ece": 0.11542953593789122, "median_ms_per_case": 85.49249148927629},
+      {"model": "JevAny-Gemma-4B", "checkpoint_id": "JevAny-Gemma-4B", "kind": "ours", "status": "local full-split rerun", "accuracy": 0.6625, "kl": 0.2715169187711413, "brier": 0.12813895549191406, "ece": 0.03607486958158731, "median_ms_per_case": 107.06288402434438},
+      {"model": "JevAny-Qwen3.5-4B", "checkpoint_id": "JevAny-Qwen3.5-4B", "kind": "ours", "status": "local full-split rerun", "accuracy": 0.635, "kl": 0.4787718293268527, "brier": 0.21769431550066473, "ece": 0.11542953593789122, "median_ms_per_case": 85.49249148927629},
       {"model": "Bongard-mini", "kind": "open_rerun", "status": "local full-split rerun", "revision": "88bb70a7e6c3acec1d9c807305e8decf4904a07d", "accuracy": 0.5965, "kl": 0.2558114552680428, "brier": 0.13234037272325103, "ece": 0.07261521032216663, "median_ms_per_case": 163.91450550872833},
       {"model": "Jeff-Gemma4-E2B", "kind": "open_rerun", "status": "local full-split rerun", "revision": "e3de3e99a979f92afd995d4e526c7e3170ae49cf", "accuracy": 0.5795, "kl": 0.3815869159250814, "brier": 0.20418426554519126, "ece": 0.08961670595487227, "median_ms_per_case": 53.51678095757961},
       {"model": "Jeff-Qwen3.5-2B", "kind": "open_rerun", "status": "local full-split rerun", "revision": "00448e884cce9e34396d8c72e9a692b41383b1ee", "accuracy": 0.5545, "kl": 0.385616221156929, "brier": 0.2097740419344089, "ece": 0.09913300225531364, "median_ms_per_case": 42.15227148961276},
@@ -75,11 +112,11 @@
     "context": "native inputs, no truncation, 65,536-token shared context ceiling",
     "official_headline": false,
     "models": [
-      {"model": "JevAny-Qwen3.8-27B", "kind": "ours", "status": "local full-context rerun", "checkpoint_sha256": "f4b835f4f7be78a819067dac226feaad2fc7b9eb0b968c5e6e665ad5328e6731", "accuracy": 0.664364640883978, "nll": 0.8239218556129507, "brier": 0.47613796709365513, "ece": 0.10262691318393291, "answered": 724, "requested": 724},
-      {"model": "JevAny-Muse-Glimmer-30B", "kind": "ours", "status": "local full-context rerun", "checkpoint_sha256": "87434122ffa2cc9438baf1f0d6375fec75f47f246d070eb50eb2a543859c4832", "accuracy": 0.6256906077348067, "nll": 0.8734662744075471, "brier": 0.5030655344263703, "ece": 0.09939612495591732, "answered": 724, "requested": 724},
-      {"model": "JevAny-Qwen3.5-4B-Direct-Token", "kind": "ours", "status": "local full-context rerun", "checkpoint_sha256": "b768d54b9e5e20204b2db9e24c18ae6b10fa310b241d1931bac6b8882f127c53", "accuracy": 0.585635359116022, "nll": 0.9150156860899241, "brier": 0.5160014193658196, "ece": 0.08948690551090707, "answered": 724, "requested": 724},
-      {"model": "JevAny-Qwen3.5-4B", "kind": "ours", "status": "local full-context rerun", "checkpoint_sha256": "5acbaec8d554517250bf9c626b3f4b9e2ec31fc67957f3486aa72e2c91ee907f", "accuracy": 0.5787292817679558, "nll": 0.9966079493815718, "brier": 0.5538440250611777, "ece": 0.07373506930233757, "answered": 724, "requested": 724},
-      {"model": "JevAny-Gemma-4B", "kind": "ours", "status": "local full-context rerun", "checkpoint_sha256": "2d78da4782b0ad1bc42161d8f78e6f5f4eaec88e4f2be6f593c1bfe0045b9c2c", "accuracy": 0.511049723756906, "nll": 1.0301831332825968, "brier": 0.5899312858995799, "ece": 0.09974500833755866, "answered": 724, "requested": 724},
+      {"model": "JevAny-Qwen3.8-27B", "checkpoint_id": "JevAny-Qwen3.8-27B", "kind": "ours", "status": "local full-context rerun", "accuracy": 0.664364640883978, "nll": 0.8239218556129507, "brier": 0.47613796709365513, "ece": 0.10262691318393291, "answered": 724, "requested": 724},
+      {"model": "JevAny-Muse-Glimmer-30B", "checkpoint_id": "JevAny-Muse-Glimmer-30B", "kind": "ours", "status": "local full-context rerun", "accuracy": 0.6256906077348067, "nll": 0.8734662744075471, "brier": 0.5030655344263703, "ece": 0.09939612495591732, "answered": 724, "requested": 724},
+      {"model": "JevAny-Qwen3.5-4B-Direct-Token", "checkpoint_id": "JevAny-Qwen3.5-4B-Direct-Token", "kind": "ours", "status": "local full-context rerun", "accuracy": 0.585635359116022, "nll": 0.9150156860899241, "brier": 0.5160014193658196, "ece": 0.08948690551090707, "answered": 724, "requested": 724},
+      {"model": "JevAny-Qwen3.5-4B", "checkpoint_id": "JevAny-Qwen3.5-4B", "kind": "ours", "status": "local full-context rerun", "accuracy": 0.5787292817679558, "nll": 0.9966079493815718, "brier": 0.5538440250611777, "ece": 0.07373506930233757, "answered": 724, "requested": 724},
+      {"model": "JevAny-Gemma-4B", "checkpoint_id": "JevAny-Gemma-4B", "kind": "ours", "status": "local full-context rerun", "accuracy": 0.511049723756906, "nll": 1.0301831332825968, "brier": 0.5899312858995799, "ece": 0.09974500833755866, "answered": 724, "requested": 724},
       {"model": "OpenDecider-small", "kind": "open_rerun", "status": "local full-context rerun", "revision": "720ad2a630ab3011397a9f1d54d376cb4c075c25", "accuracy": 0.5497237569060773, "nll": 0.970672634974796, "brier": 0.5474356335430713, "ece": 0.033009544729216515, "answered": 724, "requested": 724},
       {"model": "Bongard-mini", "kind": "open_rerun", "status": "local full-context rerun", "revision": "88bb70a7e6c3acec1d9c807305e8decf4904a07d", "accuracy": 0.5124309392265194, "nll": 1.0477744894587386, "brier": 0.5935643485699964, "ece": 0.067800488203823, "answered": 724, "requested": 724},
       {"model": "Jeff-Gemma4-E2B", "kind": "open_rerun", "status": "local full-context rerun", "revision": "e3de3e99a979f92afd995d4e526c7e3170ae49cf", "accuracy": 0.46685082872928174, "nll": 1.2103380124372465, "brier": 0.6810848722445711, "ece": 0.18117140955426997, "answered": 724, "requested": 724},
@@ -88,13 +125,14 @@
     ],
     "supplemental": [
       {"model": "Kev-4B", "status": "full-context rerun; no matching Typed Decisions result", "accuracy": 0.5428176795580111, "answered": 724, "requested": 724},
-      {"model": "Kev-27B", "status": "full-context rerun; no matching Typed Decisions result", "accuracy": 0.38535911602209943, "answered": 724, "requested": 724},
+      {"model": "Kev-27B", "status": "legacy 8K-state/16K-packed-context audit; not full-context comparable", "accuracy": 0.38535911602209943, "answered": 724, "requested": 724},
       {"model": "Laya", "status": "not full-context comparable: runtime silently applies max_len=512 truncation", "accuracy": 0.3867403314917127, "answered": 724, "requested": 724}
     ]
   },
   "exclusions": [
     "Benchmark-trained specialist checkpoints such as OpenDecider-nano and the Laya typed-decisions fine-tune are not included in this zero-shot comparison.",
     "The base Laya checkpoint is supplemental on JevJudge because its runtime silently applies max_len=512 truncation.",
+    "The Kev-27B JevJudge row is a legacy limited-context audit and is excluded from the full-context comparison.",
     "JevJudge text is a four-role diagnostic subset, not the official five-role full-multimodal headline."
   ]
 }

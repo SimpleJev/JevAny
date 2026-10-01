@@ -84,7 +84,7 @@ full-context dual-panel cohort:
 | Supplemental model | JevJudge text | Status |
 |---|---:|---|
 | Kev-4B | 54.28% | Open full-context rerun; no matching Typed result |
-| Kev-27B | 38.54% | Open full-context rerun; no matching Typed result |
+| Kev-27B | 38.54% | Legacy 8K/16K-context audit; not full-context comparable |
 | Laya | 38.67% | Not full-context comparable; silent `max_len=512` truncation |
 
 This text-only slice represents four roles and has no quality-role records, so

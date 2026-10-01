@@ -851,15 +851,17 @@
   "text_only_comparator": {
     "model": "convaiinnovations/laya",
     "revision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
-    "scope": "text only; 724/3220 records; not comparable to full multimodal headline",
-    "incompatibility": "Laya system_one accepts only state and questions and has no image/video input",
+    "scope": "text-only audit row; 724/3220 records; not comparable to the full multimodal headline or the no-truncation common cohort",
+    "incompatibility": "Laya has no image/video input, and its shipped runtime silently slices state to max_len=512 before inference.",
     "coverage": {
       "requested_records": 724,
       "requested_questions": 724,
       "evaluated_records": 724,
       "evaluated_questions": 724,
       "rejected_records": 0,
-      "truncated_records": 0
+      "reported_truncated_records": 0,
+      "silent_runtime_truncation": true,
+      "effective_max_len": 512
     },
     "answered_only": {
       "n": 724,
