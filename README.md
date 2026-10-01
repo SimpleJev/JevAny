@@ -45,45 +45,38 @@ recorded actions and option probabilities.
 
 [![JevAny choosing actions across robotics, browser, software, laboratory and mobility tasks](docs/demos/jevany-cases.gif)](docs/CASES.md)
 
-### Jev as an LLM agent harness
+### ⚡ Jev inside LLM agent loops
 
-Jev can also sit inside an LLM agent loop. In controlled and web tasks, options come
-from the environment or DOM; in the terminal harness, the frontier LLM generates them.
-The terminal protocol keeps planning, exact edits, recovery, and completion with the
-LLM while Jev selects model-declared routine actions with a confidence-gated fallback.
-Terminal D0 uses the same candidate protocol and executes the LLM's choice. The
-cross-domain baseline instead omits the delegation tool; its optional agent may select
-any exposed benchmark action, so that matrix measures the complete sandbox-harness
-intervention—not a selector-only or production-safety ablation.
+> **Key takeaway:** the LLM plans; the environment or LLM supplies a short menu;
+> Jev picks the routine action; the LLM verifies and finishes the task.
 
-Task openness (**T0–T4**) and delegation (**D0–D4**) are independent axes; the
-[protocol](docs/experiments/AGENT_HARNESS_FRONTIER_PROTOCOL.md) defines both.
-In practice: delegate selection, not problem solving; require 2–4 materially different
-valid options; keep strategy, exact edits, recovery, and verification with the LLM;
-batch only short composable actions; and always retain a confidence-gated LLM fallback.
+**1 · SQLite recovery — choose the inspection that unlocks the task**
 
-| Evidence | Outcome | Reading |
-|---|---|---|
-| GPT-5.6-sol · FrozenLake, 10 pairs | 100% success retained; calls −64.4%, tokens −63.1%, time −37.6% | Clear controlled win |
-| WebShop, 10 pairs | 50%→60%; small resource savings | Positive signal; intervals cross zero |
-| WebArena, fixed 6 tasks | 50%→50%; calls/tokens increase | No aggregate gain |
-| Terminal-Bench, 6 task pairs | 1/6→3/6; calls −9.0% | Single-attempt exploration, not a causal claim |
+[![Jev choosing raw-page inspection from three SQLite recovery actions, followed by LLM parsing and verification](docs/demos/jev-agent-harness-sqlite.gif)](reports/JevAny_Tech_Report_Agent_Harness_Appendix.md#h1-sqlite-recovery-a-meaningful-three-way-decision)
 
-**Decision traces.** In SQLite recovery, Jev chose raw-page inspection over schema and
-tool checks at `0.81` confidence; the LLM then wrote the parser and verified the result.
-In WebShop seed `3100`, Jev chose the wrong near-match color at `0.99`; the LLM observed
-the failure, searched again, and completed the exact purchase. These traces show both
-useful bounded selection and why global ownership must stay with the LLM.
+**2 · WebShop — one paired result: reward 0 → 1, LLM calls 11 → 5**
 
-**Key takeaway:** optimize useful LLM-call replacement, not delegation rate. Jev is a
-good harness for bounded, reversible, locally judgeable choices; it does not repair an
-agent that lacks the task-level capability. See the
-[full 96-pair matrix](reports/JevAny_Tech_Report_Agent_Harness_Appendix.md#f-repeated-cross-domain-matrix),
-[Terminal-Bench breakdown and delegation frontier](reports/JevAny_Tech_Report_Agent_Harness_Appendix.md#g-open-terminal-exploration),
-[SQLite decision demo](reports/JevAny_Tech_Report_Agent_Harness_Appendix.md#h1-sqlite-recovery-a-meaningful-three-way-decision),
-[WebShop recovery demo](reports/JevAny_Tech_Report_Agent_Harness_Appendix.md#h4-webshop-a-confident-local-mistake-and-frontier-recovery),
-[task/delegation protocol](docs/experiments/AGENT_HARNESS_FRONTIER_PROTOCOL.md), and the
-[combined technical report](reports/JevAny_Tech_Report_with_Agent_Harness.pdf).
+[![Jev selecting the required black product option, followed by the LLM choosing size 11.5 and completing the purchase](docs/demos/jev-agent-harness-webshop.gif)](docs/demos/jev-agent-harness-traces.json)
+
+**3 · FrozenLake — repeated navigation decisions**
+
+[![Jev choosing four state-dependent navigation actions after one LLM plan in FrozenLake](docs/demos/jev-agent-harness-frozen-lake.gif)](results/agent-harness-v1/formal-matrix.md)
+
+| Task | Success | Efficiency |
+|---|---:|---:|
+| GPT-5.6-sol · FrozenLake · 10 pairs | 100% → 100% | LLM calls −64.4% · tokens −63.1% · time −37.6% |
+| WebShop · 10 pairs | 50% → 60% | LLM calls −7.7% · tokens −2.9% · time −6.1% |
+| WebArena · 6 pairs | 50% → 50% | LLM calls +5.6% · tokens +28.2% · time −0.4% |
+| Terminal-Bench · 6 pairs | 1/6 → 3/6 | LLM calls −9.0% |
+
+**Use Jev for:** 2–4 bounded, reversible choices with an immediate observation.
+
+**Keep with the LLM:** planning, exact edits, recovery, and the final answer.
+
+[Full results](reports/JevAny_Tech_Report_Agent_Harness_Appendix.md) ·
+[combined demo](docs/demos/jev-agent-harness.gif) ·
+[task/delegation levels](docs/experiments/AGENT_HARNESS_FRONTIER_PROTOCOL.md) ·
+[combined technical report](reports/JevAny_Tech_Report_with_Agent_Harness.pdf)
 
 ## 📑 Table of Contents
 

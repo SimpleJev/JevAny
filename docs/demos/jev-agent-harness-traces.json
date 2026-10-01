@@ -1,0 +1,107 @@
+{
+  "version": 1,
+  "summary": {
+    "controlled_and_web_pairs": 96,
+    "terminal_pairs": 6,
+    "frozen_lake": {"success": "100% -> 100%", "llm_calls_change": "-64.4%"},
+    "webshop": {"success": "50% -> 60%"},
+    "terminal_bench": {"success": "1/6 -> 3/6", "llm_calls_change": "-9.0%"}
+  },
+  "frozen_lake": {
+    "seed": 3000,
+    "selection": "predeclared first paired seed",
+    "subgoal": "Reach the goal by moving Right, Right, Right, Up while checking every new state",
+    "steps": [
+      {"player": [1, 0], "action": "Right", "confidence": 0.99},
+      {"player": [1, 1], "action": "Right", "confidence": 0.99},
+      {"player": [1, 2], "action": "Right", "confidence": 0.82},
+      {"player": [1, 3], "action": "Up", "confidence": 1.0}
+    ],
+    "pair": {
+      "baseline": {"reward": 1, "llm_calls": 4, "tokens": 2338, "wall_time_seconds": 19.7},
+      "jev_harness": {"reward": 1, "llm_calls": 1, "tokens": 663, "wall_time_seconds": 16.7}
+    },
+    "ten_pair_result": {
+      "baseline_success": 1.0,
+      "jev_harness_success": 1.0,
+      "baseline_mean_llm_calls": 4.5,
+      "jev_harness_mean_llm_calls": 1.6,
+      "baseline_mean_tokens": 3057.6,
+      "jev_harness_mean_tokens": 1128.0,
+      "baseline_mean_wall_time_seconds": 14.8,
+      "jev_harness_mean_wall_time_seconds": 9.2
+    },
+    "source": "runs/agent-harness/holdout-gpt-fl-27b.json",
+    "source_sha256": "15980db9bf914c4bfc86927a0f2c7e12de461ad1385cf8e7e13a21ee427aaf2f"
+  },
+  "sqlite": {
+    "task": "sqlite-db-truncate",
+    "options": [
+      {
+        "name": "Inspect raw page",
+        "command": "od -A x -t x1z -v /app/trunc.db | head -80"
+      },
+      {
+        "name": "Read SQLite schema",
+        "command": "sqlite3 /app/trunc.db '.schema'"
+      },
+      {
+        "name": "Check available tools",
+        "command": "which sqlite3 python3"
+      }
+    ],
+    "jev_choice": "Inspect raw page",
+    "confidence": 0.81,
+    "observation": "SQLite leaf-table page with 10 cell pointers",
+    "result": "10 rows recovered and verifier passed",
+    "baseline": {
+      "reward": 1,
+      "llm_calls": 15,
+      "tokens": 202050,
+      "wall_time_seconds": 187.9,
+      "source": "runs/terminal-bench/frontier-v4/sqlite-db-truncate/d0/jobs/jev-tb2-sqlite-db-truncate-baseline/sqlite-db-truncate__JEG29Mk/result.json",
+      "sha256": "009be2b0f3b3302240186e30981e869408a5d8434eb3b065ef565b91e5b83546"
+    },
+    "jev_harness": {
+      "reward": 1,
+      "llm_calls": 8,
+      "tokens": 121293,
+      "wall_time_seconds": 144.7,
+      "source": "runs/terminal-bench/frontier-v4/sqlite-db-truncate/d100/jobs/jev-tb2-sqlite-db-truncate-optional/sqlite-db-truncate__yq4Z9qx/result.json",
+      "sha256": "d64fc17bbc5fcc6119f6f6d90ba600452c79bcc781ca1a172f46431057d10ee4"
+    }
+  },
+  "webshop": {
+    "seed": 3106,
+    "selection": "illustrative success-gain pair from the frozen 10-pair run",
+    "goal": "Men's lace-up boots, black, size 11.5, under $160",
+    "baseline": {
+      "reward": 0,
+      "llm_calls": 11,
+      "tokens": 47360,
+      "wall_time_seconds": 20.9,
+      "path": [
+        "search",
+        "inspect features",
+        "back",
+        "search again",
+        "step budget ends"
+      ]
+    },
+    "jev_harness": {
+      "reward": 1,
+      "llm_calls": 5,
+      "tokens": 15705,
+      "wall_time_seconds": 9.9,
+      "path": [
+        {"controller": "llm", "action": "search"},
+        {"controller": "llm", "action": "open matching product"},
+        {"controller": "jev", "action": "click[black]", "confidence": 0.89, "action_is_effective": false},
+        {"controller": "llm", "action": "click[11.5]"},
+        {"controller": "llm", "action": "click[buy now]"}
+      ]
+    },
+    "source": "runs/agent-harness/webshop-opus-27b-holdout.json",
+    "source_sha256": "54cbceb65ebe2a81f5fe27ff3f634ff178918f999adcc1458459a309075dd96e"
+  }
+}

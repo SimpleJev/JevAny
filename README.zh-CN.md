@@ -42,39 +42,37 @@
 
 [![JevAny 在机器人、浏览器、软件、实验室和出行任务中选择动作](docs/demos/jevany-cases.gif)](docs/CASES.md)
 
-### Jev 作为 LLM Agent Harness
+### ⚡ Jev 加入 LLM Agent 循环
 
-Jev 也可以嵌入 LLM agent 循环：受控环境和网页任务的候选来自环境或 DOM；终端 harness
-的候选由 frontier LLM 生成。终端协议把规划、精确编辑、恢复和完成判断留给 LLM，Jev
-只选择模型声明的 routine 动作并在低置信度时回退。Terminal D0 使用相同候选协议；跨域
-baseline 则不提供 delegation tool，optional agent 可以选择 benchmark 暴露的任意动作，
-因此衡量的是完整 sandbox-harness intervention，而非纯 selector 或生产安全消融。
+> **关键结论：**LLM 负责规划，环境或 LLM 提供少量选项，Jev 选择常规动作，LLM 验证并完成任务。
 
-任务开放度（**T0–T4**）与委托程度（**D0–D4**）是两条独立轴，详见
-[分层协议](docs/experiments/AGENT_HARNESS_FRONTIER_PROTOCOL.md)。实践上应当：只委托选择，
-不委托解题；候选必须是 2–4 个有效且实质不同的动作；策略、精确编辑、恢复和最终验证留给
-LLM；只批处理短而可组合的动作；始终保留基于置信度的 LLM fallback。
+**1 · SQLite 恢复——选择能推进任务的检查动作**
 
-| 证据 | 结果 | 结论 |
-|---|---|---|
-| GPT-5.6-sol · FrozenLake，10 pairs | 成功率保持 100%；calls −64.4%，tokens −63.1%，时间 −37.6% | 明确的受控环境收益 |
-| WebShop，10 pairs | 50%→60%，资源小幅下降 | 正向信号，但区间跨零 |
-| WebArena，固定 6 tasks | 50%→50%，calls/tokens 增加 | aggregate 无收益 |
-| Terminal-Bench，6 task pairs | 1/6→3/6，calls −9.0% | 单次探索，不能作因果结论 |
+[![Jev 从三个 SQLite 恢复动作中选择原始页面检查，LLM 随后解析并验证](docs/demos/jev-agent-harness-sqlite.gif)](reports/JevAny_Tech_Report_Agent_Harness_Appendix.md#h1-sqlite-recovery-a-meaningful-three-way-decision)
 
-**真实决策轨迹。** SQLite 恢复中，Jev 以 `0.81` 在原始页面、schema 和工具检查间
-选择原始页面，LLM 随后编写解析器并完成验证。WebShop seed `3100` 中，Jev 以 `0.99`
-选择了错误的近似颜色；LLM 观察失败后重新搜索并完成精确购买。这两个案例分别展示了
-有用的有界选择，以及为什么全局任务所有权必须保留给 LLM。
+**2 · WebShop——一个配对结果：reward 0 → 1，LLM calls 11 → 5**
 
-**关键结论：**应该最大化“有价值的 LLM 调用替代”，而不是最大化委托率。Jev 适合
-有界、可逆、可局部判断的选择；当 agent 缺少任务级能力时，Jev 无法弥补。详见
-[96-pair 完整矩阵](reports/JevAny_Tech_Report_Agent_Harness_Appendix.md#f-repeated-cross-domain-matrix)、
-[Terminal-Bench 分解与委托 frontier](reports/JevAny_Tech_Report_Agent_Harness_Appendix.md#g-open-terminal-exploration)、
-[SQLite 决策 demo](reports/JevAny_Tech_Report_Agent_Harness_Appendix.md#h1-sqlite-recovery-a-meaningful-three-way-decision)、
-[WebShop 恢复 demo](reports/JevAny_Tech_Report_Agent_Harness_Appendix.md#h4-webshop-a-confident-local-mistake-and-frontier-recovery)、
-[任务/委托分层协议](docs/experiments/AGENT_HARNESS_FRONTIER_PROTOCOL.md)，以及
-[合并版技术报告](reports/JevAny_Tech_Report_with_Agent_Harness.pdf)。
+[![Jev 选择任务要求的黑色商品选项，LLM 随后选择 11.5 尺码并完成购买](docs/demos/jev-agent-harness-webshop.gif)](docs/demos/jev-agent-harness-traces.json)
+
+**3 · FrozenLake——连续导航决策**
+
+[![LLM 规划一次后，Jev 在 FrozenLake 中连续选择四个依赖当前状态的导航动作](docs/demos/jev-agent-harness-frozen-lake.gif)](results/agent-harness-v1/formal-matrix.md)
+
+| 任务 | 成功率 | 效率 |
+|---|---:|---:|
+| GPT-5.6-sol · FrozenLake · 10 pairs | 100% → 100% | LLM calls −64.4% · tokens −63.1% · 时间 −37.6% |
+| WebShop · 10 pairs | 50% → 60% | LLM calls −7.7% · tokens −2.9% · 时间 −6.1% |
+| WebArena · 6 pairs | 50% → 50% | LLM calls +5.6% · tokens +28.2% · 时间 −0.4% |
+| Terminal-Bench · 6 pairs | 1/6 → 3/6 | LLM calls −9.0% |
+
+**适合交给 Jev：**2–4 个有边界、可回退、能立即观察结果的选择。
+
+**保留给 LLM：**规划、精确修改、失败恢复和最终答案。
+
+[完整结果](reports/JevAny_Tech_Report_Agent_Harness_Appendix.md) ·
+[组合动画](docs/demos/jev-agent-harness.gif) ·
+[任务与委托分级](docs/experiments/AGENT_HARNESS_FRONTIER_PROTOCOL.md) ·
+[合并版技术报告](reports/JevAny_Tech_Report_with_Agent_Harness.pdf)
 
 ## 📑 目录
 
