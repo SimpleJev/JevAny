@@ -306,30 +306,32 @@ NLL, Brier and ECE are measured on Transfer.
 
 ### ⏱️ 3.1 Inference efficiency <a name="efficiency"></a>
 
-On one H200, direct CUDA Graphs cut Qwen3.8-27B median latency from
-**113.54 ms to 30.53 ms (3.72×)** with 207/231 correct answers before and
-after. The A100-40GB comparison below uses batch size 1: 4B models fit on one
-GPU and use CUDA Graphs, while 27B and 30B are layer-sharded over three GPUs
-and gain only from linear-attention kernels and fused SDPA.
+On one H200, CUDA Graphs cut Qwen3.8-27B median latency from **113.54 to
+30.53 ms (3.72×)** on 231 JevBench questions; fused SDPA plus CUDA Graphs cut
+Muse-Glimmer-30B from **100.71 to 43.25 ms (2.33×)** on a balanced 44-request
+Transfer panel.
+Accuracy stayed at 207/231 and 38/44, with no argmax changes. The table uses
+the H200 headline measurements for 27B and 30B, while retaining the original
+apples-to-apples A100-40GB comparison for the 4B models. Latency is comparable
+within each row; the fixed evaluation panels are listed explicitly.
 
 [![Accuracy vs median latency before and after acceleration for JevAny and other decision models](docs/efficiency-latency.png)](docs/EFFICIENCY.md)
 
-[![Median latency of each JevAny release before and after acceleration](docs/efficiency-ablation.svg)](docs/EFFICIENCY.md)
+| Model | Hardware | Before | After | Speed-up | Accuracy check | Fixed panel |
+|:---|:---:|---:|---:|---:|---:|:---|
+| JevAny-Qwen3.5-4B | A100 | 104.6 ms | **25.3 ms** | **4.1×** | 78.68% → 78.87% | Transfer, 1,046 |
+| JevAny-Qwen3.5-4B-Direct-Token | A100 | 106.4 ms | **25.9 ms** | **4.1×** | 78.11% → 78.39% | Transfer, 1,046 |
+| JevAny-Gemma-4B | A100 | 106.3 ms | **31.9 ms** | **3.3×** | 70.84% → 70.84% | Transfer, 1,046 |
+| JevAny-Muse-Glimmer-30B | H200 | 100.71 ms | **43.25 ms** | **2.33×** | 38/44 → 38/44 | Transfer sample, 44 |
+| JevAny-Qwen3.8-27B | H200 | 113.54 ms | **30.53 ms** | **3.72×** | 207/231 → 207/231 | JevBench public, 231 |
 
-| Model | A100 GPUs | Default | Accelerated | Speed-up | Transfer accuracy |
-|:---|---:|---:|---:|---:|---:|
-| JevAny-Qwen3.5-4B | 1 | 104.6 ms | **25.3 ms** | **4.1×** | 78.68% → 78.87% |
-| JevAny-Qwen3.5-4B-Direct-Token | 1 | 106.4 ms | **25.9 ms** | **4.1×** | 78.11% → 78.39% |
-| JevAny-Gemma-4B | 1 | 106.3 ms | **31.9 ms** | **3.3×** | 70.84% → 70.84% |
-| JevAny-Muse-Glimmer-30B | 3 | 171.2 ms | **154.2 ms** | **1.11×** | 83.37% → 83.37% |
-| JevAny-Qwen3.8-27B<sup>†</sup> | 3 | 240.2 ms | **220.1 ms** | **1.09×** | 85.66% → 85.66% |
-
-Median per-request latency on Transfer-v9, batch size 1.
-<sup>†</sup> Measured at step 22,160.
+Median model-call latency, serial batch size 1. See the full report for the
+apples-to-apples A100 comparison and panel limitations.
 
 [Full tables, setup and other models](docs/EFFICIENCY.md) ·
 [How to enable](docs/DEPLOYMENT.md#optional-cuda-acceleration) ·
-[Machine-readable results](results/efficiency-a100-v1.json)
+[H200 results](results/efficiency-h200-best-v1.json) ·
+[A100 results](results/efficiency-a100-v1.json)
 
 ## 🕹️ 4. Examples & Test Environments <a name="examples--test-environments"></a>
 
