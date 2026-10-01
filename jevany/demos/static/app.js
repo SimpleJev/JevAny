@@ -6,8 +6,18 @@ const label = name => {
   return move ? `${move[1].toUpperCase()} ${move[2] === "plus" ? "+" : "−"}${move[3]} cm` :
     ({do:"Interact", noop:"Wait"}[name] || name.replaceAll("_", " "));
 };
-let config, current = "doom", mode = "replay", replay, state, index = 0;
+let config, link = {}, current = "doom", mode = "replay", replay, state, index = 0;
 let playing = false, automatic = false, busy = false, generation = 0, loop = 0, actions = {};
+let failedAttempt = false;
+const EXAMPLE = {
+  state: "A customer writes: I was charged twice for order 4182, and the second charge is still pending.",
+  question: "Which team should handle this ticket?",
+  options: [
+    {name: "billing", description: "Payment problems, duplicate charges and refunds"},
+    {name: "shipping", description: "Delivery problems and missing parcels"},
+    {name: "accounts", description: "Sign-in and account ownership problems"},
+  ],
+};
 
 function element(tag, text, className) {
   const node = document.createElement(tag);
@@ -34,14 +44,16 @@ function controls() {
   $("step").textContent = mode === "model" ? "One decision" : "Next step";
   $("step").hidden = mode === "manual";
   const ready = state && (mode === "replay" || (config.installed[current] && Number.isInteger(state.revision)));
-  $("primary").disabled = !ready || (busy && !automatic) || (mode === "model" && (!config.model || state.done));
-  $("step").disabled = !ready || busy || (mode === "replay" ? index >= replay.steps.length - 1 : (!config.model || state.done));
+  $("primary").disabled = !ready || (busy && !automatic) || (mode === "model" && (!link.configured || state.done));
+  $("step").disabled = !ready || busy || (mode === "replay" ? index >= replay.steps.length - 1 : (!link.configured || state.done));
   $("reset").disabled = busy;
+  $("connect").disabled = !link.editable || busy;
+  $("custom-ask").disabled = !link.configured || busy;
   $("scrub").hidden = mode !== "replay";
   $("seed-label").hidden = mode === "replay";
   $("seed").disabled = busy;
   document.querySelectorAll("[data-mode],.case").forEach(button => button.disabled = busy);
-  document.querySelectorAll(".action").forEach(button => button.disabled = !ready || mode !== "manual" || busy || state?.done);
+  $("actions").querySelectorAll(".action").forEach(button => button.disabled = !ready || mode !== "manual" || busy || state?.done);
 }
 function updateMetrics(observation) {
   let values;
@@ -125,10 +137,10 @@ function modeLabels() {
   $("recording-note").textContent = mode === "replay" ? replay.note :
     "Real environment execution. Simulation time advances only when an action runs." +
     (current === "arm" ? " Motion primitives drive joint motors; contacts and gravity determine the result." : "");
-  $("connection").replaceChildren(element("i"), document.createTextNode(mode === "model" && config.model ? config.model : mode === "replay" ? "Local playback" : "Local CPU environment"));
+  $("connection").replaceChildren(element("i"), document.createTextNode(mode === "model" && link.model ? link.model : mode === "replay" ? "Local playback" : "Local CPU environment"));
   $("footer-note").textContent = mode === "replay" ? "Playback uses packaged assets only." :
     mode === "manual" ? "Manual play makes no model requests." :
-    (config.images ? "The model receives the current image and measured state." : "Text-only: the model receives measured state.");
+    (link.image_requests ? "The model receives the current image and measured state." : "Text-only: the model receives measured state.");
 }
 async function selectCase(key) {
   generation++; playing = false; automatic = false; mode = "replay"; current = key; actions = {}; state = null;
@@ -174,9 +186,9 @@ async function changeMode(next) {
       `python -m pip install -e '.[${config.cases[current].extra}]'`);
     controls(); return;
   }
-  if (mode === "model" && !config.model) {
-    setupMessage("Start the model server with JEVANY_MEDIA_ROOT=/tmp/jevany-media, then connect the playground.",
-      "jevany demo --base-url http://127.0.0.1:8008 --media-root /tmp/jevany-media");
+  if (mode === "model" && !link.configured) {
+    setupMessage("Connect a model above: enter the URL of a running server and choose Test and connect. "
+      + "Start one with:", "jevany serve --checkpoint runs/my-jev --port 8008");
     controls(); return;
   }
   await newRun();
@@ -203,6 +215,115 @@ async function liveStep(action) {
   } catch (e) { error(e.message); }
   finally { busy = false; $("waiting").hidden = true; controls(); }
 }
+function renderConnection() {
+  const media = link.media || {}, served = link.served;
+  $("connect-url").disabled = $("connect-model").disabled = !link.editable;
+  if (!$("connect-url").value) $("connect-url").value = link.base_url || link.default_base_url || "";
+  if (!$("connect-model").value && link.model && link.model !== "jevany-latest") $("connect-model").value = link.model;
+  $("connection-status").textContent = failedAttempt && !link.configured ? "Not connected" :
+    !link.configured ? "No model configured" :
+    link.reachable ? `Connected: ${link.model}` : `Configured but never tested: ${link.model}`;
+  $("connection-status").className = "connect-status " +
+    (link.reachable ? "ok" : link.configured ? "warn" : failedAttempt ? "bad" : "");
+  $("connection-detail").textContent = served ? [
+    `Serves ${served.id}`,
+    served.aliases.length ? `aliases ${served.aliases.join(", ")}` : null,
+    served.base ? `base ${served.base}` : null,
+    served.device ? `device ${served.device}` : null,
+    served.decision_mode ? `${served.decision_mode} readout` : null,
+    media.model_media_types && media.model_media_types.length
+      ? `accepts ${media.model_media_types.join(", ")}` : "text only",
+    link.checked ? `checked ${link.checked}` : null,
+  ].filter(Boolean).join(" - ") : link.configured
+    ? "The identity and media support of this endpoint are unknown until you test it."
+    : "Enter the URL of a running JevAny server, then test it. Replays need no model.";
+  if (failedAttempt && link.reachable)
+    $("connection-detail").textContent += " The last attempt failed; this connected model is still in use.";
+  // The box shows what a request would actually carry, not an intent that cannot be met.
+  $("images-toggle").checked = !!link.image_requests;
+  $("images-toggle").disabled = !link.configured || !link.editable || (!link.image_requests && !media.usable);
+  $("images-note").textContent = link.image_requests
+    ? `Images are sent using the ${media.transport} transport.`
+    : media.usable ? "Text only. Enable images to send the current frame as well."
+    : `Text only: ${media.reason || "image input needs a tested model that accepts images"}.`;
+  if (!link.configured) $("custom-note").textContent = "Connect a model to ask your own question.";
+  else if (!$("custom-probabilities").childElementCount)
+    $("custom-note").textContent = "Edit the state, question and options, then ask the model.";
+}
+function optionRow(option) {
+  const row = element("div", undefined, "option-row");
+  const name = element("input", undefined, "option-name");
+  name.placeholder = "option name"; name.value = option.name || ""; name.spellcheck = false;
+  const description = element("input", undefined, "option-description");
+  description.placeholder = "what this option means (optional)";
+  description.value = option.description || ""; description.spellcheck = false;
+  const remove = element("button", "Remove", "option-remove");
+  remove.type = "button";
+  remove.onclick = () => { if ($("custom-options").children.length > 2) row.remove(); };
+  row.append(name, description, remove);
+  return row;
+}
+function customOptions() {
+  return [...$("custom-options").children].map(row => ({
+    name: row.querySelector(".option-name").value.trim(),
+    description: row.querySelector(".option-description").value.trim(),
+  })).filter(option => option.name);
+}
+function drawDecision(result) {
+  const best = Math.max(...Object.values(result.probabilities));
+  $("custom-answer").textContent = `${result.choice} - confidence ${(result.confidence * 100).toFixed(0)}%`;
+  $("custom-probabilities").replaceChildren(...result.options.map(name => {
+    const value = result.probabilities[name] ?? 0;
+    const row = element("div", undefined, "action" + (name === result.choice ? " selected" : ""));
+    const bar = element("span", undefined, "bar"); bar.style.width = `${(value / best) * 100}%`;
+    const option = element("span", name, "name"); option.style.textTransform = "none";
+    row.append(bar, option, element("span", `${(value * 100).toFixed(1)}%`, "prob"));
+    return row;
+  }));
+  $("custom-note").textContent = `Answered by ${result.model} in ${result.seconds.toFixed(2)} s.`;
+}
+$("connect").onclick = async () => {
+  const url = $("connect-url").value.trim(), model = $("connect-model").value.trim();
+  if (!url) { error("Enter the URL of a running model server, for example http://127.0.0.1:8008"); return; }
+  busy = true; error(""); $("connect").textContent = "Testing..."; controls();
+  try {
+    link = await request("/api/connect", model ? {base_url: url, model} : {base_url: url});
+    failedAttempt = false;
+  } catch (e) {
+    failedAttempt = true;
+    error("Could not connect: " + e.message);
+  }
+  finally {
+    busy = false; $("connect").textContent = "Test and connect";
+    renderConnection(); modeLabels(); controls();
+  }
+};
+$("images-toggle").onchange = async () => {
+  const enabled = $("images-toggle").checked;
+  error("");
+  try { link = await request("/api/images", {enabled}); }
+  catch (e) { error(e.message); }
+  finally { renderConnection(); modeLabels(); controls(); }
+};
+$("custom-add").onclick = () => {
+  if ($("custom-options").children.length < (config.max_custom_options || 12))
+    $("custom-options").append(optionRow({}));
+};
+$("custom-ask").onclick = async () => {
+  const options = customOptions();
+  if (options.length < 2) { error("Give at least two named candidate options."); return; }
+  busy = true; error(""); $("custom-ask").textContent = "Asking...";
+  $("custom-note").textContent = "Waiting for the model."; controls();
+  try {
+    drawDecision(await request("/api/decide", {
+      state: $("custom-state").value, question: $("custom-question").value, options,
+    }));
+  } catch (e) {
+    error(e.message);
+    $("custom-note").textContent = "The model did not answer: " + e.message;
+  }
+  finally { busy = false; $("custom-ask").textContent = "Ask the model"; controls(); }
+};
 $("primary").onclick = async () => {
   if (mode === "replay") { if (playing) {playing = false; loop++; controls();} else startPlayback(); }
   else if (mode === "manual") await newRun();
@@ -236,6 +357,11 @@ $("download").onclick = async () => {
 (async () => {
   try {
     config = await request("/api/config");
+    link = config.connection || {};
+    $("custom-state").value = EXAMPLE.state;
+    $("custom-question").value = EXAMPLE.question;
+    $("custom-options").replaceChildren(...EXAMPLE.options.map(optionRow));
+    renderConnection();
     for (const [key, meta] of Object.entries(config.cases)) {
       const button = element("button", undefined, "case"); button.dataset.case = key;
       const img = element("img"); img.src = `/recordings/${key}/000.jpg`; img.alt = "";

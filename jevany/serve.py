@@ -80,6 +80,8 @@ def prepare(req):
             candidate = Path(item.uri)
             try:
                 path = candidate.resolve(strict=True) if candidate.is_absolute() else (root / candidate).resolve(strict=True)
+            except PermissionError:
+                raise HTTPException(422, "server cannot access media file; check shared directory and file permissions")
             except (OSError, RuntimeError):
                 raise HTTPException(422, "media file does not exist")
             try:

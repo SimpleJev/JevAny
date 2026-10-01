@@ -1,11 +1,82 @@
 """Python clients using the same System One request and response as HTTP."""
+import io
 import json
 import math
+import urllib.error
 import urllib.request
 from typing import Any
 from urllib.parse import urlparse
 
 from .api import JSONContent, Media, Question, SystemOneRequest, validate_response
+
+DETAIL_LIMIT = 400
+# A rejected request can be answered with a long page by a gateway in front of the
+# model. Only this much of a failed response is copied; successful decision
+# responses are read whole.
+ERROR_BODY_LIMIT = 64 * 1024
+
+
+def error_detail(body: bytes, limit: int = DETAIL_LIMIT) -> str:
+    """One readable line explaining a failed response, from a JSON error body or any other payload."""
+    text = body.decode("utf-8", "replace").strip()
+    if not text:
+        return ""
+    try:
+        payload = json.loads(text)
+    except ValueError:
+        payload = None
+    if isinstance(payload, dict):
+        for key in ("detail", "message", "error"):
+            if key in payload:
+                value = payload[key]
+                text = value if isinstance(value, str) else json.dumps(value, ensure_ascii=False)
+                break
+        else:
+            text = json.dumps(payload, ensure_ascii=False)
+    elif payload is not None:
+        text = json.dumps(payload, ensure_ascii=False)
+    text = " ".join(text.split())
+    return text if len(text) <= limit else text[:limit] + "..."
+
+
+class DecisionHTTPError(urllib.error.HTTPError):
+    """An HTTP failure that reports the server's own explanation.
+
+    `str(error)` adds the server's `detail` (or the first line of a non-JSON body)
+    to the usual status line, so an unknown model or a disabled media root says so
+    instead of only `HTTP Error 422: Unprocessable Entity`. `code`, `status`,
+    `msg`, `reason`, `headers` and `read()` behave as urllib's HTTPError, and
+    `detail` and `body` expose the parsed explanation and the raw bytes. The body
+    holds at most the first ERROR_BODY_LIMIT bytes of the failed response, and
+    `read()` returns that copy. Request headers, including any Authorization
+    header, are never part of the message.
+    """
+
+    def __init__(self, error: urllib.error.HTTPError, body: bytes) -> None:
+        super().__init__(error.filename, error.code, error.msg, error.hdrs, io.BytesIO(body))
+        self.body = body
+        self.detail = error_detail(body)
+
+    def __str__(self) -> str:
+        status = f"HTTP Error {self.code}: {self.msg}"
+        return f"{status}: {self.detail}" if self.detail else status
+
+
+def _response_body(error: urllib.error.HTTPError, limit: int = ERROR_BODY_LIMIT) -> bytes:
+    """Up to `limit` bytes of a failed response, releasing the original response.
+
+    The status and the explanation at the start of the body are what callers need;
+    reading an unbounded error page into memory is not.
+    """
+    try:
+        return error.read(limit)
+    except OSError:
+        return b""
+    finally:
+        try:
+            error.close()
+        except OSError:
+            pass
 
 
 class DecisionClient:
@@ -33,8 +104,9 @@ class DecisionClient:
 class JevClient(DecisionClient):
     """Call a JevAny server or a compatible TypeSafe endpoint.
 
-    Invalid requests raise ValueError before sending. HTTP and connection errors
-    propagate from urllib; malformed responses raise ValueError.
+    Invalid requests raise ValueError before sending. Connection errors propagate
+    from urllib; HTTP failures raise DecisionHTTPError, which is an HTTPError
+    carrying the server's explanation. Malformed responses raise ValueError.
     """
 
     def __init__(
@@ -51,16 +123,42 @@ class JevClient(DecisionClient):
             raise ValueError("timeout must be finite and positive")
         if parsed.query or parsed.fragment or parsed.username or parsed.password:
             raise ValueError("base_url must not contain credentials, a query or a fragment")
-        self.url = base_url.rstrip("/") + "/v1/systemone"
+        self.base_url = base_url.rstrip("/")
+        self.url = self.base_url + "/v1/systemone"
         self.api_key, self.timeout, self.model_id = api_key, timeout, model
+
+    def _headers(self) -> dict[str, str]:
+        headers = {"accept": "application/json"}
+        if self.api_key:
+            headers["authorization"] = f"Bearer {self.api_key}"
+        return headers
+
+    def _open(self, http_request: urllib.request.Request) -> Any:
+        try:
+            with urllib.request.urlopen(http_request, timeout=self.timeout) as response:
+                return json.loads(response.read())
+        except urllib.error.HTTPError as error:
+            raise DecisionHTTPError(error, _response_body(error)) from error
+        except json.JSONDecodeError as error:
+            raise ValueError(f"{http_request.full_url} did not return JSON: {error}") from error
+
+    def models(self) -> list[dict[str, Any]]:
+        """GET /v1/models: what this deployment serves, with its capabilities and limits.
+
+        One real round trip, so it also proves the endpoint is reachable and ready.
+        """
+        payload = self._open(urllib.request.Request(
+            self.base_url + "/v1/models", method="GET", headers=self._headers(),
+        ))
+        models = payload.get("models") if isinstance(payload, dict) else None
+        if not isinstance(models, list) or not models or not all(isinstance(item, dict) for item in models):
+            raise ValueError("GET /v1/models did not return a models list; is this a System One endpoint?")
+        return models
 
     def __call__(self, request: SystemOneRequest | dict) -> dict[str, Any]:
         validated = request if isinstance(request, SystemOneRequest) else SystemOneRequest.model_validate(request)
-        headers = {"content-type": "application/json"}
-        if self.api_key:
-            headers["authorization"] = f"Bearer {self.api_key}"
         http_request = urllib.request.Request(
-            self.url, data=validated.model_dump_json().encode(), method="POST", headers=headers,
+            self.url, data=validated.model_dump_json().encode(), method="POST",
+            headers={**self._headers(), "content-type": "application/json"},
         )
-        with urllib.request.urlopen(http_request, timeout=self.timeout) as response:
-            return validate_response(validated, json.loads(response.read()))
+        return validate_response(validated, self._open(http_request))

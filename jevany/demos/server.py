@@ -2,6 +2,7 @@
 import argparse
 import base64
 from contextlib import nullcontext
+from datetime import datetime, timezone
 import importlib.util
 import io
 import json
@@ -11,6 +12,7 @@ from pathlib import Path
 import sys
 import threading
 import time
+import urllib.error
 from tempfile import TemporaryDirectory
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Callable
@@ -23,6 +25,15 @@ from . import CASES, DemoEnvironment, make_environment
 from .context import decision_request, focus_crafter_request
 
 ROOT = Path(__file__).parent
+# One editable choice question needs more room than an action click, and nothing
+# the page posts is large. Each path keeps its own bound.
+BODY_LIMITS = {"/api/start": 4096, "/api/step": 4096, "/api/connect": 4096,
+               "/api/images": 4096, "/api/decide": 32768}
+MAX_CUSTOM_OPTIONS = 12
+DEFAULT_BASE_URL = "http://127.0.0.1:8008"
+# GET /v1/models returns metadata, so the connection test holds the run lock for
+# much less time than a decision may take.
+PROBE_TIMEOUT = 30
 
 
 def frame_uri(image) -> str:
@@ -33,21 +44,233 @@ def frame_uri(image) -> str:
     return "data:image/jpeg;base64," + base64.b64encode(buffer.getvalue()).decode("ascii")
 
 
+def text_field(value: Any, name: str, limit: int) -> str:
+    """A required, stripped, length-bounded string from the browser."""
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{name} is required")
+    value = value.strip()
+    if len(value) > limit:
+        raise ValueError(f"{name} must be at most {limit} characters")
+    return value
+
+
+def identities(entry: dict[str, Any]) -> set[str]:
+    """The ids a /v1/models entry answers to, ignoring anything malformed."""
+    identity, aliases = entry.get("id"), entry.get("aliases")
+    found = {identity} if isinstance(identity, str) and identity.strip() else set()
+    if isinstance(aliases, list):
+        found |= {alias for alias in aliases if isinstance(alias, str) and alias.strip()}
+    return found
+
+
+def model_descriptor(base_url: str, entry: dict[str, Any]) -> dict[str, Any]:
+    """Validate the /v1/models fields the Playground consumes, before adopting an endpoint.
+
+    A compatible endpoint can report anything; a connection is only adopted when the
+    fields the page and the media rules read have the shape they are used with.
+    """
+    identity = entry.get("id")
+    if not isinstance(identity, str) or not identity.strip():
+        raise ValueError(f"{base_url} did not report a model id in GET /v1/models")
+    aliases = entry.get("aliases")
+    if aliases is not None and (not isinstance(aliases, list)
+                                or not all(isinstance(alias, str) for alias in aliases)):
+        raise ValueError(f"{base_url} reported aliases for {identity!r} that are not a list of names")
+    sections = {}
+    for name in ("capabilities", "limits"):
+        value = entry.get(name)
+        if value is not None and not isinstance(value, dict):
+            raise ValueError(f"{base_url} reported {name} for {identity!r} that is not an object")
+        sections[name] = value or {}
+    media_types = sections["capabilities"].get("media_types")
+    if media_types is not None and (not isinstance(media_types, list)
+                                    or not all(isinstance(item, str) for item in media_types)):
+        raise ValueError(f"{base_url} reported capabilities.media_types for {identity!r} "
+                         "that is not a list of media types")
+    media_enabled = sections["limits"].get("media_enabled", False)
+    if type(media_enabled) is not bool:
+        raise ValueError(f"{base_url} reported limits.media_enabled for {identity!r} "
+                         "that is not a boolean")
+    labels = {}
+    for name in ("base", "device", "decision_mode"):
+        value = entry.get(name)
+        if value is not None and not isinstance(value, str):
+            raise ValueError(f"{base_url} reported {name} for {identity!r} that is not a name")
+        labels[name] = value
+    return {
+        "id": identity.strip(), "aliases": list(aliases or []), **labels,
+        "media_types": list(media_types or []),
+        "media_enabled": media_enabled,
+        "limits": sections["limits"],
+    }
+
+
 class DemoApplication:
     """One local interactive run; concurrent requests cannot change its state."""
 
     def __init__(self, client: DecisionClient | None = None, *, images: bool = True,
                  factory: Callable[[str, int], DemoEnvironment] = make_environment,
-                 media_root: str | Path | None = None):
+                 media_root: str | Path | None = None, timeout: float = 120):
         self.client, self.images, self.factory = client, images, factory
+        self.timeout = timeout
         self.lock = threading.Lock()
         self.env, self.case = None, None
         self.revision = 0
         self.trace = []
         self.snapshot = None
+        # The last successful GET /v1/models for the current client; None means the
+        # endpoint is configured but has never answered, so its identity and media
+        # support are still unknown.
+        self.probe: dict[str, Any] | None = None
+        self.checked: str | None = None
         self.media_root = Path(media_root).resolve() if media_root is not None else None
         if self.media_root is not None:
             self.media_root.mkdir(parents=True, exist_ok=True)
+
+    def media_state(self) -> dict[str, Any]:
+        """Whether an image can actually reach the connected model, and why not.
+
+        A remote endpoint has to prove it: until GET /v1/models has answered, its
+        media support is unknown and image input stays off. An in-process model
+        (jevany.runtime.JevModel or a caller's own client) takes trusted local
+        paths, so it needs no probe.
+        """
+        remote = isinstance(self.client, JevClient)
+        reasons = []
+        if self.client is None:
+            reasons.append("connect a model first")
+        if remote and self.media_root is None:
+            reasons.append("start the playground with --media-root inside the server's JEVANY_MEDIA_ROOT")
+        if remote and self.probe is None:
+            reasons.append("choose Test and connect first; this endpoint's media support is unknown")
+        model_types: list[str] | None = None
+        server_enabled: bool | None = None
+        if self.probe is not None:
+            model_types, server_enabled = self.probe["media_types"], self.probe["media_enabled"]
+            if "image" not in model_types:
+                reasons.append("this checkpoint is text-only")
+            elif not server_enabled:
+                reasons.append("the server has no JEVANY_MEDIA_ROOT")
+        return {
+            "transport": "shared-files" if self.media_root is not None else "inline",
+            "model_media_types": model_types, "server_media_enabled": server_enabled,
+            "verified": self.probe is not None,
+            "usable": not reasons, "reason": "; ".join(reasons) or None,
+        }
+
+    @property
+    def image_requests(self) -> bool:
+        """Images are attached only when requested and actually deliverable."""
+        return bool(self.images) and self.media_state()["usable"]
+
+    def connection(self) -> dict[str, Any]:
+        """Configured endpoint and, separately, what a real round trip confirmed."""
+        remote = isinstance(self.client, JevClient)
+        served = self.probe
+        return {
+            "configured": self.client is not None,
+            "editable": self.client is None or remote,
+            "base_url": self.client.base_url if remote else None,
+            "model": self.client.model_id if self.client is not None else None,
+            "reachable": self.probe is not None,
+            "checked": self.checked,
+            "served": {
+                "id": served["id"], "aliases": served["aliases"], "base": served["base"],
+                "device": served["device"], "decision_mode": served["decision_mode"],
+                "limits": served["limits"],
+            } if served is not None else None,
+            "media": self.media_state(),
+            "images": bool(self.images), "image_requests": self.image_requests,
+            "default_base_url": DEFAULT_BASE_URL,
+        }
+
+    def connect(self, base_url: Any, model: Any = None, timeout: Any = None) -> dict[str, Any]:
+        """Adopt an endpoint only after GET /v1/models answers; keep the working one otherwise."""
+        if self.client is not None and not isinstance(self.client, JevClient):
+            raise ValueError("this playground runs an in-process model; its URL cannot be changed")
+        base_url = text_field(base_url, "model URL", 2048)
+        requested = text_field(model, "model id", 200) if model not in (None, "") else None
+        timeout = self.timeout if timeout in (None, "") else timeout
+        if type(timeout) not in (int, float) or not 0 < float(timeout) <= 600:
+            raise ValueError("timeout must be a number of seconds above 0 and at most 600")
+        # JevClient keeps its URL policy: HTTP only on loopback, no credentials in the URL.
+        probe_timeout = min(float(timeout), PROBE_TIMEOUT)
+        candidate = JevClient(base_url, timeout=probe_timeout, model=requested or "jevany-latest")
+        try:
+            served = candidate.models()
+        except urllib.error.HTTPError as error:
+            raise ValueError(f"{base_url} answered but rejected GET /v1/models: {error}") from error
+        except TimeoutError as error:
+            raise ValueError(f"{base_url} did not answer within {probe_timeout:g} seconds") from error
+        except urllib.error.URLError as error:
+            raise ValueError(f"cannot reach {base_url}: {error.reason}. Start a server with "
+                             "'jevany serve --checkpoint <checkpoint> --port 8008'.") from error
+        except ValueError as error:
+            raise ValueError(f"{base_url} is not a System One endpoint: {error}") from error
+        entry, names = None, set()
+        for item in served:
+            answers_to = identities(item)
+            names |= answers_to
+            if entry is None and (requested is None or requested in answers_to):
+                entry = item
+        if entry is None:
+            raise ValueError(f"{base_url} serves {', '.join(sorted(names)) or 'no named model'}; "
+                             f"it does not serve {requested!r}")
+        # Everything that could reject this endpoint happens before it is adopted, so a
+        # malformed descriptor leaves the previous connection, probe and image setting intact.
+        descriptor = model_descriptor(base_url, entry)
+        adopted = JevClient(base_url, timeout=float(timeout), model=requested or descriptor["id"])
+        # A newly connected model starts text-only; images are enabled explicitly
+        # once this probe shows the model and the server both accept them.
+        self.client, self.probe, self.images = adopted, descriptor, False
+        self.checked = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        return self.connection()
+
+    def set_images(self, enabled: Any) -> dict[str, Any]:
+        """Enable image input only when the model, the server and the transport all allow it."""
+        if type(enabled) is not bool:
+            raise ValueError("send images as true or false")
+        if enabled:
+            if self.client is None:
+                raise ValueError("connect a model before enabling image input")
+            media = self.media_state()
+            if not media["usable"]:
+                raise ValueError(f"image input is unavailable: {media['reason']}")
+        self.images = enabled
+        return self.connection()
+
+    def decide(self, state: Any, question: Any, options: Any) -> dict[str, Any]:
+        """One editable choice question against the connected model; no environment required."""
+        if self.client is None:
+            raise ValueError("connect a model first: enter its URL in the model connection panel")
+        state = text_field(state, "state", 6000)
+        question = text_field(question, "question", 2000)
+        if not isinstance(options, list) or not 2 <= len(options) <= MAX_CUSTOM_OPTIONS:
+            raise ValueError(f"give between 2 and {MAX_CUSTOM_OPTIONS} candidate options")
+        criteria: dict[str, Any] = {}
+        for item in options:
+            item = {"name": item} if isinstance(item, str) else item
+            if not isinstance(item, dict):
+                raise ValueError("each option needs a name and an optional description")
+            name = text_field(item.get("name"), "option name", 120)
+            if name in criteria:
+                raise ValueError(f"duplicate option {name!r}")
+            description = item.get("description")
+            criteria[name] = (text_field(description, "option description", 600)
+                              if description not in (None, "") else None)
+        request = {"model": self.client.model_id, "state": state,
+                   "questions": {"decision": {"type": "choice", "instructions": question,
+                                              "criteria": criteria}}}
+        started = time.monotonic()
+        response = validate_response(request, self.client(request))
+        answer = response["answers"]["decision"]
+        return {
+            "model": response.get("model") or self.client.model_id, "options": list(criteria),
+            "choice": answer["choice"], "confidence": answer["confidence"],
+            "probabilities": answer["probabilities"],
+            "seconds": round(time.monotonic() - started, 3),
+            "latency_ms": response.get("latency_ms"),
+        }
 
     def config(self) -> dict[str, Any]:
         return {
@@ -55,6 +278,8 @@ class DemoApplication:
             "model": self.client.model_id if self.client else None,
             "images": self.images,
             "media_transport": "shared-files" if self.media_root is not None else "inline",
+            "connection": self.connection(),
+            "max_custom_options": MAX_CUSTOM_OPTIONS,
             "installed": {key: all(importlib.util.find_spec(name) is not None
                                    for name in (meta["package"], "PIL", "numpy"))
                           for key, meta in CASES.items()},
@@ -106,7 +331,8 @@ class DemoApplication:
         started = time.monotonic()
         if model:
             if self.client is None:
-                raise ValueError("restart with --base-url http://127.0.0.1:8008 to connect a model")
+                raise ValueError("connect a model first: enter its URL in the model connection panel, "
+                                 "or start the playground with --base-url")
             request = decision_request(self.case, self.client.model_id, before, actions, self.trace)
             builder = getattr(self.env, "decision_request", None)
             if builder is not None:
@@ -117,10 +343,11 @@ class DemoApplication:
                 request = builder(self.client.model_id, history)
             if isinstance(request["state"], dict):
                 subgoal = request["state"].get("current_subgoal")
+            images = self.image_requests
             storage = (TemporaryDirectory(prefix="jevany-frame-", dir=self.media_root)
-                       if self.images and self.media_root is not None else nullcontext())
+                       if images and self.media_root is not None else nullcontext())
             with storage as directory:
-                if self.images:
+                if images:
                     image = self.env.render()
                     if directory is None:
                         uri = frame_uri(image)
@@ -203,25 +430,35 @@ def make_server(app: DemoApplication, port: int = 8090) -> ThreadingHTTPServer:
                 return self.send({"error": "cross-origin actions are not allowed"}, 403)
             if self.headers.get_content_type() != "application/json":
                 return self.send({"error": "send application/json"}, 415)
-            if self.path not in ("/api/start", "/api/step"):
+            limit = BODY_LIMITS.get(self.path)
+            if limit is None:
                 return self.send({"error": "not found"}, 404)
             if not app.lock.acquire(blocking=False):
                 return self.send({"error": "another action is still running"}, 409)
             try:
                 length = int(self.headers.get("Content-Length", "0"))
-                if not 0 < length <= 4096:
-                    raise ValueError("JSON action body must be between 1 and 4096 bytes")
+                if not 0 < length <= limit:
+                    raise ValueError(f"JSON action body must be between 1 and {limit} bytes")
                 body = json.loads(self.rfile.read(length))
                 if not isinstance(body, dict):
                     raise ValueError("send a JSON object")
                 if self.path == "/api/start":
                     result = app.start(body.get("case"), body.get("seed", 17))
+                elif self.path == "/api/connect":
+                    result = app.connect(body.get("base_url"), body.get("model"), body.get("timeout"))
+                elif self.path == "/api/images":
+                    result = app.set_images(body.get("enabled"))
+                elif self.path == "/api/decide":
+                    result = app.decide(body.get("state"), body.get("question"), body.get("options"))
                 else:
                     result = app.step(body.get("revision"), action=body.get("action"),
                                       model=body.get("model", False))
                 self.send(result)
             except (ValueError, TypeError) as error:
                 self.send({"error": str(error)}, 400)
+            except urllib.error.HTTPError as error:
+                # The status line already names the status; show the server's reason.
+                self.send({"error": f"the model server rejected the request: {error}"}, 502)
             except Exception as error:
                 self.send({"error": f"{type(error).__name__}: {error}"}, 502)
             finally:
@@ -236,7 +473,8 @@ def make_server(app: DemoApplication, port: int = 8090) -> ThreadingHTTPServer:
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(prog="jevany demo", description="Open the local JevAny playground. Replays need no GPU or model.")
     parser.add_argument("--port", type=int, default=8090)
-    parser.add_argument("--base-url", help="JevAny HTTP server for live model decisions")
+    parser.add_argument("--base-url", help="JevAny HTTP server for live model decisions; "
+                                           "the page can also connect one without restarting")
     parser.add_argument("--model", default="jevany-latest", help="model identity sent to the server")
     parser.add_argument("--timeout", type=float, default=120, help="model request timeout in seconds")
     parser.add_argument("--text-only", action="store_true", help="send measured state without an image")
@@ -248,13 +486,18 @@ def main(argv: list[str] | None = None) -> None:
     if args.text_only and args.media_root:
         parser.error("--media-root cannot be combined with --text-only")
     client = JevClient(args.base_url, timeout=args.timeout, model=args.model) if args.base_url else None
-    app = DemoApplication(client, images=not args.text_only, media_root=args.media_root)
+    app = DemoApplication(client, images=not args.text_only, media_root=args.media_root,
+                          timeout=args.timeout)
     try:
         server = make_server(app, args.port)
     except OSError as error:
         parser.exit(2, f"Cannot open demo port {args.port}: {error}. Try --port 8091.\n")
     url = f"http://127.0.0.1:{server.server_port}"
-    print(f"JevAny playground: {url}\nReplays are ready. Press Ctrl+C to stop.", flush=True)
+    print(f"JevAny playground: {url}\nReplays are ready. Connect a model in the page, or pass --base-url. "
+          "Press Ctrl+C to stop.", flush=True)
+    if client is not None:
+        print(f"Model endpoint configured: {args.base_url}. Text decisions work now; press Test and connect "
+              "in the page to confirm what it serves and to enable image input.", flush=True)
     if not args.no_open and (os.environ.get("DISPLAY") or sys.platform in ("darwin", "win32")):
         webbrowser.open(url)
     try:

@@ -18,6 +18,23 @@
       <span class="local-note">Replays work offline.<br>No GPU or account needed.</span>
     </div>
     <nav id="cases" class="cases" aria-label="Choose an environment"></nav>
+    <section class="connect" aria-labelledby="connect-heading">
+      <div class="connect-row">
+        <div class="connect-field">
+          <label for="connect-url" id="connect-heading">YOUR MODEL URL</label>
+          <input id="connect-url" type="url" inputmode="url" spellcheck="false" autocomplete="off" placeholder="http://127.0.0.1:8008">
+        </div>
+        <div class="connect-field">
+          <label for="connect-model">MODEL ID (OPTIONAL)</label>
+          <input id="connect-model" type="text" spellcheck="false" autocomplete="off" placeholder="served model">
+        </div>
+        <button id="connect">Test and connect</button>
+      </div>
+      <p id="connection-status" class="connect-status"></p>
+      <p id="connection-detail" class="hint"></p>
+      <label class="connect-toggle"><input id="images-toggle" type="checkbox"> Also send the current image</label>
+      <p id="images-note" class="hint"></p>
+    </section>
     <div class="workspace-heading">
       <div><p id="category" class="eyebrow"></p><h2 id="title"></h2></div>
       <div class="modes" role="group" aria-label="Control mode">
@@ -52,6 +69,34 @@
         <p id="probability-note" class="hint"></p>
         <div id="actions" class="actions"></div>
       </aside>
+    </section>
+    <section class="custom" aria-labelledby="custom-heading">
+      <div class="custom-heading">
+        <div>
+          <p class="eyebrow" id="custom-heading">TRY YOUR OWN DECISION</p>
+          <p class="hint">Edit the state, the question and the candidate options. The connected model returns one option and its probabilities. No game dependencies.</p>
+        </div>
+        <button id="custom-ask" class="primary" disabled>Ask the model</button>
+      </div>
+      <div class="custom-grid">
+        <div class="custom-form">
+          <label for="custom-state">STATE</label>
+          <textarea id="custom-state" rows="5" spellcheck="false"></textarea>
+          <label for="custom-question">QUESTION</label>
+          <textarea id="custom-question" rows="2" spellcheck="false"></textarea>
+          <div class="custom-options-heading">
+            <span>CANDIDATE OPTIONS</span>
+            <button id="custom-add" class="quiet">Add option +</button>
+          </div>
+          <div id="custom-options"></div>
+        </div>
+        <div class="custom-result">
+          <p class="eyebrow">RESULT</p>
+          <p id="custom-answer" class="custom-answer"></p>
+          <div id="custom-probabilities" class="actions"></div>
+          <p id="custom-note" class="hint"></p>
+        </div>
+      </div>
     </section>
     <div class="evidence">
       <details><summary>Inspect environment state</summary><pre id="state-json"></pre></details>

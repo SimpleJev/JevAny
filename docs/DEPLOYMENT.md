@@ -108,6 +108,123 @@ runtime. `/health` returns 200 when ready and 503 when no runtime is loaded;
 decision and model-discovery requests also return 503 while unavailable.
 Use one Uvicorn worker per device: each worker loads a full model.
 
+## A complete local deployment
+
+Every command below is copyable as-is. It downloads a released checkpoint at a
+pinned revision, starts one server, checks it, calls it from the command line and
+from Python, scores it, and connects the Playground to it. Replace
+`SimpleJev/JevAny-Qwen3.5-4B-LoRA@...` with `runs/my-jev` to deploy your own
+training output; nothing else changes.
+
+```bash
+python -m pip install -e '.[serve]'
+```
+
+Download the adapter into the Hugging Face cache, pinned to the revision this
+release was published at. No account or token is needed:
+
+```bash
+hf download SimpleJev/JevAny-Qwen3.5-4B-LoRA \
+  --revision 1c7aa9bab14ac347aeb917c0bcd757838a8a78ce
+```
+
+The base model is fetched on first load at the revision the checkpoint records,
+so it needs no separate pin. To prefetch it, or to mirror it for an offline host:
+
+```bash
+hf download Qwen/Qwen3.5-4B --revision 851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a
+```
+
+Start one server. `--device cpu --dtype bf16` works for a functional check;
+`--device cuda` is the deployment path:
+
+```bash
+jevany serve \
+  --checkpoint SimpleJev/JevAny-Qwen3.5-4B-LoRA@1c7aa9bab14ac347aeb917c0bcd757838a8a78ce \
+  --model-name jevany-qwen3.5-4b --device cuda --dtype bf16 --host 127.0.0.1 --port 8008
+```
+
+Weights load during ASGI startup, so wait for `/health` before sending traffic:
+
+```bash
+until curl -sf http://127.0.0.1:8008/health; do sleep 2; done
+curl -s http://127.0.0.1:8008/v1/models
+```
+
+`/health` answers 200 `{"status":"ready"}` once the runtime is loaded and 503
+`{"status":"loading"}` before that. `/v1/models` reports the served id and
+aliases, the base model, the device, the readout, the effective token limits and
+whether media is enabled.
+
+One request from the command line, then the same request from Python:
+
+```bash
+cat > /tmp/request.json <<'JSON'
+{"state": "I was charged twice for order 4182.",
+ "model": "jevany-qwen3.5-4b",
+ "questions": {"department": {"type": "choice",
+   "instructions": "Which team should handle this?",
+   "criteria": {"billing": "Payment problems", "shipping": "Delivery problems"}}}}
+JSON
+jevany decide /tmp/request.json --base-url http://127.0.0.1:8008
+```
+
+```bash
+python - <<'PY'
+from jevany import Choice, JevClient
+
+client = JevClient("http://127.0.0.1:8008", model="jevany-qwen3.5-4b")
+print(client.system_one(
+    "I was charged twice for order 4182.",
+    {"department": Choice(instructions="Which team should handle this?",
+                          criteria={"billing": "Payment problems", "shipping": "Delivery problems"})},
+)["answers"]["department"])
+PY
+```
+
+Score the running endpoint on labelled data, without loading a second copy of
+the weights:
+
+```bash
+jevany data init --out data/starter
+jevany eval --remote http://127.0.0.1:8008 --remote-model jevany-qwen3.5-4b \
+  --data data/starter/development.jsonl --out /tmp/eval-remote
+```
+
+Finally, drive it from the browser:
+
+```bash
+jevany demo
+```
+
+Enter `http://127.0.0.1:8008` in the Playground's model panel and choose
+**Test and connect**. See [PLAYGROUND.md](PLAYGROUND.md) for image input and the
+custom decision form.
+
+### Prerequisites
+
+The server needs the backbone's weights in memory plus room for activations. Use
+two bytes per base parameter for BF16 and four for FP32, from the table in
+[Checkpoints and hardware](#checkpoints-and-hardware):
+
+| Checkpoint | BF16 weights | GPU to plan for | CPU/BF16 RAM to plan for |
+|---|---:|---|---|
+| `JevAny-Qwen3.5-4B-LoRA` (and Direct-Token) | ~8 GB | one 16 GB card | ~12 GB free |
+| `JevAny-Gemma-4B-LoRA` | ~16 GB | one 24 GB card | ~20 GB free |
+| `JevAny-Qwen3.8-27B-LoRA` (default) | ~54 GB | one 80 GB card, or `--device-map` over several | ~64 GB free |
+| `JevAny-Muse-Glimmer-30B-LoRA` | ~59 GB | one 80 GB card, or `--device-map` over several | ~70 GB free |
+
+The RAM column adds headroom for activations, the adapter and the tokenizer to
+the weight estimate; measure your own workload before sizing a deployment. A BF16
+CPU load of the 4B release above, answering single-question requests, peaked near
+8.3 GiB of resident memory. CPU and MPS are supported for backbones that fit and
+are useful for functional checks, not for latency: the published latency figures
+in this document are GPU measurements and do not transfer to CPU. Python 3.12 or
+newer is required. One
+Uvicorn worker loads one full model, so size per worker and keep one worker per
+device. Downloading 4B needs roughly 8 GB of cache and 27B roughly 54 GB; set
+`HF_HOME` to place it on a large enough filesystem.
+
 ## Inference settings
 
 Python and HTTP use `InferenceOptions`. Both `jevany serve` and local
@@ -290,8 +407,45 @@ print(result["answers"]["done"]["noul"])
 
 `JevClient` requires HTTPS for non-loopback endpoints. Pass `api_key` for your
 gateway or the official hosted API. Invalid requests and responses raise
-`ValueError`; transport and HTTP failures propagate from `urllib`.
+`ValueError`; connection failures propagate from `urllib`.
 Calls have a configurable 120-second default timeout and no automatic retries.
+
+`client.models()` performs one `GET /v1/models`, so it both reports what the
+endpoint serves and proves it is reachable and ready.
+
+The base package also covers the command line against a remote server. Neither
+of these needs PyTorch; only `--checkpoint` loads a model in-process:
+
+```bash
+jevany decide --help
+jevany decide /tmp/request.json --base-url http://127.0.0.1:8008
+```
+
+### HTTP failures
+
+An HTTP failure raises `jevany.client.DecisionHTTPError`, a subclass of
+`urllib.error.HTTPError` that reports the server's own explanation:
+
+```python
+import urllib.error
+
+try:
+    client.system_one("state", {"department": Choice(criteria={"billing": None})}, model="wrong")
+except urllib.error.HTTPError as error:
+    print(error)            # HTTP Error 422: Unprocessable Entity: unknown model 'wrong'; this deployment serves 'sft'
+    print(error.code)       # 422
+    print(error.detail)     # unknown model 'wrong'; this deployment serves 'sft'
+    print(error.read())     # the raw response body
+```
+
+`code`, `status`, `msg`, `reason`, `headers` and `read()` behave as they do on
+`urllib.error.HTTPError`, so existing `except urllib.error.HTTPError` handlers and
+any code already reading the body keep working. `detail` holds the server's
+`detail`, `message` or `error` field; a non-JSON body (a gateway's HTML page, for
+example) is reported as a single trimmed line instead. Request headers, including
+`Authorization`, are never part of the message. `jevany decide` prints the same
+text, so a rejected model name, a disabled media root or an oversized request
+says which input to change.
 
 ## Use the official SDK
 

@@ -250,6 +250,35 @@ def test_state_branch_and_packed_limits(checkpoint, request_body):
             baseline(request_body)
 
 
+def test_media_directory_permission_error_explains_how_to_retry(tmp_path, monkeypatch):
+    from pathlib import Path
+    from fastapi import HTTPException
+    from PIL import Image
+    from jevany import serve
+
+    image = tmp_path / "image.png"
+    Image.new("RGB", (16, 16), "red").save(image)
+    monkeypatch.setattr(serve, "MEDIA_ROOT", str(tmp_path))
+    request = SystemOneRequest(
+        state="state", media=[{"type": "image", "uri": str(image)}],
+        questions={"color": Choice(criteria={"red": None, "blue": None})},
+    )
+    resolve = Path.resolve
+
+    def inaccessible(path, *args, **kwargs):
+        if path == image:
+            raise PermissionError("the server user cannot traverse the frame directory")
+        return resolve(path, *args, **kwargs)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(Path, "resolve", inaccessible)
+        with pytest.raises(HTTPException) as caught:
+            serve.prepare(request)
+        assert caught.value.status_code == 422
+        assert "shared directory and file permissions" in caught.value.detail
+    assert serve.prepare(request).media[0].uri == str(image)
+
+
 def test_cache_eviction_failure_recovery_and_concurrent_requests(checkpoint, request_body, monkeypatch):
     local = JevModel.from_pretrained(
         checkpoint, device="cpu",
