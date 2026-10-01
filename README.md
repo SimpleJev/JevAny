@@ -330,7 +330,8 @@ apples-to-apples A100 comparison and panel limitations.
 
 [Full tables, setup and other models](docs/EFFICIENCY.md) ·
 [How to enable](docs/DEPLOYMENT.md#optional-cuda-acceleration) ·
-[Machine-readable results](results/efficiency-a100-v1.json)
+[H200 results](results/efficiency-h200-best-v1.json) ·
+[A100 results](results/efficiency-a100-v1.json)
 
 ## 🕹️ 4. Examples & Test Environments <a name="examples--test-environments"></a>
 

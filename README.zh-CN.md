@@ -305,7 +305,8 @@ Muse-Glimmer-30B 从 **100.71 ms 降至 43.25 ms（2.33×）**。
 
 [完整表格、实验设置与其他模型](docs/EFFICIENCY.md) ·
 [开启方法](docs/DEPLOYMENT.md#optional-cuda-acceleration) ·
-[机器可读结果](results/efficiency-a100-v1.json)
+[H200 机器可读结果](results/efficiency-h200-best-v1.json) ·
+[A100 机器可读结果](results/efficiency-a100-v1.json)
 
 ## 🕹️ 4. 示例与测试环境 <a name="示例与测试环境"></a>
 

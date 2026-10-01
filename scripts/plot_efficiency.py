@@ -242,7 +242,7 @@ def plot(data: dict, featured: dict, output: Path) -> None:
 
     axes[0].set_ylim(49.2, 89.2)
     axes[1].set_ylim(57.7, 91.8)
-    fig.suptitle("Best measured inference efficiency, before and after acceleration",
+    fig.suptitle("Measured inference efficiency, before and after acceleration",
                  x=0.055, y=0.965, ha="left", fontsize=23, fontweight="bold")
     fig.text(0.055, 0.915,
              "Each arrow compares one hardware + fixed panel only. H200 cards and A100 plots are not absolute cross-hardware comparisons.",

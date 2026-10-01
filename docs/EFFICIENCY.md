@@ -154,9 +154,10 @@ included in the mean. Its median and p90 describe steady-state latency.
 - **JevBench p90 with CUDA graphs:** p90 is slightly higher with graphs than
   without, because long requests were padded to the next captured length. The
   current 2,048-token capture limit keeps those requests on eager inference.
-- **Comparing across rows:** every row uses the same GPU type, but some
-  comparisons span different nodes of the cluster. That adds a few percent of
-  run-to-run variation.
+- **Comparing across rows:** each before/after pair uses one GPU type and fixed
+  panel. The detailed comparison tables use A100s, but some rows span different
+  nodes of the cluster, adding a few percent of run-to-run variation. Do not
+  compare their absolute latency with the H200 headline cards.
 
 Regenerate the figure from the repository root with
 `python scripts/plot_efficiency.py`; it reads both efficiency JSON files linked
