@@ -320,16 +320,16 @@ NLL、Brier 和 ECE 均在 Transfer 上计算。
 <a href="../files/results/model-family-v2.json">机器可读结果</a> ·
 <a href="../files/reports/JevAny_Tech_Report.pdf">方法与消融实验报告</a></p>
 <h3 id="31">⏱️ 3.1 推理效率 <a name="推理效率"></a></h3>
-<p>在单张 A100-40GB、batch size 1 的条件下，打开可选的 CUDA 加速
-（<code>flash-linear-attention</code>、融合 SDPA 和 <code>--cuda-graphs</code>）后，4B 版本的中位延迟降到原来的约四分之一，
-Transfer 准确率最多变化 3 题。27B 和 30B 版本用 <code>--device-map auto</code> 按层切分到多张 40 GB GPU 上，
-提速 8–10%。</p>
+<p>在单张 H200 上，直接 CUDA Graph 将 Qwen3.8-27B 的中位延迟从
+<strong>113.54 ms 降至 30.53 ms（3.72×）</strong>，加速前后均答对 207/231。
+下表是 batch size 1 的 A100-40GB 对比：4B 模型可放入单卡并使用 CUDA Graph，
+27B 和 30B 则按层切分到三张卡，只获得 linear-attention kernel 与融合 SDPA 的收益。</p>
 <p><a href="EFFICIENCY.html"><img loading="lazy" alt="加速前后 JevAny 与其他决策模型的准确率-延迟对比" src="../files/docs/efficiency-latency.png" /></a></p>
 <div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
 <thead>
 <tr>
 <th style="text-align: left;">模型</th>
-<th style="text-align: right;">GPU 数</th>
+<th style="text-align: right;">A100 GPU 数</th>
 <th style="text-align: right;">默认</th>
 <th style="text-align: right;">加速后</th>
 <th style="text-align: right;">加速比</th>

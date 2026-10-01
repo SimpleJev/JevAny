@@ -10,6 +10,16 @@ numbers are also in [`results/efficiency-a100-v1.json`](../results/efficiency-a1
 
 ## Summary
 
+On one H200, direct CUDA Graphs reduced JevAny-Qwen3.8-27B JevBench median
+latency from **113.54 ms to 30.53 ms (3.72×)**. Both matched paths answered
+207/231 correctly with no argmax changes. Mean latency fell from 138.49 ms to
+81.20 ms; p95 was effectively unchanged at 279.17 versus 281.52 ms. See the
+[serving configuration](DEPLOYMENT.md#optional-cuda-acceleration).
+
+The table and plot below are the separate A100-40GB comparison. The 27B and
+30B models require layer sharding on 40 GB cards, which prevents whole-model
+CUDA Graph capture; their 1.1× rows measure kernels + fused SDPA instead.
+
 | Model | GPUs | Default median | Accelerated median | Speed-up | Transfer accuracy |
 |:---|---:|---:|---:|---:|---:|
 | JevAny-Qwen3.5-4B | 1 | 104.6 ms | 25.3 ms | 4.1× | 78.68% → 78.87% |

@@ -285,14 +285,14 @@ NLL、Brier 和 ECE 均在 Transfer 上计算。
 
 ### ⏱️ 3.1 推理效率 <a name="推理效率"></a>
 
-在单张 A100-40GB、batch size 1 的条件下，打开可选的 CUDA 加速
-（`flash-linear-attention`、融合 SDPA 和 `--cuda-graphs`）后，4B 版本的中位延迟降到原来的约四分之一，
-Transfer 准确率最多变化 3 题。27B 和 30B 版本用 `--device-map auto` 按层切分到多张 40 GB GPU 上，
-提速 8–10%。
+在单张 H200 上，直接 CUDA Graph 将 Qwen3.8-27B 的中位延迟从
+**113.54 ms 降至 30.53 ms（3.72×）**，加速前后均答对 207/231。
+下表是 batch size 1 的 A100-40GB 对比：4B 模型可放入单卡并使用 CUDA Graph，
+27B 和 30B 则按层切分到三张卡，只获得 linear-attention kernel 与融合 SDPA 的收益。
 
 [![加速前后 JevAny 与其他决策模型的准确率-延迟对比](docs/efficiency-latency.png)](docs/EFFICIENCY.md)
 
-| 模型 | GPU 数 | 默认 | 加速后 | 加速比 | Transfer 准确率 |
+| 模型 | A100 GPU 数 | 默认 | 加速后 | 加速比 | Transfer 准确率 |
 |:---|---:|---:|---:|---:|---:|
 | JevAny-Qwen3.5-4B | 1 | 104.6 ms | **25.3 ms** | **4.1×** | 78.68% → 78.87% |
 | JevAny-Qwen3.5-4B-Direct-Token | 1 | 106.4 ms | **25.9 ms** | **4.1×** | 78.11% → 78.39% |
