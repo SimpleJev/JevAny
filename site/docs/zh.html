@@ -325,21 +325,62 @@ NLL、Brier 和 ECE 均在 Transfer 上计算。
 Transfer 准确率最多变化 3 题。27B 和 30B 版本用 <code>--device-map auto</code> 按层切分到多张 40 GB GPU 上，
 提速 8–10%。</p>
 <p><a href="EFFICIENCY.html"><img loading="lazy" alt="加速前后 JevAny 与其他决策模型的准确率-延迟对比" src="../files/docs/efficiency-latency.png" /></a></p>
-<div align="center">
-
-| 模型 | GPU 数 | 默认 | 加速后 | Transfer 准确率 |
-|:---|---:|---:|---:|---:|
-| JevAny-Qwen3.5-4B | 1 | 104.6 ms | **25.3 ms** | 78.68% → 78.87% |
-| JevAny-Qwen3.5-4B-Direct-Token | 1 | 106.4 ms | **25.9 ms** | 78.11% → 78.39% |
-| JevAny-Gemma-4B | 1 | 106.3 ms | **31.9 ms** | 70.84% → 70.84% |
-| JevAny-Muse-Glimmer-30B | 3 | 171.2 ms | **154.2 ms** | 83.37% → 83.37% |
-| JevAny-Qwen3.8-27B<sup>†</sup> | 3 | 240.2 ms | **220.1 ms** | 85.66% → 85.66% |
-
-Transfer-v9 上每个请求的中位延迟，batch size 1。
-<sup>†</sup> 测的是 step 22,160 版本。
-
-</div>
-
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th style="text-align: left;">模型</th>
+<th style="text-align: right;">GPU 数</th>
+<th style="text-align: right;">默认</th>
+<th style="text-align: right;">加速后</th>
+<th style="text-align: right;">加速比</th>
+<th style="text-align: right;">Transfer 准确率</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">JevAny-Qwen3.5-4B</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">104.6 ms</td>
+<td style="text-align: right;"><strong>25.3 ms</strong></td>
+<td style="text-align: right;"><strong>4.1×</strong></td>
+<td style="text-align: right;">78.68% → 78.87%</td>
+</tr>
+<tr>
+<td style="text-align: left;">JevAny-Qwen3.5-4B-Direct-Token</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">106.4 ms</td>
+<td style="text-align: right;"><strong>25.9 ms</strong></td>
+<td style="text-align: right;"><strong>4.1×</strong></td>
+<td style="text-align: right;">78.11% → 78.39%</td>
+</tr>
+<tr>
+<td style="text-align: left;">JevAny-Gemma-4B</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">106.3 ms</td>
+<td style="text-align: right;"><strong>31.9 ms</strong></td>
+<td style="text-align: right;"><strong>3.3×</strong></td>
+<td style="text-align: right;">70.84% → 70.84%</td>
+</tr>
+<tr>
+<td style="text-align: left;">JevAny-Muse-Glimmer-30B</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">171.2 ms</td>
+<td style="text-align: right;"><strong>154.2 ms</strong></td>
+<td style="text-align: right;"><strong>1.11×</strong></td>
+<td style="text-align: right;">83.37% → 83.37%</td>
+</tr>
+<tr>
+<td style="text-align: left;">JevAny-Qwen3.8-27B<sup>†</sup></td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">240.2 ms</td>
+<td style="text-align: right;"><strong>220.1 ms</strong></td>
+<td style="text-align: right;"><strong>1.09×</strong></td>
+<td style="text-align: right;">85.66% → 85.66%</td>
+</tr>
+</tbody>
+</table></div>
+<p>Transfer-v9 上每个请求的中位延迟，batch size 1。
+<sup>†</sup> 测的是 step 22,160 版本。</p>
 <p><a href="EFFICIENCY.html">完整表格、实验设置与其他模型</a> ·
 <a href="DEPLOYMENT.html#optional-cuda-acceleration">开启方法</a> ·
 <a href="../files/results/efficiency-a100-v1.json">机器可读结果</a></p>
