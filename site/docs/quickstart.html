@@ -439,7 +439,9 @@ Transfer panel.
 Accuracy stayed at 207/231 and 38/44, with no argmax changes. The table uses
 the H200 headline measurements for 27B and 30B, while retaining the original
 apples-to-apples A100-40GB comparison for the 4B models. Latency is comparable
-within each row; the fixed evaluation panels are listed explicitly.</p>
+within each row; the fixed evaluation panels are listed explicitly. In the
+plot, diamonds show the 27B/30B H200 arrows and circles show the A100 cohort;
+the H200 points are not mixed into the A100 frontier.</p>
 <p><a href="EFFICIENCY.html"><img loading="lazy" alt="Accuracy vs median latency before and after acceleration for JevAny and other decision models" src="../files/docs/efficiency-latency.png" /></a></p>
 <div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
 <thead>
@@ -503,6 +505,9 @@ within each row; the fixed evaluation panels are listed explicitly.</p>
 </table></div>
 <p>Median model-call latency, serial batch size 1. See the full report for the
 apples-to-apples A100 comparison and panel limitations.</p>
+<p><a href="EFFICIENCY.html"><img loading="lazy" alt="Animation: Default, kernels with fused SDPA, and CUDA graphs race on one A100 clock slowed twenty times for JevAny-4B, 4B-DT and Gemma-4B; CUDA graphs finish at 25–32 ms, 3.3–4.1× sooner than Default" src="../files/docs/efficiency-ablation.gif" /></a></p>
+<p align="center"><sub>4B releases on one A100-40GB, Transfer-v9. Each bar fills at 1/20 of real time and stops at that stage's median latency.</sub></p>
+
 <p><a href="EFFICIENCY.html">Full tables, setup and other models</a> ·
 <a href="DEPLOYMENT.html#optional-cuda-acceleration">How to enable</a> ·
 <a href="../files/results/efficiency-h200-best-v1.json">H200 results</a> ·

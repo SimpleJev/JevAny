@@ -3,9 +3,9 @@
 Measured accuracy and per-request latency of the JevAny releases and other
 decision models before and after inference acceleration. The 27B and 30B
 headline rows use their best single-H200 measurements; the 4B and third-party
-comparison remains on A100-SXM4-40GB. The figure separates those hardware and
-panel scopes explicitly: compare latency only within a before/after row, never
-between the H200 cards and A100 plots. How to enable each option is described
+comparison remains on A100-SXM4-40GB. The figure shows the H200 runs as diamond
+before/after pairs and excludes them from the A100 Pareto frontier: compare
+latency only within a before/after row, never across hardware or panels. How to enable each option is described
 in [Optional CUDA acceleration](DEPLOYMENT.md#optional-cuda-acceleration).
 The plotted data are in
 [`results/efficiency-h200-best-v1.json`](../results/efficiency-h200-best-v1.json)
@@ -31,9 +31,10 @@ absolute latency and accuracy are not directly comparable. See the
 [serving configuration](DEPLOYMENT.md#optional-cuda-acceleration).
 
 The A100-40GB comparison below keeps the 4B JevAny rows and third-party models
-on one hardware class. Historical layer-sharded A100 measurements for the 27B
-and 30B releases remain in the machine-readable source but are intentionally
-omitted from the headline table, figure and detailed tables.
+on one hardware class. The figure overlays the current 27B and 30B one-H200
+measurements with distinct diamonds but does not include them in the A100
+frontier. Historical layer-sharded A100 measurements for those releases remain
+in the machine-readable source and are omitted from the tables and plot.
 
 | Model | GPUs | Default median | Accelerated median | Speed-up | Transfer accuracy |
 |:---|---:|---:|---:|---:|---:|

@@ -20,6 +20,8 @@ JEVANY_ARROW = "#7db7f4"
 OTHER = "#8c8d89"
 OTHER_ARROW = "#c2c2bf"
 FRONTIER = "#f26634"
+H200 = "#16877d"
+H200_ARROW = "#67b9b2"
 FEATURED_MODELS = {
     "JevAny-Qwen3.8-27B",
     "JevAny-Muse-Glimmer-30B",
@@ -186,8 +188,8 @@ def plot(data: dict, featured: dict, output: Path) -> None:
     best_points: dict[str, list[tuple[float, float, str]]] = {"transfer": [], "jevbench": []}
 
     panel_titles = (
-        "A100-40GB comparison  •  Transfer-v9 (1,046 scored)",
-        "A100-40GB comparison  •  JevBench public (231)",
+        "Transfer latency  •  A100 comparison + Muse-30B on H200",
+        "JevBench latency  •  A100 comparison + Qwen-27B on H200",
     )
     for ax, suite, title in zip(axes, ("transfer", "jevbench"), panel_titles):
         for model, rows in models.items():
@@ -223,6 +225,44 @@ def plot(data: dict, featured: dict, output: Path) -> None:
                 ax.scatter([x], [y], s=520, color="#cfe3fb", alpha=0.9,
                            edgecolors="none", zorder=0)
 
+        # Overlay the headline one-H200 pair without mixing it into the A100
+        # Pareto frontier. The diamond marker makes the hardware boundary
+        # visible while still putting the 27B/30B releases on the latency axes.
+        featured_row = (
+            featured_by_suite["Transfer balanced sample"]
+            if suite == "transfer"
+            else featured_by_suite["JevBench public"]
+        )
+        featured_before = featured_row["before"]
+        featured_after = featured_row["after"]
+        featured_accuracy = featured_after["correct"] / featured_after["total"] * 100
+        ax.scatter(
+            [featured_before["median_ms"]], [featured_accuracy], marker="D", s=118,
+            facecolors="white", edgecolors=H200, linewidths=2.2, zorder=7,
+        )
+        ax.scatter(
+            [featured_after["median_ms"]], [featured_accuracy], marker="D", s=118,
+            facecolors=H200, edgecolors="white", linewidths=1.2, zorder=8,
+        )
+        ax.annotate(
+            "",
+            xy=(featured_after["median_ms"], featured_accuracy),
+            xytext=(featured_before["median_ms"], featured_accuracy),
+            arrowprops=dict(arrowstyle="-|>", color=H200_ARROW, lw=2.2),
+            zorder=6,
+        )
+        ax.annotate(
+            f"{LABELS[featured_row['model']]} · H200\n"
+            f"{featured_before['median_ms']:.1f} → {featured_after['median_ms']:.1f} ms",
+            (featured_after["median_ms"], featured_accuracy),
+            xytext=(9, 11),
+            textcoords="offset points",
+            fontsize=10.5,
+            color=H200,
+            fontweight="bold",
+            ha="left",
+        )
+
         ax.set_xscale("log")
         ax.set_xlim(6.7, 3200)
         ax.set_xticks([10, 20, 50, 100, 200, 500, 1000, 2000])
@@ -241,7 +281,7 @@ def plot(data: dict, featured: dict, output: Path) -> None:
         ax.spines[["left", "bottom"]].set_color("#ddddda")
 
     axes[0].set_ylim(49.2, 89.2)
-    axes[1].set_ylim(57.7, 91.8)
+    axes[1].set_ylim(57.7, 94.0)
     fig.suptitle("Measured inference efficiency, before and after acceleration",
                  x=0.055, y=0.965, ha="left", fontsize=23, fontweight="bold")
     fig.text(0.055, 0.915,
@@ -256,12 +296,16 @@ def plot(data: dict, featured: dict, output: Path) -> None:
                markeredgecolor="white", markersize=8, label="Third-party, after"),
         Line2D([], [], marker="o", linestyle="", markerfacecolor="white",
                markeredgecolor=OTHER, markeredgewidth=2, markersize=8, label="Third-party, before"),
+        Line2D([], [], marker="D", linestyle="", markerfacecolor=H200,
+               markeredgecolor="white", markersize=8, label="H200 featured, accelerated"),
+        Line2D([], [], marker="D", linestyle="", markerfacecolor="white",
+               markeredgecolor=H200, markeredgewidth=2, markersize=8, label="H200 featured, before"),
         Line2D([], [], marker="o", linestyle="", markerfacecolor="#cfe3fb",
                markeredgecolor="none", markersize=16, label="JevAny on the frontier"),
         Line2D([], [], color=FRONTIER, lw=2.5, label="Pareto frontier (after)"),
     ]
     fig.legend(handles=legend, loc="upper left", bbox_to_anchor=(0.052, 0.865),
-               ncol=6, frameon=False, fontsize=11.5, handlelength=1.4, columnspacing=1.4)
+               ncol=4, frameon=False, fontsize=11.2, handlelength=1.4, columnspacing=1.4)
     fig.text(0.055, 0.055,
              "After: flash-linear-attention + causal-conv1d for models with Gated DeltaNet layers, plus fused SDPA.\n"
              "Single-GPU JevAny models also use CUDA graphs; 27B/30B cards report their best one-H200 fixed-panel measurements.\n"

@@ -350,7 +350,9 @@ Transfer panel.
 Accuracy stayed at 207/231 and 38/44, with no argmax changes. The table uses
 the H200 headline measurements for 27B and 30B, while retaining the original
 apples-to-apples A100-40GB comparison for the 4B models. Latency is comparable
-within each row; the fixed evaluation panels are listed explicitly.
+within each row; the fixed evaluation panels are listed explicitly. In the
+plot, diamonds show the 27B/30B H200 arrows and circles show the A100 cohort;
+the H200 points are not mixed into the A100 frontier.
 
 [![Accuracy vs median latency before and after acceleration for JevAny and other decision models](docs/efficiency-latency.png)](docs/EFFICIENCY.md)
 
