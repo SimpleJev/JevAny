@@ -373,6 +373,10 @@ class DecisionModel(nn.Module):
         self.verbalizers = (list(verbalizers) if verbalizers is not None
                             else decision_verbalizers(tokenizer)) if decision_mode == "lm_token" else []
         self.verbalizer_ids = verbalizer_token_ids(tokenizer, self.verbalizers) if self.verbalizers else []
+        index_device = self.lm_head.weight.device if self.lm_head is not None else device
+        self.register_buffer("_verbalizer_index",
+                             torch.tensor(self.verbalizer_ids, dtype=torch.long, device=index_device),
+                             persistent=False)
         self.temperature = 1.0
         self.device = device
         self.device_map = device_map
@@ -479,12 +483,13 @@ class DecisionModel(nn.Module):
     def _question_readout(self, h, decide, options):
         query = h[decide]
         if self.decision_mode == "lm_token":
-            logits = F.linear(query.to(self.lm_head.weight.device, self.lm_head.weight.dtype), self.lm_head.weight).float()
-            if self.training:
-                return logits
-            candidates = torch.tensor(self.verbalizer_ids[:len(options)], device=logits.device)
-            logits = logits.index_select(0, candidates)
-            return logits if self.temperature == 1.0 else logits / self.temperature
+            weight = self.lm_head.weight
+            if not self.training:
+                # Inference normalizes over candidates only. Selecting rows
+                # before projection avoids scoring the rest of the vocabulary.
+                weight = weight.index_select(0, self._verbalizer_index[:len(options)])
+            logits = F.linear(query.to(weight.device, weight.dtype), weight).float()
+            return logits if self.training or self.temperature == 1.0 else logits / self.temperature
         return self.head(query, h[torch.tensor(options, device=self.device)])
 
     def _readout(self, h, enc):
