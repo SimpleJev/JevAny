@@ -96,6 +96,22 @@ def _available_actions(env: Any) -> tuple[bool, list[str]]:
     return search_available, clicks
 
 
+_NON_DELEGABLE_CLICKS = {
+    "buy now", "back to search", "< prev", "next >",
+    "description", "features", "reviews", "attributes",
+}
+
+
+def _delegable_click_keys(clicks: list[str]) -> list[str]:
+    """Return stable page-local keys for reversible, finite click choices."""
+    keys = []
+    for index, action in enumerate(clicks):
+        label = action.removeprefix("click[").removesuffix("]").strip().lower()
+        if label not in _NON_DELEGABLE_CLICKS:
+            keys.append(str(index))
+    return keys
+
+
 class BedrockJevWebShopAgent:
     """Solve WebShop while letting the frontier model decide when Jev acts.
 
@@ -162,26 +178,44 @@ class BedrockJevWebShopAgent:
                     "additionalProperties": False,
                 }},
             }})
-            if mode == "optional":
+            delegable_keys = _delegable_click_keys(clicks)
+            if mode == "optional" and len(delegable_keys) >= 2:
+                delegable = ", ".join(
+                    f"{key}={clicks[int(key)]}" for key in delegable_keys
+                )
                 tools.append({"toolSpec": {
                     "name": "delegate_clicks",
                     "description": (
-                        "Delegate several routine finite-choice page clicks to Jev. Jev sees the "
-                        "fresh page after every click and returns control on completion, low confidence, "
-                        "a search page, or the requested horizon. Retain control for ambiguous choices."
+                        "Generate bounded candidate sets for routine page decisions, then let Jev choose "
+                        "and execute one action from each set. Each set must contain 2-4 mutually exclusive "
+                        "alternatives for the same decision (for example, products, colors, or sizes). "
+                        "Use only these delegable keys: " + delegable + ". Retain search queries, Buy Now, "
+                        "navigation, information tabs, ambiguous reasoning, and completion yourself."
                     ),
                     "inputSchema": {"json": {
                         "type": "object",
                         "properties": {
-                            "steps": {
-                                "type": "integer", "minimum": 1,
-                                "maximum": self.max_delegate_steps,
-                            },
-                            "subgoal": {
-                                "type": "string", "minLength": 1, "maxLength": 500,
+                            "decisions": {
+                                "type": "array", "minItems": 1,
+                                "maxItems": self.max_delegate_steps,
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "subgoal": {
+                                            "type": "string", "minLength": 1, "maxLength": 500,
+                                        },
+                                        "candidate_keys": {
+                                            "type": "array", "minItems": 2, "maxItems": 4,
+                                            "uniqueItems": True,
+                                            "items": {"type": "string", "enum": delegable_keys},
+                                        },
+                                    },
+                                    "required": ["subgoal", "candidate_keys"],
+                                    "additionalProperties": False,
+                                },
                             },
                         },
-                        "required": ["steps", "subgoal"],
+                        "required": ["decisions"],
                         "additionalProperties": False,
                     }},
                 }})
@@ -197,9 +231,10 @@ class BedrockJevWebShopAgent:
         )
         if mode == "optional":
             return common + (
-                " You may autonomously delegate routine finite-choice clicking to Jev. Keep control of "
-                "search queries and novel, ambiguous, or high-risk choices. Give Jev a concrete subgoal "
-                "that preserves the user's product, option, price, and completion constraints."
+                " You may generate 2-4 mutually exclusive candidates for each routine finite-choice "
+                "decision and delegate only those candidates to Jev. Keep control of search queries, "
+                "Buy Now, navigation, novel or ambiguous reasoning, and task completion. Candidate sets "
+                "must compare alternatives for one decision, never sequential future steps."
             )
         return common
 
@@ -255,6 +290,7 @@ class BedrockJevWebShopAgent:
                 "action": action,
                 "reward": float(reward),
                 "effective": info.get("action_is_effective"),
+                "valid": info.get("action_is_valid"),
             })
             return {
                 "action": action,
@@ -262,22 +298,34 @@ class BedrockJevWebShopAgent:
                 "done": done,
                 "success": success,
                 "effective": info.get("action_is_effective"),
+                "valid": info.get("action_is_valid"),
                 "observation": observation,
             }
 
-        def delegate(steps: int, subgoal: str) -> dict:
+        def delegate(decisions: list[dict], initial_clicks: list[str]) -> dict:
             nonlocal jev_decisions, jev_failures, jev_latency, low_confidence_returns
             delegated = []
             reason = "horizon"
-            for _ in range(min(steps, self.max_delegate_steps, max_actions - len(actions_taken))):
-                search_available, clicks = _available_actions(env)
+            executed_actions: set[str] = set()
+            for decision in decisions[:min(self.max_delegate_steps, max_actions - len(actions_taken))]:
+                _, clicks = _available_actions(env)
                 if done:
                     reason = "terminal"
                     break
-                if search_available or not clicks:
+                if not clicks:
                     reason = "frontier_control_required"
                     break
-                choices = {str(index): action for index, action in enumerate(clicks)}
+                requested_actions = [
+                    initial_clicks[int(key)] for key in decision["candidate_keys"]
+                ]
+                choices = {
+                    str(index): action for index, action in enumerate(requested_actions)
+                    if action in clicks and action not in executed_actions
+                }
+                if len(choices) < 2:
+                    reason = "stale_candidates"
+                    break
+                subgoal = decision["subgoal"]
                 request = action_request(
                     f"Shopping goal: {goal}\nDelegated subgoal: {subgoal}",
                     observation,
@@ -313,18 +361,24 @@ class BedrockJevWebShopAgent:
                     break
                 if key not in choices:
                     raise ValueError(f"decision backend returned unknown click {key!r}")
-                delegated.append(execute(choices[key], "jev", confidence))
+                selected_action = choices[key]
+                step_result = execute(selected_action, "jev", confidence)
+                step_result["confidence"] = confidence
+                step_result["candidate_actions"] = list(choices.values())
+                step_result["selected_action"] = selected_action
+                step_result["subgoal"] = subgoal
+                delegated.append(step_result)
+                executed_actions.add(selected_action)
                 if done:
                     reason = "terminal"
                     break
                 if delegated[-1]["reward"] < 0:
                     reason = "negative_reward"
                     break
-                if delegated[-1].get("effective") is False:
-                    reason = "ineffective_action"
+                if delegated[-1].get("valid") is False:
+                    reason = "invalid_action"
                     break
             return {
-                "subgoal": subgoal,
                 "executed": len(delegated),
                 "stop_reason": reason,
                 "steps": delegated,
@@ -408,26 +462,50 @@ class BedrockJevWebShopAgent:
                         raise ValueError(f"unknown click key {key!r}")
                     result = execute(clicks[int(key)], "bedrock", None)
                 elif call["name"] == "delegate_clicks" and mode == "optional":
-                    steps = tool_input.get("steps")
-                    if (
-                        isinstance(steps, bool)
-                        or not isinstance(steps, int)
-                        or not 1 <= steps <= self.max_delegate_steps
-                    ):
+                    decisions = tool_input.get("decisions")
+                    if not isinstance(decisions, list) or not 1 <= len(decisions) <= self.max_delegate_steps:
                         raise ValueError(
-                            f"steps must be an integer in [1, {self.max_delegate_steps}]"
+                            f"decisions must contain 1-{self.max_delegate_steps} objects"
                         )
-                    subgoal = tool_input.get("subgoal")
-                    if not isinstance(subgoal, str) or not subgoal.strip() or len(subgoal) > 500:
-                        raise ValueError("subgoal must be a non-empty string of at most 500 characters")
+                    allowed_keys = set(_delegable_click_keys(clicks))
+                    normalized = []
+                    for decision in decisions:
+                        if not isinstance(decision, Mapping):
+                            raise ValueError("each decision must be an object")
+                        subgoal = decision.get("subgoal")
+                        if not isinstance(subgoal, str) or not subgoal.strip() or len(subgoal) > 500:
+                            raise ValueError(
+                                "each subgoal must be a non-empty string of at most 500 characters"
+                            )
+                        keys = decision.get("candidate_keys")
+                        if (
+                            not isinstance(keys, list) or not 2 <= len(keys) <= 4
+                            or len(set(keys)) != len(keys)
+                            or any(not isinstance(key, str) or key not in allowed_keys for key in keys)
+                        ):
+                            raise ValueError(
+                                "candidate_keys must contain 2-4 unique delegable click keys"
+                            )
+                        normalized.append({"subgoal": subgoal.strip(), "candidate_keys": keys})
                     delegation_calls += 1
-                    result = delegate(steps, subgoal.strip())
+                    result = delegate(normalized, clicks)
                 else:
                     raise ValueError(f"unavailable tool {call.get('name')!r}")
                 status = "success"
             except (KeyError, TypeError, ValueError) as error:
                 result, status = {"error": str(error), "observation": observation}, "error"
                 protocol_repairs += 1
+            if call.get("name") == "delegate_clicks" and status == "success":
+                transcript[-1]["delegation"] = {
+                    "executed": result["executed"],
+                    "stop_reason": result["stop_reason"],
+                    "steps": [{
+                        key: step.get(key) for key in (
+                            "subgoal", "candidate_actions", "selected_action", "confidence",
+                            "reward", "done", "effective", "valid",
+                        )
+                    } for step in result["steps"]],
+                }
             if not call.get("toolUseId"):
                 termination_reason = "model_protocol_error"
                 break

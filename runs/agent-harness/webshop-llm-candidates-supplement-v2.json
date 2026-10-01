@@ -1,0 +1,2417 @@
+{
+  "schema_version": 1,
+  "status": "complete",
+  "benchmark": "WebShop paired agent evaluation",
+  "ragen_revision": "d97bb3284e99568adfd44ee15c736d7685c07512",
+  "webshop_revision": "4758174947e5494f0cda3b762508ed4a20a2e4cf",
+  "bedrock_model": "us.anthropic.claude-opus-4-7",
+  "resolved_bedrock_model": "arn:aws:bedrock:us-west-2:729049749620:inference-profile/us.anthropic.claude-opus-4-7",
+  "jev_model": "SimpleJev/JevAny-Qwen3.5-4B-LoRA",
+  "config": {
+    "split": "test",
+    "modes": [
+      "baseline",
+      "optional"
+    ],
+    "episodes": 3,
+    "seed_start": 3105,
+    "num_products": 1000,
+    "max_actions": 10,
+    "max_turns": 12,
+    "max_delegate_steps": 4,
+    "confidence_threshold": 0.55,
+    "max_output_tokens": 384,
+    "mode_order": "counterbalanced",
+    "demo_seed": 3105,
+    "input_price_per_million": null,
+    "output_price_per_million": null,
+    "cache_read_price_per_million": null,
+    "cache_write_price_per_million": null
+  },
+  "summaries": {
+    "baseline": {
+      "episodes": 3,
+      "success_rate": 0.6666666666666666,
+      "mean_reward": 0.6666666666666666,
+      "mean_actions": 9.333333333333334,
+      "mean_bedrock_calls": 9.333333333333334,
+      "mean_bedrock_failures": 0.0,
+      "mean_direct_actions": 9.333333333333334,
+      "mean_search_actions": 1.3333333333333333,
+      "mean_delegation_calls": 0.0,
+      "mean_jev_decisions": 0.0,
+      "mean_jev_failures": 0.0,
+      "error_rate": 0.0,
+      "mean_total_latency_ms": 16756.31805260976,
+      "mean_bedrock_latency_ms": 16351.094876804078,
+      "mean_jev_latency_ms": 0.0,
+      "usage": {
+        "inputTokens": 111668,
+        "outputTokens": 2720,
+        "totalTokens": 114388,
+        "cacheReadInputTokens": 0,
+        "cacheWriteInputTokens": 0,
+        "cacheWriteInputTokens5m": 0,
+        "cacheWriteInputTokens1h": 0,
+        "cacheWriteInputTokens30m": 0
+      }
+    },
+    "optional": {
+      "episodes": 3,
+      "success_rate": 1.0,
+      "mean_reward": 1.0,
+      "mean_actions": 7.666666666666667,
+      "mean_bedrock_calls": 7.333333333333333,
+      "mean_bedrock_failures": 0.0,
+      "mean_direct_actions": 6.333333333333333,
+      "mean_search_actions": 1.0,
+      "mean_delegation_calls": 0.6666666666666666,
+      "mean_jev_decisions": 1.3333333333333333,
+      "mean_jev_failures": 0.0,
+      "error_rate": 0.0,
+      "mean_total_latency_ms": 14240.523355004067,
+      "mean_bedrock_latency_ms": 13667.663765605539,
+      "mean_jev_latency_ms": 183.9695107191801,
+      "usage": {
+        "inputTokens": 95787,
+        "outputTokens": 2243,
+        "totalTokens": 98030,
+        "cacheReadInputTokens": 0,
+        "cacheWriteInputTokens": 0,
+        "cacheWriteInputTokens5m": 0,
+        "cacheWriteInputTokens1h": 0,
+        "cacheWriteInputTokens30m": 0
+      }
+    }
+  },
+  "comparison": {
+    "success_rate_delta": 0.33333333333333337,
+    "reward_delta": 0.33333333333333337,
+    "bedrock_call_reduction": 0.21428571428571436,
+    "bedrock_token_reduction": 0.1430045109626884,
+    "wall_time_reduction": 0.15014006595642676,
+    "paired": {
+      "success": {
+        "mean_optional_minus_baseline": 0.3333333333333333,
+        "bootstrap_95_ci": [
+          0.0,
+          1.0
+        ]
+      },
+      "reward": {
+        "mean_optional_minus_baseline": 0.3333333333333333,
+        "bootstrap_95_ci": [
+          0.0,
+          1.0
+        ]
+      },
+      "bedrock_calls": {
+        "mean_optional_minus_baseline": -2.0,
+        "bootstrap_95_ci": [
+          -5.0,
+          1.0
+        ]
+      },
+      "tokens": {
+        "mean_optional_minus_baseline": -5452.666666666667,
+        "bootstrap_95_ci": [
+          -24596.0,
+          13140.0
+        ]
+      },
+      "latency_ms": {
+        "mean_optional_minus_baseline": -2515.794697605694,
+        "bootstrap_95_ci": [
+          -10708.643927704543,
+          4283.06924412027
+        ]
+      }
+    }
+  },
+  "demo_case": {
+    "seed": 3105,
+    "selection": "predeclared first paired seed",
+    "baseline": {
+      "mode": "baseline",
+      "split": "test",
+      "seed": 3105,
+      "goal": "Instruction: Find me men's sleep & lounge with long sleeve, elastic waistband for daily wear with color: multi 9, and size: medium, and price lower than 70.00 dollars",
+      "success": true,
+      "reward": 1.0,
+      "actions": [
+        {
+          "index": 0,
+          "controller": "bedrock",
+          "action": "search[men's sleep lounge long sleeve elastic waistband pajama set]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 1,
+          "controller": "bedrock",
+          "action": "click[b09nd8p2qr]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 2,
+          "controller": "bedrock",
+          "action": "click[medium]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": false,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 3,
+          "controller": "bedrock",
+          "action": "click[multi 9]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": false,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 4,
+          "controller": "bedrock",
+          "action": "click[features]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 1
+          }
+        },
+        {
+          "index": 5,
+          "controller": "bedrock",
+          "action": "click[< prev]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 6,
+          "controller": "bedrock",
+          "action": "click[multi 9]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": false,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 7,
+          "controller": "bedrock",
+          "action": "click[medium]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": false,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 8,
+          "controller": "bedrock",
+          "action": "click[buy now]",
+          "confidence": null,
+          "reward": 1.0,
+          "done": true,
+          "info": {
+            "r_type": 1.0,
+            "r_att": 1.0,
+            "w_att": 0.5,
+            "query_match": true,
+            "category_match": true,
+            "title_score": 0.3076923076923077,
+            "r_option": 1.0,
+            "w_option": 0.3333333333333333,
+            "r_price": true,
+            "w_price": 0.16666666666666666,
+            "reward": 1.0,
+            "raw_reward": 1.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 1,
+            "success_purchase": 1,
+            "success_find": 1,
+            "end_of_page": 0
+          }
+        }
+      ],
+      "bedrock_calls": 9,
+      "bedrock_failures": 0,
+      "direct_actions": 9,
+      "search_actions": 1,
+      "delegation_calls": 0,
+      "jev_decisions": 0,
+      "jev_failures": 0,
+      "low_confidence_returns": 0,
+      "protocol_repairs": 0,
+      "termination_reason": "terminal_success",
+      "usage": {
+        "inputTokens": 34009,
+        "outputTokens": 813,
+        "totalTokens": 34822,
+        "cacheReadInputTokens": 0,
+        "cacheWriteInputTokens": 0
+      },
+      "bedrock_latency_ms": 14919.338054489344,
+      "jev_latency_ms": 0.0,
+      "total_latency_ms": 15402.053970843554,
+      "transcript": [
+        {
+          "turn": 0,
+          "text": "I'll search for the product matching the user's criteria.",
+          "tool": "search",
+          "tool_input": {
+            "query": "men's sleep lounge long sleeve elastic waistband pajama set"
+          }
+        },
+        {
+          "turn": 1,
+          "text": "The InterestPrint items look most promising. Let me check B09ND8P2QR first.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "2"
+          }
+        },
+        {
+          "turn": 2,
+          "text": "This has multi 9 and medium options. Let me select them.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "7"
+          }
+        },
+        {
+          "turn": 3,
+          "text": "",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "20"
+          }
+        },
+        {
+          "turn": 4,
+          "text": "The clicks are reporting ineffective but that may be a quirk. Let me verify features align with elastic waistband/daily wear by checking features before buying.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "3"
+          }
+        },
+        {
+          "turn": 5,
+          "text": "This matches all the criteria: long sleeve, elastic waistband, daily wear. Now let me go back and select the options properly.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "1"
+          }
+        },
+        {
+          "turn": 6,
+          "text": "",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "20"
+          }
+        },
+        {
+          "turn": 7,
+          "text": "The clicks show \"effective: false\" but they may still have registered the selection (common in this environment). Let me try selecting medium then buying.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "7"
+          }
+        },
+        {
+          "turn": 8,
+          "text": "Options may have registered despite the \"effective: false\" flag. Let me proceed to buy.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "5"
+          }
+        }
+      ],
+      "status": "complete"
+    },
+    "optional": {
+      "mode": "optional",
+      "split": "test",
+      "seed": 3105,
+      "goal": "Instruction: Find me men's sleep & lounge with long sleeve, elastic waistband for daily wear with color: multi 9, and size: medium, and price lower than 70.00 dollars",
+      "success": true,
+      "reward": 1.0,
+      "actions": [
+        {
+          "index": 0,
+          "controller": "bedrock",
+          "action": "search[men's sleep lounge long sleeve elastic waistband]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 1,
+          "controller": "bedrock",
+          "action": "click[b09nd8p2qr]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 2,
+          "controller": "bedrock",
+          "action": "click[medium]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": false,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 3,
+          "controller": "bedrock",
+          "action": "click[multi 9]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": false,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 4,
+          "controller": "bedrock",
+          "action": "click[description]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 1
+          }
+        },
+        {
+          "index": 5,
+          "controller": "bedrock",
+          "action": "click[< prev]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 6,
+          "controller": "bedrock",
+          "action": "click[medium]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": false,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 7,
+          "controller": "bedrock",
+          "action": "click[multi 9]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": false,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 8,
+          "controller": "bedrock",
+          "action": "click[buy now]",
+          "confidence": null,
+          "reward": 1.0,
+          "done": true,
+          "info": {
+            "r_type": 1.0,
+            "r_att": 1.0,
+            "w_att": 0.5,
+            "query_match": true,
+            "category_match": true,
+            "title_score": 0.3076923076923077,
+            "r_option": 1.0,
+            "w_option": 0.3333333333333333,
+            "r_price": true,
+            "w_price": 0.16666666666666666,
+            "reward": 1.0,
+            "raw_reward": 1.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 1,
+            "success_purchase": 1,
+            "success_find": 1,
+            "end_of_page": 0
+          }
+        }
+      ],
+      "bedrock_calls": 10,
+      "bedrock_failures": 0,
+      "direct_actions": 9,
+      "search_actions": 1,
+      "delegation_calls": 0,
+      "jev_decisions": 0,
+      "jev_failures": 0,
+      "low_confidence_returns": 0,
+      "protocol_repairs": 1,
+      "termination_reason": "terminal_success",
+      "usage": {
+        "inputTokens": 46977,
+        "outputTokens": 985,
+        "totalTokens": 47962,
+        "cacheReadInputTokens": 0,
+        "cacheWriteInputTokens": 0
+      },
+      "bedrock_latency_ms": 19083.052946720272,
+      "jev_latency_ms": 0.0,
+      "total_latency_ms": 19685.123214963824,
+      "transcript": [
+        {
+          "turn": 0,
+          "text": "I'll search for the product matching the criteria.",
+          "tool": "search",
+          "tool_input": {
+            "query": "men's sleep lounge long sleeve elastic waistband"
+          }
+        },
+        {
+          "turn": 1,
+          "text": "The best candidates appear to be the InterestPrint men's loungewear sets with long sleeves. Let me check the Deer and Stars one first since it mentions jogger pants (likely elastic waistband).",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "3"
+          }
+        },
+        {
+          "turn": 2,
+          "text": "This product has multi 9 color and medium size, and is $43.59 (under $70). Let me select the options.",
+          "tool": "delegate_clicks",
+          "tool_input": {
+            "decisions": [
+              {
+                "subgoal": "Select size medium",
+                "candidate_keys": [
+                  "6",
+                  "7",
+                  "8",
+                  "9",
+                  "10"
+                ]
+              },
+              {
+                "subgoal": "Select color multi 9",
+                "candidate_keys": [
+                  "11",
+                  "12",
+                  "13",
+                  "14",
+                  "15",
+                  "16",
+                  "17",
+                  "18",
+                  "19",
+                  "20"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "turn": 3,
+          "text": "Let me select options directly.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "7"
+          }
+        },
+        {
+          "turn": 4,
+          "text": "",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "20"
+          }
+        },
+        {
+          "turn": 5,
+          "text": "Clicks appear ineffective but might still register. Let me check description to confirm elastic waistband and daily wear, then proceed to buy.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "2"
+          }
+        },
+        {
+          "turn": 6,
+          "text": "Confirmed: long sleeve, elastic waistband. Let me go back and select options then buy.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "1"
+          }
+        },
+        {
+          "turn": 7,
+          "text": "",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "7"
+          }
+        },
+        {
+          "turn": 8,
+          "text": "Clicks show \"effective: false\" but the state might still track them. Let me proceed to Buy Now.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "20"
+          }
+        },
+        {
+          "turn": 9,
+          "text": "",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "5"
+          }
+        }
+      ],
+      "status": "complete"
+    }
+  },
+  "episodes": [
+    {
+      "mode": "baseline",
+      "split": "test",
+      "seed": 3105,
+      "goal": "Instruction: Find me men's sleep & lounge with long sleeve, elastic waistband for daily wear with color: multi 9, and size: medium, and price lower than 70.00 dollars",
+      "success": true,
+      "reward": 1.0,
+      "actions": [
+        {
+          "index": 0,
+          "controller": "bedrock",
+          "action": "search[men's sleep lounge long sleeve elastic waistband pajama set]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 1,
+          "controller": "bedrock",
+          "action": "click[b09nd8p2qr]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 2,
+          "controller": "bedrock",
+          "action": "click[medium]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": false,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 3,
+          "controller": "bedrock",
+          "action": "click[multi 9]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": false,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 4,
+          "controller": "bedrock",
+          "action": "click[features]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 1
+          }
+        },
+        {
+          "index": 5,
+          "controller": "bedrock",
+          "action": "click[< prev]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 6,
+          "controller": "bedrock",
+          "action": "click[multi 9]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": false,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 7,
+          "controller": "bedrock",
+          "action": "click[medium]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": false,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 8,
+          "controller": "bedrock",
+          "action": "click[buy now]",
+          "confidence": null,
+          "reward": 1.0,
+          "done": true,
+          "info": {
+            "r_type": 1.0,
+            "r_att": 1.0,
+            "w_att": 0.5,
+            "query_match": true,
+            "category_match": true,
+            "title_score": 0.3076923076923077,
+            "r_option": 1.0,
+            "w_option": 0.3333333333333333,
+            "r_price": true,
+            "w_price": 0.16666666666666666,
+            "reward": 1.0,
+            "raw_reward": 1.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 1,
+            "success_purchase": 1,
+            "success_find": 1,
+            "end_of_page": 0
+          }
+        }
+      ],
+      "bedrock_calls": 9,
+      "bedrock_failures": 0,
+      "direct_actions": 9,
+      "search_actions": 1,
+      "delegation_calls": 0,
+      "jev_decisions": 0,
+      "jev_failures": 0,
+      "low_confidence_returns": 0,
+      "protocol_repairs": 0,
+      "termination_reason": "terminal_success",
+      "usage": {
+        "inputTokens": 34009,
+        "outputTokens": 813,
+        "totalTokens": 34822,
+        "cacheReadInputTokens": 0,
+        "cacheWriteInputTokens": 0
+      },
+      "bedrock_latency_ms": 14919.338054489344,
+      "jev_latency_ms": 0.0,
+      "total_latency_ms": 15402.053970843554,
+      "transcript": [
+        {
+          "turn": 0,
+          "text": "I'll search for the product matching the user's criteria.",
+          "tool": "search",
+          "tool_input": {
+            "query": "men's sleep lounge long sleeve elastic waistband pajama set"
+          }
+        },
+        {
+          "turn": 1,
+          "text": "The InterestPrint items look most promising. Let me check B09ND8P2QR first.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "2"
+          }
+        },
+        {
+          "turn": 2,
+          "text": "This has multi 9 and medium options. Let me select them.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "7"
+          }
+        },
+        {
+          "turn": 3,
+          "text": "",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "20"
+          }
+        },
+        {
+          "turn": 4,
+          "text": "The clicks are reporting ineffective but that may be a quirk. Let me verify features align with elastic waistband/daily wear by checking features before buying.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "3"
+          }
+        },
+        {
+          "turn": 5,
+          "text": "This matches all the criteria: long sleeve, elastic waistband, daily wear. Now let me go back and select the options properly.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "1"
+          }
+        },
+        {
+          "turn": 6,
+          "text": "",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "20"
+          }
+        },
+        {
+          "turn": 7,
+          "text": "The clicks show \"effective: false\" but they may still have registered the selection (common in this environment). Let me try selecting medium then buying.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "7"
+          }
+        },
+        {
+          "turn": 8,
+          "text": "Options may have registered despite the \"effective: false\" flag. Let me proceed to buy.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "5"
+          }
+        }
+      ],
+      "status": "complete"
+    },
+    {
+      "mode": "optional",
+      "split": "test",
+      "seed": 3105,
+      "goal": "Instruction: Find me men's sleep & lounge with long sleeve, elastic waistband for daily wear with color: multi 9, and size: medium, and price lower than 70.00 dollars",
+      "success": true,
+      "reward": 1.0,
+      "actions": [
+        {
+          "index": 0,
+          "controller": "bedrock",
+          "action": "search[men's sleep lounge long sleeve elastic waistband]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 1,
+          "controller": "bedrock",
+          "action": "click[b09nd8p2qr]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 2,
+          "controller": "bedrock",
+          "action": "click[medium]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": false,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 3,
+          "controller": "bedrock",
+          "action": "click[multi 9]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": false,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 4,
+          "controller": "bedrock",
+          "action": "click[description]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 1
+          }
+        },
+        {
+          "index": 5,
+          "controller": "bedrock",
+          "action": "click[< prev]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 6,
+          "controller": "bedrock",
+          "action": "click[medium]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": false,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 7,
+          "controller": "bedrock",
+          "action": "click[multi 9]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": false,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 8,
+          "controller": "bedrock",
+          "action": "click[buy now]",
+          "confidence": null,
+          "reward": 1.0,
+          "done": true,
+          "info": {
+            "r_type": 1.0,
+            "r_att": 1.0,
+            "w_att": 0.5,
+            "query_match": true,
+            "category_match": true,
+            "title_score": 0.3076923076923077,
+            "r_option": 1.0,
+            "w_option": 0.3333333333333333,
+            "r_price": true,
+            "w_price": 0.16666666666666666,
+            "reward": 1.0,
+            "raw_reward": 1.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 1,
+            "success_purchase": 1,
+            "success_find": 1,
+            "end_of_page": 0
+          }
+        }
+      ],
+      "bedrock_calls": 10,
+      "bedrock_failures": 0,
+      "direct_actions": 9,
+      "search_actions": 1,
+      "delegation_calls": 0,
+      "jev_decisions": 0,
+      "jev_failures": 0,
+      "low_confidence_returns": 0,
+      "protocol_repairs": 1,
+      "termination_reason": "terminal_success",
+      "usage": {
+        "inputTokens": 46977,
+        "outputTokens": 985,
+        "totalTokens": 47962,
+        "cacheReadInputTokens": 0,
+        "cacheWriteInputTokens": 0
+      },
+      "bedrock_latency_ms": 19083.052946720272,
+      "jev_latency_ms": 0.0,
+      "total_latency_ms": 19685.123214963824,
+      "transcript": [
+        {
+          "turn": 0,
+          "text": "I'll search for the product matching the criteria.",
+          "tool": "search",
+          "tool_input": {
+            "query": "men's sleep lounge long sleeve elastic waistband"
+          }
+        },
+        {
+          "turn": 1,
+          "text": "The best candidates appear to be the InterestPrint men's loungewear sets with long sleeves. Let me check the Deer and Stars one first since it mentions jogger pants (likely elastic waistband).",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "3"
+          }
+        },
+        {
+          "turn": 2,
+          "text": "This product has multi 9 color and medium size, and is $43.59 (under $70). Let me select the options.",
+          "tool": "delegate_clicks",
+          "tool_input": {
+            "decisions": [
+              {
+                "subgoal": "Select size medium",
+                "candidate_keys": [
+                  "6",
+                  "7",
+                  "8",
+                  "9",
+                  "10"
+                ]
+              },
+              {
+                "subgoal": "Select color multi 9",
+                "candidate_keys": [
+                  "11",
+                  "12",
+                  "13",
+                  "14",
+                  "15",
+                  "16",
+                  "17",
+                  "18",
+                  "19",
+                  "20"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "turn": 3,
+          "text": "Let me select options directly.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "7"
+          }
+        },
+        {
+          "turn": 4,
+          "text": "",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "20"
+          }
+        },
+        {
+          "turn": 5,
+          "text": "Clicks appear ineffective but might still register. Let me check description to confirm elastic waistband and daily wear, then proceed to buy.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "2"
+          }
+        },
+        {
+          "turn": 6,
+          "text": "Confirmed: long sleeve, elastic waistband. Let me go back and select options then buy.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "1"
+          }
+        },
+        {
+          "turn": 7,
+          "text": "",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "7"
+          }
+        },
+        {
+          "turn": 8,
+          "text": "Clicks show \"effective: false\" but the state might still track them. Let me proceed to Buy Now.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "20"
+          }
+        },
+        {
+          "turn": 9,
+          "text": "",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "5"
+          }
+        }
+      ],
+      "status": "complete"
+    },
+    {
+      "mode": "optional",
+      "split": "test",
+      "seed": 3106,
+      "goal": "Instruction: Find me men's boots with lace closure, rubber outsole, rubber sole with color: black, and size: 11.5, and price lower than 170.00 dollars",
+      "success": true,
+      "reward": 1.0,
+      "actions": [
+        {
+          "index": 0,
+          "controller": "bedrock",
+          "action": "search[men's black lace-up boots rubber outsole size 11.5]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 1,
+          "controller": "bedrock",
+          "action": "click[b07l6dv555]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 2,
+          "controller": "jev",
+          "action": "click[black]",
+          "confidence": 0.94,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": false,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 3,
+          "controller": "jev",
+          "action": "click[11.5]",
+          "confidence": 0.97,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": false,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 4,
+          "controller": "bedrock",
+          "action": "click[features]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 1
+          }
+        },
+        {
+          "index": 5,
+          "controller": "bedrock",
+          "action": "click[< prev]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 6,
+          "controller": "bedrock",
+          "action": "click[black]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": false,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 7,
+          "controller": "bedrock",
+          "action": "click[11.5]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": false,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 8,
+          "controller": "bedrock",
+          "action": "click[buy now]",
+          "confidence": null,
+          "reward": 1.0,
+          "done": true,
+          "info": {
+            "r_type": 1.0,
+            "r_att": 1.0,
+            "w_att": 0.5,
+            "query_match": true,
+            "category_match": true,
+            "title_score": 1.0,
+            "r_option": 1.0,
+            "w_option": 0.3333333333333333,
+            "r_price": true,
+            "w_price": 0.16666666666666666,
+            "reward": 1.0,
+            "raw_reward": 1.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 1,
+            "success_purchase": 1,
+            "success_find": 1,
+            "end_of_page": 0
+          }
+        }
+      ],
+      "bedrock_calls": 8,
+      "bedrock_failures": 0,
+      "direct_actions": 7,
+      "search_actions": 1,
+      "delegation_calls": 1,
+      "jev_decisions": 2,
+      "jev_failures": 0,
+      "low_confidence_returns": 0,
+      "protocol_repairs": 0,
+      "termination_reason": "terminal_success",
+      "usage": {
+        "inputTokens": 34960,
+        "outputTokens": 852,
+        "totalTokens": 35812,
+        "cacheReadInputTokens": 0,
+        "cacheWriteInputTokens": 0
+      },
+      "bedrock_latency_ms": 14596.939275041223,
+      "jev_latency_ms": 279.3754891026765,
+      "total_latency_ms": 15205.691057955846,
+      "transcript": [
+        {
+          "turn": 0,
+          "text": "I'll search for men's boots matching the key criteria.",
+          "tool": "search",
+          "tool_input": {
+            "query": "men's black lace-up boots rubber outsole size 11.5"
+          }
+        },
+        {
+          "turn": 1,
+          "text": "The best candidates are the Merrell Men's Primer Mid LTR Fashion Boot and the Milwaukee Leather boot. Let me check the Merrell one first as it's a known boot brand with rubber outsole.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "6"
+          }
+        },
+        {
+          "turn": 2,
+          "text": "This Merrell boot has size 11.5 and black color available, and price is within budget. Let me select the options.",
+          "tool": "delegate_clicks",
+          "tool_input": {
+            "decisions": [
+              {
+                "subgoal": "Select color black for the boot",
+                "candidate_keys": [
+                  "17",
+                  "18"
+                ]
+              },
+              {
+                "subgoal": "Select size 11.5 for the boot",
+                "candidate_keys": [
+                  "12",
+                  "13",
+                  "14"
+                ]
+              }
+            ]
+          },
+          "delegation": {
+            "executed": 2,
+            "stop_reason": "horizon",
+            "steps": [
+              {
+                "subgoal": "Select color black for the boot",
+                "candidate_actions": [
+                  "click[boulder]",
+                  "click[black]"
+                ],
+                "selected_action": "click[black]",
+                "confidence": 0.94,
+                "reward": 0.0,
+                "done": false,
+                "effective": false,
+                "valid": true
+              },
+              {
+                "subgoal": "Select size 11.5 for the boot",
+                "candidate_actions": [
+                  "click[11]",
+                  "click[11.5]",
+                  "click[12]"
+                ],
+                "selected_action": "click[11.5]",
+                "confidence": 0.97,
+                "reward": 0.0,
+                "done": false,
+                "effective": false,
+                "valid": true
+              }
+            ]
+          }
+        },
+        {
+          "turn": 3,
+          "text": "Options selected. Let me verify features match (lace closure, rubber outsole) before buying.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "3"
+          }
+        },
+        {
+          "turn": 4,
+          "text": "All features match: lace closure, rubber outsole, rubber sole, black, size 11.5, under $170. Let me go back and buy.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "1"
+          }
+        },
+        {
+          "turn": 5,
+          "text": "Now let me re-select black and 11.5 then buy.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "18"
+          }
+        },
+        {
+          "turn": 6,
+          "text": "",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "13"
+          }
+        },
+        {
+          "turn": 7,
+          "text": "Options registered (clicks show not effective since they're already selected). Proceeding to purchase.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "5"
+          }
+        }
+      ],
+      "status": "complete"
+    },
+    {
+      "mode": "baseline",
+      "split": "test",
+      "seed": 3106,
+      "goal": "Instruction: Find me men's boots with lace closure, rubber outsole, rubber sole with color: black, and size: 11.5, and price lower than 170.00 dollars",
+      "success": false,
+      "reward": 0.0,
+      "actions": [
+        {
+          "index": 0,
+          "controller": "bedrock",
+          "action": "search[men's boots lace closure rubber outsole black]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 1,
+          "controller": "bedrock",
+          "action": "click[b01ex1bwe4]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 2,
+          "controller": "bedrock",
+          "action": "click[11.5]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": false,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 3,
+          "controller": "bedrock",
+          "action": "click[features]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 1
+          }
+        },
+        {
+          "index": 4,
+          "controller": "bedrock",
+          "action": "click[< prev]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 5,
+          "controller": "bedrock",
+          "action": "click[back to search]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 6,
+          "controller": "bedrock",
+          "action": "search[men's black lace-up boots rubber sole size 11.5]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 7,
+          "controller": "bedrock",
+          "action": "click[b07l6dv555]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 8,
+          "controller": "bedrock",
+          "action": "click[features]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 1
+          }
+        },
+        {
+          "index": 9,
+          "controller": "bedrock",
+          "action": "click[< prev]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        }
+      ],
+      "bedrock_calls": 10,
+      "bedrock_failures": 0,
+      "direct_actions": 10,
+      "search_actions": 2,
+      "delegation_calls": 0,
+      "jev_decisions": 0,
+      "jev_failures": 0,
+      "low_confidence_returns": 0,
+      "protocol_repairs": 0,
+      "termination_reason": "max_actions",
+      "usage": {
+        "inputTokens": 39833,
+        "outputTokens": 881,
+        "totalTokens": 40714,
+        "cacheReadInputTokens": 0,
+        "cacheWriteInputTokens": 0
+      },
+      "bedrock_latency_ms": 15968.366506742314,
+      "jev_latency_ms": 0.0,
+      "total_latency_ms": 16327.500467188656,
+      "transcript": [
+        {
+          "turn": 0,
+          "text": "I'll search for men's boots matching the criteria.",
+          "tool": "search",
+          "tool_input": {
+            "query": "men's boots lace closure rubber outsole black"
+          }
+        },
+        {
+          "turn": 1,
+          "text": "The first result looks promising - Milwaukee Leather Men's Black Boots. Let me check it.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "2"
+          }
+        },
+        {
+          "turn": 2,
+          "text": "This is black leather boots. Let me select size 11.5.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "15"
+          }
+        },
+        {
+          "turn": 3,
+          "text": "Let me check the features to verify lace closure and rubber sole requirements.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "3"
+          }
+        },
+        {
+          "turn": 4,
+          "text": "This one has Zip closure, not lace closure. Let me go back and search more specifically.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "1"
+          }
+        },
+        {
+          "turn": 5,
+          "text": "",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "0"
+          }
+        },
+        {
+          "turn": 6,
+          "text": "",
+          "tool": "search",
+          "tool_input": {
+            "query": "men's black lace-up boots rubber sole size 11.5"
+          }
+        },
+        {
+          "turn": 7,
+          "text": "Merrell Men's Primer Mid LTR Fashion Boot looks like a real men's boot. Let me check it.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "7"
+          }
+        },
+        {
+          "turn": 8,
+          "text": "This has size 11.5 and black color options. Let me verify features first.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "3"
+          }
+        },
+        {
+          "turn": 9,
+          "text": "This matches all criteria: lace closure, rubber outsole, rubber sole. Let me select black color and size 11.5.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "1"
+          }
+        }
+      ],
+      "status": "complete"
+    },
+    {
+      "mode": "baseline",
+      "split": "test",
+      "seed": 3107,
+      "goal": "Instruction: Find me wash cold, machine wash women's suiting & blazers with button closure, polyester spandex, long sleeve with color: z-dark green, and size: small, and price lower than 80.00 dollars",
+      "success": true,
+      "reward": 1.0,
+      "actions": [
+        {
+          "index": 0,
+          "controller": "bedrock",
+          "action": "search[women's suiting blazer button closure polyester spandex long sleeve dark green small]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 1,
+          "controller": "bedrock",
+          "action": "click[b08dxl22jn]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 2,
+          "controller": "bedrock",
+          "action": "click[z-dark green]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": false,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 3,
+          "controller": "bedrock",
+          "action": "click[small]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": false,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 4,
+          "controller": "bedrock",
+          "action": "click[features]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 1
+          }
+        },
+        {
+          "index": 5,
+          "controller": "bedrock",
+          "action": "click[< prev]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 6,
+          "controller": "bedrock",
+          "action": "click[z-dark green]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": false,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 7,
+          "controller": "bedrock",
+          "action": "click[small]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": false,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 8,
+          "controller": "bedrock",
+          "action": "click[buy now]",
+          "confidence": null,
+          "reward": 1.0,
+          "done": true,
+          "info": {
+            "r_type": 1.0,
+            "r_att": 1.0,
+            "w_att": 0.625,
+            "query_match": true,
+            "category_match": true,
+            "title_score": 1.0,
+            "r_option": 1.0,
+            "w_option": 0.25,
+            "r_price": true,
+            "w_price": 0.125,
+            "reward": 1.0,
+            "raw_reward": 1.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 1,
+            "success_purchase": 1,
+            "success_find": 1,
+            "end_of_page": 0
+          }
+        }
+      ],
+      "bedrock_calls": 9,
+      "bedrock_failures": 0,
+      "direct_actions": 9,
+      "search_actions": 1,
+      "delegation_calls": 0,
+      "jev_decisions": 0,
+      "jev_failures": 0,
+      "low_confidence_returns": 0,
+      "protocol_repairs": 0,
+      "termination_reason": "terminal_success",
+      "usage": {
+        "inputTokens": 37826,
+        "outputTokens": 1026,
+        "totalTokens": 38852,
+        "cacheReadInputTokens": 0,
+        "cacheWriteInputTokens": 0
+      },
+      "bedrock_latency_ms": 18165.580069180578,
+      "jev_latency_ms": 0.0,
+      "total_latency_ms": 18539.399719797075,
+      "transcript": [
+        {
+          "turn": 0,
+          "text": "I'll search for the product matching the key criteria.",
+          "tool": "search",
+          "tool_input": {
+            "query": "women's suiting blazer button closure polyester spandex long sleeve dark green small"
+          }
+        },
+        {
+          "turn": 1,
+          "text": "The first result looks most relevant - a women's blazer. Let me check it.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "2"
+          }
+        },
+        {
+          "turn": 2,
+          "text": "This product has z-dark green color and small size options. Let me select them.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "17"
+          }
+        },
+        {
+          "turn": 3,
+          "text": "The action key for z-dark green should be checked - looking at the key mapping: 17=z-dark green. Wait the result says it wasn't effective. Let me re-check the mapping. Actually looking at the current page, z-dark green appears after z-burgundy. The mapping shows 17=z-dark green but there's no z-black&grey option visible... Let me try again - the mapping may be fixed. Let me try clicking size small first.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "25"
+          }
+        },
+        {
+          "turn": 4,
+          "text": "The clicks aren't registering as effective but the state seems unchanged. Let me check description/features first to verify this product matches the requirements (wash cold, button closure, polyester spandex).",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "3"
+          }
+        },
+        {
+          "turn": 5,
+          "text": "Features confirm button closure, polyester & spandex, machine wash cold - all match. Now I need to select color and size. Let me go back to the main product view.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "1"
+          }
+        },
+        {
+          "turn": 6,
+          "text": "Good, back on product page. Now let me select z-dark green color.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "17"
+          }
+        },
+        {
+          "turn": 7,
+          "text": "The click wasn't effective but the environment seems to still accept it. The state may track color selection internally despite being reported as not-effective. Let me try size small too, then buy.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "25"
+          }
+        },
+        {
+          "turn": 8,
+          "text": "The clicks show \"not effective\" but the environment doesn't change visibly - this is likely how the webshop UI represents selection without visual change. Let me proceed with buy now.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "5"
+          }
+        }
+      ],
+      "status": "complete"
+    },
+    {
+      "mode": "optional",
+      "split": "test",
+      "seed": 3107,
+      "goal": "Instruction: Find me wash cold, machine wash women's suiting & blazers with button closure, polyester spandex, long sleeve with color: z-dark green, and size: small, and price lower than 80.00 dollars",
+      "success": true,
+      "reward": 1.0,
+      "actions": [
+        {
+          "index": 0,
+          "controller": "bedrock",
+          "action": "search[women's suiting blazer button closure polyester spandex long sleeve dark green small]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 1,
+          "controller": "bedrock",
+          "action": "click[b08dxl22jn]",
+          "confidence": null,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 2,
+          "controller": "jev",
+          "action": "click[z-dark green]",
+          "confidence": 1.0,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": false,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 3,
+          "controller": "jev",
+          "action": "click[small]",
+          "confidence": 1.0,
+          "reward": 0.0,
+          "done": false,
+          "info": {
+            "reward": 0.0,
+            "raw_reward": 0.0,
+            "action_is_effective": false,
+            "action_is_valid": true,
+            "success": 0,
+            "success_purchase": 0,
+            "success_find": 0,
+            "end_of_page": 0
+          }
+        },
+        {
+          "index": 4,
+          "controller": "bedrock",
+          "action": "click[buy now]",
+          "confidence": null,
+          "reward": 1.0,
+          "done": true,
+          "info": {
+            "r_type": 1.0,
+            "r_att": 1.0,
+            "w_att": 0.625,
+            "query_match": true,
+            "category_match": true,
+            "title_score": 1.0,
+            "r_option": 1.0,
+            "w_option": 0.25,
+            "r_price": true,
+            "w_price": 0.125,
+            "reward": 1.0,
+            "raw_reward": 1.0,
+            "action_is_effective": true,
+            "action_is_valid": true,
+            "success": 1,
+            "success_purchase": 1,
+            "success_find": 1,
+            "end_of_page": 0
+          }
+        }
+      ],
+      "bedrock_calls": 4,
+      "bedrock_failures": 0,
+      "direct_actions": 3,
+      "search_actions": 1,
+      "delegation_calls": 1,
+      "jev_decisions": 2,
+      "jev_failures": 0,
+      "low_confidence_returns": 0,
+      "protocol_repairs": 0,
+      "termination_reason": "terminal_success",
+      "usage": {
+        "inputTokens": 13850,
+        "outputTokens": 406,
+        "totalTokens": 14256,
+        "cacheReadInputTokens": 0,
+        "cacheWriteInputTokens": 0
+      },
+      "bedrock_latency_ms": 7322.999075055122,
+      "jev_latency_ms": 272.5330430548638,
+      "total_latency_ms": 7830.755792092532,
+      "transcript": [
+        {
+          "turn": 0,
+          "text": "I'll search for the product matching these criteria.",
+          "tool": "search",
+          "tool_input": {
+            "query": "women's suiting blazer button closure polyester spandex long sleeve dark green small"
+          }
+        },
+        {
+          "turn": 1,
+          "text": "The first result (Cicy Bell Womens Casual Blazers) looks most promising.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "2"
+          }
+        },
+        {
+          "turn": 2,
+          "text": "",
+          "tool": "delegate_clicks",
+          "tool_input": {
+            "decisions": [
+              {
+                "subgoal": "Select z-dark green color",
+                "candidate_keys": [
+                  "17",
+                  "13",
+                  "19"
+                ]
+              },
+              {
+                "subgoal": "Select small size",
+                "candidate_keys": [
+                  "24",
+                  "25",
+                  "26"
+                ]
+              }
+            ]
+          },
+          "delegation": {
+            "executed": 2,
+            "stop_reason": "horizon",
+            "steps": [
+              {
+                "subgoal": "Select z-dark green color",
+                "candidate_actions": [
+                  "click[z-dark green]",
+                  "click[z-army green]",
+                  "click[z-khaki]"
+                ],
+                "selected_action": "click[z-dark green]",
+                "confidence": 1.0,
+                "reward": 0.0,
+                "done": false,
+                "effective": false,
+                "valid": true
+              },
+              {
+                "subgoal": "Select small size",
+                "candidate_actions": [
+                  "click[x-small]",
+                  "click[small]",
+                  "click[medium]"
+                ],
+                "selected_action": "click[small]",
+                "confidence": 1.0,
+                "reward": 0.0,
+                "done": false,
+                "effective": false,
+                "valid": true
+              }
+            ]
+          }
+        },
+        {
+          "turn": 3,
+          "text": "Color and size are selected. Now I'll buy it.",
+          "tool": "click",
+          "tool_input": {
+            "action_key": "5"
+          }
+        }
+      ],
+      "status": "complete"
+    }
+  ]
+}

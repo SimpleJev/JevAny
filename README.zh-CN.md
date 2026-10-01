@@ -45,33 +45,40 @@
 
 ### ⚡ Jev 加入 LLM Agent 循环
 
-> **关键结论：**LLM 负责规划，环境或 LLM 提供少量选项，Jev 选择常规动作，LLM 验证并完成任务。
+**关键结论**
 
-**1 · Terminal-Bench · `sqlite-db-truncate`——从三个命令中选择一个**
+- **任务层级：**T0 受控环境 → T4 开放终端；任务难度与委托程度分开判断。
+- **委托层级：**D0 仅 LLM → D4 有边界子目标；只有局部选择容易验证时才提高委托程度。
+- **适合 Jev：**LLM 能生成 2–4 个有效、有明确差别、可回退且能立即看到反馈的选项。
+- **保留给 LLM：**规划、开放搜索、精确修改、失败恢复、高风险动作和最终完成。
+- **成功标准：**reward 不降，同时减少 LLM calls、tokens 或时间；否则立即交回 LLM。
 
-[![Jev 从三个 Terminal-Bench 命令中选择原始页面检查，LLM 随后解析并验证](docs/demos/jev-agent-harness-sqlite.gif)](reports/JevAny_Tech_Report_Agent_Harness_Appendix.md#h1-sqlite-recovery-a-meaningful-three-way-decision)
+**1 · WebShop——从 LLM 生成的颜色和尺寸候选中选择精确选项**
 
-**2 · WebShop——从页面动作中选择任务要求的颜色**
+[![LLM 分别生成三个颜色和三个尺寸候选，Jev 选中精确选项，LLM 完成购买](docs/demos/jev-decision-webshop-v2.gif)](docs/demos/jev-agent-harness-traces.json)
 
-[![Jev 选择任务要求的黑色商品选项，LLM 随后选择 11.5 尺码并完成购买](docs/demos/jev-agent-harness-webshop.gif)](docs/demos/jev-agent-harness-traces.json)
+Reward `1→1` · LLM calls `9→4` · tokens `38,852→14,256` · 时间 `18.54s→7.83s`
 
-**3 · FrozenLake——每一步都比较四个方向**
+**2 · FrozenLake——每一步都比较四个方向**
 
-[![LLM 规划一次后，Jev 在 FrozenLake 中连续选择四个依赖当前状态的导航动作](docs/demos/jev-agent-harness-frozen-lake.gif)](results/agent-harness-v1/formal-matrix.md)
+[![Jev 比较四个方向、执行选中的移动、到达目标并减少 LLM 调用](docs/demos/jev-decision-frozen-lake-v2.gif)](results/agent-harness-v1/formal-matrix.md)
+
+Reward `1→1` · LLM calls `4→1` · tokens `2,338→663`
+
+**3 · Terminal-Bench · `sqlite-db-truncate`——从三个真实命令中选择一个**
+
+[![Jev 比较三个真实 Terminal-Bench 命令，选择原始页面检查，LLM 恢复十行数据](docs/demos/jev-decision-terminal-v2.gif)](reports/JevAny_Tech_Report_Agent_Harness_Appendix.md#h1-sqlite-recovery-a-meaningful-three-way-decision)
+
+Reward `1→1` · LLM calls `15→8` · 时间 `187.9s→144.7s`
 
 | 任务 | 成功率 | 效率 |
 |---|---:|---:|
 | GPT-5.6-sol · FrozenLake · 10 pairs | 100% → 100% | LLM calls −64.4% · tokens −63.1% · 时间 −37.6% |
-| WebShop · 10 pairs | 50% → 60% | LLM calls −7.7% · tokens −2.9% · 时间 −6.1% |
+| WebShop · LLM 生成候选 · 3 pairs | 67% → 100% | LLM calls −21.4% · tokens −14.3% · 时间 −15.0% |
 | WebArena · 6 pairs | 50% → 50% | LLM calls +5.6% · tokens +28.2% · 时间 −0.4% |
 | Terminal-Bench · 6 pairs | 1/6 → 3/6 | LLM calls −9.0% |
 
-**适合交给 Jev：**2–4 个有边界、可回退、能立即观察结果的选择。
-
-**保留给 LLM：**规划、精确修改、失败恢复和最终答案。
-
 [完整结果](reports/JevAny_Tech_Report_Agent_Harness_Appendix.md) ·
-[组合动画](docs/demos/jev-agent-harness.gif) ·
 [任务与委托分级](docs/experiments/AGENT_HARNESS_FRONTIER_PROTOCOL.md) ·
 [合并版技术报告](reports/JevAny_Tech_Report_with_Agent_Harness.pdf)
 

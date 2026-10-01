@@ -21,7 +21,9 @@ generates terminal menus. Jev only chooses within the bounded menu it receives.
 
 The benefit is conditional rather than universal. The strongest repeated
 result is GPT-5.6-sol on FrozenLake: success stayed at 100% while frontier calls,
-tokens, and wall time fell by 64.4%, 63.1%, and 37.6%. By contrast, Sokoban
+tokens, and wall time fell by 64.4%, 63.1%, and 37.6%. A three-pair WebShop
+supplement using LLM-authored candidate groups moves success from 67% to 100%
+while calls, tokens, and time fall by 21.4%, 14.3%, and 15.0%. By contrast, Sokoban
 usually became more expensive, the fixed six-task WebArena aggregate preserved
 success but used more calls and tokens, and both medium Terminal-Bench tasks
 failed with and without Jev. Jev cannot repair a missing global plan or add
@@ -60,7 +62,7 @@ not who reasons about the task. It is not an unconstrained text-only shell
 baseline, and separate runs can still produce different stochastic trajectories.
 
 The repeated cross-domain D2 matrix uses a different integration. FrozenLake,
-Sokoban, WebShop, and WebArena expose candidates from the environment or DOM.
+Sokoban, the original WebShop run, and WebArena expose candidates from the environment or DOM.
 The optional agent adds a delegation tool and its system instructions; the
 baseline acts directly without that tool. Those paired rows therefore measure
 the complete optional-harness intervention, including its prompt/tool surface,
@@ -68,6 +70,13 @@ not a selector-only ablation. Results from the two protocols are reported
 separately. D2 uses benchmark-sandbox action menus without a semantic risk
 filter and may delegate terminal UI controls such as `buy now`; it is not a
 production authorization or safety boundary.
+
+The later WebShop supplement uses the stricter D4 boundary requested for this
+report: the LLM authors one or more groups of two to four mutually exclusive
+current-page candidates, Jev chooses within each group, and the harness excludes
+`buy now`, navigation, and information tabs. The LLM retains search, reasoning,
+verification, and purchase completion. Every generated menu and selected action
+is stored in the episode trace.
 
 ## C. Two orthogonal levels
 
@@ -97,7 +106,7 @@ protocol placement rather than an empirical Jev result.
 | D1 shadow judge | Score but do not execute | Log agreement/regret | Proposed |
 | D2 selective | LLM opts in | One bounded action with fallback | 96-pair matrix |
 | D3 routine default | All eligible basic decisions | Normally one action; at most two if composable | Terminal-Bench harness |
-| D4 bounded subgoal | Repeated selection from an LLM-authored library | Stop on novelty, risk, or verification | Proposed |
+| D4 bounded subgoal | Repeated selection from LLM-authored candidate groups | Stop on novelty, risk, or verification | WebShop 3-pair supplement |
 
 Configured delegation and realized delegation are different quantities. Report
 both eligible coverage and all-command replacement. Neither is automatically a
@@ -207,7 +216,9 @@ The observed task pattern is correspondingly mixed:
 - **Successful efficiency use:** FrozenLake with GPT-5.6-sol and 27B Jev;
   bounded direction choices preserve success while replacing costly calls.
 - **Promising but not confirmed:** WebShop moves from 50% to 60% success with
-  small resource savings, but the paired intervals cross zero.
+  environment-supplied menus in the original ten-pair run. With LLM-authored
+  candidate groups in the three-pair supplement, success is 67%→100%, calls
+  9.33→7.33, tokens 114,388→98,030 total, and mean time 16.76→14.24 seconds.
 - **Useful terminal mechanism:** SQLite recovery preserves reward across a
   three-point delegation-rate sweep while the sampled 100% target uses fewer
   frontier resources. It remains a single-attempt curve.
@@ -249,6 +260,24 @@ calls [−4.7, −1.3], −1,929.6 tokens [−3,854.3, −427.7], and −5.55 se
 [−10.69, −0.30]. WebShop's point estimates are favorable, but its paired
 intervals for calls, tokens, and latency cross zero. Opus/FrozenLake saves model
 work but loses one success in each cell and is slower; it is not a win.
+
+### F.1 WebShop LLM-authored candidate supplement
+
+The revised WebShop harness asks the frontier LLM to generate one to four
+decision groups. Each group contains two to four mutually exclusive click
+candidates for one local decision. Jev chooses and executes only within those
+groups; `buy now`, navigation, information tabs, and open-text search stay with
+the frontier. Three paired seeds (3105–3107) give:
+
+| Protocol | Success | Mean LLM calls | Total tokens | Mean time |
+|---|---:|---:|---:|---:|
+| D0 LLM-only | 2/3 | 9.33 | 114,388 | 16.76s |
+| D4 LLM + Jev | 3/3 | 7.33 | 98,030 | 14.24s |
+
+Seed 3105 generated candidate groups larger than the enforced maximum and
+safely fell back to direct LLM clicks. Seeds 3106 and 3107 delegated two option
+choices each. This small supplement demonstrates the revised mechanism and its
+fallback; it does not replace the frozen ten-pair result.
 
 ## G. Open-terminal exploration
 
@@ -346,24 +375,29 @@ changes 0→1. Yet agent wall time rises from 831 to 937 seconds. This is an
 exploratory quality-recovery example, not an end-to-end latency win, and v3 did
 not persist every unselected candidate text.
 
-### H.4 WebShop: a confident local mistake and frontier recovery
+### H.4 WebShop: two meaningful choices, then LLM completion
 
-WebShop seed 3100 requests a slim-fit short-sleeve men's henley with exact
-color `155- blue`, size `x-large`, and price below $40. On an initially
-plausible product, Jev selects `click[light blue]` at 0.99 confidence. The
-environment reports the action as ineffective, and the selected color does not
-satisfy the exact global constraint. The frontier LLM consumes that
-observation, returns to search, opens a different product, selects exact
-`155- blue` and `x-large`, and completes the purchase. The independent verifier
-returns reward 1.
+WebShop seed 3107 requests a long-sleeve women's blazer in exact color
+`z-dark green`, size `small`, below $80. After search and product selection, the
+frontier LLM generates two bounded decisions:
 
-This trace demonstrates a meaningful action choice and the need for retained
-frontier ownership. Confidence is not correctness; a local decision model can
-prefer a plausible near match while missing a task-level constraint. Immediate
-re-observation lets the LLM recover. The trace stores the executed Jev action
-but not its complete unselected menu, so it is a recovery demo rather than a
-fully replayable candidate-menu comparison. The ten-pair WebShop aggregate
-remains a positive but inconclusive signal because paired intervals cross zero.
+```text
+color: z-dark green | z-army green | z-khaki
+size:  x-small      | small        | medium
+```
+
+Jev selects `z-dark green` and `small`, both at confidence 1.0. The environment
+records the hidden product state after each valid click. The LLM then executes
+`buy now`; the independent environment returns reward 1. Against the same-seed
+LLM-only path, reward stays 1 while LLM calls fall 9→4, tokens 38,852→14,256,
+and wall time 18.54→7.83 seconds.
+
+The earlier harness incorrectly treated these clicks as no-ops because RAGEN
+defined `action_is_effective` as visible observation text changing. WebShop
+option clicks update hidden session state without changing the text. The
+revised harness continues on valid clicks, records the selected hidden state,
+and stops on invalid, stale, low-confidence, or malformed decisions. It also
+removes `buy now` from Jev candidates so completion remains with the LLM.
 
 ## I. Failure analysis and protocol evolution
 
@@ -385,6 +419,9 @@ The early results explain why the strict contract matters:
    Jev inference, and context transfer cost more than direct execution.
 7. **Dynamic-state drift:** in browsers or persistent terminals, a candidate
    can become stale after a popup, navigation, or side effect.
+8. **Partial-observation false negatives:** WebShop option clicks changed hidden
+   state while leaving page text unchanged. Validity and task state, not text
+   inequality alone, must determine whether a delegated action made progress.
 
 The final protocol consequently enforces bounded candidate menus, a short
 composability horizon, a 0.55 confidence fallback, complete candidate logging,
@@ -427,6 +464,7 @@ study.
 - Terminal-Bench v3 snapshot: `results/agent-harness-v1/terminal-bench-sample-v3.md` and `.json`
 - Delegation-rate sweep: `results/agent-harness-v1/terminal-bench-frontier-v4.md` and `.json`
 - Decision traces: Sections H.1 (SQLite), H.2 (WebArena), H.3 (query optimization), and H.4 (WebShop)
+- WebShop LLM-candidate supplement: `runs/agent-harness/webshop-llm-candidates-supplement-v2.json`
 - Task/delegation protocol: `docs/experiments/AGENT_HARNESS_FRONTIER_PROTOCOL.md`
 
 Raw sources, failed runs, development versions, exact model IDs, hashes, and

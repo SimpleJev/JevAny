@@ -16,15 +16,15 @@ class FakeShop:
         if self.page == "search":
             return ["search[<content>]" ]
         if self.page == "results":
-            return ["click[back to search]", "click[blue-shirt]"]
+            return ["click[back to search]", "click[blue-shirt]", "click[red-shirt]"]
         if self.page == "product":
-            return ["click[large]", "click[buy now]"]
+            return ["click[large]", "click[small]", "click[buy now]"]
         return []
 
     def step(self, action):
         if action.startswith("search["):
             self.page = "results"
-        elif action == "click[blue-shirt]":
+        elif action in {"click[blue-shirt]", "click[red-shirt]"}:
             self.page = "product"
         elif action == "click[buy now]":
             self.page = "done"
@@ -58,11 +58,11 @@ class FakeBedrock:
 def jev_first(request):
     keys = list(request["questions"]["action"]["criteria"])
     probabilities = {key: 0.0 for key in keys}
-    probabilities["1"] = 1.0
+    probabilities[keys[0]] = 1.0
     return {
         "model": request["model"],
         "answers": {"action": {
-            "type": "choice", "choice": "1", "confidence": 0.9,
+            "type": "choice", "choice": keys[0], "confidence": 0.9,
             "probabilities": probabilities,
         }},
     }
@@ -72,7 +72,7 @@ def test_baseline_keeps_search_and_clicks_under_bedrock_control():
     client = FakeBedrock([
         ("search", {"query": "blue shirt"}),
         ("click", {"action_key": "1"}),
-        ("click", {"action_key": "1"}),
+        ("click", {"action_key": "2"}),
     ])
     episode = BedrockJevWebShopAgent(client, "frontier", jev_first).run(
         FakeShop(), seed=7, mode="baseline",
@@ -92,13 +92,17 @@ def test_baseline_keeps_search_and_clicks_under_bedrock_control():
 def test_optional_mode_delegates_only_finite_clicks():
     client = FakeBedrock([
         ("search", {"query": "blue shirt"}),
-        ("delegate_clicks", {"steps": 2, "subgoal": "Open the shirt and buy it."}),
+        ("delegate_clicks", {"decisions": [{
+            "subgoal": "Choose the shirt that matches the requested color.",
+            "candidate_keys": ["1", "2"],
+        }]}),
+        ("click", {"action_key": "2"}),
     ])
     requests = []
 
     def decide(request):
         requests.append(request)
-        choice = "1"
+        choice = "0"
         keys = list(request["questions"]["action"]["criteria"])
         probabilities = {key: 0.0 for key in keys}
         probabilities[choice] = 1.0
@@ -114,11 +118,14 @@ def test_optional_mode_delegates_only_finite_clicks():
         FakeShop(), seed=7, mode="optional",
     )
     assert episode.success
-    assert [action.controller for action in episode.actions] == ["bedrock", "jev", "jev"]
+    assert [action.controller for action in episode.actions] == ["bedrock", "jev", "bedrock"]
     assert episode.search_actions == 1
     assert episode.delegation_calls == 1
-    assert episode.jev_decisions == 2
+    assert episode.jev_decisions == 1
     assert len(requests[0]["questions"]["action"]["criteria"]) == 2
+    assert episode.transcript[1]["delegation"]["steps"][0]["candidate_actions"] == [
+        "click[blue-shirt]", "click[red-shirt]",
+    ]
     assert all(
         value.startswith("click[")
         for request in requests
@@ -129,19 +136,21 @@ def test_optional_mode_delegates_only_finite_clicks():
 def test_low_confidence_returns_control_without_clicking():
     client = FakeBedrock([
         ("search", {"query": "blue shirt"}),
-        ("delegate_clicks", {"steps": 2, "subgoal": "Open a matching product."}),
+        ("delegate_clicks", {"decisions": [{
+            "subgoal": "Open a matching product.", "candidate_keys": ["1", "2"],
+        }]}),
         ("click", {"action_key": "1"}),
-        ("click", {"action_key": "1"}),
+        ("click", {"action_key": "2"}),
     ])
 
     def uncertain(request):
         keys = list(request["questions"]["action"]["criteria"])
         probabilities = {key: 0.0 for key in keys}
-        probabilities["1"] = 1.0
+        probabilities["0"] = 1.0
         return {
             "model": request["model"],
             "answers": {"action": {
-                "type": "choice", "choice": "1", "confidence": 0.4,
+                "type": "choice", "choice": "0", "confidence": 0.4,
                 "probabilities": probabilities,
             }},
         }
@@ -158,9 +167,11 @@ def test_low_confidence_returns_control_without_clicking():
 def test_jev_failure_returns_control_and_is_counted():
     client = FakeBedrock([
         ("search", {"query": "blue shirt"}),
-        ("delegate_clicks", {"steps": 2, "subgoal": "Open a matching product."}),
+        ("delegate_clicks", {"decisions": [{
+            "subgoal": "Open a matching product.", "candidate_keys": ["1", "2"],
+        }]}),
         ("click", {"action_key": "1"}),
-        ("click", {"action_key": "1"}),
+        ("click", {"action_key": "2"}),
     ])
 
     def unavailable(_request):
@@ -173,3 +184,45 @@ def test_jev_failure_returns_control_and_is_counted():
     assert episode.jev_failures == 1
     assert episode.jev_decisions == 1
     assert all(action.controller == "bedrock" for action in episode.actions)
+
+
+class FakeHiddenOptions(FakeShop):
+    def reset(self, *, seed, mode):
+        self.page = "product"
+        return "Product page", {}
+
+    def get_available_actions(self):
+        if self.page == "product":
+            return [
+                "click[red]", "click[blue]", "click[small]", "click[large]",
+                "click[buy now]",
+            ]
+        return []
+
+    def step(self, action):
+        if action == "click[buy now]":
+            self.page = "done"
+            return "Purchased", 1.0, True, {
+                "success": 1, "action_is_effective": True, "action_is_valid": True,
+            }
+        return "Product page", 0.0, False, {
+            "success": 0, "action_is_effective": False, "action_is_valid": True,
+        }
+
+
+def test_hidden_option_state_does_not_stop_a_valid_delegation_batch():
+    client = FakeBedrock([
+        ("delegate_clicks", {"decisions": [
+            {"subgoal": "Choose blue.", "candidate_keys": ["0", "1"]},
+            {"subgoal": "Choose large.", "candidate_keys": ["2", "3"]},
+        ]}),
+        ("click", {"action_key": "4"}),
+    ])
+    episode = BedrockJevWebShopAgent(client, "frontier", jev_first).run(
+        FakeHiddenOptions(), seed=7, mode="optional",
+    )
+    assert episode.success
+    assert [action.controller for action in episode.actions] == ["jev", "jev", "bedrock"]
+    assert episode.jev_decisions == 2
+    assert episode.transcript[0]["delegation"]["executed"] == 2
+    assert episode.transcript[0]["delegation"]["stop_reason"] == "horizon"

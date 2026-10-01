@@ -1,10 +1,10 @@
 {
-  "version": 2,
+  "version": 3,
   "summary": {
     "controlled_and_web_pairs": 96,
     "terminal_pairs": 6,
     "frozen_lake": {"success": "100% -> 100%", "llm_calls_change": "-64.4%"},
-    "webshop": {"success": "50% -> 60%"},
+    "webshop": {"success": "67% -> 100%", "llm_calls_change": "-21.4%", "pairs": 3},
     "terminal_bench": {"success": "1/6 -> 3/6", "llm_calls_change": "-9.0%"}
   },
   "frozen_lake": {
@@ -92,43 +92,61 @@
     }
   },
   "webshop": {
-    "seed": 3106,
-    "selection": "illustrative success-gain pair from the frozen 10-pair run",
-    "goal": "Men's lace-up boots, black, size 11.5, under $160",
-    "menu_provenance": "The full Jev candidate menu was not persisted; these four controls are confirmed by executed actions in the paired trace.",
-    "highlighted_actions": [
-      {"action": "click[black]", "evidence": "executed by Jev", "order": 1},
-      {"action": "click[11.5]", "evidence": "executed later by LLM", "order": 2},
-      {"action": "click[buy now]", "evidence": "executed later by LLM", "order": 3},
-      {"action": "click[features]", "evidence": "visible in paired baseline", "order": null}
+    "seed": 3107,
+    "selection": "positive pair from the LLM-authored candidate supplement",
+    "goal": "Women's long-sleeve blazer, z-dark green, small, under $80",
+    "candidate_groups": [
+      {
+        "subgoal": "Select z-dark green color",
+        "actions": ["click[z-dark green]", "click[z-army green]", "click[z-khaki]"],
+        "selected": "click[z-dark green]",
+        "confidence": 1.0,
+        "hidden_state": {"color": "z-dark green"}
+      },
+      {
+        "subgoal": "Select small size",
+        "actions": ["click[x-small]", "click[small]", "click[medium]"],
+        "selected": "click[small]",
+        "confidence": 1.0,
+        "hidden_state": {"color": "z-dark green", "size": "small"}
+      }
     ],
     "baseline": {
-      "reward": 0,
-      "llm_calls": 11,
-      "tokens": 47360,
-      "wall_time_seconds": 20.9,
+      "reward": 1,
+      "llm_calls": 9,
+      "tokens": 38852,
+      "wall_time_seconds": 18.54,
       "path": [
         "search",
+        "open product",
+        "select color",
+        "select size",
         "inspect features",
-        "back",
-        "search again",
-        "step budget ends"
+        "repeat color and size",
+        "buy now"
       ]
     },
     "jev_harness": {
       "reward": 1,
-      "llm_calls": 5,
-      "tokens": 15705,
-      "wall_time_seconds": 9.9,
+      "llm_calls": 4,
+      "tokens": 14256,
+      "wall_time_seconds": 7.83,
       "path": [
         {"controller": "llm", "action": "search"},
         {"controller": "llm", "action": "open matching product"},
-        {"controller": "jev", "action": "click[black]", "confidence": 0.89, "action_is_effective": false},
-        {"controller": "llm", "action": "click[11.5]"},
+        {"controller": "jev", "action": "click[z-dark green]", "confidence": 1.0, "action_is_valid": true},
+        {"controller": "jev", "action": "click[small]", "confidence": 1.0, "action_is_valid": true},
         {"controller": "llm", "action": "click[buy now]"}
       ]
     },
-    "source": "runs/agent-harness/webshop-opus-27b-holdout.json",
-    "source_sha256": "54cbceb65ebe2a81f5fe27ff3f634ff178918f999adcc1458459a309075dd96e"
+    "three_pair_result": {
+      "baseline_success": 0.6667,
+      "jev_harness_success": 1.0,
+      "llm_calls_change": -0.2143,
+      "tokens_change": -0.1430,
+      "wall_time_change": -0.1501
+    },
+    "source": "runs/agent-harness/webshop-llm-candidates-supplement-v2.json",
+    "source_sha256": "0363fb8d6fcc241fbe7e1d3eed5b0d4d9fc571a76fee204dfe24b9b3833bbd8e"
   }
 }

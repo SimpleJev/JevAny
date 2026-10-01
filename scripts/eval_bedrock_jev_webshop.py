@@ -256,11 +256,20 @@ def render_demo(case: dict, model: str, jev_model: str) -> str:
     for turn in optional["transcript"]:
         if turn.get("tool") == "delegate_clicks":
             delegated = True
-            subgoal = (turn.get("tool_input") or {}).get("subgoal", "(missing subgoal)")
-            lines.append(
-                f"- Turn {turn['turn'] + 1}: {turn.get('text') or '(no public rationale)'} "
-                f"**Delegated subgoal:** {subgoal}"
-            )
+            lines.append(f"- Turn {turn['turn'] + 1}: {turn.get('text') or '(no public rationale)'}")
+            for index, decision in enumerate(
+                (turn.get("tool_input") or {}).get("decisions", []), start=1,
+            ):
+                lines.append(
+                    f"  - Decision {index}: {decision.get('subgoal', '(missing subgoal)')} · "
+                    f"candidate keys `{decision.get('candidate_keys', [])}`"
+                )
+            for step in (turn.get("delegation") or {}).get("steps", []):
+                lines.append(
+                    f"  - Jev selected `{step.get('selected_action')}` from "
+                    f"`{step.get('candidate_actions', [])}` at "
+                    f"{float(step.get('confidence', 0)):.3f} confidence"
+                )
     if not delegated:
         lines.append("- The frontier model did not delegate in this episode.")
     lines.extend([
