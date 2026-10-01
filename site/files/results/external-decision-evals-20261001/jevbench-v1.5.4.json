@@ -1,0 +1,120 @@
+{
+  "artifact_version": 1,
+  "kind": "official_aggregate_provenance_only",
+  "benchmark": "JevBench",
+  "revision": "v1.5.4",
+  "protocol": "jevbench::v1.5",
+  "status": "released",
+  "run_kind": "official",
+  "official_api": "https://benchmarkheaven.com/api/jevbench/v1.5.4",
+  "official_source_sha256": "452885de2a84cd5b9ed393d541fd8d6c6a540f9d7f762f9d2df9349383f26173",
+  "download_sha256": "0cf210b76bf85084a5f3fb40fb109e9a2c2f93df42ff6628696377666e89db45",
+  "method_sha256": "c25d3d8b8512e4d93370a9e0c99705d19b2a9389956ca33b8a4bd2b0ec501c07",
+  "sample": {
+    "open": 904,
+    "published_open": 601,
+    "unpublished_open": 303,
+    "sealed": 720,
+    "total": 1624
+  },
+  "scoring": {
+    "type_weights": {"choice": 0.3333333333333333, "noul": 0.3333333333333333, "score": 0.3333333333333333},
+    "tier_weights": {"easy": 0.1, "standard": 0.2, "judge": 0.3, "hard": 0.4},
+    "sealed_share_of_intelligence": 0.5,
+    "frozen_G_med": 5.186627500079243,
+    "headline_option": "A"
+  },
+  "board": {"ranked_systems": 106, "roster_systems": 112},
+  "open_weight_kev_official_aggregates": {
+    "provenance": "Official v1.5.4 aggregate; evaluator-owned A6000 offline pod",
+    "reproducibility": "Weights and code are public, but item-level verification of the official full result is impossible while sealed prompts remain private.",
+    "code": "https://github.com/jaredpalmer/kev",
+    "rows": [
+      {"key": "kev-4b", "checkpoint": "jaredpalmer/kev-4b@qwen3", "note": "Qwen3-4B-Base research preview; not the current Qwen3.5 default revision", "score_A": 38.0731, "rank_A": 37, "completed": 1624, "axes": {"intelligence": 39.8609, "calibration": 67.6415, "speed": 85.4778, "cost": 65.7804}, "intelligence_open": 47.0600, "intelligence_sealed": 33.2012},
+      {"key": "kev-8b", "checkpoint": "jaredpalmer/kev-8b", "score_A": 34.1526, "rank_A": 38, "completed": 1624, "axes": {"intelligence": 48.2953, "calibration": 71.0173, "speed": 84.1410, "cost": 40.4205}, "intelligence_open": 54.3061, "intelligence_sealed": 42.2845},
+      {"key": "kev-0.6b", "checkpoint": "jaredpalmer/kev-0.6b", "score_A": 1.26166, "rank_A": 78, "completed": 1624, "axes": {"intelligence": 10.3360, "calibration": 67.6547, "speed": 87.2167, "cost": 80.0940}, "intelligence_open": 25.4637, "intelligence_sealed": -1.4912},
+      {"key": "kev-0.5b", "checkpoint": "jaredpalmer/kev-0.5b", "score_A": 0.0, "rank_A": 92, "completed": 1624, "axes": {"intelligence": 0.0, "calibration": 64.9830, "speed": 88.4534, "cost": 80.0940}, "intelligence_open": 3.4434, "intelligence_sealed": -22.2626}
+    ]
+  },
+  "selected_official_baseline_aggregates": {
+    "source_kind": "official_not_local",
+    "source": "Pinned v1.5.4 API aggregate with download SHA-256 0cf210b76bf85084a5f3fb40fb109e9a2c2f93df42ff6628696377666e89db45",
+    "rows": [
+      {
+        "key": "jev-omni",
+        "display": "Jev-Omni (akhilaaa3, Gemma-4-12B merged)",
+        "status": {"status": "complete", "rows": 1624, "missing": 0, "answered_ok": 1624},
+        "axes": {"intelligence": 70.49063617669168, "calibration": 82.59813256382532, "speed": 84.67623138886884, "cost": 56.05113155939739},
+        "scores": {"A": 71.5005378093621, "B": 71.29624911998478, "C": 71.5005378093621},
+        "jevbench_score": 71.5005378093621,
+        "rank": 6,
+        "ranks": {"A": 6, "B": 4, "C": 4},
+        "speed": {"p50_s_raw": 0.112679542042315, "p95_s_raw": 0.37883703656261736, "p50_s_adjusted": 0.37535908408463003, "p95_s_adjusted": 0.9076740731252347, "n": 450, "adjustment": "x2 + 0.15 s (assumption, not measured)"}
+      },
+      {
+        "key": "decider-4b-v2",
+        "display": "decider-4b v2 (Mapika)",
+        "status": {"status": "complete", "rows": 1624, "missing": 0, "answered_ok": 1624},
+        "axes": {"intelligence": 55.7709920864861, "calibration": 85.59400811608691, "speed": 90.85503597842234, "cost": 64.54376873042901},
+        "scores": {"A": 71.28417523518583, "B": 67.5275035635358, "C": 61.58959786188317},
+        "jevbench_score": 71.28417523518583,
+        "rank": 7,
+        "ranks": {"A": 7, "B": 7, "C": 10},
+        "speed": {"p50_s_raw": 0.026405358512420207, "p95_s_raw": 0.12747691074036993, "p50_s_adjusted": 0.2028107170248404, "p95_s_adjusted": 0.4049538214807399, "n": 450, "adjustment": "x2 + 0.15 s (assumption, not measured)"}
+      },
+      {
+        "key": "decider-2b",
+        "display": "decider-2b (Mapika)",
+        "status": {"status": "complete", "rows": 1624, "missing": 0, "answered_ok": 1624},
+        "axes": {"intelligence": 42.33871878833063, "calibration": 71.52659723196619, "speed": 94.40334833224873, "cost": 64.91766177740826},
+        "scores": {"A": 45.09827651852322, "B": 41.10644266575027, "C": 31.318247582307787},
+        "jevbench_score": 45.09827651852322,
+        "rank": 30,
+        "ranks": {"A": 30, "B": 34, "C": 34},
+        "speed": {"p50_s_raw": 0.01366500393487513, "p95_s_raw": 0.02729465400916524, "p50_s_adjusted": 0.17733000786975026, "p95_s_adjusted": 0.20458930801833047, "n": 450, "adjustment": "x2 + 0.15 s (assumption, not measured)"}
+      },
+      {
+        "key": "open-jev-zefan-9b",
+        "display": "Open-Jev 9B (Zefan Cai)",
+        "status": {"status": "complete", "rows": 1624, "missing": 0, "answered_ok": 1624},
+        "axes": {"intelligence": 63.82052863874054, "calibration": 81.52933105829675, "speed": 73.58523755072761, "cost": 33.05490478272432},
+        "scores": {"A": 24.35608345131106, "B": 24.98980978448973, "C": 24.35608345131106},
+        "jevbench_score": 24.35608345131106,
+        "rank": 46,
+        "ranks": {"A": 46, "B": 44, "C": 41},
+        "speed": {"p50_s_raw": 0.5631460719741881, "p95_s_raw": 1.640916511422256, "p50_s_adjusted": 1.276292143948376, "p95_s_adjusted": 3.4318330228445117, "n": 450, "adjustment": "x2 + 0.15 s (assumption, not measured)"}
+      },
+      {
+        "key": "laya",
+        "display": "Laya (Convai Innovations, ModernBERT-large 421M)",
+        "status": {"status": "complete", "rows": 1624, "missing": 0, "answered_ok": 1624},
+        "axes": {"intelligence": 0, "calibration": 73.70996996254986, "speed": 73.89376469233966, "cost": 84.89402784895724},
+        "scores": {"A": 0, "B": 0, "C": 0},
+        "jevbench_score": 0,
+        "rank": 93,
+        "ranks": {"A": 93, "B": 93, "C": 93},
+        "speed": {"p50_s_raw": 0.6676969870459288, "p95_s_raw": 1.2982571767410263, "p50_s_adjusted": 1.4853939740918576, "p95_s_adjusted": 2.7465143534820524, "n": 450, "adjustment": "x2 + 0.15 s (assumption, not measured)"}
+      }
+    ],
+    "exact_entries_not_present": [
+      "JevAny (any release)",
+      "Open-Jev-27B-v1.1",
+      "Intern-Decision-4B"
+    ]
+  },
+  "local_reproduction": {
+    "performed": false,
+    "reason": "The official API publishes system-level aggregates, not prompt text. All 720 sealed prompts and 303 older open prompts are explicitly unavailable. The method's 601 published-open count is 231 older published prompts plus 120 public drafts plus a 250-question public draw from the sealed pool, but the official page, API, full public repository history, releases and Hugging Face Space expose only the original 231 prompt files. No downloadable bundle for the other 370 was found.",
+    "maximum_claim": "Official v1.5.4 aggregate metadata was preserved exactly; no JevAny or third-party local v1.5.4 score is claimed.",
+    "official_evaluation_request": "https://benchmarkheaven.com/jev-models/request-evaluation",
+    "submission_note": "A complete result requires the maintainer to evaluate a fixed TypeSafe-compatible API or reproducible public checkpoint and publish aggregate-only output."
+  },
+  "public_upstream_inspected": {
+    "repository": "https://github.com/fstandhartinger/jevbench",
+    "revision": "bb05a335bc809e61b20c0f745d25499a82b326fc",
+    "finding": "Contains v1.5 method documents and the original 231 published prompt files. No branch, tag, release asset or historical path exposes the additional 120 drafts or 250-question public draw needed for the declared 601 published-open total."
+  },
+  "raw_official_aggregate": "/lustre-storage/fsx/tianxinwei/JevAny/runs/external-decision-evals-20261001/artifacts/jevbench-v1.5.4-results.json",
+  "raw_page_snapshot": "/lustre-storage/fsx/tianxinwei/JevAny/runs/external-decision-evals-20261001/artifacts/benchmarkheaven-jev-models-20261001.html",
+  "retrieved_utc_date": "2026-10-01"
+}
