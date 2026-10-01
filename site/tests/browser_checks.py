@@ -28,6 +28,15 @@ class Handler(SimpleHTTPRequestHandler):
         pass
 
 
+def finish_replay(page, *, seek=True):
+    page.wait_for_function("document.querySelector('#replay-video').readyState >= 2")
+    page.locator("#replay-video").evaluate("""(video, seek) => new Promise((resolve, reject) => {
+        video.addEventListener('ended', () => resolve(), {once: true});
+        if (seek) video.currentTime = video.duration - 0.1;
+        video.play().catch(reject);
+    })""", seek)
+
+
 def check(url: str, output: Path) -> None:
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(args=["--disable-dev-shm-usage"])
@@ -69,6 +78,41 @@ def check(url: str, output: Path) -> None:
         page.locator("#in-action").scroll_into_view_if_needed()
         page.wait_for_function("document.documentElement.classList.contains('models-offscreen')")
         assert page.locator(".model-track").evaluate("e => getComputedStyle(e).animationPlayState") == "paused"
+        # Let a whole recording play twice; subsequent checks seek near the end.
+        player = page.locator("#replay-video")
+        page.locator('.replay-choice[data-case="peg_insertion"]').click()
+        assert not player.evaluate("v => v.loop")
+        finish_replay(page, seek=False)
+        assert player.get_attribute("src").endswith("/peg_insertion.webm")
+        finish_replay(page, seek=False)
+        assert player.get_attribute("src").endswith("/drone.webm")
+        assert page.locator('.replay-choice[data-case="drone"]').get_attribute("aria-pressed") == "true"
+        drone = next(case for case in json.loads((SITE / "assets/data/cases.json").read_text()) if case["id"] == "drone")
+        assert drone["title"] in player.get_attribute("aria-label")
+        assert drone["description"] == page.locator("#replay-description").inner_text()
+
+        # A manual choice starts a fresh pair; the final featured case wraps around.
+        finish_replay(page)
+        assert player.get_attribute("src").endswith("/drone.webm")
+        page.locator('.replay-choice[data-case="chess"]').click()
+        finish_replay(page)
+        assert player.get_attribute("src").endswith("/chess.webm")
+        finish_replay(page)
+        assert player.get_attribute("src").endswith("/peg_insertion.webm")
+
+        # Pausing and scrolling away retain the first completed play.
+        finish_replay(page)
+        player.evaluate("v => v.pause()")
+        page.wait_for_timeout(100)
+        page.locator("#get-started").scroll_into_view_if_needed()
+        page.wait_for_timeout(150)
+        page.locator("#in-action").scroll_into_view_if_needed()
+        page.wait_for_timeout(150)
+        assert player.evaluate("v => v.paused")
+        assert player.get_attribute("src").endswith("/peg_insertion.webm")
+        finish_replay(page)
+        assert player.get_attribute("src").endswith("/drone.webm")
+
         for name in ("peg_insertion", "drone", "lab", "frontend", "sql", "chess"):
             page.locator(f'.replay-choice[data-case="{name}"]').click()
             page.wait_for_function("document.querySelector('#replay-video').readyState >= 2")
@@ -86,6 +130,13 @@ def check(url: str, output: Path) -> None:
             page.wait_for_function("document.querySelector('#replay-video').readyState >= 2")
             assert name in page.locator("#replay-video").get_attribute("src")
             assert page.url == url + "#case-library"
+        last_case = page.locator(".case-card").last.get_attribute("data-case")
+        first_case = page.locator(".case-card").first.get_attribute("data-case")
+        finish_replay(page)
+        assert player.get_attribute("src").endswith(f"/{last_case}.webm")
+        finish_replay(page)
+        assert player.get_attribute("src").endswith(f"/{first_case}.webm")
+        assert page.locator(f'.case-card[data-case="{first_case}"]').evaluate("e => e.classList.contains('is-active')")
         page.locator("#case-library > summary").click()
 
         # Metrics must sort in the right direction and display the source values.
@@ -237,7 +288,13 @@ def check(url: str, output: Path) -> None:
         reduced_page.locator("#in-action").scroll_into_view_if_needed()
         reduced_page.locator("#replay-video").evaluate("v => v.play()")
         reduced_page.wait_for_function("document.querySelector('#replay-video').currentTime > 0")
+        for _ in range(2):
+            finish_replay(reduced_page)
+            assert reduced_page.locator("#replay-video").get_attribute("src").endswith("/peg_insertion.webm")
+            assert reduced_page.locator("#replay-video").evaluate("v => v.ended && v.paused")
         assert not background_requests
+        reduced_page.locator("#motion-toggle").click()
+        reduced_page.wait_for_function("document.querySelector('#replay-video').getAttribute('src').endsWith('/drone.webm')")
         reduced.close()
 
         # Save-Data also keeps backgrounds off. Decorative failure must not break the page.
@@ -299,7 +356,8 @@ def check(url: str, output: Path) -> None:
             "checks": ["one preblurred background stream", "responsive background resolution",
                        "scrolling model logos and offscreen pause", "Muse identity", "Hugging Face links",
                        "upright heading font", "Star link without authentication",
-                       "30 decoded replays", "five benchmark metrics and correct sorting",
+                       "30 decoded replays", "two-play rotation, manual reset and playlist wrapping",
+                       "rotation pause and reduced-motion controls", "five benchmark metrics and correct sorting",
                        "full results table", "model support deep links", "local documentation and PDF", "global pause",
                        "native pause", "CPU/GPU model selection and model card links",
                        "keyboard tabs", "clipboard and fallback",

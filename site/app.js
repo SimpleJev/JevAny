@@ -88,11 +88,15 @@ const replay = document.querySelector("#replay-video");
 const videoExtension = replay.canPlayType('video/webm; codecs="vp9"') ? "webm" : "mp4";
 const ambientVideo = document.querySelector(".ambient-video");
 const portraitBackground = window.matchMedia("(max-aspect-ratio: 3/4)");
+const featuredCases = Object.keys(caseDetails);
 let motionEnabled = !reduceMotion.matches && !navigator.connection?.saveData;
 let replayVisible = false;
 let selectedCase = "peg_insertion";
 let manuallyPausedReplay = false;
-let caseOrder = Object.keys(caseDetails);
+let completedReplays = 0;
+let galleryPlayback = false;
+let caseOrder = featuredCases;
+replay.loop = false;
 
 function play(video) {
   // Autoplay may be denied by the browser; the poster and native controls remain.
@@ -104,6 +108,19 @@ function canAnimate() {
   return motionEnabled && !document.hidden;
 }
 
+function resumeReplay() {
+  if (!canAnimate() || !replayVisible || manuallyPausedReplay) return;
+  if (replay.ended) {
+    if (completedReplays >= 2) {
+      const playlist = galleryPlayback ? caseOrder : featuredCases;
+      selectCase(playlist[(playlist.indexOf(selectedCase) + 1) % playlist.length]);
+      return;
+    }
+    replay.currentTime = 0;
+  }
+  if (replay.paused) play(replay);
+}
+
 function syncMotion() {
   motionButton.setAttribute("aria-pressed", String(!motionEnabled));
   motionButton.querySelector(".motion-label").textContent = motionEnabled ? "Pause animation" : "Resume animation";
@@ -113,7 +130,7 @@ function syncMotion() {
   if (canAnimate()) {
     if (replayVisible && !manuallyPausedReplay) {
       if (!replay.getAttribute("src")) replay.src = `assets/media/${selectedCase}.${videoExtension}`;
-      if (replay.paused) play(replay);
+      resumeReplay();
     }
   } else {
     replay.pause();
@@ -174,27 +191,33 @@ const observer = new IntersectionObserver(entries => {
 }, { rootMargin: "100px" });
 observer.observe(replay);
 
+function selectCase(name) {
+  selectedCase = name;
+  completedReplays = 0;
+  const details = caseDetails[name];
+  document.querySelectorAll("[data-case]").forEach(choice => {
+    const selected = choice.dataset.case === name;
+    choice.classList.toggle("is-active", selected);
+    if (choice.tagName === "BUTTON") choice.setAttribute("aria-pressed", String(selected));
+  });
+  replay.pause();
+  replay.poster = `assets/media/${name}.webp`;
+  replay.src = `assets/media/${name}.${videoExtension}`;
+  replay.setAttribute("aria-label", `Archived JevAny replay: ${details.title}`);
+  document.querySelector("#replay-description").textContent = details.description;
+  document.querySelector("#replay-number").textContent = `${String(caseOrder.indexOf(name) + 1).padStart(2, "0")} / ${caseOrder.length}`;
+  manuallyPausedReplay = false;
+  if (canAnimate()) play(replay);
+}
+
 document.querySelectorAll("[data-case]").forEach(button => {
   button.addEventListener("click", event => {
     // When the catalog is unavailable, gallery links still open local MP4s.
     if (!caseDetails[button.dataset.case]) return;
     event.preventDefault();
-    selectedCase = button.dataset.case;
-    const details = caseDetails[selectedCase];
-    document.querySelectorAll("[data-case]").forEach(choice => {
-      const selected = choice.dataset.case === selectedCase;
-      choice.classList.toggle("is-active", selected);
-      if (choice.tagName === "BUTTON") choice.setAttribute("aria-pressed", String(selected));
-    });
-    replay.pause();
-    replay.poster = `assets/media/${selectedCase}.webp`;
-    replay.src = `assets/media/${selectedCase}.${videoExtension}`;
-    replay.setAttribute("aria-label", `Archived JevAny replay: ${details.title}`);
-    document.querySelector("#replay-description").textContent = details.description;
-    document.querySelector("#replay-number").textContent = `${String(caseOrder.indexOf(selectedCase) + 1).padStart(2, "0")} / ${caseOrder.length}`;
-    manuallyPausedReplay = false;
-    if (canAnimate()) play(replay);
-    if (button.classList.contains("case-card")) {
+    galleryPlayback = button.classList.contains("case-card");
+    selectCase(button.dataset.case);
+    if (galleryPlayback) {
       document.querySelector("#in-action").scrollIntoView();
       replay.focus({ preventScroll: true });
     }
@@ -203,9 +226,13 @@ document.querySelectorAll("[data-case]").forEach(button => {
 
 // Preserve a pause made with the video's native controls across viewport changes.
 replay.addEventListener("pause", () => {
-  if (canAnimate() && replayVisible && !replay.seeking && replay.readyState >= 2) manuallyPausedReplay = true;
+  if (canAnimate() && replayVisible && !replay.ended && !replay.seeking && replay.readyState >= 2) manuallyPausedReplay = true;
 });
 replay.addEventListener("play", () => { manuallyPausedReplay = false; });
+replay.addEventListener("ended", () => {
+  completedReplays += 1;
+  resumeReplay();
+});
 
 fetch("assets/data/cases.json")
   .then(response => {
