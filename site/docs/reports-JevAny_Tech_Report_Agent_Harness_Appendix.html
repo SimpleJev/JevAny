@@ -821,6 +821,13 @@ uniform baseline illustrates the distinction: 40.0% plain accuracy but −0.77%
 <td style="text-align: right;">3,220/3,220</td>
 </tr>
 <tr>
+<td>Jev 1.13 (OpenRouter)</td>
+<td style="text-align: right;">72.70%</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">Text-only endpoint</td>
+</tr>
+<tr>
 <td>JevAny-Muse-Glimmer-30B</td>
 <td style="text-align: right;">69.95%</td>
 <td style="text-align: right;">58.70%</td>
@@ -864,14 +871,18 @@ uniform baseline illustrates the distinction: 40.0% plain accuracy but −0.77%
 </tr>
 </tbody>
 </table></div>
+<p>Jev 1.13's 72.70% Typed result is published on the pinned dataset card; the
+separate OpenRouter rerun scores 65.06% on the 724-record JevJudge text-only
+subset. The endpoint is text-only, so no full-suite score is reported.</p>
 <p>All five JevAny releases exceed the two open external checkpoints that can run
 the complete native multimodal suite. OpenDecider-small and Jeff-Gemma4 are
 text-only; Bongard-mini has no video path; Kev's pinned runtime does not consume
 image or video media. These systems show <code>—</code> in the full-suite comparison
 rather than a media-stripped score.</p>
-<p>The separate 724-record text-only accuracy view places JevAny-Qwen3.8-27B at 66.44%,
-Kev-27B at 64.23%, Muse-Glimmer-30B at 62.57%, and the remaining compared
-systems at 42.82%–58.56%. Kev uses a full-context 4,096-token chunked-KV
+<p>The separate 724-record text-only accuracy view places JevAny-Qwen3.8-27B at
+66.44%, Jev 1.13 at 65.06%, Kev-27B at 64.23%, Muse-Glimmer-30B at 62.57%,
+and the remaining scored systems at 42.82%–58.56%. Kev uses a full-context
+4,096-token chunked-KV
 protocol with no token truncation. Its old 38.54% 27B row is invalid: the
 malformed path encoded only 7–63 effective tokens and omitted the state and
 instructions.</p>

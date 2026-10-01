@@ -327,15 +327,15 @@ NLL, Brier and ECE are measured on Transfer.
 
 The external comparison uses the complete Typed Decisions test split, the full
 3,220-record JevJudge multimodal suite, and its 724-record text slice. The same
-12 models stay in the same order; `—` means unsupported native input or no
+13 models stay in the same order; `—` means unsupported native input or no
 matching result.
 
-[![Accuracy on Typed Decisions, full JevJudge, and the JevJudge text-only subset for the same twelve-model cohort](docs/external-zero-shot.svg)](docs/external-zero-shot.svg)
+[![Accuracy on Typed Decisions, full JevJudge, and the JevJudge text-only subset for the same thirteen-model cohort](docs/external-zero-shot.svg)](docs/external-zero-shot.svg)
 
 - **JevAny-Qwen3.8-27B:** 72.8% Typed accuracy, **62.3%** JevJudge full accuracy, and 66.4% JevJudge text-only accuracy.
 - All five JevAny releases completed 3,220/3,220 native text, image, and video records. Their full-suite accuracy ranges from 51.5% to 62.3%; the strongest complete open baseline scores 48.2%.
 - On the JevJudge text-only subset, Qwen3.8-27B scores 66.4% and Kev-27B scores 64.2%. Kev has no native image/video path, so its full result is `—`.
-- Published-only Decider 1 (76.8%) and Liquid d1 (74.2%) remain above our 72.8% on Typed Decisions; neither has a JevJudge result.
+- **Jev 1.13 (OpenRouter):** 72.7% Typed accuracy (published) and 65.1% JevJudge text-only accuracy; its full result is `—` because the endpoint is text-only. Published Decider 1 (76.8%) and Liquid d1 (74.2%) remain higher on Typed Decisions.
 
 All three panels use accuracy. JevJudge full covers all 3,220 multimodal records;
 text-only is its 724-record text subset. The benchmark's official `skill_role`

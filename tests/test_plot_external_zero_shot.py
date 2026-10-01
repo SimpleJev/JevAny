@@ -27,14 +27,71 @@ def load_modified(tmp_path, artifact, panel, model, **changes):
     return load_results(path)
 
 
-def test_tracked_chart_artifact_has_one_valid_twelve_model_cohort():
+def test_tracked_chart_artifact_has_one_valid_thirteen_model_cohort():
     data = load_results(SOURCE)
     order = data["main_comparison_order"]
-    assert len(order) == 12
+    assert len(order) == 13
     assert {panel["metric"] for panel in PANELS} == {"accuracy"}
     for panel in ("typed_decisions", "jevjudge_full", "jevjudge_text"):
         assert [row["model"] for row in data[panel]["ordered_models"]] == order
         assert data[panel]["chart_metric"] == "accuracy"
+
+
+def test_jev_113_combines_published_typed_and_openrouter_text_results():
+    data = load_results(SOURCE)
+    typed = {row["model"]: row for row in data["typed_decisions"]["ordered_models"]}
+    full = {row["model"]: row for row in data["jevjudge_full"]["ordered_models"]}
+    text = {row["model"]: row for row in data["jevjudge_text"]["ordered_models"]}
+
+    model = "Jev 1.13 (OpenRouter)"
+    assert {typed[model]["kind"], full[model]["kind"], text[model]["kind"]} == {"external_api"}
+    assert typed[model]["accuracy"] == pytest.approx(0.727)
+    assert typed[model]["result_source"] == "published_only"
+    assert typed[model]["status"] == "dataset-card result; not locally rerun"
+    assert full[model]["accuracy"] is None
+    assert full[model]["result_source"] == "not_available"
+    assert full[model]["status"] == "incompatible: OpenRouter endpoint is text-only"
+    assert text[model]["accuracy"] == pytest.approx(471 / 724)
+    assert text[model]["result_source"] == "api_rerun"
+    assert text[model]["nll"] == pytest.approx(0.836)
+    assert text[model]["brier"] == pytest.approx(0.461)
+    assert text[model]["answered"] == text[model]["requested"] == 724
+    assert text[model]["status"] == "OpenRouter full-context rerun"
+
+
+@pytest.mark.parametrize(
+    ("panel", "wrong_source"),
+    [
+        ("typed_decisions", "api_rerun"),
+        ("jevjudge_full", "published_only"),
+        ("jevjudge_text", "published_only"),
+    ],
+)
+def test_jev_113_result_source_is_fixed_per_panel(tmp_path, artifact, panel, wrong_source):
+    with pytest.raises(ValueError, match="result_source must be"):
+        load_modified(
+            tmp_path,
+            artifact,
+            panel,
+            "Jev 1.13 (OpenRouter)",
+            result_source=wrong_source,
+        )
+
+
+def test_jev_113_cannot_be_reclassified_as_a_local_open_rerun(tmp_path, artifact):
+    data = deepcopy(artifact)
+    for panel in ("typed_decisions", "jevjudge_full", "jevjudge_text"):
+        row = next(
+            row
+            for row in data[panel]["models"]
+            if row["model"] == "Jev 1.13 (OpenRouter)"
+        )
+        row["kind"] = "open_rerun"
+        row.pop("result_source")
+    path = tmp_path / "results.json"
+    path.write_text(json.dumps(data))
+    with pytest.raises(ValueError, match="must use kind external_api"):
+        load_results(path)
 
 
 @pytest.mark.parametrize("value", [-0.01, 1.01, True, float("inf")])
@@ -110,6 +167,14 @@ def test_dash_rows_require_null_metrics_and_an_unavailable_status(tmp_path, arti
             "jevjudge_full",
             "Kev-27B",
             skill_role=0.5,
+        )
+    with pytest.raises(ValueError, match="non-null fields"):
+        load_modified(
+            tmp_path,
+            artifact,
+            "jevjudge_full",
+            "Kev-27B",
+            nll=1.0,
         )
     with pytest.raises(ValueError, match="needs a no-matching status"):
         load_modified(

@@ -15,11 +15,24 @@ MUTED = "#64748B"
 RULE = "#E4E9EF"
 COLORS = {
     "ours": "#278577",
+    "external_api": "#C08A42",
     "open_kev": "#9A6FB0",
     "open_rerun": "#8493A6",
     "published_only": "#A17BB7",
 }
-HATCHES = {"ours": None, "open_kev": None, "open_rerun": None, "published_only": "////"}
+HATCHES = {
+    "ours": None,
+    "external_api": None,
+    "open_kev": None,
+    "open_rerun": None,
+    "published_only": "////",
+}
+EXTERNAL_API_MODEL = "Jev 1.13 (OpenRouter)"
+EXTERNAL_API_SOURCE_BY_SUITE = {
+    "typed_decisions": "published_only",
+    "jevjudge_full": "not_available",
+    "jevjudge_text": "api_rerun",
+}
 PANELS = (
     {
         "key": "typed_decisions",
@@ -77,11 +90,24 @@ def _validate_row(row: dict, panel: dict) -> None:
         normalized = status.strip().lower() if isinstance(status, str) else ""
         if suite == "typed_decisions" and "no matching" not in normalized:
             raise ValueError(f"{suite}: unavailable {model} needs a no-matching status")
-        if suite == "jevjudge_full" and not normalized.startswith("incompatible:"):
-            raise ValueError(f"{suite}: unavailable {model} needs an incompatibility status")
-        if suite == "jevjudge_text":
-            raise ValueError(f"{suite}: every cohort model must have a scored result")
-        fields = ("accuracy", "skill_role", "skill_role_ci_95", "answered", "requested")
+        if suite == "jevjudge_full" and not (
+            normalized.startswith("incompatible:") or "no matching" in normalized
+        ):
+            raise ValueError(f"{suite}: unavailable {model} needs an incompatibility or no-matching status")
+        if suite == "jevjudge_text" and not (
+            row.get("kind") == "published_only" and "no matching" in normalized
+        ):
+            raise ValueError(f"{suite}: unavailable {model} needs a published no-matching status")
+        fields = (
+            "accuracy",
+            "skill_role",
+            "skill_role_ci_95",
+            "nll",
+            "brier",
+            "ece",
+            "answered",
+            "requested",
+        )
         present = [field for field in fields if row.get(field) is not None]
         if present:
             raise ValueError(f"{suite}: unavailable {model} has non-null fields: {present}")
@@ -118,8 +144,8 @@ def _validate_row(row: dict, panel: dict) -> None:
 def load_results(source: Path = SOURCE) -> dict:
     data = json.loads(source.read_text())
     order = data["main_comparison_order"]
-    if len(order) != 12 or len(order) != len(set(order)) or not all(isinstance(model, str) and model for model in order):
-        raise ValueError("main comparison order must contain 12 unique, non-empty model names")
+    if len(order) != 13 or len(order) != len(set(order)) or not all(isinstance(model, str) and model for model in order):
+        raise ValueError("main comparison order must contain 13 unique, non-empty model names")
     cohort_kinds = {}
     for panel in PANELS:
         suite = data[panel["key"]]
@@ -134,6 +160,21 @@ def load_results(source: Path = SOURCE) -> dict:
                 raise ValueError(f"{panel['key']}: duplicate model {model}")
             if row.get("kind") not in COLORS:
                 raise ValueError(f"{panel['key']}: invalid kind for {model}")
+            kind = row["kind"]
+            if model == EXTERNAL_API_MODEL and kind != "external_api":
+                raise ValueError(f"{panel['key']}: {model} must use kind external_api")
+            if kind == "external_api":
+                if model != EXTERNAL_API_MODEL:
+                    raise ValueError(
+                        f"{panel['key']}: external_api kind is reserved for {EXTERNAL_API_MODEL}"
+                    )
+                expected_source = EXTERNAL_API_SOURCE_BY_SUITE[panel["key"]]
+                if row.get("result_source") != expected_source:
+                    raise ValueError(
+                        f"{panel['key']}: {model} result_source must be {expected_source}"
+                    )
+            elif "result_source" in row:
+                raise ValueError(f"{panel['key']}: unexpected result_source for {model}")
             by_model[model] = row
         missing = [model for model in order if model not in by_model]
         if missing:
@@ -156,6 +197,7 @@ def short_label(name: str) -> str:
         "JevAny-Qwen3.5-4B": "JevAny Qwen3.5 4B · Pointer",
         "JevAny-Muse-Glimmer-30B": "JevAny Muse 30B",
         "JevAny-Gemma-4B": "JevAny Gemma 4B",
+        "Jev 1.13 (OpenRouter)": "Jev 1.13 · OpenRouter",
         "OpenDecider-small": "OpenDecider small",
         "Bongard-mini": "Bongard mini",
         "Jeff-Gemma4-E2B": "Jeff Gemma4 E2B",
@@ -185,8 +227,17 @@ def draw_panel(ax, rows: list[dict], panel: dict, show_labels: bool) -> None:
             )
             continue
         value = score * 100
-        bar = ax.barh(index, value, height=0.66, color=color, edgecolor="none", zorder=3)
-        bar[0].set_hatch(HATCHES[row["kind"]])
+        published = row.get("result_source") == "published_only" or row["kind"] == "published_only"
+        bar = ax.barh(
+            index,
+            value,
+            height=0.66,
+            color=color,
+            edgecolor="#805A2B" if published else "none",
+            linewidth=0.7 if published else 0,
+            zorder=3,
+        )
+        bar[0].set_hatch("////" if published else HATCHES[row["kind"]])
         ax.text(
             min(value + panel["xmax"] * 0.018, panel["xmax"] * 0.985),
             index,
@@ -242,20 +293,22 @@ def main() -> None:
     fig.text(
         0.035,
         0.910,
-        "Same 12-model order · complete stated sets · — = unsupported native input or no matching result",
+        "Same 13-model order · complete stated sets · — = unsupported native input or no matching result",
         fontsize=12.2,
         color=MUTED,
     )
     legend = [
         Patch(facecolor=COLORS["ours"], label="JevAny"),
+        Patch(facecolor=COLORS["external_api"], label="Jev 1.13 · API"),
         Patch(facecolor=COLORS["open_kev"], label="Kev · open"),
         Patch(facecolor=COLORS["open_rerun"], label="Other open · locally rerun"),
+        Patch(facecolor="white", edgecolor="#805A2B", hatch="////", label="Published result"),
     ]
     fig.legend(
         handles=legend,
         loc="upper right",
         bbox_to_anchor=(0.988, 0.972),
-        ncol=3,
+        ncol=5,
         frameon=False,
         fontsize=10.8,
         handlelength=1.2,

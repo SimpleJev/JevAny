@@ -34,8 +34,11 @@ being independently sorted by score.
 Laya is retained as a request-conversion check but is not in the common
 chart cohort. The pinned dataset card also contains results that were not
 rerun locally; their hardware, runtime and item-level outputs are unavailable
-under the local protocol. OpenDecider and Bongard appear below only as
-published references; the locally rerun rows above are used in the chart.
+under the local protocol. The chart's Jev 1.13 (OpenRouter) row uses the
+published TypeSafe Jev 1.13.0 result for Typed Decisions and the 724-record
+OpenRouter rerun for JevJudge text-only. OpenDecider and Bongard appear below
+only as published references, while their locally rerun rows above are used in
+the chart.
 
 | Supplemental row | Accuracy ↑ | KL ↓ | Brier ↓ | ECE ↓ | Status |
 |---|---:|---:|---:|---:|---:|
@@ -60,8 +63,9 @@ zero-shot comparison.
 We evaluated the complete v0.3 test split at revision `4d576ded`: 3,220
 records, including 724 text, 2,214 image and 282 video requests from 22
 families and five judge roles. A score requires all 3,220 native requests with
-zero rejected or truncated records. Models that cannot consume every required
-modality show `—`; media are never removed to manufacture a score.
+zero rejected or truncated records. Models without a complete matching result,
+whether from modality incompatibility or no published/local run, show `—`;
+media are never removed to manufacture a score.
 
 The official headline is `skill_role`. Each family first receives
 `(A-c)/(1-c)`, where `A` is balanced accuracy for fixed option sets or accuracy
@@ -77,6 +81,7 @@ score remains reported below and in the technical report.
 | Model | Accuracy ↑ | Official `skill_role` ↑ (95% CI) | NLL ↓ | Brier ↓ | ECE ↓ | Full-suite status |
 |---|---:|---:|---:|---:|---:|---|
 | **JevAny-Qwen3.8-27B** | **62.27%** | 35.55% [32.84, 38.18] | **0.878** | **0.500** | 0.094 | 3,220/3,220 |
+| Jev 1.13 (OpenRouter) | — | — | — | — | — | Text-only endpoint |
 | JevAny-Muse-Glimmer-30B | 58.70% | 29.65% [26.71, 32.31] | 0.911 | 0.528 | 0.100 | 3,220/3,220 |
 | JevAny-Qwen3.5-4B-Direct-Token | 54.94% | 23.85% [20.96, 26.70] | 1.005 | 0.573 | 0.131 | 3,220/3,220 |
 | JevAny-Qwen3.5-4B | 54.75% | 23.23% [20.49, 25.84] | 1.051 | 0.586 | 0.117 | 3,220/3,220 |
@@ -84,7 +89,6 @@ score remains reported below and in the technical report.
 | Kev-27B | — | — | — | — | — | No native image/video path |
 | Kev-4B | — | — | — | — | — | No native image/video path |
 | OpenDecider-small | — | — | — | — | — | Text only |
-| Jev 1.13 (OpenRouter) | — | — | — | — | — | Text only |
 | Bongard-mini | — | — | — | — | — | No native video path |
 | Jeff-Gemma4-E2B | — | — | — | — | — | Text-only checkpoint |
 | Jeff-Qwen3.5-2B | 48.23% | 13.57% [10.80, 15.99] | 1.105 | 0.628 | 0.137 | 3,220/3,220 |
@@ -118,6 +122,10 @@ and is not the official five-role headline.
 | Jeff-Gemma4-E2B | 46.69% | 1.210 | 0.681 | 0.181 | 724/724 |
 | Jeff-Qwen3.5-2B | 42.82% | 1.214 | 0.682 | 0.191 | 724/724 |
 | Jeff-Qwen3.5-0.8B | 43.51% | 1.256 | 0.703 | 0.211 | 724/724 |
+
+Jev 1.13's Typed value is the pinned dataset-card result; its JevJudge
+text-only value is the separate 724/724 OpenRouter full-context rerun. The
+full-suite result remains `—` because the endpoint is text-only.
 
 Kev uses a full-context 4,096-token chunked-KV protocol. BF16 chunking is not
 numerically bit-exact: the new Kev-4B run changes three argmax decisions versus
@@ -153,6 +161,8 @@ and are not used in the figure.
   `runs/jevjudge-full-current-20261001` (summary SHA-256 `fcc3025c…b6609`);
   Jeff full results come from the corrected derived summary SHA-256
   `3c348c94…c00b3`; Kev text comes from summary SHA-256 `4e1f4485…6598`.
+  Jev 1.13's OpenRouter text aggregate was added in source commit
+  `2ff9d301…3c6f`; item-level outputs are not tracked in this artifact.
 - Typed Decisions uses dataset revision `d0e2f0c4`, parquet SHA-256
   `4f294f…b647c`; JevJudge uses revision `4d576ded`, test SHA-256
   `5c50f8…e83cb` and suite-manifest SHA-256 `ee52a1…15b68`.
