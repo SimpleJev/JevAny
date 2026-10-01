@@ -283,36 +283,22 @@ NLL、Brier 和 ECE 均在 Transfer 上计算。
 [机器可读结果](results/model-family-v2.json) ·
 [方法与消融实验报告](reports/JevAny_Tech_Report.pdf)
 
-公开外部对比在完整 Typed Decisions 测试集（2,000 个决策）和相同的
-JevJudge 724 条文本请求上使用同一组十个模型。JevJudge 使用原生输入、
-统一 65,536-token 上限且不截断；所有模型均完成 724/724。Typed Decisions
-衡量与教师软标签的一致率，并非客观正确率。
+外部对比覆盖完整 Typed Decisions、JevJudge 3,220 条多模态全集及其 724 条
+文本切片。12 个模型在三个面板中保持同一顺序；`—` 表示不支持原生输入或
+没有对应结果。
 
-[![同一组 JevAny 与开源外部模型在 Typed Decisions 和 JevJudge 文本集上的双面板对比](docs/external-zero-shot.svg)](docs/external-zero-shot.svg)
+[![同一组十二个模型在 Typed Decisions、JevJudge 全集和文本切片上的结果](docs/external-zero-shot.svg)](docs/external-zero-shot.svg)
 
-| 模型 | Typed Decisions ↑ | JevJudge 文本 ↑ | 来源 / 状态 |
-|:---|---:|---:|:---|
-| **JevAny-Qwen3.8-27B** | **72.80%** | **66.44%** | 我们；full-context 实跑 |
-| JevAny-Muse-Glimmer-30B | 69.95% | 62.57% | 我们；full-context 实跑 |
-| JevAny-Qwen3.5-4B-Direct-Token | 67.20% | 58.56% | 我们；full-context 实跑 |
-| JevAny-Qwen3.5-4B | 63.50% | 57.87% | 我们；full-context 实跑 |
-| JevAny-Gemma-4B | 66.25% | 51.10% | 我们；full-context 实跑 |
-| OpenDecider-small | 66.65% | 54.97% | 开源；full-context 实跑 |
-| Bongard-mini | 59.65% | 51.24% | 开源；full-context 实跑 |
-| Jeff-Gemma4-E2B | 57.95% | 46.69% | 开源；full-context 实跑 |
-| Jeff-Qwen3.5-2B | 55.45% | 42.82% | 开源；full-context 实跑 |
-| Jeff-Qwen3.5-0.8B | 49.15% | 43.51% | 开源；full-context 实跑 |
+- **JevAny-Qwen3.8-27B：**Typed agreement 72.8%，JevJudge `skill_role` **35.6%**，JevJudge 文本准确率 66.4%。
+- 五个 JevAny 版本都完成了 3,220/3,220 条原生文本、图片和视频评测，`skill_role` 为 17.9%–35.6%；最强完整开源 baseline 为 13.6%。
+- JevJudge 文本中，Qwen3.8-27B 为 66.4%，Kev-27B 为 64.2%。Kev 没有原生图片/视频路径，因此全集为 `—`。
+- 仅有公开报告的 Decider 1（76.8%）和 Liquid d1（74.2%）仍高于我们在 Typed Decisions 上的 72.8%；二者都没有 JevJudge 结果。
 
-Qwen3.8-27B 分别领先本地复现的最强外部模型 **6.15** 和 **11.46** 个百分点。
-Direct-Token 4B 分别领先 0.55 和 3.59 个百分点；Pointer 4B 在 Typed
-Decisions 落后 3.15 个百分点、在 JevJudge 文本领先 2.90 个百分点，
-Gemma-4B 则未超过最强外部结果。仅有 published 结果的 Decider 1（76.8%）
-和 Liquid d1（74.2%）在 Typed Decisions 上仍高于我们的 27B，但没有对应的
-JevJudge 结果。
+JevJudge 官方 `skill_role` 会扣除每个 family 的猜测或多数类基线，再等权平均五种
+role。Qwen3.8-27B 的全集普通准确率是 62.27%，`skill_role` 是 35.55%；
+两者衡量的内容不同。
 
-JevJudge 文本集仅覆盖四种角色，是诊断集而非官方五角色多模态 headline。
-Laya 会静默截断到 `max_len=512`，因此不进入 full-context 主表；Kev、Laya
-与 published-only 结果保留在[完整外部结果](docs/EXTERNAL_EVALUATION.md)中。
+[完整外部结果](docs/EXTERNAL_EVALUATION.md) ·
 [机器可读图表数据](results/external-zero-shot-v1.json)
 
 ### ⏱️ 3.1 推理效率 <a name="推理效率"></a>

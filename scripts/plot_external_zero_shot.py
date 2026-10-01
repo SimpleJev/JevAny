@@ -5,13 +5,6 @@ import json
 import math
 from pathlib import Path
 
-import matplotlib
-
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-from matplotlib.patches import Patch
-
-
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "results/external-zero-shot-v1.json"
 SVG_OUT = ROOT / "docs/external-zero-shot.svg"
@@ -22,31 +15,133 @@ MUTED = "#64748B"
 RULE = "#E4E9EF"
 COLORS = {
     "ours": "#278577",
+    "open_kev": "#9A6FB0",
     "open_rerun": "#8493A6",
     "published_only": "#A17BB7",
 }
-HATCHES = {"ours": None, "open_rerun": None, "published_only": "////"}
+HATCHES = {"ours": None, "open_kev": None, "open_rerun": None, "published_only": "////"}
+PANELS = (
+    {
+        "key": "typed_decisions",
+        "metric": "accuracy",
+        "title": "Typed Decisions",
+        "scope": "2,000 decisions · teacher agreement (%)",
+        "xmax": 82,
+        "ticks": [0, 20, 40, 60, 80],
+        "score_range": (0, 1),
+        "coverage": None,
+    },
+    {
+        "key": "jevjudge_full",
+        "metric": "skill_role",
+        "title": "JevJudge full",
+        "scope": "3,220 text / image / video · skill_role (%)",
+        "xmax": 42,
+        "ticks": [0, 10, 20, 30, 40],
+        # Chance correction can be less than -1 when a family's floor is high.
+        "score_range": (None, 1),
+        "coverage": 3220,
+    },
+    {
+        "key": "jevjudge_text",
+        "metric": "accuracy",
+        "title": "JevJudge text",
+        "scope": "724 full-context text requests · accuracy (%)",
+        "xmax": 72,
+        "ticks": [0, 20, 40, 60],
+        "score_range": (0, 1),
+        "coverage": 724,
+    },
+)
 
 
-def load_results() -> dict:
-    data = json.loads(SOURCE.read_text())
-    for suite in ("typed_decisions", "jevjudge_text"):
-        seen = set()
-        for row in data[suite]["models"]:
-            if row["model"] in seen:
-                raise ValueError(f"{suite}: duplicate model {row['model']}")
-            seen.add(row["model"])
-            score = row["accuracy"]
-            if (
-                isinstance(score, bool)
-                or not isinstance(score, (int, float))
-                or not math.isfinite(score)
-                or not 0 <= score <= 1
-            ):
-                raise ValueError(f"{suite}: invalid accuracy for {row['model']}")
-            if row["kind"] not in COLORS:
-                raise ValueError(f"{suite}: invalid kind for {row['model']}")
-        data[suite]["models"].sort(key=lambda row: (-row["accuracy"], row["model"]))
+def _finite_number(value) -> bool:
+    return not isinstance(value, bool) and isinstance(value, (int, float)) and math.isfinite(value)
+
+
+def _unavailable_status(status) -> bool:
+    if not isinstance(status, str) or not status.strip():
+        return False
+    normalized = status.strip().lower()
+    return normalized.startswith("incompatible:") or "no matching" in normalized
+
+
+def _validate_row(row: dict, panel: dict) -> None:
+    suite = panel["key"]
+    model = row["model"]
+    metric = panel["metric"]
+    score = row.get(metric)
+    unavailable = score is None
+
+    if unavailable:
+        status = row.get("status")
+        normalized = status.strip().lower() if isinstance(status, str) else ""
+        if suite == "typed_decisions" and "no matching" not in normalized:
+            raise ValueError(f"{suite}: unavailable {model} needs a no-matching status")
+        if suite == "jevjudge_full" and not normalized.startswith("incompatible:"):
+            raise ValueError(f"{suite}: unavailable {model} needs an incompatibility status")
+        if suite == "jevjudge_text":
+            raise ValueError(f"{suite}: every cohort model must have a scored result")
+        fields = ("accuracy", "skill_role", "skill_role_ci_95", "answered", "requested")
+        present = [field for field in fields if row.get(field) is not None]
+        if present:
+            raise ValueError(f"{suite}: unavailable {model} has non-null fields: {present}")
+        return
+
+    if _unavailable_status(row.get("status")):
+        raise ValueError(f"{suite}: scored {model} has an unavailable status")
+    low, high = panel["score_range"]
+    if not _finite_number(score) or (low is not None and score < low) or score > high:
+        raise ValueError(f"{suite}: invalid {metric} for {model}")
+
+    accuracy = row.get("accuracy")
+    if not _finite_number(accuracy) or not 0 <= accuracy <= 1:
+        raise ValueError(f"{suite}: invalid accuracy for {model}")
+
+    coverage = panel["coverage"]
+    if coverage is not None and (row.get("answered"), row.get("requested")) != (coverage, coverage):
+        raise ValueError(f"{suite}: {model} must have exact {coverage}/{coverage} coverage")
+
+    ci = row.get("skill_role_ci_95")
+    if metric == "skill_role":
+        if not isinstance(ci, list) or len(ci) != 2 or not all(_finite_number(value) for value in ci):
+            raise ValueError(f"{suite}: invalid skill_role CI for {model}")
+        ci_low, ci_high = ci
+        if not ci_low <= score <= ci_high <= 1:
+            raise ValueError(f"{suite}: skill_role CI must be ordered and contain the score for {model}")
+    elif ci is not None:
+        raise ValueError(f"{suite}: unexpected skill_role CI for {model}")
+
+
+def load_results(source: Path = SOURCE) -> dict:
+    data = json.loads(source.read_text())
+    order = data["main_comparison_order"]
+    if len(order) != 12 or len(order) != len(set(order)) or not all(isinstance(model, str) and model for model in order):
+        raise ValueError("main comparison order must contain 12 unique, non-empty model names")
+    cohort_kinds = {}
+    for panel in PANELS:
+        suite = data[panel["key"]]
+        by_model = {}
+        for row in suite["models"]:
+            model = row.get("model")
+            if not isinstance(model, str) or not model:
+                raise ValueError(f"{panel['key']}: invalid model name")
+            if model in by_model:
+                raise ValueError(f"{panel['key']}: duplicate model {model}")
+            if row.get("kind") not in COLORS:
+                raise ValueError(f"{panel['key']}: invalid kind for {model}")
+            by_model[model] = row
+        missing = [model for model in order if model not in by_model]
+        if missing:
+            raise ValueError(f"{panel['key']}: missing fixed-cohort models: {missing}")
+        ordered = [by_model[model] for model in order]
+        for row in ordered:
+            model = row["model"]
+            previous = cohort_kinds.setdefault(model, row["kind"])
+            if row["kind"] != previous:
+                raise ValueError(f"{panel['key']}: inconsistent kind for {model}")
+            _validate_row(row, panel)
+        suite["ordered_models"] = ordered
     return data
 
 
@@ -54,50 +149,82 @@ def short_label(name: str) -> str:
     replacements = {
         "JevAny-Qwen3.8-27B": "JevAny Qwen3.8 27B",
         "JevAny-Qwen3.5-4B-Direct-Token": "JevAny Qwen3.5 4B · DT",
-        "JevAny-Qwen3.5-4B": "JevAny Qwen3.5 4B",
+        "JevAny-Qwen3.5-4B": "JevAny Qwen3.5 4B · Pointer",
         "JevAny-Muse-Glimmer-30B": "JevAny Muse 30B",
         "JevAny-Gemma-4B": "JevAny Gemma 4B",
-        "prima-ratio + Gemma4 12B": "prima-ratio + Gemma 12B",
-        "convaiinnovations/laya": "Laya",
+        "OpenDecider-small": "OpenDecider small",
+        "Bongard-mini": "Bongard mini",
+        "Jeff-Gemma4-E2B": "Jeff Gemma4 E2B",
+        "Jeff-Qwen3.5-2B": "Jeff Qwen3.5 2B",
+        "Jeff-Qwen3.5-0.8B": "Jeff Qwen3.5 0.8B",
+        "Kev-27B": "Kev 27B",
+        "Kev-4B": "Kev 4B",
     }
     return replacements.get(name, name)
 
 
-def draw_panel(ax, rows: list[dict], title: str, scope: str) -> None:
-    labels = [short_label(row["model"]) for row in rows]
-    values = [row["accuracy"] * 100 for row in rows]
-    bars = ax.barh(
-        range(len(rows)),
-        values,
-        height=0.67,
-        color=[COLORS[row["kind"]] for row in rows],
-        edgecolor=["#79558D" if row["kind"] == "published_only" else "none" for row in rows],
-        linewidth=0.6,
-        zorder=3,
-    )
-    for bar, row, value in zip(bars, rows, values):
-        bar.set_hatch(HATCHES[row["kind"]])
+def draw_panel(ax, rows: list[dict], panel: dict, show_labels: bool) -> None:
+    metric = panel["metric"]
+    for index, row in enumerate(rows):
+        score = row.get(metric)
+        color = COLORS[row["kind"]]
+        if score is None:
+            ax.text(
+                panel["xmax"] * 0.018,
+                index,
+                "—",
+                ha="left",
+                va="center",
+                fontsize=14,
+                color="#A8B1BD",
+                weight="bold",
+            )
+            continue
+        value = score * 100
+        bar = ax.barh(index, value, height=0.66, color=color, edgecolor="none", zorder=3)
+        bar[0].set_hatch(HATCHES[row["kind"]])
+        ci = row.get("skill_role_ci_95") if metric == "skill_role" else None
+        label_edge = value
+        if ci:
+            low, high = (bound * 100 for bound in ci)
+            label_edge = high
+            ax.errorbar(
+                value,
+                index,
+                xerr=[[value - low], [high - value]],
+                fmt="none",
+                ecolor=INK,
+                elinewidth=1.15,
+                capsize=2.5,
+                capthick=1.15,
+                zorder=5,
+            )
         ax.text(
-            min(value + 1.0, 80.7),
-            bar.get_y() + bar.get_height() / 2,
+            min(label_edge + panel["xmax"] * 0.018, panel["xmax"] * 0.985),
+            index,
             f"{value:.1f}",
-            ha="left" if value < 77 else "right",
+            ha="right" if value > panel["xmax"] * 0.91 else "left",
             va="center",
-            fontsize=9.4,
+            fontsize=9.1,
             color=INK,
             weight="bold" if row["kind"] == "ours" else "normal",
         )
-    ax.set_title(title, loc="left", fontsize=17, color=INK, weight="bold", pad=24)
-    ax.text(0, 1.015, scope, transform=ax.transAxes, fontsize=10.5, color=MUTED)
-    ax.set_xlim(0, 82)
-    ax.set_xticks([0, 20, 40, 60, 80])
-    ax.set_xticklabels(["0", "20", "40", "60", "80"], fontsize=9.5, color=MUTED)
-    ax.set_yticks(range(len(rows)), labels, fontsize=9.5, color=INK)
-    for tick, row in zip(ax.get_yticklabels(), rows):
-        if row["kind"] == "ours":
-            tick.set_weight("bold")
+
+    ax.set_title(panel["title"], loc="left", fontsize=16, color=INK, weight="bold", pad=25)
+    ax.text(0, 1.014, panel["scope"], transform=ax.transAxes, fontsize=10.1, color=MUTED)
+    ax.set_xlim(0, panel["xmax"])
+    ax.set_xticks(panel["ticks"])
+    ax.set_xticklabels([str(value) for value in panel["ticks"]], fontsize=9.2, color=MUTED)
+    ax.set_yticks(range(len(rows)))
+    if show_labels:
+        ax.set_yticklabels([short_label(row["model"]) for row in rows], fontsize=9.4, color=INK)
+        for tick, row in zip(ax.get_yticklabels(), rows):
+            if row["kind"] == "ours":
+                tick.set_weight("bold")
+    else:
+        ax.tick_params(axis="y", labelleft=False)
     ax.invert_yaxis()
-    ax.tick_params(axis="x", length=0, pad=8)
+    ax.tick_params(axis="x", length=0, pad=7)
     ax.tick_params(axis="y", length=0, pad=7)
     ax.set_axisbelow(True)
     ax.grid(axis="x", color=RULE, linewidth=0.8)
@@ -107,82 +234,68 @@ def draw_panel(ax, rows: list[dict], title: str, scope: str) -> None:
 
 
 def main() -> None:
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from matplotlib.patches import Patch
+
     data = load_results()
-    order = data["main_comparison_order"]
-    panels = {}
-    for suite in ("typed_decisions", "jevjudge_text"):
-        by_model = {row["model"]: row for row in data[suite]["models"]}
-        missing = [model for model in order if model not in by_model]
-        if missing:
-            raise ValueError(f"{suite}: missing common-cohort models: {missing}")
-        panels[suite] = [by_model[model] for model in order]
     plt.rcParams.update({
         "font.family": ["DejaVu Sans", "sans-serif"],
         "svg.fonttype": "none",
-        "svg.hashsalt": "jevany-external-zero-shot-v1",
+        "svg.hashsalt": "jevany-external-zero-shot-v2",
         "text.color": INK,
         "hatch.linewidth": 0.7,
     })
-    fig, axes = plt.subplots(1, 2, figsize=(18, 6.5), dpi=100, facecolor="white")
-    fig.subplots_adjust(left=0.17, right=0.985, bottom=0.17, top=0.72, wspace=0.48)
-    fig.text(0.035, 0.955, "External zero-shot decision accuracy", fontsize=24, weight="bold")
+    fig, axes = plt.subplots(1, 3, figsize=(21, 8.2), dpi=110, facecolor="white", sharey=True)
+    fig.subplots_adjust(left=0.17, right=0.988, bottom=0.16, top=0.72, wspace=0.20)
+    fig.text(0.035, 0.955, "External zero-shot decision results", fontsize=24, weight="bold")
     fig.text(
         0.035,
         0.910,
-        "The same ten models in the same order · complete stated evaluation sets",
-        fontsize=12.5,
+        "Same 12-model order · complete stated sets · — = unsupported native input or no matching result",
+        fontsize=12.2,
         color=MUTED,
     )
     legend = [
         Patch(facecolor=COLORS["ours"], label="JevAny"),
-        Patch(facecolor=COLORS["open_rerun"], label="Open · locally rerun"),
+        Patch(facecolor=COLORS["open_kev"], label="Kev · open"),
+        Patch(facecolor=COLORS["open_rerun"], label="Other open · locally rerun"),
     ]
     fig.legend(
         handles=legend,
         loc="upper right",
-        bbox_to_anchor=(0.985, 0.975),
-        ncol=2,
+        bbox_to_anchor=(0.988, 0.972),
+        ncol=3,
         frameon=False,
-        fontsize=11.5,
+        fontsize=10.8,
         handlelength=1.2,
-        columnspacing=1.7,
+        columnspacing=1.5,
     )
-    draw_panel(
-        axes[0],
-        panels["typed_decisions"],
-        "Typed Decisions",
-        "2,000 decisions · teacher agreement (%)",
-    )
-    draw_panel(
-        axes[1],
-        panels["jevjudge_text"],
-        "JevJudge common text set",
-        "724/724 full-context requests · accuracy (%)",
-    )
+    for index, (ax, panel) in enumerate(zip(axes, PANELS)):
+        draw_panel(ax, data[panel["key"]]["ordered_models"], panel, show_labels=index == 0)
     fig.text(
         0.035,
         0.045,
-        "JevJudge text is a four-role diagnostic, not the official full-multimodal headline; native inputs use the "
-        "same 65,536-token ceiling with no truncation.",
+        "JevJudge full uses official chance-corrected, equal-role skill with 95% source-stratified group-bootstrap CIs. "
+        "The text slice is a separate four-role diagnostic.",
         fontsize=10.2,
         color=MUTED,
     )
     description = " ".join(
-        f"{suite}: "
-        + ", ".join(f"{row['model']} {row['accuracy'] * 100:.2f}%" for row in panels[key])
-        for suite, key in (
-            ("Typed Decisions", "typed_decisions"),
-            ("JevJudge common text set", "jevjudge_text"),
+        f"{panel['title']}: "
+        + ", ".join(
+            f"{row['model']} "
+            + ("unavailable" if row.get(panel["metric"]) is None else f"{row[panel['metric']] * 100:.2f}%")
+            for row in data[panel["key"]]["ordered_models"]
         )
+        for panel in PANELS
     )
-    metadata = {
-        "Date": None,
-        "Title": "External zero-shot decision accuracy",
-        "Description": description,
-    }
+    metadata = {"Date": None, "Title": "External zero-shot decision results", "Description": description}
     fig.savefig(SVG_OUT, metadata=metadata)
     SVG_OUT.write_text("\n".join(line.rstrip() for line in SVG_OUT.read_text().splitlines()) + "\n")
-    fig.savefig(PNG_OUT, dpi=160, metadata={"Software": "JevAny plot_external_zero_shot.py"})
+    fig.savefig(PNG_OUT, dpi=170, metadata={"Software": "JevAny plot_external_zero_shot.py"})
     plt.close(fig)
     print(f"Wrote {SVG_OUT.relative_to(ROOT)} and {PNG_OUT.relative_to(ROOT)}")
 
