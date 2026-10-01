@@ -1,4 +1,4 @@
-# JevBench and Kev evaluation
+# External decision-suite evaluation
 
 ## Public-suite additions — October 1, 2026
 
@@ -8,8 +8,11 @@ We ran the complete `LocalLLaMA/typed-decisions` test split at revision
 `d0e2f0c4`: 400 cases, five questions per case and 2,000 scored decisions.
 Each local model ran on one H200 with batch size 1. Latency is per five-decision
 case; published comparator latency uses different hardware and is not compared.
+The soft gold label for each decision is the mean of three samples from a
+teacher of roughly 4B-class capability. Accuracy is therefore argmax agreement
+with that teacher-derived label, not objective correctness.
 
-| Local model | Accuracy ↑ | KL ↓ | Brier ↓ | ECE ↓ | Median / case ↓ |
+| Local model | Accuracy (teacher agreement) ↑ | KL ↓ | Brier ↓ | ECE ↓ | Median / case ↓ |
 |---|---:|---:|---:|---:|---:|
 | **JevAny-Qwen3.8-27B** | **72.80%** | 0.293 | 0.131 | 0.053 | 279.8 ms |
 | JevAny-Muse-Glimmer-30B | 69.95% | **0.245** | **0.111** | **0.028** | 265.9 ms |
@@ -30,23 +33,28 @@ rows that we did not rerun are excluded from this comparison.
 
 We ran all 3,220 JevJudge-Public v0.3 test records at revision `4d576ded`.
 The suite contains 2,214 image, 724 text, and 282 video decisions across 22
-families. Accuracy and probability metrics below cover answered records only;
-coverage makes the context-limit rejections visible rather than replacing them
+families. Every evaluated model rejected at least one record, so none is
+eligible for a full-suite headline. The accuracy and probability metrics below
+are answered-only internal diagnostics, not full-suite scores; coverage makes
+the context-limit and runtime rejections visible rather than replacing them
 with invented uniform predictions.
 
-| Local model | Answered / 3,220 | Coverage | Accuracy ↑ | NLL ↓ | Brier ↓ | ECE ↓ |
+| Diagnostic checkpoint | Answered / 3,220 | Coverage | Accuracy ↑ | NLL ↓ | Brier ↓ | ECE ↓ |
 |---|---:|---:|---:|---:|---:|---:|
-| **JevAny-Qwen3.8-27B** | 3,123 | 97.0% | **61.32%** | **0.852** | **0.491** | **0.068** |
+| JevAny-Qwen3.8-27B (internal step-022160) | 3,123 | 97.0% | 61.32% | 0.852 | 0.491 | 0.068 |
 | JevAny-Muse-Glimmer-30B | 3,140 | **97.5%** | 58.73% | 0.911 | 0.527 | 0.098 |
 | JevAny-Qwen3.5-4B-Direct-Token | 3,123 | 97.0% | 54.66% | 1.012 | 0.578 | 0.132 |
 | JevAny-Qwen3.5-4B | 3,123 | 97.0% | 54.53% | 1.057 | 0.590 | 0.119 |
 | JevAny-Gemma-4B | 634 | 19.7% | 50.32% | 1.057 | 0.600 | 0.102 |
 
-Qwen3.8-27B leads every reported quality metric. Muse answers 17 more records
-but trails by 2.59 accuracy points. Gemma's current runtime rejected the native
-media layout, so its text-heavy answered subset is not comparable to the other
-rows. The open Laya checkpoint completed the 724 text records at 38.67%; it has
-no image or video input and is kept as a text-only comparator.
+The Qwen3.8-27B row uses internal training checkpoint `step-022160`, not the
+released checkpoint, and is retained only as a diagnostic. Muse answers 17 more
+records than that checkpoint. Gemma's current runtime rejected the native media
+layout, so its text-heavy answered subset is not comparable to the other rows.
+The open Laya checkpoint completed the 724 text records at 38.67%; it has no
+image or video input and is kept as a text-only comparator. Because all models
+reject records and their answered subsets differ, these rows do not define a
+full-suite winner.
 
 [Machine-readable results and provenance](../results/external-decision-evals-20261001/jevjudge-public.json)
 
@@ -102,6 +110,8 @@ score and is not included in the result showcase.
 
 [Pinned index provenance](../results/external-decision-evals-20261001/jev-decision-index.json)
 
+## Kev and earlier JevAny comparison matrix — September 27, 2026
+
 The frozen recipe evaluates both released JevAny checkpoints and all 14 distinct
 Kev checkpoints available through the main repositories and release tags on
 September 27, 2026. Identical release aliases share a result. Unreleased
@@ -120,7 +130,7 @@ counts, hashes, and mirror revisions remain in `manifest.json` under
 JevBench results cover its 231 public decisions; its sealed leaderboard composite
 is outside this public evaluation.
 
-## Results — September 27, 2026
+### Results
 
 The completed public matrix contains 16 checkpoints × 67 panels. Each model
 attempted all 22,219 unique requests, representing 56,677 original panel

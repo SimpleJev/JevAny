@@ -304,13 +304,13 @@ NLL, Brier and ECE are measured on Transfer.
 [Machine-readable results](results/model-family-v2.json) ·
 [Method and ablation report](reports/JevAny_Tech_Report.pdf)
 
-Two additional public suites confirm the same model ordering without closed
-API baselines:
+Typed Decisions provides an additional public zero-shot comparison. Its
+accuracy is agreement with soft gold labels produced by a teacher of roughly
+4B-class capability, not a measure of objective correctness:
 
-| Public suite | Coverage | Best local result |
+| Public suite | Coverage | Best local teacher agreement |
 |:---|---:|---:|
 | Typed Decisions | 2,000 / 2,000 decisions | **Qwen3.8-27B: 72.80%** |
-| JevJudge-Public v0.3 | 3,123 / 3,220 records | **Qwen3.8-27B: 61.32% answered-only** |
 
 [Full external results, probability metrics and reproducibility notes](docs/EXTERNAL_EVALUATION.md)
 

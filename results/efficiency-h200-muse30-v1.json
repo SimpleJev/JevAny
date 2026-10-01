@@ -1,10 +1,22 @@
 {
   "schema_version": 1,
   "model": "SimpleJev/JevAny-Muse-Glimmer-30B-LoRA",
+  "measured_utc": "2026-10-01",
+  "code_revision": "f5110b8b87b63f230f26c9cecd5fd13968bc4463",
+  "checkpoint": {
+    "base": "meta-models/Muse-Glimmer-30B",
+    "base_revision": "a4e59da52a7bc87ae7251dd5545c0dd437c44b68",
+    "base_config_sha256": "5a9df2d8a385b3d361ab6ae68d73586f4e775033933bd0cd863fb7f3820e6a14",
+    "adapter_sha256": "87434122ffa2cc9438baf1f0d6375fec75f47f246d070eb50eb2a543859c4832",
+    "head_sha256": "c19591f6293c52ab796f85e5db6e34fc08f5cfbec294614e16a76d2c476f69b1"
+  },
   "hardware": "1 x NVIDIA H200",
   "precision": "BF16",
   "panel": {
     "suite": "Transfer-v9 development",
+    "manifest_sha256": "3c4f0be94509a3612678bfd3a30fd99a8d0ca3c47ddfe7318075d95b2fa365e4",
+    "split_sha256": "53872ba045564315cf3c3dd8fb656e76441c6c514b1a7ff985ff0db3955710cf",
+    "panel_id_sha256": "0b6a56bd063bdf82fbecd5bb77c61f070f3c0168b6ce9f07b838147a3eafc511",
     "selection": "first four clean text-only single-question records from each of 11 scored sources",
     "records": 44,
     "input_token_range": [36, 242],
