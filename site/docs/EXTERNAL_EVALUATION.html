@@ -40,7 +40,9 @@ five-decision case; published comparator latency uses different hardware and is
 not compared.
 The soft gold label for each decision is the mean of three samples from a
 teacher of roughly 4B-class capability. Accuracy is therefore argmax agreement
-with that teacher-derived label, not objective correctness.</p>
+with that teacher-derived label, not objective correctness.
+Rows follow the fixed common-cohort order used in both panels, rather than
+being independently sorted by score.</p>
 <div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
 <thead>
 <tr>
@@ -82,13 +84,13 @@ with that teacher-derived label, not objective correctness.</p>
 <td style="text-align: right;">89.4 ms</td>
 </tr>
 <tr>
-<td>OpenDecider-small</td>
-<td>Open external</td>
-<td style="text-align: right;">66.65%</td>
-<td style="text-align: right;">0.210</td>
-<td style="text-align: right;">0.117</td>
-<td style="text-align: right;">0.075</td>
-<td style="text-align: right;">136.5 ms</td>
+<td>JevAny-Qwen3.5-4B</td>
+<td>Ours</td>
+<td style="text-align: right;">63.50%</td>
+<td style="text-align: right;">0.479</td>
+<td style="text-align: right;">0.218</td>
+<td style="text-align: right;">0.115</td>
+<td style="text-align: right;">85.5 ms</td>
 </tr>
 <tr>
 <td>JevAny-Gemma-4B</td>
@@ -100,13 +102,13 @@ with that teacher-derived label, not objective correctness.</p>
 <td style="text-align: right;">107.1 ms</td>
 </tr>
 <tr>
-<td>JevAny-Qwen3.5-4B</td>
-<td>Ours</td>
-<td style="text-align: right;">63.50%</td>
-<td style="text-align: right;">0.479</td>
-<td style="text-align: right;">0.218</td>
-<td style="text-align: right;">0.115</td>
-<td style="text-align: right;">85.5 ms</td>
+<td>OpenDecider-small</td>
+<td>Open external</td>
+<td style="text-align: right;">66.65%</td>
+<td style="text-align: right;">0.210</td>
+<td style="text-align: right;">0.117</td>
+<td style="text-align: right;">0.075</td>
+<td style="text-align: right;">136.5 ms</td>
 </tr>
 <tr>
 <td>Bongard-mini</td>

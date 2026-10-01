@@ -13,15 +13,17 @@ not compared.
 The soft gold label for each decision is the mean of three samples from a
 teacher of roughly 4B-class capability. Accuracy is therefore argmax agreement
 with that teacher-derived label, not objective correctness.
+Rows follow the fixed common-cohort order used in both panels, rather than
+being independently sorted by score.
 
 | Locally rerun model | Source | Accuracy ↑ | KL ↓ | Brier ↓ | ECE ↓ | Median / case ↓ |
 |---|---|---:|---:|---:|---:|---:|
 | **JevAny-Qwen3.8-27B** | Ours | **72.80%** | 0.293 | 0.131 | 0.053 | 279.8 ms |
 | JevAny-Muse-Glimmer-30B | Ours | 69.95% | **0.245** | **0.111** | **0.028** | 265.9 ms |
 | JevAny-Qwen3.5-4B-Direct-Token | Ours | 67.20% | 0.435 | 0.179 | 0.082 | 89.4 ms |
-| OpenDecider-small | Open external | 66.65% | 0.210 | 0.117 | 0.075 | 136.5 ms |
-| JevAny-Gemma-4B | Ours | 66.25% | 0.272 | 0.128 | 0.036 | 107.1 ms |
 | JevAny-Qwen3.5-4B | Ours | 63.50% | 0.479 | 0.218 | 0.115 | 85.5 ms |
+| JevAny-Gemma-4B | Ours | 66.25% | 0.272 | 0.128 | 0.036 | 107.1 ms |
+| OpenDecider-small | Open external | 66.65% | 0.210 | 0.117 | 0.075 | 136.5 ms |
 | Bongard-mini | Open external | 59.65% | 0.256 | 0.132 | 0.073 | 163.9 ms |
 | Jeff-Gemma4-E2B | Open external | 57.95% | 0.382 | 0.204 | 0.090 | 53.5 ms |
 | Jeff-Qwen3.5-2B | Open external | 55.45% | 0.386 | 0.210 | 0.099 | 42.2 ms |
