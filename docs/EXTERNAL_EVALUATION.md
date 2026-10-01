@@ -1,5 +1,91 @@
 # JevBench and Kev evaluation
 
+## Public-suite additions — October 1, 2026
+
+### Typed Decisions
+
+We ran the complete `LocalLLaMA/typed-decisions` test split at revision
+`d0e2f0c4`: 400 cases, five questions per case and 2,000 scored decisions.
+Each local model ran on one H200 with batch size 1. Latency is per five-decision
+case; published comparator latency uses different hardware and is not compared.
+
+| Local model | Accuracy ↑ | KL ↓ | Brier ↓ | ECE ↓ | Median / case ↓ |
+|---|---:|---:|---:|---:|---:|
+| **JevAny-Qwen3.8-27B** | **72.80%** | 0.293 | 0.131 | 0.053 | 279.8 ms |
+| JevAny-Muse-Glimmer-30B | 69.95% | **0.245** | **0.111** | **0.028** | 265.9 ms |
+| JevAny-Qwen3.5-4B-Direct-Token | 67.20% | 0.435 | 0.179 | 0.082 | 89.4 ms |
+| JevAny-Gemma-4B | 66.25% | 0.272 | 0.128 | 0.036 | 107.1 ms |
+| JevAny-Qwen3.5-4B | 63.50% | 0.479 | 0.218 | 0.115 | 85.5 ms |
+| Laya (`55cf4c4`) | 36.20% | 0.576 | 0.316 | 0.174 | **19.7 ms** |
+
+The exact open Laya rerun reproduces its published 36.2%, validating the
+request conversion. Among our models, 27B leads accuracy, Muse has the best
+probability metrics, and direct-token improves over the 4B pointer by 3.7
+percentage points at similar latency. Closed hosted systems and dataset-card
+rows that we did not rerun are excluded from this comparison.
+
+[Machine-readable results and provenance](../results/external-decision-evals-20261001/typed-decisions.json)
+
+### JevJudge-Public
+
+We ran all 3,220 JevJudge-Public v0.3 test records at revision `4d576ded`.
+The suite contains 2,214 image, 724 text, and 282 video decisions across 22
+families. Accuracy and probability metrics below cover answered records only;
+coverage makes the context-limit rejections visible rather than replacing them
+with invented uniform predictions.
+
+| Local model | Answered / 3,220 | Coverage | Accuracy ↑ | NLL ↓ | Brier ↓ | ECE ↓ |
+|---|---:|---:|---:|---:|---:|---:|
+| **JevAny-Qwen3.8-27B** | 3,123 | 97.0% | **61.32%** | **0.852** | **0.491** | **0.068** |
+| JevAny-Muse-Glimmer-30B | 3,140 | **97.5%** | 58.73% | 0.911 | 0.527 | 0.098 |
+| JevAny-Qwen3.5-4B-Direct-Token | 3,123 | 97.0% | 54.66% | 1.012 | 0.578 | 0.132 |
+| JevAny-Qwen3.5-4B | 3,123 | 97.0% | 54.53% | 1.057 | 0.590 | 0.119 |
+| JevAny-Gemma-4B | 634 | 19.7% | 50.32% | 1.057 | 0.600 | 0.102 |
+
+Qwen3.8-27B leads every reported quality metric. Muse answers 17 more records
+but trails by 2.59 accuracy points. Gemma's current runtime rejected the native
+media layout, so its text-heavy answered subset is not comparable to the other
+rows. The open Laya checkpoint completed the 724 text records at 38.67%; it has
+no image or video input and is kept as a text-only comparator.
+
+[Machine-readable results and provenance](../results/external-decision-evals-20261001/jevjudge-public.json)
+
+### JevBench v1.5.4
+
+JevBench v1.5.4 has 1,624 questions: 904 open and 720 sealed. The official API
+publishes complete system aggregates, but not the 720 sealed prompts or 303 of
+the open prompts. It identifies 601 open prompts as published but links no
+downloadable bundle; the public upstream repository still contains the older
+231-item files. We therefore preserve the official v1.5.4 aggregates without
+claiming a local 1,624-question rerun.
+
+Selected official comparison rows:
+
+| Official system | v1.5.4 score A | Rank A | Completed |
+|---|---:|---:|---:|
+| Jev-Omni | 71.50 | 6 | 1,624 / 1,624 |
+| decider-4b v2 | 71.28 | 7 | 1,624 / 1,624 |
+| decider-2b | 45.10 | 30 | 1,624 / 1,624 |
+| Open-Jev 9B | 24.36 | 46 | 1,624 / 1,624 |
+| Laya | 0.00 | 93 | 1,624 / 1,624 |
+
+No exact current JevAny release appears in the official aggregate. These are
+official composite scores, not the accuracy metric used by the older 231-item
+public evaluation below.
+
+[Pinned official aggregates and reproducibility boundary](../results/external-decision-evals-20261001/jevbench-v1.5.4.json)
+
+### Jev Decision Index
+
+The `multimodalart/jev-decision-index` Space at revision `7cdcea3d` is a static
+aggregate registry and methodology page, not an item-level evaluation corpus.
+It indexes 120,340 requests across 43 suites and 70 model rows, but does not
+publish the request records or per-item predictions required for a new local
+run. Its Space metadata also declares no license. It produces no new JevAny
+score and is not included in the result showcase.
+
+[Pinned index provenance](../results/external-decision-evals-20261001/jev-decision-index.json)
+
 The frozen recipe evaluates both released JevAny checkpoints and all 14 distinct
 Kev checkpoints available through the main repositories and release tags on
 September 27, 2026. Identical release aliases share a result. Unreleased
