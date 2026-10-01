@@ -98,8 +98,9 @@ but are not used for the main comparison.
   [`external-zero-shot-v1.json`](../results/external-zero-shot-v1.json), and the
   deterministic renderer is
   [`plot_external_zero_shot.py`](../scripts/plot_external_zero_shot.py).
-- The source files are recorded by repository-relative path and SHA-256 in that
-  artifact. JevJudge scores come from
+- The tracked artifact contains the aggregate rows needed to regenerate the
+  figure. Raw local run locations and SHA-256 hashes are recorded for audit but
+  are not included in the repository. JevJudge scores come from
   `runs/jevjudge-open-baselines-20261001/scores-full-context`; detailed reports
   and predictions are under the sibling `results-full-context` directory.
 - Typed Decisions uses dataset revision `d0e2f0c4`, parquet SHA-256

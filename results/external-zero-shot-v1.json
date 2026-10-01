@@ -8,11 +8,11 @@
       "sha256": "a9fbcc06a5e957630e83f18c5dc01d41ff7b3e2289b0d816f2e1459ef814341e"
     },
     "typed_open_summary": {
-      "path": "runs/external-open-baselines-20261001/summary.json",
+      "local_run_path": "runs/external-open-baselines-20261001/summary.json",
       "sha256": "4b4f06f8f02ce6cb4a610f110450469c46b917fd9aa1d571077d0c054320eab2"
     },
     "jevjudge_full_context_scores": {
-      "path": "runs/jevjudge-open-baselines-20261001/scores-full-context",
+      "local_run_path": "runs/jevjudge-open-baselines-20261001/scores-full-context",
       "protocol": "native inputs, no truncation, 65,536-token shared context ceiling",
       "sha256_by_file": {
         "bongard-mini.json": "f3fa601f617ed2e70b31d98fe2c589ee8787ee47624233f3fbd8b3d02630daa9",
@@ -75,11 +75,11 @@
     "context": "native inputs, no truncation, 65,536-token shared context ceiling",
     "official_headline": false,
     "models": [
-      {"model": "JevAny-Qwen3.8-27B", "kind": "ours", "status": "local full-context rerun", "revision": "f4b835f4f7be78a819067dac226feaad2fc7b9eb0b968c5e6e665ad5328e6731", "accuracy": 0.664364640883978, "nll": 0.8239218556129507, "brier": 0.47613796709365513, "ece": 0.10262691318393291, "answered": 724, "requested": 724},
-      {"model": "JevAny-Muse-Glimmer-30B", "kind": "ours", "status": "local full-context rerun", "revision": "87434122ffa2cc9438baf1f0d6375fec75f47f246d070eb50eb2a543859c4832", "accuracy": 0.6256906077348067, "nll": 0.8734662744075471, "brier": 0.5030655344263703, "ece": 0.09939612495591732, "answered": 724, "requested": 724},
-      {"model": "JevAny-Qwen3.5-4B-Direct-Token", "kind": "ours", "status": "local full-context rerun", "revision": "b768d54b9e5e20204b2db9e24c18ae6b10fa310b241d1931bac6b8882f127c53", "accuracy": 0.585635359116022, "nll": 0.9150156860899241, "brier": 0.5160014193658196, "ece": 0.08948690551090707, "answered": 724, "requested": 724},
-      {"model": "JevAny-Qwen3.5-4B", "kind": "ours", "status": "local full-context rerun", "revision": "5acbaec8d554517250bf9c626b3f4b9e2ec31fc67957f3486aa72e2c91ee907f", "accuracy": 0.5787292817679558, "nll": 0.9966079493815718, "brier": 0.5538440250611777, "ece": 0.07373506930233757, "answered": 724, "requested": 724},
-      {"model": "JevAny-Gemma-4B", "kind": "ours", "status": "local full-context rerun", "revision": "2d78da4782b0ad1bc42161d8f78e6f5f4eaec88e4f2be6f593c1bfe0045b9c2c", "accuracy": 0.511049723756906, "nll": 1.0301831332825968, "brier": 0.5899312858995799, "ece": 0.09974500833755866, "answered": 724, "requested": 724},
+      {"model": "JevAny-Qwen3.8-27B", "kind": "ours", "status": "local full-context rerun", "checkpoint_sha256": "f4b835f4f7be78a819067dac226feaad2fc7b9eb0b968c5e6e665ad5328e6731", "accuracy": 0.664364640883978, "nll": 0.8239218556129507, "brier": 0.47613796709365513, "ece": 0.10262691318393291, "answered": 724, "requested": 724},
+      {"model": "JevAny-Muse-Glimmer-30B", "kind": "ours", "status": "local full-context rerun", "checkpoint_sha256": "87434122ffa2cc9438baf1f0d6375fec75f47f246d070eb50eb2a543859c4832", "accuracy": 0.6256906077348067, "nll": 0.8734662744075471, "brier": 0.5030655344263703, "ece": 0.09939612495591732, "answered": 724, "requested": 724},
+      {"model": "JevAny-Qwen3.5-4B-Direct-Token", "kind": "ours", "status": "local full-context rerun", "checkpoint_sha256": "b768d54b9e5e20204b2db9e24c18ae6b10fa310b241d1931bac6b8882f127c53", "accuracy": 0.585635359116022, "nll": 0.9150156860899241, "brier": 0.5160014193658196, "ece": 0.08948690551090707, "answered": 724, "requested": 724},
+      {"model": "JevAny-Qwen3.5-4B", "kind": "ours", "status": "local full-context rerun", "checkpoint_sha256": "5acbaec8d554517250bf9c626b3f4b9e2ec31fc67957f3486aa72e2c91ee907f", "accuracy": 0.5787292817679558, "nll": 0.9966079493815718, "brier": 0.5538440250611777, "ece": 0.07373506930233757, "answered": 724, "requested": 724},
+      {"model": "JevAny-Gemma-4B", "kind": "ours", "status": "local full-context rerun", "checkpoint_sha256": "2d78da4782b0ad1bc42161d8f78e6f5f4eaec88e4f2be6f593c1bfe0045b9c2c", "accuracy": 0.511049723756906, "nll": 1.0301831332825968, "brier": 0.5899312858995799, "ece": 0.09974500833755866, "answered": 724, "requested": 724},
       {"model": "OpenDecider-small", "kind": "open_rerun", "status": "local full-context rerun", "revision": "720ad2a630ab3011397a9f1d54d376cb4c075c25", "accuracy": 0.5497237569060773, "nll": 0.970672634974796, "brier": 0.5474356335430713, "ece": 0.033009544729216515, "answered": 724, "requested": 724},
       {"model": "Bongard-mini", "kind": "open_rerun", "status": "local full-context rerun", "revision": "88bb70a7e6c3acec1d9c807305e8decf4904a07d", "accuracy": 0.5124309392265194, "nll": 1.0477744894587386, "brier": 0.5935643485699964, "ece": 0.067800488203823, "answered": 724, "requested": 724},
       {"model": "Jeff-Gemma4-E2B", "kind": "open_rerun", "status": "local full-context rerun", "revision": "e3de3e99a979f92afd995d4e526c7e3170ae49cf", "accuracy": 0.46685082872928174, "nll": 1.2103380124372465, "brier": 0.6810848722445711, "ece": 0.18117140955426997, "answered": 724, "requested": 724},

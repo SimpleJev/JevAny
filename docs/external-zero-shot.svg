@@ -534,7 +534,7 @@ z
    <text style="font-weight: 700; font-size: 24px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start; fill: #213248" x="45.36" y="21.06" transform="rotate(-0 45.36 21.06)">External zero-shot decision accuracy</text>
   </g>
   <g id="text_56">
-   <text style="font-size: 12.5px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start; fill: #64748b" x="45.36" y="42.12" transform="rotate(-0 45.36 42.12)">The same ten models in the same order · full public splits</text>
+   <text style="font-size: 12.5px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start; fill: #64748b" x="45.36" y="42.12" transform="rotate(-0 45.36 42.12)">The same ten models in the same order · complete stated evaluation sets</text>
   </g>
   <g id="text_57">
    <text style="font-size: 10.2px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start; fill: #64748b" x="45.36" y="446.94" transform="rotate(-0 45.36 446.94)">JevJudge text is a four-role diagnostic, not the official full-multimodal headline; native inputs use the same 65,536-token ceiling with no truncation.</text>

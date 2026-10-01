@@ -129,7 +129,7 @@ def main() -> None:
     fig.text(
         0.035,
         0.910,
-        "The same ten models in the same order · full public splits",
+        "The same ten models in the same order · complete stated evaluation sets",
         fontsize=12.5,
         color=MUTED,
     )

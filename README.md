@@ -325,6 +325,13 @@ measures agreement with teacher-derived soft gold, not objective correctness.
 | Jeff-Qwen3.5-2B | 55.45% | 42.82% | Open; full-context rerun |
 | Jeff-Qwen3.5-0.8B | 49.15% | 43.51% | Open; full-context rerun |
 
+Qwen3.8-27B leads the strongest locally rerun external model by **6.15 points**
+on Typed Decisions and **11.46 points** on JevJudge text. Direct-Token 4B leads
+by 0.55 and 3.59 points; Pointer 4B trails by 3.15 points on Typed Decisions but
+leads by 2.90 on JevJudge text, while Gemma-4B does not beat the strongest
+external row. Published-only Decider 1 (76.8%) and Liquid d1 (74.2%) remain
+ahead of our 27B on Typed Decisions and have no matching JevJudge result.
+
 JevJudge text covers four roles and is a diagnostic, not the official
 five-role full-multimodal headline. Benchmark-trained specialist checkpoints
 are excluded from this zero-shot chart. Laya uses silent `max_len=512`
