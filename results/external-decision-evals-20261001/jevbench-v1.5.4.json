@@ -25,6 +25,17 @@
     "headline_option": "A"
   },
   "board": {"ranked_systems": 106, "roster_systems": 112},
+  "open_weight_kev_official_aggregates": {
+    "provenance": "Official v1.5.4 aggregate; evaluator-owned A6000 offline pod",
+    "reproducibility": "Weights and code are public, but item-level verification of the official full result is impossible while sealed prompts remain private.",
+    "code": "https://github.com/jaredpalmer/kev",
+    "rows": [
+      {"key": "kev-4b", "checkpoint": "jaredpalmer/kev-4b@qwen3", "note": "Qwen3-4B-Base research preview; not the current Qwen3.5 default revision", "score_A": 38.0731, "rank_A": 37, "completed": 1624, "axes": {"intelligence": 39.8609, "calibration": 67.6415, "speed": 85.4778, "cost": 65.7804}, "intelligence_open": 47.0600, "intelligence_sealed": 33.2012},
+      {"key": "kev-8b", "checkpoint": "jaredpalmer/kev-8b", "score_A": 34.1526, "rank_A": 38, "completed": 1624, "axes": {"intelligence": 48.2953, "calibration": 71.0173, "speed": 84.1410, "cost": 40.4205}, "intelligence_open": 54.3061, "intelligence_sealed": 42.2845},
+      {"key": "kev-0.6b", "checkpoint": "jaredpalmer/kev-0.6b", "score_A": 1.26166, "rank_A": 78, "completed": 1624, "axes": {"intelligence": 10.3360, "calibration": 67.6547, "speed": 87.2167, "cost": 80.0940}, "intelligence_open": 25.4637, "intelligence_sealed": -1.4912},
+      {"key": "kev-0.5b", "checkpoint": "jaredpalmer/kev-0.5b", "score_A": 0.0, "rank_A": 92, "completed": 1624, "axes": {"intelligence": 0.0, "calibration": 64.9830, "speed": 88.4534, "cost": 80.0940}, "intelligence_open": 3.4434, "intelligence_sealed": -22.2626}
+    ]
+  },
   "selected_official_baseline_aggregates": {
     "source_kind": "official_not_local",
     "source": "Pinned v1.5.4 API aggregate with download SHA-256 0cf210b76bf85084a5f3fb40fb109e9a2c2f93df42ff6628696377666e89db45",

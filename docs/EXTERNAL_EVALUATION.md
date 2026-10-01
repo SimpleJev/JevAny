@@ -69,19 +69,25 @@ where the maintainer runs a fixed API or public offline checkpoint and returns
 aggregate results. We therefore preserve the v1.5.4 official aggregates
 without claiming a local 601- or 1,624-question rerun.
 
-Selected official comparison rows:
+Kev has four open-weight, open-code entries in the official aggregate:
 
-| Official system | v1.5.4 score A | Rank A | Completed |
-|---|---:|---:|---:|
-| Jev-Omni | 71.50 | 6 | 1,624 / 1,624 |
-| decider-4b v2 | 71.28 | 7 | 1,624 / 1,624 |
-| decider-2b | 45.10 | 30 | 1,624 / 1,624 |
-| Open-Jev 9B | 24.36 | 46 | 1,624 / 1,624 |
-| Laya | 0.00 | 93 | 1,624 / 1,624 |
+| Open system | Frozen checkpoint | v1.5.4 score A | Rank A | Completed |
+|---|---|---:|---:|---:|
+| Kev-4B | `jaredpalmer/kev-4b@qwen3` | **38.07** | 37 / 106 | 1,624 / 1,624 |
+| Kev-8B | `jaredpalmer/kev-8b` | 34.15 | 38 / 106 | 1,624 / 1,624 |
+| Kev-0.6B | `jaredpalmer/kev-0.6b` | 1.26 | 78 / 106 | 1,624 / 1,624 |
+| Kev-0.5B | `jaredpalmer/kev-0.5b` | 0.00 | 92 / 106 | 1,624 / 1,624 |
 
-No exact current JevAny release appears in the official aggregate. These are
-official composite scores, not the accuracy metric used by the older 231-item
-public evaluation below.
+The official evaluator ran these public checkpoints in an evaluator-owned
+offline pod. Their weights and [code](https://github.com/jaredpalmer/kev) are
+available, but the full item-level outcome cannot be independently reproduced
+while the sealed questions remain private. The Kev-4B row is the older Qwen3
+research preview, not the current Qwen3.5 checkpoint under the repository's
+default revision.
+
+No exact current JevAny release appears in the official aggregate. These Kev
+values are official composite scores, not the accuracy metric used by the
+downloadable 231-item public evaluation below.
 
 [Pinned official aggregates and reproducibility boundary](../results/external-decision-evals-20261001/jevbench-v1.5.4.json)
 
