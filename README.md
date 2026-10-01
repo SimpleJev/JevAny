@@ -304,6 +304,43 @@ NLL, Brier and ECE are measured on Transfer.
 [Machine-readable results](results/model-family-v2.json) ·
 [Method and ablation report](reports/JevAny_Tech_Report.pdf)
 
+The public external comparison uses the same ten-model cohort on the complete
+2,000-decision Typed Decisions test split and the same 724 JevJudge text
+requests. JevJudge uses native inputs without truncation under a shared
+65,536-token context ceiling; every model answers 724/724. Typed Decisions
+measures agreement with teacher-derived soft gold, not objective correctness.
+
+[![Two-panel comparison of the same JevAny and locally rerun open-model cohort on Typed Decisions and the JevJudge common text set](docs/external-zero-shot.svg)](docs/external-zero-shot.svg)
+
+| Model | Typed Decisions ↑ | JevJudge text ↑ | Source / status |
+|:---|---:|---:|:---|
+| **JevAny-Qwen3.8-27B** | **72.80%** | **66.44%** | Ours; full-context rerun |
+| JevAny-Muse-Glimmer-30B | 69.95% | 62.57% | Ours; full-context rerun |
+| JevAny-Qwen3.5-4B-Direct-Token | 67.20% | 58.56% | Ours; full-context rerun |
+| JevAny-Qwen3.5-4B | 63.50% | 57.87% | Ours; full-context rerun |
+| JevAny-Gemma-4B | 66.25% | 51.10% | Ours; full-context rerun |
+| OpenDecider-small | 66.65% | 54.97% | Open; full-context rerun |
+| Bongard-mini | 59.65% | 51.24% | Open; full-context rerun |
+| Jeff-Gemma4-E2B | 57.95% | 46.69% | Open; full-context rerun |
+| Jeff-Qwen3.5-2B | 55.45% | 42.82% | Open; full-context rerun |
+| Jeff-Qwen3.5-0.8B | 49.15% | 43.51% | Open; full-context rerun |
+
+Qwen3.8-27B leads the strongest locally rerun external model by **6.15 points**
+on Typed Decisions and **11.46 points** on JevJudge text. Direct-Token 4B leads
+by 0.55 and 3.59 points; Pointer 4B trails by 3.15 points on Typed Decisions but
+leads by 2.90 on JevJudge text, while Gemma-4B does not beat the strongest
+external row. Published-only Decider 1 (76.8%) and Liquid d1 (74.2%) remain
+ahead of our 27B on Typed Decisions and have no matching JevJudge result.
+
+JevJudge text covers four roles and is a diagnostic, not the official
+five-role full-multimodal headline. Benchmark-trained specialist checkpoints
+are excluded from this zero-shot chart. Laya uses silent `max_len=512`
+truncation and is not full-context comparable; Laya, Kev and published-only
+rows remain clearly labeled in the supplemental external tables.
+
+[Full external tables and reproducibility notes](docs/EXTERNAL_EVALUATION.md) ·
+[Machine-readable chart results](results/external-zero-shot-v1.json)
+
 ### ⏱️ 3.1 Inference efficiency <a name="efficiency"></a>
 
 On one H200, CUDA Graphs cut Qwen3.8-27B median latency from **113.54 to
