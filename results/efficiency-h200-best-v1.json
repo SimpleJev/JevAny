@@ -46,7 +46,8 @@
       },
       "median_speedup": 2.33,
       "argmax_flips": 0,
-      "source": "results/efficiency-h200-muse30-v1.json"
+      "source": "single-H200 matched audit",
+      "raw_comparison_sha256": "aa532515e591a5d518d66d82bbfd3c05f5b7db126bcf4f8fe2629dd844410218"
     }
   ]
 }

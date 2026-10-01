@@ -25,7 +25,7 @@ fits on one H200:
 
 Neither run had an argmax change. The 30B audit separates fused SDPA's 1.15×
 median gain from CUDA Graphs' further 2.03× gain, with 96 graph calls and no
-eager fallback. Its [machine-readable audit](../results/efficiency-h200-muse30-v1.json)
+eager fallback. Its [machine-readable result](../results/efficiency-h200-best-v1.json)
 uses 44 short requests. The two H200 rows use different fixed panels, so their
 absolute latency and accuracy are not directly comparable. See the
 [serving configuration](DEPLOYMENT.md#optional-cuda-acceleration).
