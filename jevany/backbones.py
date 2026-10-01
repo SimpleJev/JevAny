@@ -296,6 +296,35 @@ class BackboneAdapter:
         return model(**inputs).last_hidden_state
 
 
+def _video_inputs(processor, paths: list[str], *, num_frames: int) -> dict:
+    """Decode with the declared PyAV dependency and retain native frame sampling."""
+    if not paths:
+        return {"videos": None}
+    import numpy as np
+    from transformers.video_utils import load_video
+
+    video_processor = processor.video_processor
+    videos, metadata = [], []
+    for path in paths:
+        indices = inverse = None
+
+        def sample(metadata, **kwargs):
+            nonlocal indices, inverse
+            indices = np.asarray(video_processor.sample_frames(
+                metadata=metadata, num_frames=num_frames, fps=None,
+                temporal_patch_size=getattr(video_processor, "temporal_patch_size", None),
+            ))
+            # PyAV decodes each selected frame once; restore repetitions for short clips.
+            unique, inverse = np.unique(indices, return_inverse=True)
+            return unique
+
+        frames, info = load_video(path, backend="pyav", sample_indices_fn=sample)
+        videos.append(frames[inverse])
+        info.frames_indices = indices
+        metadata.append(info)
+    return {"videos": videos, "video_metadata": metadata, "do_sample_frames": False}
+
+
 class VisionAdapter(BackboneAdapter):
     """Native Transformers vision model with a separately addressable decoder.
 
@@ -372,7 +401,8 @@ class QwenVisionAdapter(VisionAdapter):
         if videos:
             kwargs.update(size={"shortest_edge": 32 * 32, "longest_edge": 512 * 512},
                           num_frames=8, fps=None, max_video_tokens=512, cap_pixels_per_frame=True)
-        return processor(text=["".join(prefix) + text], images=images or None, videos=videos or None, **kwargs)
+        return processor(text=["".join(prefix) + text], images=images or None,
+                         **_video_inputs(processor, videos, num_frames=8), **kwargs)
 
 
 class LlamaVisionAdapter(VisionAdapter):
@@ -393,7 +423,8 @@ class Gemma4VisionAdapter(VisionAdapter):
         for item in media:
             prefix.append(processor.image_token if item["type"] == "image" else processor.video_token)
             (images if item["type"] == "image" else videos).append(item["uri"])
-        return processor(text=["".join(prefix) + text], images=images or None, videos=videos or None,
+        return processor(text=["".join(prefix) + text], images=images or None,
+                         **_video_inputs(processor, videos, num_frames=4),
                          return_tensors="pt", videos_kwargs={"num_frames": 4, "fps": None})
 
 
@@ -407,7 +438,8 @@ class MuseVisionAdapter(VisionAdapter):
             prefix.append(processor.image_token if item["type"] == "image" else processor.video_token)
             (images if item["type"] == "image" else videos).append(item["uri"])
         return processor(
-            text=["".join(prefix) + text], images=images or None, videos=videos or None,
+            text=["".join(prefix) + text], images=images or None,
+            **_video_inputs(processor, videos, num_frames=8),
             return_tensors="pt", images_kwargs={"max_image_tokens": max(1, 512 // len(media))},
             videos_kwargs={"num_frames": 8, "fps": None, "return_metadata": True,
                            "max_video_frame_tokens": max(1, 128 // len(media))},
@@ -430,7 +462,8 @@ class GLMVisionAdapter(VisionAdapter):
             prefix.append(f"<|begin_of_{kind}|>{token}<|end_of_{kind}|>")
             (images if kind == "image" else videos).append(item["uri"])
         return processor(
-            text=["".join(prefix) + text], images=images or None, videos=videos or None,
+            text=["".join(prefix) + text], images=images or None,
+            **_video_inputs(processor, videos, num_frames=8),
             return_tensors="pt", videos_kwargs={"num_frames": 8, "fps": None, "return_metadata": True},
         )
 

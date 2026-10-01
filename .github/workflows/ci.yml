@@ -4,22 +4,63 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: test
+            dependencies: latest
+          - name: test (minimum ML versions)
+            dependencies: minimum
+    env:
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
         with:
+          version: '0.11.28'
           enable-cache: true
+          cache-dependency-glob: |
+            pyproject.toml
+            .github/constraints/*.txt
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: uv venv --python 3.12
-      - run: uv pip install --torch-backend cpu -e '.[dev]'
-      - run: .venv/bin/python -m pytest tests -m 'not server' -q
-        env:
-          OMP_NUM_THREADS: '1'
-          MKL_NUM_THREADS: '1'
-      - run: .venv/bin/python -m build
+      - name: Create environment
+        run: uv venv --python 3.12
+      - name: Install latest dependencies
+        if: matrix.dependencies == 'latest'
+        run: uv pip install --torch-backend cpu -e '.[dev]'
+      - name: Install minimum ML versions
+        if: matrix.dependencies == 'minimum'
+        run: uv pip install --torch-backend cpu -c .github/constraints/minimum.txt -e '.[dev]'
+      - name: Record and check dependencies
+        run: |
+          uv pip freeze > ci-dependencies.txt
+          uv pip check
+      - name: Run tests
+        run: .venv/bin/python -m pytest tests -m 'not server' -q -ra --strict-config --strict-markers --junitxml=ci-results.xml
+      - name: Build distributions
+        run: .venv/bin/python -m build
+      - name: Upload test results and dependency versions
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-${{ matrix.dependencies }}
+          path: |
+            ci-results.xml
+            ci-dependencies.txt

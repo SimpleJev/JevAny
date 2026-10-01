@@ -7,7 +7,7 @@ from tokenizers import Tokenizer
 from tokenizers.models import WordLevel
 from tokenizers.pre_tokenizers import Whitespace
 
-from jevany.backbones import get_backbone_adapter
+from jevany.backbones import _video_inputs, get_backbone_adapter
 from jevany.checkpoint import Checkpoint, Meta, write_meta
 from jevany.model import DecisionModel, load_preprocessor
 
@@ -214,8 +214,12 @@ def test_current_vision_base_text_training(tmp_path, family, attn):
 
 
 @pytest.mark.parametrize("family", ["qwen35", "qwen35_moe", "gemma4", "gemma4_per_layer", "gemma4_unified", "muse", "glm"])
-def test_native_video(tmp_path, family):
+def test_native_video(tmp_path, monkeypatch, family):
     import av
+    import transformers.video_processing_utils as video_utils
+
+    monkeypatch.setattr(video_utils, "is_torchcodec_available", lambda: False)
+    monkeypatch.setattr(video_utils, "is_torchvision_video_decoding_available", lambda: False)
     base = tmp_path / "base"
     make_vision_base(base, family)
     video = tmp_path / "sample.mp4"
@@ -249,6 +253,50 @@ def test_native_video(tmp_path, family):
     actual = restored.probs(restored.encode(
         restored_processor, record(None, media=[{"type": "video", "uri": str(video)}])))
     torch.testing.assert_close(expected[0], actual[0])
+
+
+@pytest.mark.parametrize("frame_count", [3, 12])
+def test_video_sampling_preserves_frames_and_timestamps(tmp_path, frame_count):
+    import av
+    import numpy as np
+    from types import SimpleNamespace
+
+    video = tmp_path / "sample.mp4"
+    with av.open(str(video), "w") as output:
+        stream = output.add_stream("libx264", rate=4)
+        stream.width = stream.height = 28
+        stream.pix_fmt = "yuv420p"
+        for i in range(frame_count):
+            frame = av.VideoFrame.from_image(Image.new("RGB", (28, 28), (i * 20, 0, 0)))
+            for packet in stream.encode(frame):
+                output.mux(packet)
+        for packet in stream.encode():
+            output.mux(packet)
+    with av.open(str(video)) as source:
+        original = np.stack([frame.to_ndarray(format="rgb24") for frame in source.decode(video=0)])
+
+    processor = SimpleNamespace(video_processor=hf.Qwen3VLVideoProcessor())
+    inputs = _video_inputs(processor, [str(video), str(video)], num_frames=8)
+    expected_indices = np.linspace(0, frame_count - 1, 8).round().astype(int)
+    assert inputs["do_sample_frames"] is False
+    assert len(inputs["videos"]) == len(inputs["video_metadata"]) == 2
+    for frames, metadata in zip(inputs["videos"], inputs["video_metadata"]):
+        np.testing.assert_array_equal(frames, original[expected_indices])
+        np.testing.assert_array_equal(metadata.frames_indices, expected_indices)
+        assert metadata.fps == 4
+        assert metadata.total_num_frames == frame_count
+        assert metadata.duration == frame_count / 4
+
+
+def test_video_inputs_reject_invalid_file(tmp_path):
+    import av
+    from types import SimpleNamespace
+
+    video = tmp_path / "broken.mp4"
+    video.write_bytes(b"not a video")
+    processor = SimpleNamespace(video_processor=hf.Qwen3VLVideoProcessor())
+    with pytest.raises(av.error.InvalidDataError):
+        _video_inputs(processor, [str(video)], num_frames=8)
 
 
 @pytest.mark.parametrize("family,attn", [(family, "eager") for family in FAMILIES]

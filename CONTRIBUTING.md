@@ -7,10 +7,30 @@ python -m pip install -e '.[dev]'
 python -m pytest tests -m 'not server' -q
 ```
 
+To reproduce CI on a CPU machine, use Python 3.12 and uv 0.11.28:
+
+```bash
+uv venv --python 3.12
+uv pip install --torch-backend cpu -e '.[dev]'
+uv pip check
+OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 .venv/bin/python -m pytest tests -m 'not server' -q -ra --strict-config --strict-markers
+.venv/bin/python -m build
+```
+
+CI tests both the latest allowed dependencies and the minimum supported
+PyTorch, torchvision and Transformers versions. For the latter, add
+`-c .github/constraints/minimum.txt` to the install command in a fresh
+environment. Both jobs run the full CPU test suite and build the package;
+their artifacts include the resolved dependency versions and JUnit test
+results. Keep the constraints aligned with the lower bounds in
+`pyproject.toml` when changing the supported ML versions.
+
 The integration tests create a tiny local Qwen backbone, run SFT and RLCR
 updates, reload the saved adapter, and check Python/HTTP/official-SDK contracts.
 The unit tests also use a Qwen2.5 tokenizer, downloaded on first use.
 Released-weight tests are optional and require `JEVANY_TEST_CHECKPOINT`.
+Video tests decode local clips with PyAV, which is included in the
+`multimodal` and `dev` extras, and retain each model processor's frame sampling.
 
 For tests against an existing server:
 
