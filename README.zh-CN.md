@@ -303,6 +303,11 @@ Muse-Glimmer-30B 从 **100.71 ms 降至 43.25 ms（2.33×）**。
 
 中位模型调用延迟，串行 batch size 1。完整报告保留同硬件 A100 对照与面板限制。
 
+[![动图：JevAny-4B、4B-DT 与 Gemma-4B 的默认、kernel 加融合 SDPA、CUDA Graph 三个阶段在放慢二十倍的同一 A100 时钟上同时起跑；CUDA Graph 在 25–32 ms 完成，比默认快 3.3–4.1×](docs/efficiency-ablation.gif)](docs/efficiency-ablation.svg)
+
+<p align="center"><sub>单张 A100-40GB 上的 4B 版本，Transfer-v9。每根进度条以真实时间的 1/20 增长，停在该阶段的中位延迟处。
+点击查看两个测试集上各加速选项的分解。</sub></p>
+
 [完整表格、实验设置与其他模型](docs/EFFICIENCY.md) ·
 [开启方法](docs/DEPLOYMENT.md#optional-cuda-acceleration) ·
 [H200 机器可读结果](results/efficiency-h200-best-v1.json) ·
