@@ -1,0 +1,92 @@
+{
+  "schema_version": 2,
+  "selection_policy": "Predeclared small samples; never select tasks after observing Jev results.",
+  "classification": {
+    "task_axis": "T0-T4 measures environment openness; it is not a claim that every task in a later environment is harder.",
+    "empirical_difficulty": "Within a benchmark, use retained baseline pass rate rather than benchmark name.",
+    "delegation_axis": "D0-D4 is independent of task tier; the terminal implementation exposes harness_level plus a continuous delegation_rate from 0 to 1.",
+    "protocol": "docs/experiments/AGENT_HARNESS_FRONTIER_PROTOCOL.md"
+  },
+  "tiers": [
+    {
+      "tier": "controlled",
+      "role": "mechanism and regression checks, not frontier difficulty claims",
+      "benchmarks": [
+        {"name": "frozen_lake", "paired_seeds": "3000-3009", "status": "complete"},
+        {"name": "sokoban", "paired_seeds": "3000-3009", "status": "complete"}
+      ]
+    },
+    {
+      "tier": "interactive_product",
+      "role": "finite-choice shopping with open-text search",
+      "benchmarks": [
+        {"name": "webshop", "split": "test", "paired_seeds": "3100-3109", "status": "complete"}
+      ]
+    },
+    {
+      "tier": "real_web",
+      "role": "dynamic browser state across search, account, admin, and map workflows",
+      "benchmarks": [
+        {
+          "name": "webarena",
+          "source_split": "frozen_50",
+          "task_ids": [264, 278, 300, 158, 4, 763],
+          "demo_task_id": 264,
+          "selection_basis": [
+            "task 264: category browsing; historical Opus baseline success",
+            "task 278: direct search workflow; historical Opus baseline failure",
+            "task 300: account/order lookup; historical Opus baseline success",
+            "task 158: semantic product selection; historical Opus baseline failure",
+            "task 4: multi-filter admin report; historical Opus baseline failure",
+            "task 763: multi-field map routing; no prior frozen-50 trajectory found"
+          ],
+          "status": "sample6_complete",
+          "popup_aware_demo": {
+            "task_id": 264,
+            "status": "complete",
+            "role": "single-task mechanism demo; not a statistical benchmark row",
+            "candidate_rule": "hasPopup: menu elements expose hover only; leaf controls expose click"
+          }
+        }
+      ]
+    },
+    {
+      "tier": "open_terminal",
+      "role": "open-ended shell/software tasks; run only after candidate-command delegation is validated",
+      "benchmarks": [
+        {
+          "name": "terminal-bench-2",
+          "dataset_revision": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c",
+          "difficulty_basis": "pass rate across four retained historical frontier-agent runs",
+          "samples": {
+            "easy_4_of_4": ["regex-log", "sqlite-db-truncate"],
+            "medium_2_of_4": ["configure-git-webserver", "llm-inference-batching-scheduler"],
+            "hard_0_of_4": ["query-optimize", "path-tracing"]
+          },
+          "status": "sample_v3_complete_12_of_12_exploratory",
+          "delegation_rate_sweep": {
+            "tasks": ["regex-log", "sqlite-db-truncate"],
+            "rates": [0.0, 0.5, 1.0],
+            "status": "complete_6_of_6_exploratory",
+            "report": "runs/terminal-bench/frontier-v4-summary.md",
+            "demo": "runs/terminal-bench/demos/sqlite-db-truncate-delegation-frontier-v4.md"
+          },
+          "final_protocol_smoke": {
+            "task": "sqlite-db-truncate",
+            "harness_level": 3,
+            "delegation_rate": 1.0,
+            "status": "complete_reward_1",
+            "agent_version": "1.2.0",
+            "metrics_schema": 2
+          }
+        }
+      ]
+    }
+  ],
+  "excluded_from_difficulty_claims": [
+    "alfworld",
+    "bandit",
+    "game_2048",
+    "rubikscube"
+  ]
+}

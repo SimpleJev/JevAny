@@ -1,0 +1,735 @@
+{
+  "schema_version": 1,
+  "generated_at_utc": "2026-10-01T04:21:13.150018+00:00",
+  "pricing_checked_at": "2026-09-30",
+  "pricing": {
+    "us.anthropic.claude-opus-4-7": {
+      "input": 5.5,
+      "output": 27.5,
+      "source": "AWS public Price List, checked 2026-09-30"
+    },
+    "us.anthropic.claude-sonnet-4-6": {
+      "input": 3.3,
+      "output": 16.5,
+      "source": "AWS public Price List, checked 2026-09-30"
+    },
+    "us.openai.gpt-5.6-sol": {
+      "input": 4.4,
+      "output": 22.0,
+      "source": "AWS model card short-context Geo CRIS, checked 2026-09-30",
+      "catalog_caveat": "No matching public Price List SKU; cached-token price unavailable."
+    }
+  },
+  "rows": [
+    {
+      "source": "runs/agent-harness/holdout-opus-fl-4b.json",
+      "sha256": "d1fbd4aea1b6de881b3230412857e67612a20e7b59bcb5093138cb1c8f810229",
+      "benchmark": "frozen_lake",
+      "pairs": 10,
+      "seeds": [
+        3000,
+        3001,
+        3002,
+        3003,
+        3004,
+        3005,
+        3006,
+        3007,
+        3008,
+        3009
+      ],
+      "bedrock_model": "us.anthropic.claude-opus-4-7",
+      "resolved_bedrock_model": "us.anthropic.claude-opus-4-7",
+      "jev_model": "SimpleJev/JevAny-Qwen3.5-4B-LoRA",
+      "baseline_success_rate": 1.0,
+      "optional_success_rate": 0.9,
+      "success_rate_delta": -0.09999999999999998,
+      "bedrock_call_reduction": 0.5588235294117647,
+      "bedrock_token_reduction": 0.5143868635131064,
+      "wall_time_reduction": -0.14026623782728678,
+      "estimated_bedrock_cost_baseline_usd": 0.358402,
+      "estimated_bedrock_cost_optional_usd": 0.195052,
+      "estimated_bedrock_cost_reduction": 0.45577312626603644,
+      "mean_optional_delegation_calls": 0.7,
+      "mean_optional_jev_decisions": 2.4,
+      "baseline_error_rate": 0.0,
+      "optional_error_rate": 0.0,
+      "paired": {
+        "success": {
+          "mean_optional_minus_baseline": -0.1,
+          "bootstrap_95_ci": [
+            -0.3,
+            0.0
+          ]
+        },
+        "reward": {
+          "mean_optional_minus_baseline": -0.1,
+          "bootstrap_95_ci": [
+            -0.3,
+            0.0
+          ]
+        },
+        "bedrock_calls": {
+          "mean_optional_minus_baseline": -1.9,
+          "bootstrap_95_ci": [
+            -2.8,
+            -1.0
+          ]
+        },
+        "tokens": {
+          "mean_optional_minus_baseline": -2731.6,
+          "bootstrap_95_ci": [
+            -4798.9,
+            -948.2
+          ]
+        },
+        "latency_ms": {
+          "mean_optional_minus_baseline": 835.5312738567591,
+          "bootstrap_95_ci": [
+            -571.2313249474391,
+            2171.2363697122782
+          ]
+        }
+      },
+      "clear_quality_cost_latency_win": false
+    },
+    {
+      "source": "runs/agent-harness/holdout-opus-fl-27b.json",
+      "sha256": "939528db97531e03523a87a4ca8c3fc3b2bccdd7cebeb2fee6770a56e30de270",
+      "benchmark": "frozen_lake",
+      "pairs": 10,
+      "seeds": [
+        3000,
+        3001,
+        3002,
+        3003,
+        3004,
+        3005,
+        3006,
+        3007,
+        3008,
+        3009
+      ],
+      "bedrock_model": "us.anthropic.claude-opus-4-7",
+      "resolved_bedrock_model": "us.anthropic.claude-opus-4-7",
+      "jev_model": "SimpleJev/JevAny-Qwen3.8-27B-LoRA@09c9e9102d5b8cc7d56558d25da1202a761b6c0d",
+      "baseline_success_rate": 1.0,
+      "optional_success_rate": 0.9,
+      "success_rate_delta": -0.09999999999999998,
+      "bedrock_call_reduction": 0.5151515151515151,
+      "bedrock_token_reduction": 0.44621950976285923,
+      "wall_time_reduction": -0.218457238700363,
+      "estimated_bedrock_cost_baseline_usd": 0.3391465,
+      "estimated_bedrock_cost_optional_usd": 0.209363,
+      "estimated_bedrock_cost_reduction": 0.3826768078101942,
+      "mean_optional_delegation_calls": 0.7,
+      "mean_optional_jev_decisions": 2.3,
+      "baseline_error_rate": 0.0,
+      "optional_error_rate": 0.0,
+      "paired": {
+        "success": {
+          "mean_optional_minus_baseline": -0.1,
+          "bootstrap_95_ci": [
+            -0.3,
+            0.0
+          ]
+        },
+        "reward": {
+          "mean_optional_minus_baseline": -0.1,
+          "bootstrap_95_ci": [
+            -0.3,
+            0.0
+          ]
+        },
+        "bedrock_calls": {
+          "mean_optional_minus_baseline": -1.7,
+          "bootstrap_95_ci": [
+            -2.5,
+            -0.9
+          ]
+        },
+        "tokens": {
+          "mean_optional_minus_baseline": -2237.3,
+          "bootstrap_95_ci": [
+            -3730.3,
+            -765.5
+          ]
+        },
+        "latency_ms": {
+          "mean_optional_minus_baseline": 1244.151801825501,
+          "bootstrap_95_ci": [
+            -70.60157705564052,
+            2547.0519691705704
+          ]
+        }
+      },
+      "clear_quality_cost_latency_win": false
+    },
+    {
+      "source": "runs/agent-harness/holdout-opus-sk-4b.json",
+      "sha256": "fb092f6c287b0eac7653b55891cdcc86d22b01a5f310a2c0108b98ae63c33da6",
+      "benchmark": "sokoban",
+      "pairs": 10,
+      "seeds": [
+        3000,
+        3001,
+        3002,
+        3003,
+        3004,
+        3005,
+        3006,
+        3007,
+        3008,
+        3009
+      ],
+      "bedrock_model": "us.anthropic.claude-opus-4-7",
+      "resolved_bedrock_model": "us.anthropic.claude-opus-4-7",
+      "jev_model": "SimpleJev/JevAny-Qwen3.5-4B-LoRA",
+      "baseline_success_rate": 1.0,
+      "optional_success_rate": 1.0,
+      "success_rate_delta": 0.0,
+      "bedrock_call_reduction": -0.021276595744680774,
+      "bedrock_token_reduction": -0.332093671915858,
+      "wall_time_reduction": -0.28661201645827833,
+      "estimated_bedrock_cost_baseline_usd": 0.5859975,
+      "estimated_bedrock_cost_optional_usd": 0.771518,
+      "estimated_bedrock_cost_reduction": -0.3165892345957109,
+      "mean_optional_delegation_calls": 0.7,
+      "mean_optional_jev_decisions": 0.7,
+      "baseline_error_rate": 0.0,
+      "optional_error_rate": 0.0,
+      "paired": {
+        "success": {
+          "mean_optional_minus_baseline": 0.0,
+          "bootstrap_95_ci": [
+            0.0,
+            0.0
+          ]
+        },
+        "reward": {
+          "mean_optional_minus_baseline": 0.019999999999999928,
+          "bootstrap_95_ci": [
+            0.0,
+            0.05999999999999979
+          ]
+        },
+        "bedrock_calls": {
+          "mean_optional_minus_baseline": 0.1,
+          "bootstrap_95_ci": [
+            -0.7,
+            0.7
+          ]
+        },
+        "tokens": {
+          "mean_optional_minus_baseline": 2857.5,
+          "bootstrap_95_ci": [
+            564.6,
+            4839.4
+          ]
+        },
+        "latency_ms": {
+          "mean_optional_minus_baseline": 2668.7122421571985,
+          "bootstrap_95_ci": [
+            375.98619561176747,
+            4805.270171677694
+          ]
+        }
+      },
+      "clear_quality_cost_latency_win": false
+    },
+    {
+      "source": "runs/agent-harness/holdout-opus-sk-27b.json",
+      "sha256": "ebf018863a32c28cd674fb2210344fafdb31ac1e6c24d1c9c1f1088326381ee4",
+      "benchmark": "sokoban",
+      "pairs": 10,
+      "seeds": [
+        3000,
+        3001,
+        3002,
+        3003,
+        3004,
+        3005,
+        3006,
+        3007,
+        3008,
+        3009
+      ],
+      "bedrock_model": "us.anthropic.claude-opus-4-7",
+      "resolved_bedrock_model": "us.anthropic.claude-opus-4-7",
+      "jev_model": "SimpleJev/JevAny-Qwen3.8-27B-LoRA@09c9e9102d5b8cc7d56558d25da1202a761b6c0d",
+      "baseline_success_rate": 1.0,
+      "optional_success_rate": 1.0,
+      "success_rate_delta": 0.0,
+      "bedrock_call_reduction": -0.2954545454545454,
+      "bedrock_token_reduction": -0.843516843070669,
+      "wall_time_reduction": -0.5098906518638984,
+      "estimated_bedrock_cost_baseline_usd": 0.551749,
+      "estimated_bedrock_cost_optional_usd": 0.972059,
+      "estimated_bedrock_cost_reduction": -0.7617775473992702,
+      "mean_optional_delegation_calls": 0.6,
+      "mean_optional_jev_decisions": 0.6,
+      "baseline_error_rate": 0.0,
+      "optional_error_rate": 0.0,
+      "paired": {
+        "success": {
+          "mean_optional_minus_baseline": 0.0,
+          "bootstrap_95_ci": [
+            0.0,
+            0.0
+          ]
+        },
+        "reward": {
+          "mean_optional_minus_baseline": -0.06999999999999992,
+          "bootstrap_95_ci": [
+            -0.1400000000000002,
+            0.0
+          ]
+        },
+        "bedrock_calls": {
+          "mean_optional_minus_baseline": 1.3,
+          "bootstrap_95_ci": [
+            0.4,
+            2.3
+          ]
+        },
+        "tokens": {
+          "mean_optional_minus_baseline": 6806.0,
+          "bootstrap_95_ci": [
+            3219.9,
+            10872.7
+          ]
+        },
+        "latency_ms": {
+          "mean_optional_minus_baseline": 4480.869963229634,
+          "bootstrap_95_ci": [
+            1799.5404994813725,
+            7379.5066189952195
+          ]
+        }
+      },
+      "clear_quality_cost_latency_win": false
+    },
+    {
+      "source": "runs/agent-harness/webarena-opus-27b-sample6.json",
+      "sha256": "7f6b8fd41c9d12d88c278c049468fa1ee7fa6336ffcd12b67976a9d36c29f324",
+      "benchmark": "webarena",
+      "pairs": 6,
+      "seeds": [
+        4,
+        158,
+        264,
+        278,
+        300,
+        763
+      ],
+      "bedrock_model": "us.anthropic.claude-opus-4-7",
+      "resolved_bedrock_model": "us.anthropic.claude-opus-4-7",
+      "jev_model": "SimpleJev/JevAny-Qwen3.8-27B-LoRA@09c9e9102d5b8cc7d56558d25da1202a761b6c0d",
+      "baseline_success_rate": 0.5,
+      "optional_success_rate": 0.5,
+      "success_rate_delta": 0.0,
+      "bedrock_call_reduction": -0.055555555555555504,
+      "bedrock_token_reduction": -0.2820551778275788,
+      "wall_time_reduction": 0.004162566597046644,
+      "estimated_bedrock_cost_baseline_usd": 1.3957845,
+      "estimated_bedrock_cost_optional_usd": 1.769295,
+      "estimated_bedrock_cost_reduction": -0.2675989739103709,
+      "mean_optional_delegation_calls": 0.16666666666666666,
+      "mean_optional_jev_decisions": 0.16666666666666666,
+      "baseline_error_rate": 0.0,
+      "optional_error_rate": 0.0,
+      "paired": {
+        "success": {
+          "mean_optional_minus_baseline": 0.0,
+          "bootstrap_95_ci": [
+            0.0,
+            0.0
+          ]
+        },
+        "bedrock_calls": {
+          "mean_optional_minus_baseline": 0.3333333333333333,
+          "bootstrap_95_ci": [
+            0.0,
+            0.6666666666666666
+          ]
+        },
+        "tokens": {
+          "mean_optional_minus_baseline": 11138.5,
+          "bootstrap_95_ci": [
+            2813.3333333333335,
+            24473.5
+          ]
+        },
+        "latency_ms": {
+          "mean_optional_minus_baseline": -335.3890392075603,
+          "bootstrap_95_ci": [
+            -9354.855798378898,
+            12962.400025416477
+          ]
+        }
+      },
+      "clear_quality_cost_latency_win": false
+    },
+    {
+      "source": "runs/agent-harness/webshop-opus-27b-holdout.json",
+      "sha256": "54cbceb65ebe2a81f5fe27ff3f634ff178918f999adcc1458459a309075dd96e",
+      "benchmark": "webshop",
+      "pairs": 10,
+      "seeds": [
+        3100,
+        3101,
+        3102,
+        3103,
+        3104,
+        3105,
+        3106,
+        3107,
+        3108,
+        3109
+      ],
+      "bedrock_model": "us.anthropic.claude-opus-4-7",
+      "resolved_bedrock_model": "us.anthropic.claude-opus-4-7",
+      "jev_model": "SimpleJev/JevAny-Qwen3.8-27B-LoRA@09c9e9102d5b8cc7d56558d25da1202a761b6c0d",
+      "baseline_success_rate": 0.5,
+      "optional_success_rate": 0.6,
+      "success_rate_delta": 0.09999999999999998,
+      "bedrock_call_reduction": 0.07692307692307689,
+      "bedrock_token_reduction": 0.028879199637978057,
+      "wall_time_reduction": 0.060552024663920775,
+      "estimated_bedrock_cost_baseline_usd": 1.97747,
+      "estimated_bedrock_cost_optional_usd": 1.9101005,
+      "estimated_bedrock_cost_reduction": 0.03406853201312793,
+      "mean_optional_delegation_calls": 0.7,
+      "mean_optional_jev_decisions": 0.7,
+      "baseline_error_rate": 0.0,
+      "optional_error_rate": 0.0,
+      "paired": {
+        "success": {
+          "mean_optional_minus_baseline": 0.1,
+          "bootstrap_95_ci": [
+            0.0,
+            0.3
+          ]
+        },
+        "reward": {
+          "mean_optional_minus_baseline": 0.1,
+          "bootstrap_95_ci": [
+            0.0,
+            0.3
+          ]
+        },
+        "bedrock_calls": {
+          "mean_optional_minus_baseline": -0.6,
+          "bootstrap_95_ci": [
+            -2.3,
+            1.1
+          ]
+        },
+        "tokens": {
+          "mean_optional_minus_baseline": -944.5,
+          "bootstrap_95_ci": [
+            -11005.9,
+            9687.1
+          ]
+        },
+        "latency_ms": {
+          "mean_optional_minus_baseline": -1008.3878205856308,
+          "bootstrap_95_ci": [
+            -4976.821499387734,
+            3497.9772564955056
+          ]
+        }
+      },
+      "clear_quality_cost_latency_win": false
+    },
+    {
+      "source": "runs/agent-harness/holdout-sonnet-fl-27b.json",
+      "sha256": "57dab84305dbf04cf22f2b75fd4781a883bad150a1c38129087556b6db86ea6e",
+      "benchmark": "frozen_lake",
+      "pairs": 10,
+      "seeds": [
+        3000,
+        3001,
+        3002,
+        3003,
+        3004,
+        3005,
+        3006,
+        3007,
+        3008,
+        3009
+      ],
+      "bedrock_model": "us.anthropic.claude-sonnet-4-6",
+      "resolved_bedrock_model": "us.anthropic.claude-sonnet-4-6",
+      "jev_model": "SimpleJev/JevAny-Qwen3.8-27B-LoRA@09c9e9102d5b8cc7d56558d25da1202a761b6c0d",
+      "baseline_success_rate": 1.0,
+      "optional_success_rate": 1.0,
+      "success_rate_delta": 0.0,
+      "bedrock_call_reduction": 0.3658536585365853,
+      "bedrock_token_reduction": 0.3436901682845722,
+      "wall_time_reduction": -0.14091502872961653,
+      "estimated_bedrock_cost_baseline_usd": 0.263703,
+      "estimated_bedrock_cost_optional_usd": 0.189519,
+      "estimated_bedrock_cost_reduction": 0.2813164810411714,
+      "mean_optional_delegation_calls": 0.8,
+      "mean_optional_jev_decisions": 2.6,
+      "baseline_error_rate": 0.0,
+      "optional_error_rate": 0.0,
+      "paired": {
+        "success": {
+          "mean_optional_minus_baseline": 0.0,
+          "bootstrap_95_ci": [
+            0.0,
+            0.0
+          ]
+        },
+        "reward": {
+          "mean_optional_minus_baseline": 0.0,
+          "bootstrap_95_ci": [
+            0.0,
+            0.0
+          ]
+        },
+        "bedrock_calls": {
+          "mean_optional_minus_baseline": -1.5,
+          "bootstrap_95_ci": [
+            -2.8,
+            -0.3
+          ]
+        },
+        "tokens": {
+          "mean_optional_minus_baseline": -2046.4,
+          "bootstrap_95_ci": [
+            -4634.6,
+            126.2
+          ]
+        },
+        "latency_ms": {
+          "mean_optional_minus_baseline": 1272.7186485892162,
+          "bootstrap_95_ci": [
+            -594.7928005130962,
+            2940.454787784256
+          ]
+        }
+      },
+      "clear_quality_cost_latency_win": false
+    },
+    {
+      "source": "runs/agent-harness/holdout-sonnet-sk-27b.json",
+      "sha256": "9e0f0eafd57a0505b64e37b35ef45f024b27aacfead1167ff263095ce3c58524",
+      "benchmark": "sokoban",
+      "pairs": 10,
+      "seeds": [
+        3000,
+        3001,
+        3002,
+        3003,
+        3004,
+        3005,
+        3006,
+        3007,
+        3008,
+        3009
+      ],
+      "bedrock_model": "us.anthropic.claude-sonnet-4-6",
+      "resolved_bedrock_model": "us.anthropic.claude-sonnet-4-6",
+      "jev_model": "SimpleJev/JevAny-Qwen3.8-27B-LoRA@09c9e9102d5b8cc7d56558d25da1202a761b6c0d",
+      "baseline_success_rate": 0.9,
+      "optional_success_rate": 0.9,
+      "success_rate_delta": 0.0,
+      "bedrock_call_reduction": -0.10126582278480999,
+      "bedrock_token_reduction": -0.14785123461405142,
+      "wall_time_reduction": 0.038472056385954044,
+      "estimated_bedrock_cost_baseline_usd": 1.102827,
+      "estimated_bedrock_cost_optional_usd": 1.2577520999999998,
+      "estimated_bedrock_cost_reduction": -0.14047996648613048,
+      "mean_optional_delegation_calls": 0.6,
+      "mean_optional_jev_decisions": 0.6,
+      "baseline_error_rate": 0.0,
+      "optional_error_rate": 0.0,
+      "paired": {
+        "success": {
+          "mean_optional_minus_baseline": 0.0,
+          "bootstrap_95_ci": [
+            -0.3,
+            0.3
+          ]
+        },
+        "reward": {
+          "mean_optional_minus_baseline": 1.7763568394002506e-16,
+          "bootstrap_95_ci": [
+            -4.1,
+            4.160000000000001
+          ]
+        },
+        "bedrock_calls": {
+          "mean_optional_minus_baseline": 0.8,
+          "bootstrap_95_ci": [
+            -9.1,
+            10.4
+          ]
+        },
+        "tokens": {
+          "mean_optional_minus_baseline": 4350.7,
+          "bootstrap_95_ci": [
+            -64005.2,
+            72782.9
+          ]
+        },
+        "latency_ms": {
+          "mean_optional_minus_baseline": -934.5182957593352,
+          "bootstrap_95_ci": [
+            -32755.512149166316,
+            27524.07155984547
+          ]
+        }
+      },
+      "clear_quality_cost_latency_win": false
+    },
+    {
+      "source": "runs/agent-harness/holdout-gpt-fl-27b.json",
+      "sha256": "15980db9bf914c4bfc86927a0f2c7e12de461ad1385cf8e7e13a21ee427aaf2f",
+      "benchmark": "frozen_lake",
+      "pairs": 10,
+      "seeds": [
+        3000,
+        3001,
+        3002,
+        3003,
+        3004,
+        3005,
+        3006,
+        3007,
+        3008,
+        3009
+      ],
+      "bedrock_model": "us.openai.gpt-5.6-sol",
+      "resolved_bedrock_model": "us.openai.gpt-5.6-sol",
+      "jev_model": "SimpleJev/JevAny-Qwen3.8-27B-LoRA@09c9e9102d5b8cc7d56558d25da1202a761b6c0d",
+      "baseline_success_rate": 1.0,
+      "optional_success_rate": 1.0,
+      "success_rate_delta": 0.0,
+      "bedrock_call_reduction": 0.6444444444444444,
+      "bedrock_token_reduction": 0.631083202511774,
+      "wall_time_reduction": 0.3761090803151131,
+      "estimated_bedrock_cost_baseline_usd": null,
+      "estimated_bedrock_cost_optional_usd": 0.09108,
+      "estimated_bedrock_cost_reduction": null,
+      "mean_optional_delegation_calls": 0.7,
+      "mean_optional_jev_decisions": 2.6,
+      "baseline_error_rate": 0.0,
+      "optional_error_rate": 0.0,
+      "paired": {
+        "success": {
+          "mean_optional_minus_baseline": 0.0,
+          "bootstrap_95_ci": [
+            0.0,
+            0.0
+          ]
+        },
+        "reward": {
+          "mean_optional_minus_baseline": 0.0,
+          "bootstrap_95_ci": [
+            0.0,
+            0.0
+          ]
+        },
+        "bedrock_calls": {
+          "mean_optional_minus_baseline": -2.9,
+          "bootstrap_95_ci": [
+            -4.7,
+            -1.3
+          ]
+        },
+        "tokens": {
+          "mean_optional_minus_baseline": -1929.6,
+          "bootstrap_95_ci": [
+            -3854.3,
+            -427.7
+          ]
+        },
+        "latency_ms": {
+          "mean_optional_minus_baseline": -5548.109026136808,
+          "bootstrap_95_ci": [
+            -10686.209488171153,
+            -301.8958761822432
+          ]
+        }
+      },
+      "clear_quality_cost_latency_win": true
+    },
+    {
+      "source": "runs/agent-harness/holdout-gpt-sk-27b.json",
+      "sha256": "eefaab5f8c5590c0e2f9f38495fbf2659ea6fba3d3a3da9c3ebbaf3773dde49c",
+      "benchmark": "sokoban",
+      "pairs": 10,
+      "seeds": [
+        3000,
+        3001,
+        3002,
+        3003,
+        3004,
+        3005,
+        3006,
+        3007,
+        3008,
+        3009
+      ],
+      "bedrock_model": "us.openai.gpt-5.6-sol",
+      "resolved_bedrock_model": "us.openai.gpt-5.6-sol",
+      "jev_model": "SimpleJev/JevAny-Qwen3.8-27B-LoRA@09c9e9102d5b8cc7d56558d25da1202a761b6c0d",
+      "baseline_success_rate": 1.0,
+      "optional_success_rate": 1.0,
+      "success_rate_delta": 0.0,
+      "bedrock_call_reduction": -0.2619047619047618,
+      "bedrock_token_reduction": -1.2196431391125848,
+      "wall_time_reduction": -0.07456955275238711,
+      "estimated_bedrock_cost_baseline_usd": null,
+      "estimated_bedrock_cost_optional_usd": null,
+      "estimated_bedrock_cost_reduction": null,
+      "mean_optional_delegation_calls": 0.9,
+      "mean_optional_jev_decisions": 0.9,
+      "baseline_error_rate": 0.0,
+      "optional_error_rate": 0.0,
+      "paired": {
+        "success": {
+          "mean_optional_minus_baseline": 0.0,
+          "bootstrap_95_ci": [
+            0.0,
+            0.0
+          ]
+        },
+        "reward": {
+          "mean_optional_minus_baseline": -0.019999999999999928,
+          "bootstrap_95_ci": [
+            -0.05999999999999979,
+            0.0
+          ]
+        },
+        "bedrock_calls": {
+          "mean_optional_minus_baseline": 1.1,
+          "bootstrap_95_ci": [
+            -0.1,
+            2.7
+          ]
+        },
+        "tokens": {
+          "mean_optional_minus_baseline": 3862.0,
+          "bootstrap_95_ci": [
+            1221.1,
+            7349.3
+          ]
+        },
+        "latency_ms": {
+          "mean_optional_minus_baseline": 1232.7433052938432,
+          "bootstrap_95_ci": [
+            -3601.460995245725,
+            5545.123566640541
+          ]
+        }
+      },
+      "clear_quality_cost_latency_win": false
+    }
+  ],
+  "demo_files": []
+}

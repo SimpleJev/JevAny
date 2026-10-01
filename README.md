@@ -45,6 +45,46 @@ recorded actions and option probabilities.
 
 [![JevAny choosing actions across robotics, browser, software, laboratory and mobility tasks](docs/demos/jevany-cases.gif)](docs/CASES.md)
 
+### Jev as an LLM agent harness
+
+Jev can also sit inside an LLM agent loop. In controlled and web tasks, options come
+from the environment or DOM; in the terminal harness, the frontier LLM generates them.
+The terminal protocol keeps planning, exact edits, recovery, and completion with the
+LLM while Jev selects model-declared routine actions with a confidence-gated fallback.
+Terminal D0 uses the same candidate protocol and executes the LLM's choice. The
+cross-domain baseline instead omits the delegation tool; its optional agent may select
+any exposed benchmark action, so that matrix measures the complete sandbox-harness
+intervention—not a selector-only or production-safety ablation.
+
+Task openness (**T0–T4**) and delegation (**D0–D4**) are independent axes; the
+[protocol](docs/experiments/AGENT_HARNESS_FRONTIER_PROTOCOL.md) defines both.
+In practice: delegate selection, not problem solving; require 2–4 materially different
+valid options; keep strategy, exact edits, recovery, and verification with the LLM;
+batch only short composable actions; and always retain a confidence-gated LLM fallback.
+
+| Evidence | Outcome | Reading |
+|---|---|---|
+| GPT-5.6-sol · FrozenLake, 10 pairs | 100% success retained; calls −64.4%, tokens −63.1%, time −37.6% | Clear controlled win |
+| WebShop, 10 pairs | 50%→60%; small resource savings | Positive signal; intervals cross zero |
+| WebArena, fixed 6 tasks | 50%→50%; calls/tokens increase | No aggregate gain |
+| Terminal-Bench, 6 task pairs | 1/6→3/6; calls −9.0% | Single-attempt exploration, not a causal claim |
+
+**Decision traces.** In SQLite recovery, Jev chose raw-page inspection over schema and
+tool checks at `0.81` confidence; the LLM then wrote the parser and verified the result.
+In WebShop seed `3100`, Jev chose the wrong near-match color at `0.99`; the LLM observed
+the failure, searched again, and completed the exact purchase. These traces show both
+useful bounded selection and why global ownership must stay with the LLM.
+
+**Key takeaway:** optimize useful LLM-call replacement, not delegation rate. Jev is a
+good harness for bounded, reversible, locally judgeable choices; it does not repair an
+agent that lacks the task-level capability. See the
+[full 96-pair matrix](reports/JevAny_Tech_Report_Agent_Harness_Appendix.md#f-repeated-cross-domain-matrix),
+[Terminal-Bench breakdown and delegation frontier](reports/JevAny_Tech_Report_Agent_Harness_Appendix.md#g-open-terminal-exploration),
+[SQLite decision demo](reports/JevAny_Tech_Report_Agent_Harness_Appendix.md#h1-sqlite-recovery-a-meaningful-three-way-decision),
+[WebShop recovery demo](reports/JevAny_Tech_Report_Agent_Harness_Appendix.md#h4-webshop-a-confident-local-mistake-and-frontier-recovery),
+[task/delegation protocol](docs/experiments/AGENT_HARNESS_FRONTIER_PROTOCOL.md), and the
+[combined technical report](reports/JevAny_Tech_Report_with_Agent_Harness.pdf).
+
 ## 📑 Table of Contents
 
 - [🎮 Results and Demos](#results-and-demos)
@@ -271,11 +311,13 @@ combine JevAny decisions with an LLM planner.
 
 ## 📚 6. Documentation and Contributing <a name="documentation-and-contributing"></a>
 
-[Training](docs/TRAINING.md) · [Deployment](docs/DEPLOYMENT.md) · [API](docs/API.md) · [Data](docs/DATA.md) · [Evaluation](docs/EVALUATION.md) · [Contributing](CONTRIBUTING.md)
+[Training](docs/TRAINING.md) · [Deployment](docs/DEPLOYMENT.md) · [API](docs/API.md) · [Data](docs/DATA.md) · [Evaluation](docs/EVALUATION.md) · [Agent harness protocol](docs/experiments/AGENT_HARNESS_FRONTIER_PROTOCOL.md) · [Contributing](CONTRIBUTING.md)
 
 To contribute a model adapter, evaluation or application example, start with the
-[contribution guide](CONTRIBUTING.md). The [technical report](reports/JevAny_Tech_Report.pdf)
-describes the model design, multimodal path, experiments and open questions.
+[contribution guide](CONTRIBUTING.md). The
+[combined technical report](reports/JevAny_Tech_Report_with_Agent_Harness.pdf)
+describes model design, multimodal support, the agent-harness study, negative results,
+and open questions; the [original release report](reports/JevAny_Tech_Report.pdf) remains unchanged.
 
 Code and starter data are Apache-2.0. Some components are adapted from
 [Kev](https://github.com/jaredpalmer/kev); see [NOTICE](NOTICE) and
