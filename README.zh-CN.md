@@ -45,42 +45,53 @@
 
 ### ⚡ Jev 加入 LLM Agent 循环
 
-**关键结论**
+LLM 负责规划并提出有效、可回退的候选动作，Jev 做局部选择，失败恢复和最终完成仍由 LLM 负责。
+下方动图对比左侧纯 LLM 与右侧 LLM + Jev，两侧 reward 相同；步骤为示意，
+加速播放保留各组记录的实测耗时比例，点击可放大查看。
 
-- **任务层级：**T0 受控环境 → T4 开放终端；任务难度与委托程度分开判断。
-- **委托层级：**D0 仅 LLM → D4 有边界子目标；只有局部选择容易验证时才提高委托程度。
-- **适合 Jev：**LLM 能生成 2–4 个有效、有明确差别、可回退且能立即看到反馈的选项。
-- **保留给 LLM：**规划、开放搜索、精确修改、失败恢复、高风险动作和最终完成。
-- **成功标准：**reward 不降，同时减少 LLM calls、tokens 或时间；否则立即交回 LLM。
+<table>
+  <tr>
+    <td width="64%" valign="middle">
+      <a href="docs/demos/jev-decision-webshop-v2.gif"><img src="docs/demos/jev-decision-webshop-v2.gif" alt="WebShop：左侧纯 LLM 与右侧 LLM + Jev 并排执行，分别在 18.54 秒和 7.83 秒完成购买" width="100%"></a>
+    </td>
+    <td width="36%" valign="middle">
+      <p><strong>1. <a href="docs/demos/jev-agent-harness-traces.json">WebShop</a></strong><br>
+      Jev 从 LLM 生成的候选中选中所需颜色和尺寸，LLM 随后完成购买。
+      用时从 18.54 秒降至 7.83 秒，LLM 调用从 9 次降至 4 次。</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="64%" valign="middle">
+      <a href="docs/demos/jev-decision-frozen-lake-v2.gif"><img src="docs/demos/jev-decision-frozen-lake-v2.gif" alt="FrozenLake：左侧 LLM 逐步决策，右侧 LLM 规划后由 Jev 比较四个方向，分别在 19.7 秒和 16.7 秒到达同一目标" width="100%"></a>
+    </td>
+    <td width="36%" valign="middle">
+      <p><strong>2. <a href="docs/demos/jev-agent-harness-traces.json">FrozenLake</a></strong><br>
+      LLM 规划一次路线，Jev 在每个新状态下从四个方向中选择下一步。
+      两侧均到达目标，用时从 19.7 秒降至 16.7 秒，LLM 调用从 4 次降至 1 次。</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="64%" valign="middle">
+      <a href="docs/demos/jev-decision-terminal-v2.gif"><img src="docs/demos/jev-decision-terminal-v2.gif" alt="SQLite 恢复：左侧纯 LLM 与右侧 LLM + Jev 都恢复十行数据，分别在 187.9 秒和 144.7 秒完成" width="100%"></a>
+    </td>
+    <td width="36%" valign="middle">
+      <p><strong>3. <a href="reports/JevAny_Tech_Report_Agent_Harness_Appendix.md#h1-sqlite-recovery-a-meaningful-three-way-decision">Terminal-Bench</a></strong><br>
+      在 <code>sqlite-db-truncate</code> 任务中，Jev 从三个命令中选择原始页面检查，
+      LLM 随后恢复并验证十行数据。用时从 187.9 秒降至 144.7 秒，LLM 调用从 15 次降至 8 次。</p>
+    </td>
+  </tr>
+</table>
 
-**1 · WebShop——从 LLM 生成的颜色和尺寸候选中选择精确选项**
-
-[![LLM 分别生成三个颜色和三个尺寸候选，Jev 选中精确选项，LLM 完成购买](docs/demos/jev-decision-webshop-v2.gif)](docs/demos/jev-agent-harness-traces.json)
-
-Reward `1→1` · LLM calls `9→4` · tokens `38,852→14,256` · 时间 `18.54s→7.83s`
-
-**2 · FrozenLake——每一步都比较四个方向**
-
-[![Jev 比较四个方向、执行选中的移动、到达目标并减少 LLM 调用](docs/demos/jev-decision-frozen-lake-v2.gif)](results/agent-harness-v1/formal-matrix.md)
-
-Reward `1→1` · LLM calls `4→1` · tokens `2,338→663`
-
-**3 · Terminal-Bench · `sqlite-db-truncate`——从三个真实命令中选择一个**
-
-[![Jev 比较三个真实 Terminal-Bench 命令，选择原始页面检查，LLM 恢复十行数据](docs/demos/jev-decision-terminal-v2.gif)](reports/JevAny_Tech_Report_Agent_Harness_Appendix.md#h1-sqlite-recovery-a-meaningful-three-way-decision)
-
-Reward `1→1` · LLM calls `15→8` · 时间 `187.9s→144.7s`
+下表展示更多配对评测结果，收益随任务而变化。[完整结果](reports/JevAny_Tech_Report_Agent_Harness_Appendix.md)、
+[委托协议](docs/experiments/AGENT_HARNESS_FRONTIER_PROTOCOL.md)和
+[技术报告](reports/JevAny_Tech_Report_with_Agent_Harness.pdf)说明了 Jev 适合处理哪些选择，以及何时交回 LLM。
 
 | 任务 | 成功率 | 效率 |
 |---|---:|---:|
-| GPT-5.6-sol · FrozenLake · 10 pairs | 100% → 100% | LLM calls −64.4% · tokens −63.1% · 时间 −37.6% |
-| WebShop · LLM 生成候选 · 3 pairs | 67% → 100% | LLM calls −21.4% · tokens −14.3% · 时间 −15.0% |
-| WebArena · 6 pairs | 50% → 50% | LLM calls +5.6% · tokens +28.2% · 时间 −0.4% |
-| Terminal-Bench · 6 pairs | 1/6 → 3/6 | LLM calls −9.0% |
-
-[完整结果](reports/JevAny_Tech_Report_Agent_Harness_Appendix.md) ·
-[任务与委托分级](docs/experiments/AGENT_HARNESS_FRONTIER_PROTOCOL.md) ·
-[合并版技术报告](reports/JevAny_Tech_Report_with_Agent_Harness.pdf)
+| FrozenLake（GPT-5.6-sol，10 组配对） | 100% → 100% | LLM 调用 −64.4%，tokens −63.1%，用时 −37.6% |
+| WebShop（LLM 生成候选，3 组配对） | 67% → 100% | LLM 调用 −21.4%，tokens −14.3%，用时 −15.0% |
+| WebArena（6 组配对） | 50% → 50% | LLM 调用 +5.6%，tokens +28.2%，用时 −0.4% |
+| Terminal-Bench（6 组配对） | 1/6 → 3/6 | LLM 调用 −9.0% |
 
 ## 📑 目录
 

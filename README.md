@@ -48,42 +48,58 @@ try your own inputs and see its choices and probabilities.
 
 ### ⚡ Jev inside LLM agent loops
 
-**Key takeaways**
+Jev chooses among valid, reversible actions proposed by the LLM, which handles
+planning, recovery, and completion. The animations compare LLM only (left) with
+LLM + Jev (right) at equal reward. Steps are illustrated; accelerated playback
+preserves each pair's measured completion-time ratio. Click an animation to enlarge it.
 
-- **Task level:** T0 controlled → T4 open terminal. Task difficulty and delegation are separate.
-- **Delegation level:** D0 LLM-only → D4 bounded subgoal. Increase delegation only when local choices remain easy to verify.
-- **Delegate when:** the LLM can generate 2–4 valid, meaningfully different, reversible choices with immediate feedback.
-- **Keep with the LLM:** planning, open-ended search, exact edits, recovery, high-risk actions, and completion.
-- **Success test:** reward stays the same or improves while LLM calls, tokens, or time fall; otherwise return control to the LLM.
+<table>
+  <tr>
+    <td width="64%" valign="middle">
+      <a href="docs/demos/jev-decision-webshop-v2.gif"><img src="docs/demos/jev-decision-webshop-v2.gif" alt="WebShop: LLM only and LLM + Jev run side by side; Jev-assisted purchase completes in 7.83 seconds versus 18.54 seconds" width="100%"></a>
+    </td>
+    <td width="36%" valign="middle">
+      <p><strong>1. <a href="docs/demos/jev-agent-harness-traces.json">WebShop</a></strong><br>
+      Jev selects the requested color and size from LLM-generated menus before the
+      LLM buys the product. Time falls from 18.54 to 7.83 seconds and LLM calls
+      from 9 to 4.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="64%" valign="middle">
+      <a href="docs/demos/jev-decision-frozen-lake-v2.gif"><img src="docs/demos/jev-decision-frozen-lake-v2.gif" alt="FrozenLake: the LLM chooses every move on the left; one LLM plan and Jev decisions reach the same goal in 16.7 seconds versus 19.7 seconds on the right" width="100%"></a>
+    </td>
+    <td width="36%" valign="middle">
+      <p><strong>2. <a href="docs/demos/jev-agent-harness-traces.json">FrozenLake</a></strong><br>
+      After one LLM plan, Jev checks each new state and chooses among four directions.
+      Both runs reach the goal; time falls from 19.7 to 16.7 seconds and LLM calls
+      from 4 to 1.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="64%" valign="middle">
+      <a href="docs/demos/jev-decision-terminal-v2.gif"><img src="docs/demos/jev-decision-terminal-v2.gif" alt="SQLite recovery: LLM only and LLM + Jev run side by side; both recover ten rows, finishing in 187.9 and 144.7 seconds respectively" width="100%"></a>
+    </td>
+    <td width="36%" valign="middle">
+      <p><strong>3. <a href="reports/JevAny_Tech_Report_Agent_Harness_Appendix.md#h1-sqlite-recovery-a-meaningful-three-way-decision">Terminal-Bench</a></strong><br>
+      For <code>sqlite-db-truncate</code>, Jev selects raw-page inspection from three
+      commands, then the LLM recovers and verifies ten rows. Time falls from 187.9
+      to 144.7 seconds and LLM calls from 15 to 8.</p>
+    </td>
+  </tr>
+</table>
 
-**1 · WebShop — choose the exact color and size from LLM-generated menus**
-
-[![The LLM generates three color and three size candidates, Jev selects the exact options, and the LLM completes the purchase](docs/demos/jev-decision-webshop-v2.gif)](docs/demos/jev-agent-harness-traces.json)
-
-Reward `1→1` · LLM calls `9→4` · tokens `38,852→14,256` · time `18.54s→7.83s`
-
-**2 · FrozenLake — compare four directions at every state**
-
-[![Jev compares four directions, executes each selected move, reaches the goal, and reduces LLM calls](docs/demos/jev-decision-frozen-lake-v2.gif)](results/agent-harness-v1/formal-matrix.md)
-
-Reward `1→1` · LLM calls `4→1` · tokens `2,338→663`
-
-**3 · Terminal-Bench · `sqlite-db-truncate` — select one of three commands**
-
-[![Jev compares three real Terminal-Bench commands, selects raw-page inspection, and the LLM recovers ten rows](docs/demos/jev-decision-terminal-v2.gif)](reports/JevAny_Tech_Report_Agent_Harness_Appendix.md#h1-sqlite-recovery-a-meaningful-three-way-decision)
-
-Reward `1→1` · LLM calls `15→8` · time `187.9s→144.7s`
+Broader paired evaluations show that gains vary by task. The [full results](reports/JevAny_Tech_Report_Agent_Harness_Appendix.md),
+[delegation protocol](docs/experiments/AGENT_HARNESS_FRONTIER_PROTOCOL.md), and
+[technical report](reports/JevAny_Tech_Report_with_Agent_Harness.pdf) describe
+where Jev helps and when to return control to the LLM.
 
 | Task | Success | Efficiency |
 |---|---:|---:|
-| GPT-5.6-sol · FrozenLake · 10 pairs | 100% → 100% | LLM calls −64.4% · tokens −63.1% · time −37.6% |
-| WebShop · LLM-generated menus · 3 pairs | 67% → 100% | LLM calls −21.4% · tokens −14.3% · time −15.0% |
-| WebArena · 6 pairs | 50% → 50% | LLM calls +5.6% · tokens +28.2% · time −0.4% |
-| Terminal-Bench · 6 pairs | 1/6 → 3/6 | LLM calls −9.0% |
-
-[Full results](reports/JevAny_Tech_Report_Agent_Harness_Appendix.md) ·
-[task/delegation levels](docs/experiments/AGENT_HARNESS_FRONTIER_PROTOCOL.md) ·
-[combined technical report](reports/JevAny_Tech_Report_with_Agent_Harness.pdf)
+| FrozenLake (GPT-5.6-sol, 10 pairs) | 100% → 100% | LLM calls −64.4%, tokens −63.1%, time −37.6% |
+| WebShop (LLM-generated menus, 3 pairs) | 67% → 100% | LLM calls −21.4%, tokens −14.3%, time −15.0% |
+| WebArena (6 pairs) | 50% → 50% | LLM calls +5.6%, tokens +28.2%, time −0.4% |
+| Terminal-Bench (6 pairs) | 1/6 → 3/6 | LLM calls −9.0% |
 
 ## 📑 Table of Contents
 
