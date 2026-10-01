@@ -52,6 +52,11 @@
       "local_run_path": "worktrees/JevAny/kev-jevjudge-20261001/runs/jevjudge-kev-full-context-20261001",
       "summary_sha256": "4e1f448503983a13a14df9fc877cd876906c09915ef8173bc676778d52e06598",
       "protocol": "724/724 text records; 65,536-token ceiling; 4,096-token chunked-KV prefill; no input truncation"
+    },
+    "jevjudge_jev_113_openrouter": {
+      "source_commit": "2ff9d3019bd7f910486543ce76513321537a3c6f",
+      "protocol": "OpenRouter full-context rerun; 724/724 JevJudge text-only records",
+      "note": "Aggregate metrics were added directly to the public evaluation table; item-level outputs are not tracked in this artifact."
     }
   },
   "jevany_checkpoints": {
@@ -98,7 +103,7 @@
   },
   "main_comparison_order": [
     "JevAny-Qwen3.8-27B",
-    "TypeSafe Jev 1.13.0",
+    "Jev 1.13 (OpenRouter)",
     "JevAny-Muse-Glimmer-30B",
     "JevAny-Qwen3.5-4B-Direct-Token",
     "JevAny-Qwen3.5-4B",
@@ -121,7 +126,7 @@
       {"model": "meraGPT Decider 1", "kind": "published_only", "status": "dataset-card result; not locally rerun", "accuracy": 0.768},
       {"model": "Liquid AI d1", "kind": "published_only", "status": "dataset-card result; not locally rerun", "accuracy": 0.742},
       {"model": "JevAny-Qwen3.8-27B", "checkpoint_id": "JevAny-Qwen3.8-27B", "kind": "ours", "status": "local full-split rerun", "accuracy": 0.728, "kl": 0.29284607004173263, "brier": 0.13141516555965035, "ece": 0.05304485014212309, "median_ms_per_case": 279.846342978999},
-      {"model": "TypeSafe Jev 1.13.0", "kind": "published_only", "status": "dataset-card result; not locally rerun", "accuracy": 0.727},
+      {"model": "Jev 1.13 (OpenRouter)", "canonical_model": "TypeSafe Jev 1.13.0", "kind": "external_api", "result_source": "published_only", "status": "dataset-card result; not locally rerun", "accuracy": 0.727},
       {"model": "Featherless Simple Jev", "kind": "published_only", "status": "dataset-card result; not locally rerun", "accuracy": 0.716},
       {"model": "prima-ratio + Gemma4 12B", "kind": "published_only", "status": "published open result; not locally rerun", "accuracy": 0.702},
       {"model": "JevAny-Muse-Glimmer-30B", "checkpoint_id": "JevAny-Muse-Glimmer-30B", "kind": "ours", "status": "local full-split rerun", "accuracy": 0.6995, "kl": 0.24526825101571734, "brier": 0.11076614862515069, "ece": 0.027932146407057316, "median_ms_per_case": 265.92537853866816},
@@ -149,7 +154,7 @@
     "bootstrap": "1,000 source-stratified group_id cluster replicates; seed 20261001; percentile 95% CI",
     "models": [
       {"model": "JevAny-Qwen3.8-27B", "checkpoint_id": "JevAny-Qwen3.8-27B", "kind": "ours", "status": "local native-multimodal full-suite rerun", "skill_role": 0.35553525636955524, "skill_role_ci_95": [0.32841323685030027, 0.38176197524163447], "accuracy": 0.6226708074534162, "nll": 0.8782948258038192, "brier": 0.5000911066296662, "ece": 0.09371814352871538, "answered": 3220, "requested": 3220},
-      {"model": "TypeSafe Jev 1.13.0", "kind": "published_only", "status": "no matching published or local JevJudge result", "skill_role": null, "accuracy": null},
+      {"model": "Jev 1.13 (OpenRouter)", "canonical_model": "TypeSafe Jev 1.13.0", "kind": "external_api", "result_source": "not_available", "status": "incompatible: OpenRouter endpoint is text-only", "skill_role": null, "accuracy": null},
       {"model": "JevAny-Muse-Glimmer-30B", "checkpoint_id": "JevAny-Muse-Glimmer-30B", "kind": "ours", "status": "local native-multimodal full-suite rerun", "skill_role": 0.29648844403141006, "skill_role_ci_95": [0.2671333745337393, 0.3231108867465619], "accuracy": 0.5869565217391305, "nll": 0.9114661962791302, "brier": 0.5277115788670403, "ece": 0.09999396980566182, "answered": 3220, "requested": 3220},
       {"model": "JevAny-Qwen3.5-4B-Direct-Token", "checkpoint_id": "JevAny-Qwen3.5-4B-Direct-Token", "kind": "ours", "status": "local native-multimodal full-suite rerun", "skill_role": 0.23853983079967422, "skill_role_ci_95": [0.20959105387695398, 0.2670066680115797], "accuracy": 0.5493788819875777, "nll": 1.0052958748660827, "brier": 0.5731377334260498, "ece": 0.13055054095273322, "answered": 3220, "requested": 3220},
       {"model": "JevAny-Qwen3.5-4B", "checkpoint_id": "JevAny-Qwen3.5-4B", "kind": "ours", "status": "local native-multimodal full-suite rerun", "skill_role": 0.23229601616481865, "skill_role_ci_95": [0.20493855648536144, 0.25839228637038486], "accuracy": 0.5475155279503106, "nll": 1.0509965504571777, "brier": 0.5861465151158306, "ece": 0.11717509999404728, "answered": 3220, "requested": 3220},
@@ -178,7 +183,7 @@
     "official_headline": false,
     "models": [
       {"model": "JevAny-Qwen3.8-27B", "checkpoint_id": "JevAny-Qwen3.8-27B", "kind": "ours", "status": "local full-context rerun", "accuracy": 0.664364640883978, "nll": 0.8239218540887275, "brier": 0.47613796709365513, "ece": 0.10262691318393291, "answered": 724, "requested": 724},
-      {"model": "TypeSafe Jev 1.13.0", "kind": "published_only", "status": "no matching published or local JevJudge result", "accuracy": null},
+      {"model": "Jev 1.13 (OpenRouter)", "canonical_model": "TypeSafe Jev 1.13.0", "kind": "external_api", "result_source": "api_rerun", "status": "OpenRouter full-context rerun", "accuracy": 0.6505524861878453, "nll": 0.836, "brier": 0.461, "ece": 0.076, "answered": 724, "requested": 724},
       {"model": "JevAny-Muse-Glimmer-30B", "checkpoint_id": "JevAny-Muse-Glimmer-30B", "kind": "ours", "status": "local full-context rerun", "accuracy": 0.6256906077348067, "nll": 0.873466275526263, "brier": 0.5030655344263703, "ece": 0.09939612495591732, "answered": 724, "requested": 724},
       {"model": "JevAny-Qwen3.5-4B-Direct-Token", "checkpoint_id": "JevAny-Qwen3.5-4B-Direct-Token", "kind": "ours", "status": "local full-context rerun", "accuracy": 0.585635359116022, "nll": 0.9150156870112527, "brier": 0.5160014193658196, "ece": 0.08948690551090707, "answered": 724, "requested": 724},
       {"model": "JevAny-Qwen3.5-4B", "checkpoint_id": "JevAny-Qwen3.5-4B", "kind": "ours", "status": "local full-context rerun", "accuracy": 0.5787292817679558, "nll": 0.9966079502888393, "brier": 0.5538440250611777, "ece": 0.07373506930233757, "answered": 724, "requested": 724},

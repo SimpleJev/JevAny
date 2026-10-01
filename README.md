@@ -335,7 +335,7 @@ matching result.
 - **JevAny-Qwen3.8-27B:** 72.8% Typed accuracy, **62.3%** JevJudge full accuracy, and 66.4% JevJudge text-only accuracy.
 - All five JevAny releases completed 3,220/3,220 native text, image, and video records. Their full-suite accuracy ranges from 51.5% to 62.3%; the strongest complete open baseline scores 48.2%.
 - On the JevJudge text-only subset, Qwen3.8-27B scores 66.4% and Kev-27B scores 64.2%. Kev has no native image/video path, so its full result is `—`.
-- Published TypeSafe Jev 1.13.0 scores 72.7% Typed accuracy, 0.1 point below Qwen3.8-27B. Decider 1 (76.8%) and Liquid d1 (74.2%) remain higher; none has a matching JevJudge result.
+- **Jev 1.13 (OpenRouter):** 72.7% Typed accuracy (published) and 65.1% JevJudge text-only accuracy; its full result is `—` because the endpoint is text-only. Published Decider 1 (76.8%) and Liquid d1 (74.2%) remain higher on Typed Decisions.
 
 All three panels use accuracy. JevJudge full covers all 3,220 multimodal records;
 text-only is its 724-record text subset. The benchmark's official `skill_role`

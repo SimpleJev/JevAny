@@ -37,17 +37,23 @@ def test_tracked_chart_artifact_has_one_valid_thirteen_model_cohort():
         assert data[panel]["chart_metric"] == "accuracy"
 
 
-def test_published_jev_has_typed_accuracy_and_explicit_jevjudge_dashes():
+def test_jev_113_combines_published_typed_and_openrouter_text_results():
     data = load_results(SOURCE)
     typed = {row["model"]: row for row in data["typed_decisions"]["ordered_models"]}
     full = {row["model"]: row for row in data["jevjudge_full"]["ordered_models"]}
     text = {row["model"]: row for row in data["jevjudge_text"]["ordered_models"]}
 
-    assert typed["TypeSafe Jev 1.13.0"]["accuracy"] == pytest.approx(0.727)
-    assert typed["TypeSafe Jev 1.13.0"]["status"] == "dataset-card result; not locally rerun"
-    for panel in (full, text):
-        assert panel["TypeSafe Jev 1.13.0"]["accuracy"] is None
-        assert panel["TypeSafe Jev 1.13.0"]["status"] == "no matching published or local JevJudge result"
+    model = "Jev 1.13 (OpenRouter)"
+    assert typed[model]["accuracy"] == pytest.approx(0.727)
+    assert typed[model]["result_source"] == "published_only"
+    assert typed[model]["status"] == "dataset-card result; not locally rerun"
+    assert full[model]["accuracy"] is None
+    assert full[model]["status"] == "incompatible: OpenRouter endpoint is text-only"
+    assert text[model]["accuracy"] == pytest.approx(471 / 724)
+    assert text[model]["nll"] == pytest.approx(0.836)
+    assert text[model]["brier"] == pytest.approx(0.461)
+    assert text[model]["answered"] == text[model]["requested"] == 724
+    assert text[model]["status"] == "OpenRouter full-context rerun"
 
 
 @pytest.mark.parametrize("value", [-0.01, 1.01, True, float("inf")])
@@ -123,6 +129,14 @@ def test_dash_rows_require_null_metrics_and_an_unavailable_status(tmp_path, arti
             "jevjudge_full",
             "Kev-27B",
             skill_role=0.5,
+        )
+    with pytest.raises(ValueError, match="non-null fields"):
+        load_modified(
+            tmp_path,
+            artifact,
+            "jevjudge_full",
+            "Kev-27B",
+            nll=1.0,
         )
     with pytest.raises(ValueError, match="needs a no-matching status"):
         load_modified(

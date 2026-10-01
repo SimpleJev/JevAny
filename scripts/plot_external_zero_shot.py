@@ -15,11 +15,18 @@ MUTED = "#64748B"
 RULE = "#E4E9EF"
 COLORS = {
     "ours": "#278577",
+    "external_api": "#C08A42",
     "open_kev": "#9A6FB0",
     "open_rerun": "#8493A6",
     "published_only": "#A17BB7",
 }
-HATCHES = {"ours": None, "open_kev": None, "open_rerun": None, "published_only": "////"}
+HATCHES = {
+    "ours": None,
+    "external_api": None,
+    "open_kev": None,
+    "open_rerun": None,
+    "published_only": "////",
+}
 PANELS = (
     {
         "key": "typed_decisions",
@@ -85,7 +92,16 @@ def _validate_row(row: dict, panel: dict) -> None:
             row.get("kind") == "published_only" and "no matching" in normalized
         ):
             raise ValueError(f"{suite}: unavailable {model} needs a published no-matching status")
-        fields = ("accuracy", "skill_role", "skill_role_ci_95", "answered", "requested")
+        fields = (
+            "accuracy",
+            "skill_role",
+            "skill_role_ci_95",
+            "nll",
+            "brier",
+            "ece",
+            "answered",
+            "requested",
+        )
         present = [field for field in fields if row.get(field) is not None]
         if present:
             raise ValueError(f"{suite}: unavailable {model} has non-null fields: {present}")
@@ -160,7 +176,7 @@ def short_label(name: str) -> str:
         "JevAny-Qwen3.5-4B": "JevAny Qwen3.5 4B · Pointer",
         "JevAny-Muse-Glimmer-30B": "JevAny Muse 30B",
         "JevAny-Gemma-4B": "JevAny Gemma 4B",
-        "TypeSafe Jev 1.13.0": "TypeSafe Jev 1.13.0",
+        "Jev 1.13 (OpenRouter)": "Jev 1.13 · OpenRouter",
         "OpenDecider-small": "OpenDecider small",
         "Bongard-mini": "Bongard mini",
         "Jeff-Gemma4-E2B": "Jeff Gemma4 E2B",
@@ -190,17 +206,17 @@ def draw_panel(ax, rows: list[dict], panel: dict, show_labels: bool) -> None:
             )
             continue
         value = score * 100
-        published = row["kind"] == "published_only"
+        published = row.get("result_source") == "published_only" or row["kind"] == "published_only"
         bar = ax.barh(
             index,
             value,
             height=0.66,
             color=color,
-            edgecolor="#79558D" if published else "none",
+            edgecolor="#805A2B" if published else "none",
             linewidth=0.7 if published else 0,
             zorder=3,
         )
-        bar[0].set_hatch(HATCHES[row["kind"]])
+        bar[0].set_hatch("////" if published else HATCHES[row["kind"]])
         ax.text(
             min(value + panel["xmax"] * 0.018, panel["xmax"] * 0.985),
             index,
@@ -262,15 +278,16 @@ def main() -> None:
     )
     legend = [
         Patch(facecolor=COLORS["ours"], label="JevAny"),
+        Patch(facecolor=COLORS["external_api"], label="Jev 1.13 · API"),
         Patch(facecolor=COLORS["open_kev"], label="Kev · open"),
         Patch(facecolor=COLORS["open_rerun"], label="Other open · locally rerun"),
-        Patch(facecolor=COLORS["published_only"], edgecolor="#79558D", hatch="////", label="Published only"),
+        Patch(facecolor="white", edgecolor="#805A2B", hatch="////", label="Published result"),
     ]
     fig.legend(
         handles=legend,
         loc="upper right",
         bbox_to_anchor=(0.988, 0.972),
-        ncol=4,
+        ncol=5,
         frameon=False,
         fontsize=10.8,
         handlelength=1.2,

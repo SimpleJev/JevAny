@@ -309,7 +309,7 @@ NLL、Brier 和 ECE 均在 Transfer 上计算。
 - **JevAny-Qwen3.8-27B：**Typed 准确率 72.8%，JevJudge 全集准确率 **62.3%**，JevJudge 纯文本准确率 66.4%。
 - 五个 JevAny 版本都完成了 3,220/3,220 条原生文本、图片和视频评测，全集准确率为 51.5%–62.3%；最强完整开源 baseline 为 48.2%。
 - JevJudge 纯文本子集中，Qwen3.8-27B 为 66.4%，Kev-27B 为 64.2%。Kev 没有原生图片/视频路径，因此全集为 `—`。
-- 公开报告的 TypeSafe Jev 1.13.0 在 Typed Decisions 上为 72.7%，比 Qwen3.8-27B 低 0.1 个百分点。Decider 1（76.8%）和 Liquid d1（74.2%）仍更高；三者都没有对应的 JevJudge 结果。
+- **Jev 1.13（OpenRouter）：**Typed 准确率 72.7%（公开报告），JevJudge 纯文本准确率 65.1%；由于 endpoint 仅支持文本，全集为 `—`。公开的 Decider 1（76.8%）和 Liquid d1（74.2%）在 Typed Decisions 上仍更高。
 
 三个面板现在统一使用准确率。JevJudge 全集包含全部 3,220 条多模态记录，
 纯文本面板是其中 724 条记录的子集；官方 `skill_role` 只保留在详细评测说明中。
