@@ -23,6 +23,14 @@ A100-SXM4-40GB GPUs. How to enable each option is described in
 numbers are also in <a href="../files/results/efficiency-a100-v1.json"><code>results/efficiency-a100-v1.json</code></a>.</p>
 <p><a href="../files/docs/efficiency-latency.png"><img loading="lazy" alt="Accuracy vs median latency before and after acceleration" src="../files/docs/efficiency-latency.png" /></a></p>
 <h2 id="summary">Summary</h2>
+<p>On one H200, direct CUDA Graphs reduced JevAny-Qwen3.8-27B JevBench median
+latency from <strong>113.54 ms to 30.53 ms (3.72×)</strong>. Both matched paths answered
+207/231 correctly with no argmax changes. Mean latency fell from 138.49 ms to
+81.20 ms; p95 was effectively unchanged at 279.17 versus 281.52 ms. See the
+<a href="DEPLOYMENT.html#optional-cuda-acceleration">serving configuration</a>.</p>
+<p>The table and plot below are the separate A100-40GB comparison. The 27B and
+30B models require layer sharding on 40 GB cards, which prevents whole-model
+CUDA Graph capture; their 1.1× rows measure kernels + fused SDPA instead.</p>
 <div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
 <thead>
 <tr>

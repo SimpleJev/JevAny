@@ -306,15 +306,15 @@ NLL, Brier and ECE are measured on Transfer.
 
 ### ⏱️ 3.1 Inference efficiency <a name="efficiency"></a>
 
-On one A100-40GB at batch size 1, the optional CUDA path
-(`flash-linear-attention`, fused SDPA and `--cuda-graphs`) cuts the median
-latency of the 4B releases about fourfold. Transfer accuracy moves by at most
-three questions. The 27B and 30B releases run layer-sharded over 40 GB GPUs
-with `--device-map auto` and gain 8–10%.
+On one H200, direct CUDA Graphs cut Qwen3.8-27B median latency from
+**113.54 ms to 30.53 ms (3.72×)** with 207/231 correct answers before and
+after. The A100-40GB comparison below uses batch size 1: 4B models fit on one
+GPU and use CUDA Graphs, while 27B and 30B are layer-sharded over three GPUs
+and gain only from linear-attention kernels and fused SDPA.
 
 [![Accuracy vs median latency before and after acceleration for JevAny and other decision models](docs/efficiency-latency.png)](docs/EFFICIENCY.md)
 
-| Model | GPUs | Default | Accelerated | Speed-up | Transfer accuracy |
+| Model | A100 GPUs | Default | Accelerated | Speed-up | Transfer accuracy |
 |:---|---:|---:|---:|---:|---:|
 | JevAny-Qwen3.5-4B | 1 | 104.6 ms | **25.3 ms** | **4.1×** | 78.68% → 78.87% |
 | JevAny-Qwen3.5-4B-Direct-Token | 1 | 106.4 ms | **25.9 ms** | **4.1×** | 78.11% → 78.39% |

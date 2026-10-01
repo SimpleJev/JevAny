@@ -341,17 +341,17 @@ NLL, Brier and ECE are measured on Transfer.
 <a href="../files/results/model-family-v2.json">Machine-readable results</a> ·
 <a href="../files/reports/JevAny_Tech_Report.pdf">Method and ablation report</a></p>
 <h3 id="31-inference-efficiency">⏱️ 3.1 Inference efficiency <a name="efficiency"></a></h3>
-<p>On one A100-40GB at batch size 1, the optional CUDA path
-(<code>flash-linear-attention</code>, fused SDPA and <code>--cuda-graphs</code>) cuts the median
-latency of the 4B releases about fourfold. Transfer accuracy moves by at most
-three questions. The 27B and 30B releases run layer-sharded over 40 GB GPUs
-with <code>--device-map auto</code> and gain 8–10%.</p>
+<p>On one H200, direct CUDA Graphs cut Qwen3.8-27B median latency from
+<strong>113.54 ms to 30.53 ms (3.72×)</strong> with 207/231 correct answers before and
+after. The A100-40GB comparison below uses batch size 1: 4B models fit on one
+GPU and use CUDA Graphs, while 27B and 30B are layer-sharded over three GPUs
+and gain only from linear-attention kernels and fused SDPA.</p>
 <p><a href="EFFICIENCY.html"><img loading="lazy" alt="Accuracy vs median latency before and after acceleration for JevAny and other decision models" src="../files/docs/efficiency-latency.png" /></a></p>
 <div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
 <thead>
 <tr>
 <th style="text-align: left;">Model</th>
-<th style="text-align: right;">GPUs</th>
+<th style="text-align: right;">A100 GPUs</th>
 <th style="text-align: right;">Default</th>
 <th style="text-align: right;">Accelerated</th>
 <th style="text-align: right;">Speed-up</th>
