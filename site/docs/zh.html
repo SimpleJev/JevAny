@@ -319,6 +319,93 @@ NLL、Brier 和 ECE 均在 Transfer 上计算。
 <p><a href="EVALUATION.html#model-family-v2">完整结果与评测协议</a> ·
 <a href="../files/results/model-family-v2.json">机器可读结果</a> ·
 <a href="../files/reports/JevAny_Tech_Report.pdf">方法与消融实验报告</a></p>
+<p>公开外部对比在完整 Typed Decisions 测试集（2,000 个决策）和相同的
+JevJudge 724 条文本请求上使用同一组十个模型。JevJudge 使用原生输入、
+统一 65,536-token 上限且不截断；所有模型均完成 724/724。Typed Decisions
+衡量与教师软标签的一致率，并非客观正确率。</p>
+<p><a href="../files/docs/external-zero-shot.svg"><img loading="lazy" alt="同一组 JevAny 与开源外部模型在 Typed Decisions 和 JevJudge 文本集上的双面板对比" src="../files/docs/external-zero-shot.svg" /></a></p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th style="text-align: left;">模型</th>
+<th style="text-align: right;">Typed Decisions ↑</th>
+<th style="text-align: right;">JevJudge 文本 ↑</th>
+<th style="text-align: left;">来源 / 状态</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>JevAny-Qwen3.8-27B</strong></td>
+<td style="text-align: right;"><strong>72.80%</strong></td>
+<td style="text-align: right;"><strong>66.44%</strong></td>
+<td style="text-align: left;">我们；full-context 实跑</td>
+</tr>
+<tr>
+<td style="text-align: left;">JevAny-Muse-Glimmer-30B</td>
+<td style="text-align: right;">69.95%</td>
+<td style="text-align: right;">62.57%</td>
+<td style="text-align: left;">我们；full-context 实跑</td>
+</tr>
+<tr>
+<td style="text-align: left;">JevAny-Qwen3.5-4B-Direct-Token</td>
+<td style="text-align: right;">67.20%</td>
+<td style="text-align: right;">58.56%</td>
+<td style="text-align: left;">我们；full-context 实跑</td>
+</tr>
+<tr>
+<td style="text-align: left;">JevAny-Qwen3.5-4B</td>
+<td style="text-align: right;">63.50%</td>
+<td style="text-align: right;">57.87%</td>
+<td style="text-align: left;">我们；full-context 实跑</td>
+</tr>
+<tr>
+<td style="text-align: left;">JevAny-Gemma-4B</td>
+<td style="text-align: right;">66.25%</td>
+<td style="text-align: right;">51.10%</td>
+<td style="text-align: left;">我们；full-context 实跑</td>
+</tr>
+<tr>
+<td style="text-align: left;">OpenDecider-small</td>
+<td style="text-align: right;">66.65%</td>
+<td style="text-align: right;">54.97%</td>
+<td style="text-align: left;">开源；full-context 实跑</td>
+</tr>
+<tr>
+<td style="text-align: left;">Bongard-mini</td>
+<td style="text-align: right;">59.65%</td>
+<td style="text-align: right;">51.24%</td>
+<td style="text-align: left;">开源；full-context 实跑</td>
+</tr>
+<tr>
+<td style="text-align: left;">Jeff-Gemma4-E2B</td>
+<td style="text-align: right;">57.95%</td>
+<td style="text-align: right;">46.69%</td>
+<td style="text-align: left;">开源；full-context 实跑</td>
+</tr>
+<tr>
+<td style="text-align: left;">Jeff-Qwen3.5-2B</td>
+<td style="text-align: right;">55.45%</td>
+<td style="text-align: right;">42.82%</td>
+<td style="text-align: left;">开源；full-context 实跑</td>
+</tr>
+<tr>
+<td style="text-align: left;">Jeff-Qwen3.5-0.8B</td>
+<td style="text-align: right;">49.15%</td>
+<td style="text-align: right;">43.51%</td>
+<td style="text-align: left;">开源；full-context 实跑</td>
+</tr>
+</tbody>
+</table></div>
+<p>Qwen3.8-27B 分别领先本地复现的最强外部模型 <strong>6.15</strong> 和 <strong>11.46</strong> 个百分点。
+Direct-Token 4B 分别领先 0.55 和 3.59 个百分点；Pointer 4B 在 Typed
+Decisions 落后 3.15 个百分点、在 JevJudge 文本领先 2.90 个百分点，
+Gemma-4B 则未超过最强外部结果。仅有 published 结果的 Decider 1（76.8%）
+和 Liquid d1（74.2%）在 Typed Decisions 上仍高于我们的 27B，但没有对应的
+JevJudge 结果。</p>
+<p>JevJudge 文本集仅覆盖四种角色，是诊断集而非官方五角色多模态 headline。
+Laya 会静默截断到 <code>max_len=512</code>，因此不进入 full-context 主表；Kev、Laya
+与 published-only 结果保留在<a href="EXTERNAL_EVALUATION.html">完整外部结果</a>中。
+<a href="../files/results/external-zero-shot-v1.json">机器可读图表数据</a></p>
 <h3 id="31">⏱️ 3.1 推理效率 <a name="推理效率"></a></h3>
 <p>在单张 H200 上，CUDA Graph 将 Qwen3.8-27B 的中位延迟从
 <strong>113.54 ms 降至 30.53 ms（3.72×）</strong>；融合 SDPA 加 CUDA Graph 将
