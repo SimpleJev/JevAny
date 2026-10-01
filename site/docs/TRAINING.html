@@ -278,9 +278,9 @@ and Hugging Face access before downloading; local snapshots need no account.</p>
 the maintained scope. The Phi conversion utilities and legacy media adapter names
 have been removed. The generic text adapter and custom adapter interface are
 available for experimenting with other architectures.</p>
-<p>The released JevAny adapters identify <code>Qwen/Qwen3.8-27B</code> in their release manifest
-and adapter configuration. Its Transformers architecture is <code>qwen3_5</code>.
-Load each adapter with its recorded base and revision.</p>
+<p>The released <code>JevAny-Qwen3.8-27B</code> adapter identifies <code>Qwen/Qwen3.8-27B</code>
+as its base in the release manifest and adapter configuration.
+Each released adapter must be loaded with its own recorded base and revision.</p>
 <p>Select the base in the existing recipe or on the command line:</p>
 <pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany train --config recipes/sft.toml \
   --base zai-org/GLM-4.7-Flash --out runs/glm-decisions
