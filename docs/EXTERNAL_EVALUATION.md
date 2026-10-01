@@ -52,12 +52,22 @@ no image or video input and is kept as a text-only comparator.
 
 ### JevBench v1.5.4
 
-JevBench v1.5.4 has 1,624 questions: 904 open and 720 sealed. The official API
-publishes complete system aggregates, but not the 720 sealed prompts or 303 of
-the open prompts. It identifies 601 open prompts as published but links no
-downloadable bundle; the public upstream repository still contains the older
-231-item files. We therefore preserve the official v1.5.4 aggregates without
-claiming a local 1,624-question rerun.
+JevBench v1.5.4 has 1,624 questions: 904 open and 720 sealed. Its method defines
+the 904 open questions as 534 older questions, 120 new public drafts, and a
+250-question public draw from the sealed pool. Of the older questions, 231 are
+published and 303 remain unpublished, producing the reported 601 published
+open total. However, the official page, API, repository history, releases and
+Hugging Face Space expose only the original 231 prompts; no downloadable bundle
+for the other 370 was published. The API contains system aggregates and
+explicitly omits item-level fields.
+
+The five JevAny releases remain directly comparable on those 231 downloadable
+questions in the main [benchmark table](../README.md#evaluation). A complete
+1,624-question result requires an
+[official evaluation request](https://benchmarkheaven.com/jev-models/request-evaluation),
+where the maintainer runs a fixed API or public offline checkpoint and returns
+aggregate results. We therefore preserve the v1.5.4 official aggregates
+without claiming a local 601- or 1,624-question rerun.
 
 Selected official comparison rows:
 

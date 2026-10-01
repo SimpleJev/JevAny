@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "model": "SimpleJev/JevAny-Muse-Glimmer-30B-LoRA",
+  "hardware": "1 x NVIDIA H200",
+  "precision": "BF16",
+  "panel": {
+    "suite": "Transfer-v9 development",
+    "selection": "first four clean text-only single-question records from each of 11 scored sources",
+    "records": 44,
+    "input_token_range": [36, 242],
+    "warmup_requests": 8,
+    "measured_repeats": 2
+  },
+  "timing": "serial batch-one model call; excludes tokenization and graph capture",
+  "modes": {
+    "default": {
+      "median_ms": 100.7083565928042,
+      "mean_ms": 104.04265127991411,
+      "p90_ms": 115.55624718312174,
+      "correct": 38,
+      "total": 44
+    },
+    "fused_sdpa": {
+      "median_ms": 87.6799295656383,
+      "mean_ms": 91.19564992777833,
+      "p90_ms": 102.6604349957779,
+      "correct": 38,
+      "total": 44
+    },
+    "fused_sdpa_cuda_graphs": {
+      "median_ms": 43.24844153597951,
+      "mean_ms": 46.079451297621496,
+      "p90_ms": 52.62743679340928,
+      "correct": 38,
+      "total": 44,
+      "graph_calls": 96,
+      "eager_calls": 0,
+      "capture_seconds": 8.6,
+      "cuda_graph_max_tokens": 2048
+    }
+  },
+  "median_speedup": {
+    "default_to_fused_sdpa": 1.1485907560796185,
+    "fused_sdpa_to_cuda_graphs": 2.0273546618482214,
+    "default_to_fused_sdpa_cuda_graphs": 2.3286008238937876
+  },
+  "prediction_comparison": {
+    "argmax_flips_default_to_optimized": 0,
+    "max_probability_delta_default_to_optimized": 0.013520129024982452
+  },
+  "runtime": {
+    "python": "3.12.14",
+    "torch": "2.8.0+cu128",
+    "transformers": "5.17.0",
+    "peft": "0.21.0",
+    "accelerate": "1.15.0"
+  },
+  "raw_artifact_sha256": "aa532515e591a5d518d66d82bbfd3c05f5b7db126bcf4f8fe2629dd844410218",
+  "limitations": [
+    "This is a compact 44-record latency panel, not the full Transfer-v9 split.",
+    "All measured rows fit the captured token buckets; requests above 2048 tokens fall back to eager execution.",
+    "The whole model must fit on one device for CUDA Graph capture."
+  ]
+}

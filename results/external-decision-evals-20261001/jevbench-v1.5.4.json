@@ -93,13 +93,15 @@
   },
   "local_reproduction": {
     "performed": false,
-    "reason": "The official API publishes system-level aggregates, not prompt text. All 720 sealed prompts and 303 open prompts are explicitly unavailable. Although the release metadata calls 601 open prompts published, the official API/page links no downloadable 601-prompt bundle and the inspected public upstream revision does not contain it.",
-    "maximum_claim": "Official v1.5.4 aggregate metadata was preserved exactly; no JevAny or third-party local v1.5.4 score is claimed."
+    "reason": "The official API publishes system-level aggregates, not prompt text. All 720 sealed prompts and 303 older open prompts are explicitly unavailable. The method's 601 published-open count is 231 older published prompts plus 120 public drafts plus a 250-question public draw from the sealed pool, but the official page, API, full public repository history, releases and Hugging Face Space expose only the original 231 prompt files. No downloadable bundle for the other 370 was found.",
+    "maximum_claim": "Official v1.5.4 aggregate metadata was preserved exactly; no JevAny or third-party local v1.5.4 score is claimed.",
+    "official_evaluation_request": "https://benchmarkheaven.com/jev-models/request-evaluation",
+    "submission_note": "A complete result requires the maintainer to evaluate a fixed TypeSafe-compatible API or reproducible public checkpoint and publish aggregate-only output."
   },
   "public_upstream_inspected": {
     "repository": "https://github.com/fstandhartinger/jevbench",
     "revision": "bb05a335bc809e61b20c0f745d25499a82b326fc",
-    "finding": "Contains v1.5 method documents and the older 231-item public files, not a v1.5.4 601-prompt bundle."
+    "finding": "Contains v1.5 method documents and the original 231 published prompt files. No branch, tag, release asset or historical path exposes the additional 120 drafts or 250-question public draw needed for the declared 601 published-open total."
   },
   "raw_official_aggregate": "/lustre-storage/fsx/tianxinwei/JevAny/runs/external-decision-evals-20261001/artifacts/jevbench-v1.5.4-results.json",
   "raw_page_snapshot": "/lustre-storage/fsx/tianxinwei/JevAny/runs/external-decision-evals-20261001/artifacts/benchmarkheaven-jev-models-20261001.html",
