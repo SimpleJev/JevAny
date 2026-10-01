@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0a1114">
+  <meta name="description" content="Train and deploy System 1 decision models with JevAny. Bring a model, define the options, and get a choice with probabilities. Open source, from robotics to software.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="JevAny — Any model. Your next move.">
+  <meta property="og:description" content="Open infrastructure for System 1 decision models. Train on your data. Deploy with one API.">
+  <meta property="og:url" content="https://simplejev.github.io/JevAny/">
+  <meta property="og:image" content="https://simplejev.github.io/JevAny/assets/social.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://simplejev.github.io/JevAny/">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="assets/fonts/dm-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+  <title>JevAny — Any model. Your next move.</title>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="ambient" aria-hidden="true">
+    <div class="ambient-poster"></div>
+    <video class="ambient-video" muted loop playsinline preload="none" tabindex="-1"></video>
+    <video class="ambient-video" muted loop playsinline preload="none" tabindex="-1"></video>
+    <div class="ambient-shade"></div>
+  </div>
+
+  <header class="site-header wrap">
+    <a class="brand" href="./" aria-label="JevAny home">
+      <img src="assets/favicon.svg" width="34" height="34" alt="">
+      <span>JevAny<span class="brand-period">.</span></span>
+    </a>
+    <nav aria-label="Main navigation">
+      <a href="#in-action">In action</a>
+      <a href="#how-it-works">How it works</a>
+      <a class="nav-docs" href="https://github.com/SimpleJev/JevAny#documentation-and-contributing">Docs <span aria-hidden="true">↗</span></a>
+    </nav>
+    <a class="github-link" href="https://github.com/SimpleJev/JevAny" aria-label="JevAny on GitHub">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .9a11.1 11.1 0 0 0-3.5 21.6c.6.1.8-.2.8-.5v-2.1c-3.4.7-4.1-1.4-4.1-1.4-.5-1.3-1.3-1.6-1.3-1.6-1.1-.8.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.7-.3-5.6-1.4-5.6-6.1 0-1.3.5-2.4 1.2-3.3-.1-.3-.5-1.6.1-3.3 0 0 1-.3 3.4 1.3a11.8 11.8 0 0 1 6.2 0c2.4-1.6 3.4-1.3 3.4-1.3.6 1.7.2 3 .1 3.3.8.9 1.2 2 1.2 3.3 0 4.7-2.9 5.8-5.6 6.1.4.4.8 1.1.8 2.2V22c0 .3.2.6.8.5A11.1 11.1 0 0 0 12 .9Z"/></svg>
+      <span>GitHub</span><span aria-hidden="true">↗</span>
+    </a>
+  </header>
+
+  <main id="main">
+    <section class="hero wrap" aria-labelledby="hero-title">
+      <a class="eyebrow release-link" href="https://huggingface.co/collections/SimpleJev/jevany-adaptive-decision-systems-6abc8fd39266b1c17b11b4e6">
+        <span class="status-dot"></span> OPEN MODELS. READY TO BUILD. <span aria-hidden="true">↗</span>
+      </a>
+      <h1 id="hero-title">Any model.<br>Your <em>next move.</em></h1>
+      <p class="hero-description">Train and deploy System 1 decision models.<br class="desktop-break">
+        Give your model a state and a set of options.<br class="mobile-break">
+        Get a choice, with probabilities.</p>
+      <div class="hero-actions">
+        <a class="button primary" href="#get-started">Start building <span aria-hidden="true">→</span></a>
+        <a class="button secondary" href="#in-action"><span class="play-icon" aria-hidden="true">▷</span> See it in action</a>
+      </div>
+      <p class="hero-footnote">Open source <span>·</span> Apache-2.0 code <span>·</span> Your model, your data</p>
+      <div class="hero-bottom">
+        <span class="eyebrow"><span class="tiny-cross" aria-hidden="true">+</span> FROM ANY MODEL TO ANY APPLICATION</span>
+        <button id="motion-toggle" class="motion-toggle" type="button" aria-pressed="false" hidden>
+          <span class="motion-icon" aria-hidden="true">Ⅱ</span><span class="motion-label">Pause motion</span>
+        </button>
+      </div>
+    </section>
+
+    <section id="in-action" class="showcase wrap" aria-labelledby="showcase-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow section-index">01 / IN ACTION</p>
+          <h2 id="showcase-title">A choice. <em>A consequence.</em></h2>
+        </div>
+        <a class="text-link" href="https://github.com/SimpleJev/JevAny/blob/main/docs/CASES.md">Explore all 30 cases <span aria-hidden="true">↗</span></a>
+      </div>
+      <div class="replay-shell">
+        <div class="replay-main">
+          <div class="player-topline">
+            <span><span class="status-dot"></span> <span id="replay-category">ROBOTICS</span></span>
+            <span>ARCHIVED MODEL REPLAY</span>
+          </div>
+          <div class="player-picture">
+            <video id="replay-video" controls muted loop playsinline preload="none" poster="assets/media/peg_insertion.webp" aria-label="Archived JevAny replay: robot peg insertion" aria-describedby="replay-description">
+              Your browser does not support video. <a href="https://github.com/SimpleJev/JevAny/blob/main/docs/CASES.md">Watch the GIF replays.</a>
+            </video>
+          </div>
+          <div class="player-caption" aria-live="polite">
+            <span id="replay-description">Grasp the peg, align it with the socket, and lower it into place.</span>
+            <span id="replay-number" class="mono">01 / 06</span>
+          </div>
+        </div>
+        <div class="replay-choices" role="group" aria-label="Choose a model replay">
+          <button class="replay-choice is-active" type="button" data-case="peg_insertion" aria-pressed="true">
+            <span class="choice-index">01</span><span><strong>Robot peg insertion</strong><small>Contact. Alignment. Control.</small></span><span class="choice-arrow" aria-hidden="true">→</span>
+          </button>
+          <button class="replay-choice" type="button" data-case="drone" aria-pressed="false">
+            <span class="choice-index">02</span><span><strong>Drone delivery</strong><small>Route planning with constraints.</small></span><span class="choice-arrow" aria-hidden="true">→</span>
+          </button>
+          <button class="replay-choice" type="button" data-case="lab" aria-pressed="false">
+            <span class="choice-index">03</span><span><strong>Laboratory automation</strong><small>Measure, transfer, and mix.</small></span><span class="choice-arrow" aria-hidden="true">→</span>
+          </button>
+          <button class="replay-choice" type="button" data-case="frontend" aria-pressed="false">
+            <span class="choice-index">04</span><span><strong>Frontend repair</strong><small>Check the layout at three widths.</small></span><span class="choice-arrow" aria-hidden="true">→</span>
+          </button>
+          <button class="replay-choice" type="button" data-case="sql" aria-pressed="false">
+            <span class="choice-index">05</span><span><strong>SQL repair</strong><small>Find the query that adds up.</small></span><span class="choice-arrow" aria-hidden="true">→</span>
+          </button>
+          <button class="replay-choice" type="button" data-case="chess" aria-pressed="false">
+            <span class="choice-index">06</span><span><strong>Tactical chess</strong><small>Find a forced mate in two.</small></span><span class="choice-arrow" aria-hidden="true">→</span>
+          </button>
+        </div>
+      </div>
+      <p class="replay-note">Recorded with an earlier compatible checkpoint. 3D scenes reconstruct recorded actions; interface cases use browser recordings.
+        <a href="https://github.com/SimpleJev/JevAny/blob/main/docs/CASES.md#recording-notes">Recording notes <span aria-hidden="true">↗</span></a>
+      </p>
+      <noscript><p class="noscript-note">Enable JavaScript to switch and play replays, or <a href="https://github.com/SimpleJev/JevAny/blob/main/docs/CASES.md">browse all 30 GIFs</a>.</p></noscript>
+    </section>
+
+    <section class="facts wrap" aria-label="Project at a glance">
+      <a href="https://github.com/SimpleJev/JevAny#pretrained-models"><span class="fact-value">5</span><span>Released<br>checkpoints <span aria-hidden="true">↗</span></span></a>
+      <a href="https://github.com/SimpleJev/JevAny/blob/main/docs/TRAINING.md#backbone-support"><span class="fact-value">26</span><span>Supported<br>models <span aria-hidden="true">↗</span></span></a>
+      <a href="https://github.com/SimpleJev/JevAny/blob/main/docs/CASES.md"><span class="fact-value">30</span><span>Application<br>replays <span aria-hidden="true">↗</span></span></a>
+      <a href="https://github.com/SimpleJev/JevAny/blob/main/docs/EVALUATION.md#model-family-v2"><span class="fact-value">90.04<span class="percent">%</span></span><span>JevBench accuracy<br> Qwen3.8-27B <span aria-hidden="true">↗</span></span></a>
+    </section>
+
+    <section id="how-it-works" class="how-section wrap" aria-labelledby="how-title">
+      <div class="how-copy">
+        <p class="eyebrow section-index">02 / THE DECISION LAYER</p>
+        <h2 id="how-title">Your application.<br> Your options.<br> <em>Your Jev.</em></h2>
+        <p class="section-description">Route a ticket, select a tool, or choose a robot’s next action. Use the same interface across your applications.</p>
+        <ol class="steps">
+          <li><span class="mono">01</span><div><h3>Bring a model</h3><p>Start with a released checkpoint or a supported open model.</p></div></li>
+          <li><span class="mono">02</span><div><h3>Train on your decisions</h3><p>Use your labelled data with SFT. Explore experimental RLCR for further training.</p></div></li>
+          <li><span class="mono">03</span><div><h3>Make the call</h3><p>Get a choice and its probabilities. Set your own threshold for human review.</p></div></li>
+        </ol>
+        <a class="text-link" href="https://github.com/SimpleJev/JevAny/blob/main/docs/API.md">Meet the API <span aria-hidden="true">↗</span></a>
+      </div>
+      <div class="api-visual">
+        <div class="api-top"><span class="mono">YOUR APPLICATION</span><span class="mono">Python</span></div>
+        <pre class="api-code" tabindex="0" role="region" aria-label="Python API example"><code><span class="syntax-purple">from</span> jevany <span class="syntax-purple">import</span> Choice, JevClient
+
+jev = JevClient(<span class="syntax-green">"http://127.0.0.1:8008"</span>)
+result = jev.system_one(
+    state={<span class="syntax-green">"ticket"</span>: <span class="syntax-green">"I was charged twice."</span>},
+    questions={
+        <span class="syntax-green">"department"</span>: Choice(
+            instructions=<span class="syntax-green">"Which team?"</span>,
+            criteria={
+                <span class="syntax-green">"billing"</span>: <span class="syntax-green">"Payment problems"</span>,
+                <span class="syntax-green">"shipping"</span>: <span class="syntax-green">"Delivery problems"</span>,
+            },
+        ),
+    },
+)</code></pre>
+        <div class="api-connector"><span></span><span class="connector-label">ONE API. A DIRECT DECISION.</span><span></span></div>
+        <div class="decision-output">
+          <div class="output-title"><span class="eyebrow">DEPARTMENT</span><span class="example-label">Illustrative response</span></div>
+          <div class="probability"><span>billing</span><span class="probability-track"><i style="width:96%"></i></span><span class="mono">0.96</span><span class="selected-mark" role="img" aria-label="Selected">✓</span></div>
+          <div class="probability other"><span>shipping</span><span class="probability-track"><i style="width:4%"></i></span><span class="mono">0.04</span><span></span></div>
+          <p>Your application decides what happens next.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="model-section wrap" aria-labelledby="model-title">
+      <div class="model-heading"><h2 id="model-title">Work with the models you know.</h2><a class="text-link" href="https://github.com/SimpleJev/JevAny/blob/main/docs/TRAINING.md#backbone-support">Explore model support <span aria-hidden="true">↗</span></a></div>
+      <div class="model-list">
+        <span><img src="assets/model-logos/qwen-color.svg" alt="" width="26" height="26">Qwen</span>
+        <span><img src="assets/model-logos/gemma-color.svg" alt="" width="26" height="26">Gemma</span>
+        <span><img src="assets/model-logos/jevany-muse.svg" alt="" width="26" height="26">Muse</span>
+        <span><img src="assets/model-logos/mistral-color.svg" alt="" width="26" height="26">Mistral</span>
+        <span><img src="assets/model-logos/zai.svg" alt="" width="26" height="26">GLM</span>
+        <span><img src="assets/model-logos/nvidia-color.svg" alt="" width="26" height="26">Nemotron</span>
+        <span><img src="assets/model-logos/meta-color.svg" alt="" width="26" height="26">Llama</span>
+      </div>
+      <p>Text, image, and video support varies by model. Base-model licenses and access terms apply.</p>
+    </section>
+
+    <section id="get-started" class="start-section wrap" aria-labelledby="start-title">
+      <div class="start-copy">
+        <p class="eyebrow section-index">03 / BUILD SOMETHING</p>
+        <h2 id="start-title">Your first move<br> <em>starts here.</em></h2>
+        <p class="section-description">Watch a recorded run on your CPU. When you’re ready, train on your own data or serve a released model.</p>
+        <div class="start-links">
+          <a class="text-link" href="https://github.com/SimpleJev/JevAny#quickstart">Read the quickstart <span aria-hidden="true">↗</span></a>
+          <a class="text-link" href="https://huggingface.co/collections/SimpleJev/jevany-adaptive-decision-systems-6abc8fd39266b1c17b11b4e6">Browse checkpoints <span aria-hidden="true">↗</span></a>
+        </div>
+      </div>
+      <div class="terminal">
+        <div class="terminal-tabs" role="tablist" aria-label="Quickstart recipe">
+          <button id="tab-preview" type="button" role="tab" aria-selected="true" aria-controls="quickstart-panel" tabindex="0" data-recipe="preview">Replay on CPU</button>
+          <button id="tab-train" type="button" role="tab" aria-selected="false" aria-controls="quickstart-panel" tabindex="-1" data-recipe="train">Train</button>
+          <button id="tab-serve" type="button" role="tab" aria-selected="false" aria-controls="quickstart-panel" tabindex="-1" data-recipe="serve">Serve</button>
+        </div>
+        <div id="quickstart-panel" role="tabpanel" aria-labelledby="tab-preview" tabindex="0">
+          <div class="terminal-label"><span class="mono">TERMINAL <span aria-hidden="true">/</span> BASH</span><button id="copy-code" type="button" hidden><span class="copy-label">Copy commands</span><span aria-hidden="true">⧉</span></button></div>
+          <pre tabindex="0" role="region" aria-label="Quickstart shell commands"><code id="quickstart-code">git clone https://github.com/SimpleJev/JevAny.git
+cd JevAny
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e .
+
+jevany demo</code></pre>
+          <p id="recipe-note" class="recipe-note">Python 3.12+ · macOS / Linux shell · Open localhost:8090 and choose Replay.</p>
+        </div>
+        <p id="copy-status" class="sr-only" role="status"></p>
+      </div>
+    </section>
+
+    <section class="closing wrap">
+      <div><span class="status-dot"></span><p>Open infrastructure.<br>Built for your decisions.</p></div>
+      <a class="button primary" href="https://github.com/SimpleJev/JevAny">Build with JevAny <span aria-hidden="true">↗</span></a>
+    </section>
+  </main>
+  <footer class="site-footer wrap">
+    <div class="footer-top">
+      <a class="brand" href="./"><img src="assets/favicon.svg" width="28" height="28" alt=""><span>JevAny<span class="brand-period">.</span></span></a>
+      <p>From any model to any application.</p>
+      <nav aria-label="Footer navigation">
+        <a href="https://github.com/SimpleJev/JevAny">GitHub</a>
+        <a href="https://github.com/SimpleJev/JevAny/blob/main/reports/JevAny_Tech_Report.pdf">Technical report</a>
+        <a href="https://github.com/SimpleJev/JevAny/blob/main/README.zh-CN.md" lang="zh-CN">中文文档</a>
+      </nav>
+    </div>
+    <div class="footer-bottom"><span>© 2026 JevAny contributors</span><a href="https://github.com/SimpleJev/JevAny/blob/main/LICENSE">Code licensed under Apache-2.0</a><a href="https://github.com/SimpleJev/JevAny/blob/main/CONTRIBUTING.md">Contributions welcome <span aria-hidden="true">↗</span></a></div>
+  </footer>
+</body>
+</html>
