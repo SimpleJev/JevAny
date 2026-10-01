@@ -52,16 +52,23 @@ JevAny checkpoint. The current default release is
 try your own inputs and see its choices and probabilities.</p>
 <p><a href="../index.html#case-library">Explore all 30 application replays →</a></p>
 <h3 id="jev-inside-llm-agent-loops">⚡ Jev inside LLM agent loops</h3>
-<blockquote>
-<p><strong>Key takeaway:</strong> the LLM plans; the environment or LLM supplies a short menu;
-Jev picks the routine action; the LLM verifies and finishes the task.</p>
-</blockquote>
-<p><strong>1 · Terminal-Bench · <code>sqlite-db-truncate</code> — select one of three commands</strong></p>
-<p><video class="doc-video" controls playsinline preload="none" aria-label="Jev selecting raw-page inspection from three Terminal-Bench commands before LLM parsing and verification" poster="../assets/media/docs/jev-agent-harness-sqlite.webp"><source src="../assets/media/docs/jev-agent-harness-sqlite.webm" type="video/webm"><source src="../assets/media/docs/jev-agent-harness-sqlite.mp4" type="video/mp4">Your browser does not support video.</video></p>
-<p><strong>2 · WebShop — select the required color from the page actions</strong></p>
-<p><video class="doc-video" controls playsinline preload="none" aria-label="Jev selecting the required black product option, followed by the LLM choosing size 11.5 and completing the purchase" poster="../assets/media/docs/jev-agent-harness-webshop.webp"><source src="../assets/media/docs/jev-agent-harness-webshop.webm" type="video/webm"><source src="../assets/media/docs/jev-agent-harness-webshop.mp4" type="video/mp4">Your browser does not support video.</video></p>
-<p><strong>3 · FrozenLake — compare four directions at every state</strong></p>
-<p><video class="doc-video" controls playsinline preload="none" aria-label="Jev choosing four state-dependent navigation actions after one LLM plan in FrozenLake" poster="../assets/media/docs/jev-agent-harness-frozen-lake.webp"><source src="../assets/media/docs/jev-agent-harness-frozen-lake.webm" type="video/webm"><source src="../assets/media/docs/jev-agent-harness-frozen-lake.mp4" type="video/mp4">Your browser does not support video.</video></p>
+<p><strong>Key takeaways</strong></p>
+<ul>
+<li><strong>Task level:</strong> T0 controlled → T4 open terminal. Task difficulty and delegation are separate.</li>
+<li><strong>Delegation level:</strong> D0 LLM-only → D4 bounded subgoal. Increase delegation only when local choices remain easy to verify.</li>
+<li><strong>Delegate when:</strong> the LLM can generate 2–4 valid, meaningfully different, reversible choices with immediate feedback.</li>
+<li><strong>Keep with the LLM:</strong> planning, open-ended search, exact edits, recovery, high-risk actions, and completion.</li>
+<li><strong>Success test:</strong> reward stays the same or improves while LLM calls, tokens, or time fall; otherwise return control to the LLM.</li>
+</ul>
+<p><strong>1 · WebShop — choose the exact color and size from LLM-generated menus</strong></p>
+<p><video class="doc-video" controls playsinline preload="none" aria-label="The LLM generates three color and three size candidates, Jev selects the exact options, and the LLM completes the purchase" poster="../assets/media/docs/jev-decision-webshop-v2.webp"><source src="../assets/media/docs/jev-decision-webshop-v2.webm" type="video/webm"><source src="../assets/media/docs/jev-decision-webshop-v2.mp4" type="video/mp4">Your browser does not support video.</video></p>
+<p>Reward <code>1→1</code> · LLM calls <code>9→4</code> · tokens <code>38,852→14,256</code> · time <code>18.54s→7.83s</code></p>
+<p><strong>2 · FrozenLake — compare four directions at every state</strong></p>
+<p><video class="doc-video" controls playsinline preload="none" aria-label="Jev compares four directions, executes each selected move, reaches the goal, and reduces LLM calls" poster="../assets/media/docs/jev-decision-frozen-lake-v2.webp"><source src="../assets/media/docs/jev-decision-frozen-lake-v2.webm" type="video/webm"><source src="../assets/media/docs/jev-decision-frozen-lake-v2.mp4" type="video/mp4">Your browser does not support video.</video></p>
+<p>Reward <code>1→1</code> · LLM calls <code>4→1</code> · tokens <code>2,338→663</code></p>
+<p><strong>3 · Terminal-Bench · <code>sqlite-db-truncate</code> — select one of three commands</strong></p>
+<p><video class="doc-video" controls playsinline preload="none" aria-label="Jev compares three real Terminal-Bench commands, selects raw-page inspection, and the LLM recovers ten rows" poster="../assets/media/docs/jev-decision-terminal-v2.webp"><source src="../assets/media/docs/jev-decision-terminal-v2.webm" type="video/webm"><source src="../assets/media/docs/jev-decision-terminal-v2.mp4" type="video/mp4">Your browser does not support video.</video></p>
+<p>Reward <code>1→1</code> · LLM calls <code>15→8</code> · time <code>187.9s→144.7s</code></p>
 <div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
 <thead>
 <tr>
@@ -77,9 +84,9 @@ Jev picks the routine action; the LLM verifies and finishes the task.</p>
 <td style="text-align: right;">LLM calls −64.4% · tokens −63.1% · time −37.6%</td>
 </tr>
 <tr>
-<td>WebShop · 10 pairs</td>
-<td style="text-align: right;">50% → 60%</td>
-<td style="text-align: right;">LLM calls −7.7% · tokens −2.9% · time −6.1%</td>
+<td>WebShop · LLM-generated menus · 3 pairs</td>
+<td style="text-align: right;">67% → 100%</td>
+<td style="text-align: right;">LLM calls −21.4% · tokens −14.3% · time −15.0%</td>
 </tr>
 <tr>
 <td>WebArena · 6 pairs</td>
@@ -93,10 +100,7 @@ Jev picks the routine action; the LLM verifies and finishes the task.</p>
 </tr>
 </tbody>
 </table></div>
-<p><strong>Use Jev for:</strong> 2–4 bounded, reversible choices with an immediate observation.</p>
-<p><strong>Keep with the LLM:</strong> planning, exact edits, recovery, and the final answer.</p>
 <p><a href="reports-JevAny_Tech_Report_Agent_Harness_Appendix.html">Full results</a> ·
-<a href="../assets/media/docs/jev-agent-harness.mp4">combined demo</a> ·
 <a href="experiments-AGENT_HARNESS_FRONTIER_PROTOCOL.html">task/delegation levels</a> ·
 <a href="../files/reports/JevAny_Tech_Report_with_Agent_Harness.pdf">combined technical report</a></p>
 <h2 id="table-of-contents">📑 Table of Contents</h2>

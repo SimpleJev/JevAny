@@ -31,7 +31,9 @@ def episode(mode, success, tokens, calls, latency, *, seed=1, jev=0):
             "turn": 0,
             "text": "Routine click.",
             "tool": "delegate_clicks" if jev else "click",
-            "tool_input": {"steps": 1, "subgoal": "Buy it."} if jev else {"action_key": "0"},
+            "tool_input": {"decisions": [{
+                "subgoal": "Choose it.", "candidate_keys": ["0", "1"],
+            }]} if jev else {"action_key": "0"},
         }],
     }
 

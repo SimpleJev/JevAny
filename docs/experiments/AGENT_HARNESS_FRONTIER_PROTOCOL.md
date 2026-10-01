@@ -75,7 +75,9 @@ the realized coverage must both be shown. The current Terminal-Bench candidate p
 is in the D3 family: routine decisions go to Jev, precise non-routine edits can execute
 directly, and composable execution is capped at two commands. The existing cross-domain
 optional-delegation matrix is D2 because the frontier autonomously gates delegation.
-D1 and D4 are proposed ablations and have no result yet.
+D1 remains proposed. D4 has a three-pair WebShop supplement: the LLM generated bounded
+color/size candidate groups, Jev executed the selections, and the LLM retained search,
+verification, and `buy now`.
 
 An **eligible decision** is a low-risk, reversible action for which the LLM produced at
 least two locally valid options. Examples include inspection commands, waiting versus
@@ -152,6 +154,9 @@ Recommended showcase panels based on evidence available now:
 - **Real-web mechanism:** WebArena task 264 popup-aware smoke, where both passed and the
   observed trace reduced Opus calls 8 to 2 and tokens 76,674 to 13,407. Label it a
   single-task smoke; the frozen six-task aggregate is 50% to 50% with worse calls/tokens.
+- **Structured-interaction mechanism:** WebShop seed 3107, where the LLM generated
+  three color and three size candidates, Jev selected the exact options, reward stayed
+  at 1, and calls/tokens/time changed 9→4, 38,852→14,256, and 18.54s→7.83s.
 - **Open-terminal candidate trace:** reserve this panel for a completed final-protocol
   paired run with full candidate logging. The v3 `regex-log` run is an exploratory
   quality-recovery candidate (0 to 1 reward and 30 to 18 calls), but tokens rose and v3
@@ -166,6 +171,12 @@ several Sokoban cells get more expensive and the six-task WebArena aggregate has
 success but no efficiency win. WebShop improves from 50% to 60% in one ten-pair cell,
 but its confidence intervals cross zero. See
 [`results/agent-harness-v1/formal-matrix.md`](../../results/agent-harness-v1/formal-matrix.md).
+
+The later three-pair WebShop D4 supplement uses LLM-authored menus and excludes purchase,
+navigation, and information tabs from Jev control. Success is 2/3→3/3, mean frontier
+calls 9.33→7.33, total tokens 114,388→98,030, and mean time 16.76s→14.24s. Seed 3105
+violated the 2–4 candidate bound and safely fell back to the LLM. This supplement is
+stored separately and does not overwrite the ten-pair D2 matrix.
 
 Terminal-Bench development history demonstrates why the delegation level must be
 controlled rather than maximized:
