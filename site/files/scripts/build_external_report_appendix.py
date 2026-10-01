@@ -156,7 +156,7 @@ def results_page(pdf: PdfPages, data: dict) -> None:
 
     fig.text(0.065, 0.335, "Compatibility and text-only results", color=INK, fontsize=12, weight="bold")
     fig.text(0.065, 0.300,
-             "Jev 1.13, OpenDecider-small, and Jeff-Gemma4 are text-only; Bongard-mini has no video path; Kev does not "
+             "Jev 1.13's OpenRouter endpoint, OpenDecider-small, and Jeff-Gemma4 are text-only; Bongard-mini has no video path; Kev does not "
              "consume image or video media. Their full result is —, never a media-stripped score. On the 724-record "
              "text-only subset, Qwen3.8-27B scores 66.44%, Jev 1.13 65.06%, and Kev-27B 64.23%.",
              color=MUTED, fontsize=8.5, wrap=True, linespacing=1.45, va="top")
