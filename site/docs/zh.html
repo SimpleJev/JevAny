@@ -20,7 +20,10 @@
 </ul>
 </li>
 <li><a href="#2">🤗 2. 预训练模型</a></li>
-<li><a href="#3">📊 3. 基准测试结果</a></li>
+<li><a href="#3">📊 3. 基准测试结果</a><ul>
+<li><a href="#31">⏱️ 3.1 推理效率</a></li>
+</ul>
+</li>
 <li><a href="#4">🕹️ 4. 示例与测试环境</a><ul>
 <li><a href="#41">🤖 4.1 机械臂插孔</a></li>
 <li><a href="#42-doom-3d">🔫 4.2 Doom 走廊 · 3D</a></li>
@@ -49,23 +52,45 @@
 或<a href="#本地体验">在本地运行模型</a>，输入自己的任务，查看模型的选择和各选项概率。</p>
 <p><a href="../index.html#case-library">Explore all 30 application replays →</a></p>
 <h3 id="jev-llm-agent">⚡ Jev 加入 LLM Agent 循环</h3>
-<p><strong>关键结论</strong></p>
-<ul>
-<li><strong>任务层级：</strong>T0 受控环境 → T4 开放终端；任务难度与委托程度分开判断。</li>
-<li><strong>委托层级：</strong>D0 仅 LLM → D4 有边界子目标；只有局部选择容易验证时才提高委托程度。</li>
-<li><strong>适合 Jev：</strong>LLM 能生成 2–4 个有效、有明确差别、可回退且能立即看到反馈的选项。</li>
-<li><strong>保留给 LLM：</strong>规划、开放搜索、精确修改、失败恢复、高风险动作和最终完成。</li>
-<li><strong>成功标准：</strong>reward 不降，同时减少 LLM calls、tokens 或时间；否则立即交回 LLM。</li>
-</ul>
-<p><strong>1 · WebShop——从 LLM 生成的颜色和尺寸候选中选择精确选项</strong></p>
-<p><video class="doc-video" controls playsinline preload="none" aria-label="LLM 分别生成三个颜色和三个尺寸候选，Jev 选中精确选项，LLM 完成购买" poster="../assets/media/docs/jev-decision-webshop-v2.webp"><source src="../assets/media/docs/jev-decision-webshop-v2.webm" type="video/webm"><source src="../assets/media/docs/jev-decision-webshop-v2.mp4" type="video/mp4">Your browser does not support video.</video></p>
-<p>Reward <code>1→1</code> · LLM calls <code>9→4</code> · tokens <code>38,852→14,256</code> · 时间 <code>18.54s→7.83s</code></p>
-<p><strong>2 · FrozenLake——每一步都比较四个方向</strong></p>
-<p><video class="doc-video" controls playsinline preload="none" aria-label="Jev 比较四个方向、执行选中的移动、到达目标并减少 LLM 调用" poster="../assets/media/docs/jev-decision-frozen-lake-v2.webp"><source src="../assets/media/docs/jev-decision-frozen-lake-v2.webm" type="video/webm"><source src="../assets/media/docs/jev-decision-frozen-lake-v2.mp4" type="video/mp4">Your browser does not support video.</video></p>
-<p>Reward <code>1→1</code> · LLM calls <code>4→1</code> · tokens <code>2,338→663</code></p>
-<p><strong>3 · Terminal-Bench · <code>sqlite-db-truncate</code>——从三个真实命令中选择一个</strong></p>
-<p><video class="doc-video" controls playsinline preload="none" aria-label="Jev 比较三个真实 Terminal-Bench 命令，选择原始页面检查，LLM 恢复十行数据" poster="../assets/media/docs/jev-decision-terminal-v2.webp"><source src="../assets/media/docs/jev-decision-terminal-v2.webm" type="video/webm"><source src="../assets/media/docs/jev-decision-terminal-v2.mp4" type="video/mp4">Your browser does not support video.</video></p>
-<p>Reward <code>1→1</code> · LLM calls <code>15→8</code> · 时间 <code>187.9s→144.7s</code></p>
+<p>LLM 负责规划并提出有效、可回退的候选动作，Jev 做局部选择，失败恢复和最终完成仍由 LLM 负责。
+下方动图对比左侧纯 LLM 与右侧 LLM + Jev，两侧 reward 相同；步骤为示意，
+加速播放保留各组记录的实测耗时比例，点击可放大查看。</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+  <tr>
+    <td width="64%" valign="middle">
+      <video class="doc-video" controls playsinline preload="none" aria-label="WebShop：左侧纯 LLM 与右侧 LLM + Jev 并排执行，分别在 18.54 秒和 7.83 秒完成购买" poster="../assets/media/docs/jev-decision-webshop-v2.webp"><source src="../assets/media/docs/jev-decision-webshop-v2.webm" type="video/webm"><source src="../assets/media/docs/jev-decision-webshop-v2.mp4" type="video/mp4">Your browser does not support video.</video>
+    </td>
+    <td width="36%" valign="middle">
+      <p><strong>1. <a href="../files/docs/demos/jev-agent-harness-traces.json">WebShop</a></strong><br>
+      Jev 从 LLM 生成的候选中选中所需颜色和尺寸，LLM 随后完成购买。
+      用时从 18.54 秒降至 7.83 秒，LLM 调用从 9 次降至 4 次。</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="64%" valign="middle">
+      <video class="doc-video" controls playsinline preload="none" aria-label="FrozenLake：左侧 LLM 逐步决策，右侧 LLM 规划后由 Jev 比较四个方向，分别在 19.7 秒和 16.7 秒到达同一目标" poster="../assets/media/docs/jev-decision-frozen-lake-v2.webp"><source src="../assets/media/docs/jev-decision-frozen-lake-v2.webm" type="video/webm"><source src="../assets/media/docs/jev-decision-frozen-lake-v2.mp4" type="video/mp4">Your browser does not support video.</video>
+    </td>
+    <td width="36%" valign="middle">
+      <p><strong>2. <a href="../files/docs/demos/jev-agent-harness-traces.json">FrozenLake</a></strong><br>
+      LLM 规划一次路线，Jev 在每个新状态下从四个方向中选择下一步。
+      两侧均到达目标，用时从 19.7 秒降至 16.7 秒，LLM 调用从 4 次降至 1 次。</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="64%" valign="middle">
+      <video class="doc-video" controls playsinline preload="none" aria-label="SQLite 恢复：左侧纯 LLM 与右侧 LLM + Jev 都恢复十行数据，分别在 187.9 秒和 144.7 秒完成" poster="../assets/media/docs/jev-decision-terminal-v2.webp"><source src="../assets/media/docs/jev-decision-terminal-v2.webm" type="video/webm"><source src="../assets/media/docs/jev-decision-terminal-v2.mp4" type="video/mp4">Your browser does not support video.</video>
+    </td>
+    <td width="36%" valign="middle">
+      <p><strong>3. <a href="reports-JevAny_Tech_Report_Agent_Harness_Appendix.html#h1-sqlite-recovery-a-meaningful-three-way-decision">Terminal-Bench</a></strong><br>
+      在 <code>sqlite-db-truncate</code> 任务中，Jev 从三个命令中选择原始页面检查，
+      LLM 随后恢复并验证十行数据。用时从 187.9 秒降至 144.7 秒，LLM 调用从 15 次降至 8 次。</p>
+    </td>
+  </tr>
+</table></div>
+
+<p>下表展示更多配对评测结果，收益随任务而变化。<a href="reports-JevAny_Tech_Report_Agent_Harness_Appendix.html">完整结果</a>、
+<a href="experiments-AGENT_HARNESS_FRONTIER_PROTOCOL.html">委托协议</a>和
+<a href="../files/reports/JevAny_Tech_Report_with_Agent_Harness.pdf">技术报告</a>说明了 Jev 适合处理哪些选择，以及何时交回 LLM。</p>
 <div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
 <thead>
 <tr>
@@ -76,30 +101,27 @@
 </thead>
 <tbody>
 <tr>
-<td>GPT-5.6-sol · FrozenLake · 10 pairs</td>
+<td>FrozenLake（GPT-5.6-sol，10 组配对）</td>
 <td style="text-align: right;">100% → 100%</td>
-<td style="text-align: right;">LLM calls −64.4% · tokens −63.1% · 时间 −37.6%</td>
+<td style="text-align: right;">LLM 调用 −64.4%，tokens −63.1%，用时 −37.6%</td>
 </tr>
 <tr>
-<td>WebShop · LLM 生成候选 · 3 pairs</td>
+<td>WebShop（LLM 生成候选，3 组配对）</td>
 <td style="text-align: right;">67% → 100%</td>
-<td style="text-align: right;">LLM calls −21.4% · tokens −14.3% · 时间 −15.0%</td>
+<td style="text-align: right;">LLM 调用 −21.4%，tokens −14.3%，用时 −15.0%</td>
 </tr>
 <tr>
-<td>WebArena · 6 pairs</td>
+<td>WebArena（6 组配对）</td>
 <td style="text-align: right;">50% → 50%</td>
-<td style="text-align: right;">LLM calls +5.6% · tokens +28.2% · 时间 −0.4%</td>
+<td style="text-align: right;">LLM 调用 +5.6%，tokens +28.2%，用时 −0.4%</td>
 </tr>
 <tr>
-<td>Terminal-Bench · 6 pairs</td>
+<td>Terminal-Bench（6 组配对）</td>
 <td style="text-align: right;">1/6 → 3/6</td>
-<td style="text-align: right;">LLM calls −9.0%</td>
+<td style="text-align: right;">LLM 调用 −9.0%</td>
 </tr>
 </tbody>
 </table></div>
-<p><a href="reports-JevAny_Tech_Report_Agent_Harness_Appendix.html">完整结果</a> ·
-<a href="experiments-AGENT_HARNESS_FRONTIER_PROTOCOL.html">任务与委托分级</a> ·
-<a href="../files/reports/JevAny_Tech_Report_with_Agent_Harness.pdf">合并版技术报告</a></p>
 <h2 id="_2">📑 目录</h2>
 <ul>
 <li><a href="#结果与演示">🎮 结果与演示</a></li>
@@ -109,6 +131,7 @@
 <li><a href="#部署">🚀 1.3 JevAny 部署</a></li>
 <li><a href="#预训练模型">🤗 2. 预训练模型</a></li>
 <li><a href="#评测">📊 3. 基准测试结果</a></li>
+<li><a href="#推理效率">⏱️ 3.1 推理效率</a></li>
 <li><a href="#示例与测试环境">🕹️ 4. 示例与测试环境</a></li>
 <li><a href="#支持的模型系列">🧩 5. 支持的模型系列</a></li>
 <li><a href="#文档与贡献">📚 6. 文档与贡献</a></li>
@@ -287,6 +310,30 @@ NLL、Brier 和 ECE 均在 Transfer 上计算。
 <p><a href="EVALUATION.html#model-family-v2">完整结果与评测协议</a> ·
 <a href="../files/results/model-family-v2.json">机器可读结果</a> ·
 <a href="../files/reports/JevAny_Tech_Report.pdf">方法与消融实验报告</a></p>
+<h3 id="31">⏱️ 3.1 推理效率 <a name="推理效率"></a></h3>
+<p>在单张 A100-40GB、batch size 1 的条件下，打开可选的 CUDA 加速
+（<code>flash-linear-attention</code>、融合 SDPA 和 <code>--cuda-graphs</code>）后，4B 版本的中位延迟降到原来的约四分之一，
+Transfer 准确率最多变化 3 题。27B 和 30B 版本用 <code>--device-map auto</code> 按层切分到多张 40 GB GPU 上，
+提速 8–10%。</p>
+<p><a href="EFFICIENCY.html"><img loading="lazy" alt="加速前后 JevAny 与其他决策模型的准确率-延迟对比" src="../files/docs/efficiency-latency.png" /></a></p>
+<div align="center">
+
+| 模型 | GPU 数 | 默认 | 加速后 | Transfer 准确率 |
+|:---|---:|---:|---:|---:|
+| JevAny-Qwen3.5-4B | 1 | 104.6 ms | **25.3 ms** | 78.68% → 78.87% |
+| JevAny-Qwen3.5-4B-Direct-Token | 1 | 106.4 ms | **25.9 ms** | 78.11% → 78.39% |
+| JevAny-Gemma-4B | 1 | 106.3 ms | **31.9 ms** | 70.84% → 70.84% |
+| JevAny-Muse-Glimmer-30B | 3 | 171.2 ms | **154.2 ms** | 83.37% → 83.37% |
+| JevAny-Qwen3.8-27B<sup>†</sup> | 3 | 240.2 ms | **220.1 ms** | 85.66% → 85.66% |
+
+Transfer-v9 上每个请求的中位延迟，batch size 1。
+<sup>†</sup> 测的是 step 22,160 版本。
+
+</div>
+
+<p><a href="EFFICIENCY.html">完整表格、实验设置与其他模型</a> ·
+<a href="DEPLOYMENT.html#optional-cuda-acceleration">开启方法</a> ·
+<a href="../files/results/efficiency-a100-v1.json">机器可读结果</a></p>
 <h2 id="4">🕹️ 4. 示例与测试环境 <a name="示例与测试环境"></a></h2>
 <p>交互演示包含以下三个环境。动图保留历史模型的动作和选项概率；当前
 <a href="https://huggingface.co/SimpleJev/JevAny-Qwen3.8-27B-LoRA">JevAny-Qwen3.8-27B</a>

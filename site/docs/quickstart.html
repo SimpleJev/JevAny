@@ -20,7 +20,10 @@
 </ul>
 </li>
 <li><a href="#2-pretrained-models">🤗 2. Pretrained Models</a></li>
-<li><a href="#3-benchmark-results">📊 3. Benchmark Results</a></li>
+<li><a href="#3-benchmark-results">📊 3. Benchmark Results</a><ul>
+<li><a href="#31-inference-efficiency">⏱️ 3.1 Inference efficiency</a></li>
+</ul>
+</li>
 <li><a href="#4-examples-test-environments">🕹️ 4. Examples &amp; Test Environments</a><ul>
 <li><a href="#41-robot-peg-insertion">🤖 4.1 Robot peg insertion</a></li>
 <li><a href="#42-doom-corridor-3d">🔫 4.2 Doom corridor · 3D</a></li>
@@ -52,23 +55,50 @@ JevAny checkpoint. The current default release is
 try your own inputs and see its choices and probabilities.</p>
 <p><a href="../index.html#case-library">Explore all 30 application replays →</a></p>
 <h3 id="jev-inside-llm-agent-loops">⚡ Jev inside LLM agent loops</h3>
-<p><strong>Key takeaways</strong></p>
-<ul>
-<li><strong>Task level:</strong> T0 controlled → T4 open terminal. Task difficulty and delegation are separate.</li>
-<li><strong>Delegation level:</strong> D0 LLM-only → D4 bounded subgoal. Increase delegation only when local choices remain easy to verify.</li>
-<li><strong>Delegate when:</strong> the LLM can generate 2–4 valid, meaningfully different, reversible choices with immediate feedback.</li>
-<li><strong>Keep with the LLM:</strong> planning, open-ended search, exact edits, recovery, high-risk actions, and completion.</li>
-<li><strong>Success test:</strong> reward stays the same or improves while LLM calls, tokens, or time fall; otherwise return control to the LLM.</li>
-</ul>
-<p><strong>1 · WebShop — choose the exact color and size from LLM-generated menus</strong></p>
-<p><video class="doc-video" controls playsinline preload="none" aria-label="The LLM generates three color and three size candidates, Jev selects the exact options, and the LLM completes the purchase" poster="../assets/media/docs/jev-decision-webshop-v2.webp"><source src="../assets/media/docs/jev-decision-webshop-v2.webm" type="video/webm"><source src="../assets/media/docs/jev-decision-webshop-v2.mp4" type="video/mp4">Your browser does not support video.</video></p>
-<p>Reward <code>1→1</code> · LLM calls <code>9→4</code> · tokens <code>38,852→14,256</code> · time <code>18.54s→7.83s</code></p>
-<p><strong>2 · FrozenLake — compare four directions at every state</strong></p>
-<p><video class="doc-video" controls playsinline preload="none" aria-label="Jev compares four directions, executes each selected move, reaches the goal, and reduces LLM calls" poster="../assets/media/docs/jev-decision-frozen-lake-v2.webp"><source src="../assets/media/docs/jev-decision-frozen-lake-v2.webm" type="video/webm"><source src="../assets/media/docs/jev-decision-frozen-lake-v2.mp4" type="video/mp4">Your browser does not support video.</video></p>
-<p>Reward <code>1→1</code> · LLM calls <code>4→1</code> · tokens <code>2,338→663</code></p>
-<p><strong>3 · Terminal-Bench · <code>sqlite-db-truncate</code> — select one of three commands</strong></p>
-<p><video class="doc-video" controls playsinline preload="none" aria-label="Jev compares three real Terminal-Bench commands, selects raw-page inspection, and the LLM recovers ten rows" poster="../assets/media/docs/jev-decision-terminal-v2.webp"><source src="../assets/media/docs/jev-decision-terminal-v2.webm" type="video/webm"><source src="../assets/media/docs/jev-decision-terminal-v2.mp4" type="video/mp4">Your browser does not support video.</video></p>
-<p>Reward <code>1→1</code> · LLM calls <code>15→8</code> · time <code>187.9s→144.7s</code></p>
+<p>Jev chooses among valid, reversible actions proposed by the LLM, which handles
+planning, recovery, and completion. The animations compare LLM only (left) with
+LLM + Jev (right) at equal reward. Steps are illustrated; accelerated playback
+preserves each pair's measured completion-time ratio. Click an animation to enlarge it.</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+  <tr>
+    <td width="64%" valign="middle">
+      <video class="doc-video" controls playsinline preload="none" aria-label="WebShop: LLM only and LLM + Jev run side by side; Jev-assisted purchase completes in 7.83 seconds versus 18.54 seconds" poster="../assets/media/docs/jev-decision-webshop-v2.webp"><source src="../assets/media/docs/jev-decision-webshop-v2.webm" type="video/webm"><source src="../assets/media/docs/jev-decision-webshop-v2.mp4" type="video/mp4">Your browser does not support video.</video>
+    </td>
+    <td width="36%" valign="middle">
+      <p><strong>1. <a href="../files/docs/demos/jev-agent-harness-traces.json">WebShop</a></strong><br>
+      Jev selects the requested color and size from LLM-generated menus before the
+      LLM buys the product. Time falls from 18.54 to 7.83 seconds and LLM calls
+      from 9 to 4.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="64%" valign="middle">
+      <video class="doc-video" controls playsinline preload="none" aria-label="FrozenLake: the LLM chooses every move on the left; one LLM plan and Jev decisions reach the same goal in 16.7 seconds versus 19.7 seconds on the right" poster="../assets/media/docs/jev-decision-frozen-lake-v2.webp"><source src="../assets/media/docs/jev-decision-frozen-lake-v2.webm" type="video/webm"><source src="../assets/media/docs/jev-decision-frozen-lake-v2.mp4" type="video/mp4">Your browser does not support video.</video>
+    </td>
+    <td width="36%" valign="middle">
+      <p><strong>2. <a href="../files/docs/demos/jev-agent-harness-traces.json">FrozenLake</a></strong><br>
+      After one LLM plan, Jev checks each new state and chooses among four directions.
+      Both runs reach the goal; time falls from 19.7 to 16.7 seconds and LLM calls
+      from 4 to 1.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="64%" valign="middle">
+      <video class="doc-video" controls playsinline preload="none" aria-label="SQLite recovery: LLM only and LLM + Jev run side by side; both recover ten rows, finishing in 187.9 and 144.7 seconds respectively" poster="../assets/media/docs/jev-decision-terminal-v2.webp"><source src="../assets/media/docs/jev-decision-terminal-v2.webm" type="video/webm"><source src="../assets/media/docs/jev-decision-terminal-v2.mp4" type="video/mp4">Your browser does not support video.</video>
+    </td>
+    <td width="36%" valign="middle">
+      <p><strong>3. <a href="reports-JevAny_Tech_Report_Agent_Harness_Appendix.html#h1-sqlite-recovery-a-meaningful-three-way-decision">Terminal-Bench</a></strong><br>
+      For <code>sqlite-db-truncate</code>, Jev selects raw-page inspection from three
+      commands, then the LLM recovers and verifies ten rows. Time falls from 187.9
+      to 144.7 seconds and LLM calls from 15 to 8.</p>
+    </td>
+  </tr>
+</table></div>
+
+<p>Broader paired evaluations show that gains vary by task. The <a href="reports-JevAny_Tech_Report_Agent_Harness_Appendix.html">full results</a>,
+<a href="experiments-AGENT_HARNESS_FRONTIER_PROTOCOL.html">delegation protocol</a>, and
+<a href="../files/reports/JevAny_Tech_Report_with_Agent_Harness.pdf">technical report</a> describe
+where Jev helps and when to return control to the LLM.</p>
 <div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
 <thead>
 <tr>
@@ -79,30 +109,27 @@ try your own inputs and see its choices and probabilities.</p>
 </thead>
 <tbody>
 <tr>
-<td>GPT-5.6-sol · FrozenLake · 10 pairs</td>
+<td>FrozenLake (GPT-5.6-sol, 10 pairs)</td>
 <td style="text-align: right;">100% → 100%</td>
-<td style="text-align: right;">LLM calls −64.4% · tokens −63.1% · time −37.6%</td>
+<td style="text-align: right;">LLM calls −64.4%, tokens −63.1%, time −37.6%</td>
 </tr>
 <tr>
-<td>WebShop · LLM-generated menus · 3 pairs</td>
+<td>WebShop (LLM-generated menus, 3 pairs)</td>
 <td style="text-align: right;">67% → 100%</td>
-<td style="text-align: right;">LLM calls −21.4% · tokens −14.3% · time −15.0%</td>
+<td style="text-align: right;">LLM calls −21.4%, tokens −14.3%, time −15.0%</td>
 </tr>
 <tr>
-<td>WebArena · 6 pairs</td>
+<td>WebArena (6 pairs)</td>
 <td style="text-align: right;">50% → 50%</td>
-<td style="text-align: right;">LLM calls +5.6% · tokens +28.2% · time −0.4%</td>
+<td style="text-align: right;">LLM calls +5.6%, tokens +28.2%, time −0.4%</td>
 </tr>
 <tr>
-<td>Terminal-Bench · 6 pairs</td>
+<td>Terminal-Bench (6 pairs)</td>
 <td style="text-align: right;">1/6 → 3/6</td>
 <td style="text-align: right;">LLM calls −9.0%</td>
 </tr>
 </tbody>
 </table></div>
-<p><a href="reports-JevAny_Tech_Report_Agent_Harness_Appendix.html">Full results</a> ·
-<a href="experiments-AGENT_HARNESS_FRONTIER_PROTOCOL.html">task/delegation levels</a> ·
-<a href="../files/reports/JevAny_Tech_Report_with_Agent_Harness.pdf">combined technical report</a></p>
 <h2 id="table-of-contents">📑 Table of Contents</h2>
 <ul>
 <li><a href="#results-and-demos">🎮 Results and Demos</a></li>
@@ -112,6 +139,7 @@ try your own inputs and see its choices and probabilities.</p>
 <li><a href="#deployment">🚀 1.3 JevAny Deployment</a></li>
 <li><a href="#pretrained-models">🤗 2. Pretrained Models</a></li>
 <li><a href="#evaluation">📊 3. Benchmark Results</a></li>
+<li><a href="#efficiency">⏱️ 3.1 Inference efficiency</a></li>
 <li><a href="#examples--test-environments">🕹️ 4. Examples &amp; Test Environments</a></li>
 <li><a href="#supported-model-families">🧩 5. Supported Model Families</a></li>
 <li><a href="#documentation-and-contributing">📚 6. Documentation and Contributing</a></li>
@@ -302,6 +330,31 @@ NLL, Brier and ECE are measured on Transfer.
 <p><a href="EVALUATION.html#model-family-v2">Full results and protocols</a> ·
 <a href="../files/results/model-family-v2.json">Machine-readable results</a> ·
 <a href="../files/reports/JevAny_Tech_Report.pdf">Method and ablation report</a></p>
+<h3 id="31-inference-efficiency">⏱️ 3.1 Inference efficiency <a name="efficiency"></a></h3>
+<p>On one A100-40GB at batch size 1, the optional CUDA path
+(<code>flash-linear-attention</code>, fused SDPA and <code>--cuda-graphs</code>) cuts the median
+latency of the 4B releases about fourfold. Transfer accuracy moves by at most
+three questions. The 27B and 30B releases run layer-sharded over 40 GB GPUs
+with <code>--device-map auto</code> and gain 8–10%.</p>
+<p><a href="EFFICIENCY.html"><img loading="lazy" alt="Accuracy vs median latency before and after acceleration for JevAny and other decision models" src="../files/docs/efficiency-latency.png" /></a></p>
+<div align="center">
+
+| Model | GPUs | Default | Accelerated | Transfer accuracy |
+|:---|---:|---:|---:|---:|
+| JevAny-Qwen3.5-4B | 1 | 104.6 ms | **25.3 ms** | 78.68% → 78.87% |
+| JevAny-Qwen3.5-4B-Direct-Token | 1 | 106.4 ms | **25.9 ms** | 78.11% → 78.39% |
+| JevAny-Gemma-4B | 1 | 106.3 ms | **31.9 ms** | 70.84% → 70.84% |
+| JevAny-Muse-Glimmer-30B | 3 | 171.2 ms | **154.2 ms** | 83.37% → 83.37% |
+| JevAny-Qwen3.8-27B<sup>†</sup> | 3 | 240.2 ms | **220.1 ms** | 85.66% → 85.66% |
+
+Median per-request latency on Transfer-v9, batch size 1.
+<sup>†</sup> Measured at step 22,160.
+
+</div>
+
+<p><a href="EFFICIENCY.html">Full tables, setup and other models</a> ·
+<a href="DEPLOYMENT.html#optional-cuda-acceleration">How to enable</a> ·
+<a href="../files/results/efficiency-a100-v1.json">Machine-readable results</a></p>
 <h2 id="4-examples-test-environments">🕹️ 4. Examples &amp; Test Environments <a name="examples--test-environments"></a></h2>
 <p>The playground includes the three environments below. These GIFs preserve
 historical model actions and option probabilities; run the current
