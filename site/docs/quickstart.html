@@ -341,68 +341,77 @@ NLL, Brier and ECE are measured on Transfer.
 <a href="../files/results/model-family-v2.json">Machine-readable results</a> ·
 <a href="../files/reports/JevAny_Tech_Report.pdf">Method and ablation report</a></p>
 <h3 id="31-inference-efficiency">⏱️ 3.1 Inference efficiency <a name="efficiency"></a></h3>
-<p>On one H200, direct CUDA Graphs cut Qwen3.8-27B median latency from
-<strong>113.54 ms to 30.53 ms (3.72×)</strong> with 207/231 correct answers before and
-after. The A100-40GB comparison below uses batch size 1: 4B models fit on one
-GPU and use CUDA Graphs, while 27B and 30B are layer-sharded over three GPUs
-and gain only from linear-attention kernels and fused SDPA.</p>
+<p>On one H200, CUDA Graphs cut Qwen3.8-27B median latency from <strong>113.54 to
+30.53 ms (3.72×)</strong> on 231 JevBench questions; fused SDPA plus CUDA Graphs cut
+Muse-Glimmer-30B from <strong>100.71 to 43.25 ms (2.33×)</strong> on a balanced 44-request
+Transfer panel.
+Accuracy stayed at 207/231 and 38/44, with no argmax changes. The table uses
+each model's best measured single-GPU result: A100-40GB for the 4B models and
+H200 for the 27B and 30B models. Latency is comparable within each row; the
+fixed evaluation panels are listed explicitly.</p>
 <p><a href="EFFICIENCY.html"><img loading="lazy" alt="Accuracy vs median latency before and after acceleration for JevAny and other decision models" src="../files/docs/efficiency-latency.png" /></a></p>
 <div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
 <thead>
 <tr>
 <th style="text-align: left;">Model</th>
-<th style="text-align: right;">A100 GPUs</th>
+<th style="text-align: center;">Hardware</th>
 <th style="text-align: right;">Default</th>
 <th style="text-align: right;">Accelerated</th>
 <th style="text-align: right;">Speed-up</th>
-<th style="text-align: right;">Transfer accuracy</th>
+<th style="text-align: right;">Accuracy check</th>
+<th style="text-align: left;">Fixed panel</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td style="text-align: left;">JevAny-Qwen3.5-4B</td>
-<td style="text-align: right;">1</td>
+<td style="text-align: center;">A100</td>
 <td style="text-align: right;">104.6 ms</td>
 <td style="text-align: right;"><strong>25.3 ms</strong></td>
 <td style="text-align: right;"><strong>4.1×</strong></td>
 <td style="text-align: right;">78.68% → 78.87%</td>
+<td style="text-align: left;">Transfer, 1,046</td>
 </tr>
 <tr>
 <td style="text-align: left;">JevAny-Qwen3.5-4B-Direct-Token</td>
-<td style="text-align: right;">1</td>
+<td style="text-align: center;">A100</td>
 <td style="text-align: right;">106.4 ms</td>
 <td style="text-align: right;"><strong>25.9 ms</strong></td>
 <td style="text-align: right;"><strong>4.1×</strong></td>
 <td style="text-align: right;">78.11% → 78.39%</td>
+<td style="text-align: left;">Transfer, 1,046</td>
 </tr>
 <tr>
 <td style="text-align: left;">JevAny-Gemma-4B</td>
-<td style="text-align: right;">1</td>
+<td style="text-align: center;">A100</td>
 <td style="text-align: right;">106.3 ms</td>
 <td style="text-align: right;"><strong>31.9 ms</strong></td>
 <td style="text-align: right;"><strong>3.3×</strong></td>
 <td style="text-align: right;">70.84% → 70.84%</td>
+<td style="text-align: left;">Transfer, 1,046</td>
 </tr>
 <tr>
 <td style="text-align: left;">JevAny-Muse-Glimmer-30B</td>
-<td style="text-align: right;">3</td>
-<td style="text-align: right;">171.2 ms</td>
-<td style="text-align: right;"><strong>154.2 ms</strong></td>
-<td style="text-align: right;"><strong>1.11×</strong></td>
-<td style="text-align: right;">83.37% → 83.37%</td>
+<td style="text-align: center;">H200</td>
+<td style="text-align: right;">100.71 ms</td>
+<td style="text-align: right;"><strong>43.25 ms</strong></td>
+<td style="text-align: right;"><strong>2.33×</strong></td>
+<td style="text-align: right;">38/44 → 38/44</td>
+<td style="text-align: left;">Transfer sample, 44</td>
 </tr>
 <tr>
-<td style="text-align: left;">JevAny-Qwen3.8-27B<sup>†</sup></td>
-<td style="text-align: right;">3</td>
-<td style="text-align: right;">240.2 ms</td>
-<td style="text-align: right;"><strong>220.1 ms</strong></td>
-<td style="text-align: right;"><strong>1.09×</strong></td>
-<td style="text-align: right;">85.66% → 85.66%</td>
+<td style="text-align: left;">JevAny-Qwen3.8-27B</td>
+<td style="text-align: center;">H200</td>
+<td style="text-align: right;">113.54 ms</td>
+<td style="text-align: right;"><strong>30.53 ms</strong></td>
+<td style="text-align: right;"><strong>3.72×</strong></td>
+<td style="text-align: right;">207/231 → 207/231</td>
+<td style="text-align: left;">JevBench public, 231</td>
 </tr>
 </tbody>
 </table></div>
-<p>Median per-request latency on Transfer-v9, batch size 1.
-<sup>†</sup> Measured at step 22,160.</p>
+<p>Median model-call latency, serial batch size 1. See the full report for the
+apples-to-apples A100 comparison and panel limitations.</p>
 <p><a href="EFFICIENCY.html">Full tables, setup and other models</a> ·
 <a href="DEPLOYMENT.html#optional-cuda-acceleration">How to enable</a> ·
 <a href="../files/results/efficiency-a100-v1.json">Machine-readable results</a></p>

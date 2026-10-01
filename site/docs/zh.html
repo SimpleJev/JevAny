@@ -320,67 +320,73 @@ NLL、Brier 和 ECE 均在 Transfer 上计算。
 <a href="../files/results/model-family-v2.json">机器可读结果</a> ·
 <a href="../files/reports/JevAny_Tech_Report.pdf">方法与消融实验报告</a></p>
 <h3 id="31">⏱️ 3.1 推理效率 <a name="推理效率"></a></h3>
-<p>在单张 H200 上，直接 CUDA Graph 将 Qwen3.8-27B 的中位延迟从
-<strong>113.54 ms 降至 30.53 ms（3.72×）</strong>，加速前后均答对 207/231。
-下表是 batch size 1 的 A100-40GB 对比：4B 模型可放入单卡并使用 CUDA Graph，
-27B 和 30B 则按层切分到三张卡，只获得 linear-attention kernel 与融合 SDPA 的收益。</p>
+<p>在单张 H200 上，CUDA Graph 将 Qwen3.8-27B 的中位延迟从
+<strong>113.54 ms 降至 30.53 ms（3.72×）</strong>；融合 SDPA 加 CUDA Graph 将
+Muse-Glimmer-30B 从 <strong>100.71 ms 降至 43.25 ms（2.33×）</strong>。
+两次测量均未改变 argmax。下表采用各模型最佳的单卡实测：4B 使用
+A100-40GB，27B 与 30B 使用 H200。延迟仅可在同一行内比较。</p>
 <p><a href="EFFICIENCY.html"><img loading="lazy" alt="加速前后 JevAny 与其他决策模型的准确率-延迟对比" src="../files/docs/efficiency-latency.png" /></a></p>
 <div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
 <thead>
 <tr>
 <th style="text-align: left;">模型</th>
-<th style="text-align: right;">A100 GPU 数</th>
+<th style="text-align: center;">硬件</th>
 <th style="text-align: right;">默认</th>
 <th style="text-align: right;">加速后</th>
 <th style="text-align: right;">加速比</th>
-<th style="text-align: right;">Transfer 准确率</th>
+<th style="text-align: right;">准确率检查</th>
+<th style="text-align: left;">固定面板</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td style="text-align: left;">JevAny-Qwen3.5-4B</td>
-<td style="text-align: right;">1</td>
+<td style="text-align: center;">A100</td>
 <td style="text-align: right;">104.6 ms</td>
 <td style="text-align: right;"><strong>25.3 ms</strong></td>
 <td style="text-align: right;"><strong>4.1×</strong></td>
 <td style="text-align: right;">78.68% → 78.87%</td>
+<td style="text-align: left;">Transfer，1,046</td>
 </tr>
 <tr>
 <td style="text-align: left;">JevAny-Qwen3.5-4B-Direct-Token</td>
-<td style="text-align: right;">1</td>
+<td style="text-align: center;">A100</td>
 <td style="text-align: right;">106.4 ms</td>
 <td style="text-align: right;"><strong>25.9 ms</strong></td>
 <td style="text-align: right;"><strong>4.1×</strong></td>
 <td style="text-align: right;">78.11% → 78.39%</td>
+<td style="text-align: left;">Transfer，1,046</td>
 </tr>
 <tr>
 <td style="text-align: left;">JevAny-Gemma-4B</td>
-<td style="text-align: right;">1</td>
+<td style="text-align: center;">A100</td>
 <td style="text-align: right;">106.3 ms</td>
 <td style="text-align: right;"><strong>31.9 ms</strong></td>
 <td style="text-align: right;"><strong>3.3×</strong></td>
 <td style="text-align: right;">70.84% → 70.84%</td>
+<td style="text-align: left;">Transfer，1,046</td>
 </tr>
 <tr>
 <td style="text-align: left;">JevAny-Muse-Glimmer-30B</td>
-<td style="text-align: right;">3</td>
-<td style="text-align: right;">171.2 ms</td>
-<td style="text-align: right;"><strong>154.2 ms</strong></td>
-<td style="text-align: right;"><strong>1.11×</strong></td>
-<td style="text-align: right;">83.37% → 83.37%</td>
+<td style="text-align: center;">H200</td>
+<td style="text-align: right;">100.71 ms</td>
+<td style="text-align: right;"><strong>43.25 ms</strong></td>
+<td style="text-align: right;"><strong>2.33×</strong></td>
+<td style="text-align: right;">38/44 → 38/44</td>
+<td style="text-align: left;">Transfer 样本，44</td>
 </tr>
 <tr>
-<td style="text-align: left;">JevAny-Qwen3.8-27B<sup>†</sup></td>
-<td style="text-align: right;">3</td>
-<td style="text-align: right;">240.2 ms</td>
-<td style="text-align: right;"><strong>220.1 ms</strong></td>
-<td style="text-align: right;"><strong>1.09×</strong></td>
-<td style="text-align: right;">85.66% → 85.66%</td>
+<td style="text-align: left;">JevAny-Qwen3.8-27B</td>
+<td style="text-align: center;">H200</td>
+<td style="text-align: right;">113.54 ms</td>
+<td style="text-align: right;"><strong>30.53 ms</strong></td>
+<td style="text-align: right;"><strong>3.72×</strong></td>
+<td style="text-align: right;">207/231 → 207/231</td>
+<td style="text-align: left;">JevBench public，231</td>
 </tr>
 </tbody>
 </table></div>
-<p>Transfer-v9 上每个请求的中位延迟，batch size 1。
-<sup>†</sup> 测的是 step 22,160 版本。</p>
+<p>中位模型调用延迟，串行 batch size 1。完整报告保留同硬件 A100 对照与面板限制。</p>
 <p><a href="EFFICIENCY.html">完整表格、实验设置与其他模型</a> ·
 <a href="DEPLOYMENT.html#optional-cuda-acceleration">开启方法</a> ·
 <a href="../files/results/efficiency-a100-v1.json">机器可读结果</a></p>
