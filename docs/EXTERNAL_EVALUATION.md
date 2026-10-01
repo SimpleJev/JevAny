@@ -34,8 +34,9 @@ being independently sorted by score.
 Laya is retained as a request-conversion check but is not in the common
 chart cohort. The pinned dataset card also contains results that were not
 rerun locally; their hardware, runtime and item-level outputs are unavailable
-under the local protocol. OpenDecider and Bongard appear below only as
-published references; the locally rerun rows above are used in the chart.
+under the local protocol. TypeSafe Jev 1.13.0 is the published Jev row included
+in the chart; OpenDecider and Bongard appear below only as published references,
+while their locally rerun rows above are used in the chart.
 
 | Supplemental row | Accuracy ↑ | KL ↓ | Brier ↓ | ECE ↓ | Status |
 |---|---:|---:|---:|---:|---:|
@@ -60,8 +61,9 @@ zero-shot comparison.
 We evaluated the complete v0.3 test split at revision `4d576ded`: 3,220
 records, including 724 text, 2,214 image and 282 video requests from 22
 families and five judge roles. A score requires all 3,220 native requests with
-zero rejected or truncated records. Models that cannot consume every required
-modality show `—`; media are never removed to manufacture a score.
+zero rejected or truncated records. Models without a complete matching result,
+whether from modality incompatibility or no published/local run, show `—`;
+media are never removed to manufacture a score.
 
 The official headline is `skill_role`. Each family first receives
 `(A-c)/(1-c)`, where `A` is balanced accuracy for fixed option sets or accuracy
@@ -77,6 +79,7 @@ score remains reported below and in the technical report.
 | Model | Accuracy ↑ | Official `skill_role` ↑ (95% CI) | NLL ↓ | Brier ↓ | ECE ↓ | Full-suite status |
 |---|---:|---:|---:|---:|---:|---|
 | **JevAny-Qwen3.8-27B** | **62.27%** | 35.55% [32.84, 38.18] | **0.878** | **0.500** | 0.094 | 3,220/3,220 |
+| TypeSafe Jev 1.13.0 | — | — | — | — | — | No matching published/local result |
 | JevAny-Muse-Glimmer-30B | 58.70% | 29.65% [26.71, 32.31] | 0.911 | 0.528 | 0.100 | 3,220/3,220 |
 | JevAny-Qwen3.5-4B-Direct-Token | 54.94% | 23.85% [20.96, 26.70] | 1.005 | 0.573 | 0.131 | 3,220/3,220 |
 | JevAny-Qwen3.5-4B | 54.75% | 23.23% [20.49, 25.84] | 1.051 | 0.586 | 0.117 | 3,220/3,220 |
@@ -105,6 +108,7 @@ and is not the official five-role headline.
 | Model | Accuracy ↑ | NLL ↓ | Brier ↓ | ECE ↓ | Coverage |
 |---|---:|---:|---:|---:|---:|
 | **JevAny-Qwen3.8-27B** | **66.44%** | **0.824** | **0.476** | 0.103 | 724/724 |
+| TypeSafe Jev 1.13.0 | — | — | — | — | No matching result |
 | JevAny-Muse-Glimmer-30B | 62.57% | 0.873 | 0.503 | 0.099 | 724/724 |
 | JevAny-Qwen3.5-4B-Direct-Token | 58.56% | 0.915 | 0.516 | 0.089 | 724/724 |
 | JevAny-Qwen3.5-4B | 57.87% | 0.997 | 0.554 | 0.074 | 724/724 |

@@ -77,10 +77,14 @@ def _validate_row(row: dict, panel: dict) -> None:
         normalized = status.strip().lower() if isinstance(status, str) else ""
         if suite == "typed_decisions" and "no matching" not in normalized:
             raise ValueError(f"{suite}: unavailable {model} needs a no-matching status")
-        if suite == "jevjudge_full" and not normalized.startswith("incompatible:"):
-            raise ValueError(f"{suite}: unavailable {model} needs an incompatibility status")
-        if suite == "jevjudge_text":
-            raise ValueError(f"{suite}: every cohort model must have a scored result")
+        if suite == "jevjudge_full" and not (
+            normalized.startswith("incompatible:") or "no matching" in normalized
+        ):
+            raise ValueError(f"{suite}: unavailable {model} needs an incompatibility or no-matching status")
+        if suite == "jevjudge_text" and not (
+            row.get("kind") == "published_only" and "no matching" in normalized
+        ):
+            raise ValueError(f"{suite}: unavailable {model} needs a published no-matching status")
         fields = ("accuracy", "skill_role", "skill_role_ci_95", "answered", "requested")
         present = [field for field in fields if row.get(field) is not None]
         if present:
@@ -118,8 +122,8 @@ def _validate_row(row: dict, panel: dict) -> None:
 def load_results(source: Path = SOURCE) -> dict:
     data = json.loads(source.read_text())
     order = data["main_comparison_order"]
-    if len(order) != 12 or len(order) != len(set(order)) or not all(isinstance(model, str) and model for model in order):
-        raise ValueError("main comparison order must contain 12 unique, non-empty model names")
+    if len(order) != 13 or len(order) != len(set(order)) or not all(isinstance(model, str) and model for model in order):
+        raise ValueError("main comparison order must contain 13 unique, non-empty model names")
     cohort_kinds = {}
     for panel in PANELS:
         suite = data[panel["key"]]
@@ -156,6 +160,7 @@ def short_label(name: str) -> str:
         "JevAny-Qwen3.5-4B": "JevAny Qwen3.5 4B · Pointer",
         "JevAny-Muse-Glimmer-30B": "JevAny Muse 30B",
         "JevAny-Gemma-4B": "JevAny Gemma 4B",
+        "TypeSafe Jev 1.13.0": "TypeSafe Jev 1.13.0",
         "OpenDecider-small": "OpenDecider small",
         "Bongard-mini": "Bongard mini",
         "Jeff-Gemma4-E2B": "Jeff Gemma4 E2B",
@@ -185,7 +190,16 @@ def draw_panel(ax, rows: list[dict], panel: dict, show_labels: bool) -> None:
             )
             continue
         value = score * 100
-        bar = ax.barh(index, value, height=0.66, color=color, edgecolor="none", zorder=3)
+        published = row["kind"] == "published_only"
+        bar = ax.barh(
+            index,
+            value,
+            height=0.66,
+            color=color,
+            edgecolor="#79558D" if published else "none",
+            linewidth=0.7 if published else 0,
+            zorder=3,
+        )
         bar[0].set_hatch(HATCHES[row["kind"]])
         ax.text(
             min(value + panel["xmax"] * 0.018, panel["xmax"] * 0.985),
@@ -242,7 +256,7 @@ def main() -> None:
     fig.text(
         0.035,
         0.910,
-        "Same 12-model order · complete stated sets · — = unsupported native input or no matching result",
+        "Same 13-model order · complete stated sets · — = unsupported native input or no matching result",
         fontsize=12.2,
         color=MUTED,
     )
@@ -250,12 +264,13 @@ def main() -> None:
         Patch(facecolor=COLORS["ours"], label="JevAny"),
         Patch(facecolor=COLORS["open_kev"], label="Kev · open"),
         Patch(facecolor=COLORS["open_rerun"], label="Other open · locally rerun"),
+        Patch(facecolor=COLORS["published_only"], edgecolor="#79558D", hatch="////", label="Published only"),
     ]
     fig.legend(
         handles=legend,
         loc="upper right",
         bbox_to_anchor=(0.988, 0.972),
-        ncol=3,
+        ncol=4,
         frameon=False,
         fontsize=10.8,
         handlelength=1.2,

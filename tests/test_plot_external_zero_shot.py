@@ -27,14 +27,27 @@ def load_modified(tmp_path, artifact, panel, model, **changes):
     return load_results(path)
 
 
-def test_tracked_chart_artifact_has_one_valid_twelve_model_cohort():
+def test_tracked_chart_artifact_has_one_valid_thirteen_model_cohort():
     data = load_results(SOURCE)
     order = data["main_comparison_order"]
-    assert len(order) == 12
+    assert len(order) == 13
     assert {panel["metric"] for panel in PANELS} == {"accuracy"}
     for panel in ("typed_decisions", "jevjudge_full", "jevjudge_text"):
         assert [row["model"] for row in data[panel]["ordered_models"]] == order
         assert data[panel]["chart_metric"] == "accuracy"
+
+
+def test_published_jev_has_typed_accuracy_and_explicit_jevjudge_dashes():
+    data = load_results(SOURCE)
+    typed = {row["model"]: row for row in data["typed_decisions"]["ordered_models"]}
+    full = {row["model"]: row for row in data["jevjudge_full"]["ordered_models"]}
+    text = {row["model"]: row for row in data["jevjudge_text"]["ordered_models"]}
+
+    assert typed["TypeSafe Jev 1.13.0"]["accuracy"] == pytest.approx(0.727)
+    assert typed["TypeSafe Jev 1.13.0"]["status"] == "dataset-card result; not locally rerun"
+    for panel in (full, text):
+        assert panel["TypeSafe Jev 1.13.0"]["accuracy"] is None
+        assert panel["TypeSafe Jev 1.13.0"]["status"] == "no matching published or local JevJudge result"
 
 
 @pytest.mark.parametrize("value", [-0.01, 1.01, True, float("inf")])

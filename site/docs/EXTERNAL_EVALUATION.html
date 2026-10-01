@@ -155,8 +155,9 @@ being independently sorted by score.</p>
 <p>Laya is retained as a request-conversion check but is not in the common
 chart cohort. The pinned dataset card also contains results that were not
 rerun locally; their hardware, runtime and item-level outputs are unavailable
-under the local protocol. OpenDecider and Bongard appear below only as
-published references; the locally rerun rows above are used in the chart.</p>
+under the local protocol. TypeSafe Jev 1.13.0 is the published Jev row included
+in the chart; OpenDecider and Bongard appear below only as published references,
+while their locally rerun rows above are used in the chart.</p>
 <div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
 <thead>
 <tr>
@@ -245,8 +246,9 @@ zero-shot comparison.</p>
 <p>We evaluated the complete v0.3 test split at revision <code>4d576ded</code>: 3,220
 records, including 724 text, 2,214 image and 282 video requests from 22
 families and five judge roles. A score requires all 3,220 native requests with
-zero rejected or truncated records. Models that cannot consume every required
-modality show <code>—</code>; media are never removed to manufacture a score.</p>
+zero rejected or truncated records. Models without a complete matching result,
+whether from modality incompatibility or no published/local run, show <code>—</code>;
+media are never removed to manufacture a score.</p>
 <p>The official headline is <code>skill_role</code>. Each family first receives
 <code>(A-c)/(1-c)</code>, where <code>A</code> is balanced accuracy for fixed option sets or accuracy
 for varying option sets, and <code>c</code> is the corresponding chance or majority-label
@@ -277,6 +279,15 @@ score remains reported below and in the technical report.</p>
 <td style="text-align: right;"><strong>0.500</strong></td>
 <td style="text-align: right;">0.094</td>
 <td>3,220/3,220</td>
+</tr>
+<tr>
+<td>TypeSafe Jev 1.13.0</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td>No matching published/local result</td>
 </tr>
 <tr>
 <td>JevAny-Muse-Glimmer-30B</td>
@@ -408,6 +419,14 @@ and is not the official five-role headline.</p>
 <td style="text-align: right;"><strong>0.476</strong></td>
 <td style="text-align: right;">0.103</td>
 <td style="text-align: right;">724/724</td>
+</tr>
+<tr>
+<td>TypeSafe Jev 1.13.0</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">No matching result</td>
 </tr>
 <tr>
 <td>JevAny-Muse-Glimmer-30B</td>

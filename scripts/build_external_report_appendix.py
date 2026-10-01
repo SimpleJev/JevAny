@@ -97,16 +97,17 @@ def overview_page(pdf: PdfPages, data: dict, chart: Path) -> None:
     ax.axis("off")
     full = {row["model"]: row for row in data["jevjudge_full"]["models"]}
     text = {row["model"]: row for row in data["jevjudge_text"]["models"]}
+    typed = {row["model"]: row for row in data["typed_decisions"]["models"]}
     qwen = full["JevAny-Qwen3.8-27B"]
     jeff = full["Jeff-Qwen3.5-2B"]
     card(fig, 0.065, "Full-suite accuracy",
          f"Qwen3.8-27B: {qwen['accuracy'] * 100:.2f}%\n"
          f"Jeff-2B: {jeff['accuracy'] * 100:.2f}%\n"
          f"Gap: {(qwen['accuracy'] - jeff['accuracy']) * 100:.2f} points")
-    card(fig, 0.365, "Complete native inputs",
-         "All five JevAny releases: 3,220/3,220\n"
-         "724 text · 2,214 image · 282 video\n"
-         "Zero rejected or truncated records")
+    card(fig, 0.365, "Typed accuracy",
+         f"JevAny Qwen27: {typed['JevAny-Qwen3.8-27B']['accuracy'] * 100:.2f}%\n"
+         f"TypeSafe Jev: {typed['TypeSafe Jev 1.13.0']['accuracy'] * 100:.2f}%\n"
+         "Published only · gap 0.10 pt")
     card(fig, 0.665, "Text-only accuracy",
          f"JevAny Qwen27: {text['JevAny-Qwen3.8-27B']['accuracy'] * 100:.2f}%\n"
          f"Kev-27B: {text['Kev-27B']['accuracy'] * 100:.2f}%\n"
@@ -155,9 +156,10 @@ def results_page(pdf: PdfPages, data: dict) -> None:
 
     fig.text(0.065, 0.335, "Compatibility and text-only results", color=INK, fontsize=12, weight="bold")
     fig.text(0.065, 0.300,
-             "OpenDecider-small and Jeff-Gemma4 are text-only; Bongard-mini has no video path; Kev does not consume "
-             "image or video media. Their full result is therefore —, never a media-stripped score. On the 724-record "
-        "text-only subset, Qwen3.8-27B scores 66.44%, Kev-27B 64.23%, and Muse-Glimmer-30B 62.57%.",
+             "TypeSafe Jev has no matching JevJudge result. OpenDecider-small and Jeff-Gemma4 are text-only; "
+             "Bongard-mini has no video path; Kev does not consume image or video media. Their full result is —, never "
+             "a media-stripped score. On the 724-record text-only subset, Qwen3.8-27B scores 66.44%, Kev-27B 64.23%, "
+             "and Muse-Glimmer-30B 62.57%.",
              color=MUTED, fontsize=8.5, wrap=True, linespacing=1.45, va="top")
 
     fig.text(0.065, 0.215, "Protocol and provenance", color=INK, fontsize=12, weight="bold")
