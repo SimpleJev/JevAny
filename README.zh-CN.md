@@ -46,15 +46,15 @@
 
 > **关键结论：**LLM 负责规划，环境或 LLM 提供少量选项，Jev 选择常规动作，LLM 验证并完成任务。
 
-**1 · SQLite 恢复——选择能推进任务的检查动作**
+**1 · Terminal-Bench · `sqlite-db-truncate`——从三个命令中选择一个**
 
-[![Jev 从三个 SQLite 恢复动作中选择原始页面检查，LLM 随后解析并验证](docs/demos/jev-agent-harness-sqlite.gif)](reports/JevAny_Tech_Report_Agent_Harness_Appendix.md#h1-sqlite-recovery-a-meaningful-three-way-decision)
+[![Jev 从三个 Terminal-Bench 命令中选择原始页面检查，LLM 随后解析并验证](docs/demos/jev-agent-harness-sqlite.gif)](reports/JevAny_Tech_Report_Agent_Harness_Appendix.md#h1-sqlite-recovery-a-meaningful-three-way-decision)
 
-**2 · WebShop——一个配对结果：reward 0 → 1，LLM calls 11 → 5**
+**2 · WebShop——从页面动作中选择任务要求的颜色**
 
 [![Jev 选择任务要求的黑色商品选项，LLM 随后选择 11.5 尺码并完成购买](docs/demos/jev-agent-harness-webshop.gif)](docs/demos/jev-agent-harness-traces.json)
 
-**3 · FrozenLake——连续导航决策**
+**3 · FrozenLake——每一步都比较四个方向**
 
 [![LLM 规划一次后，Jev 在 FrozenLake 中连续选择四个依赖当前状态的导航动作](docs/demos/jev-agent-harness-frozen-lake.gif)](results/agent-harness-v1/formal-matrix.md)
 

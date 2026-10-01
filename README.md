@@ -50,15 +50,15 @@ recorded actions and option probabilities.
 > **Key takeaway:** the LLM plans; the environment or LLM supplies a short menu;
 > Jev picks the routine action; the LLM verifies and finishes the task.
 
-**1 · SQLite recovery — choose the inspection that unlocks the task**
+**1 · Terminal-Bench · `sqlite-db-truncate` — select one of three commands**
 
-[![Jev choosing raw-page inspection from three SQLite recovery actions, followed by LLM parsing and verification](docs/demos/jev-agent-harness-sqlite.gif)](reports/JevAny_Tech_Report_Agent_Harness_Appendix.md#h1-sqlite-recovery-a-meaningful-three-way-decision)
+[![Jev selecting raw-page inspection from three Terminal-Bench commands before LLM parsing and verification](docs/demos/jev-agent-harness-sqlite.gif)](reports/JevAny_Tech_Report_Agent_Harness_Appendix.md#h1-sqlite-recovery-a-meaningful-three-way-decision)
 
-**2 · WebShop — one paired result: reward 0 → 1, LLM calls 11 → 5**
+**2 · WebShop — select the required color from the page actions**
 
 [![Jev selecting the required black product option, followed by the LLM choosing size 11.5 and completing the purchase](docs/demos/jev-agent-harness-webshop.gif)](docs/demos/jev-agent-harness-traces.json)
 
-**3 · FrozenLake — repeated navigation decisions**
+**3 · FrozenLake — compare four directions at every state**
 
 [![Jev choosing four state-dependent navigation actions after one LLM plan in FrozenLake](docs/demos/jev-agent-harness-frozen-lake.gif)](results/agent-harness-v1/formal-matrix.md)
 
