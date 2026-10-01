@@ -41,7 +41,7 @@ def check(url: str, output: Path) -> None:
         page.goto(url, wait_until="networkidle")
         page.evaluate("document.fonts.ready")
         page.add_style_tag(content="html { scroll-behavior: auto !important; }")
-        assert page.title() == "JevAny: Decision Models"
+        assert page.title() == "JevAny: Train and deploy System 1 decision models"
         assert page.locator(".ambient-video").count() == 1
         page.wait_for_function("[...document.querySelectorAll('.ambient-video')].every(v => v.currentTime > 0)")
         assert page.locator(".ambient-video").get_attribute("src").endswith("/grid.webm")
