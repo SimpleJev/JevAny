@@ -156,6 +156,17 @@ The final directory contains the adapter, tokenizer, `head.pt`,
 different checkpoint, `selection.json` records that path; the root directory
 always holds the final weights. Serve the selected path explicitly.
 
+### Resuming an interrupted run
+
+Add `--save-state-every-steps N` to write `checkpoints/step-*` every N optimizer
+steps. Each is a normal servable checkpoint plus `trainer_state.pt` (optimizer,
+learning-rate schedule, data position, counters) and one `rng-rank*.pt` per
+process. To continue after an interruption, repeat the same command with a new
+`--out` and `--resume-from runs/my-jev/checkpoints/step-000200`. The resumed run
+produces the same weights as an uninterrupted one. Settings that change the
+trajectory, and the number of processes, must match; JevAny rejects a mismatch
+before training. Resuming starts a new W&B run.
+
 SFT is the default recipe. RLCR is an experimental continuation with calibration
 rewards. Measure task accuracy and calibration on your own held-out data before selecting
 a checkpoint. See [the objective](ALGORITHM.md) and [release results](EVALUATION.md).
