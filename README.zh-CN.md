@@ -321,7 +321,9 @@ Laya 会静默截断到 `max_len=512`，因此不进入 full-context 主表；Ke
 **113.54 ms 降至 30.53 ms（3.72×）**；融合 SDPA 加 CUDA Graph 将
 Muse-Glimmer-30B 从 **100.71 ms 降至 43.25 ms（2.33×）**。
 两次测量均未改变 argmax。下表对 27B 与 30B 使用 H200 headline 实测，
-对 4B 保留原有的同硬件 A100-40GB 对照。延迟仅可在同一行内比较。
+对 4B 保留原有的同硬件 A100-40GB 对照。图中的菱形是 27B/30B 的 H200
+加速箭头，圆点是 A100 对照；H200 点不参与 A100 frontier。延迟仅可在
+同一行内比较。
 
 [![加速前后 JevAny 与其他决策模型的准确率-延迟对比](docs/efficiency-latency.png)](docs/EFFICIENCY.md)
 
