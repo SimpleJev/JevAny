@@ -12,7 +12,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
-from matplotlib.ticker import FuncFormatter
+from matplotlib.ticker import FuncFormatter, NullFormatter
 
 
 JEVANY = "#2f7ed8"
@@ -41,38 +41,38 @@ LABELS = {
 
 OFFSETS = {
     "transfer": {
-        "JevAny-Qwen3.5-4B": (-4, 18),
-        "JevAny-Qwen3.5-4B-Direct-Token": (-4, -23),
-        "JevAny-Gemma-4B": (-4, -4),
-        "JevAny-Qwen3.8-27B": (-4, 15),
-        "JevAny-Muse-Glimmer-30B": (7, -18),
-        "Bespoke-Nimble-9B": (7, 4),
-        "Intern-Decision-4B": (7, -12),
-        "Intern-Decision-2B": (7, -8),
-        "Intern-Decision-0.8B": (7, -8),
-        "decider-4b": (7, -12),
-        "decider-2b": (7, -8),
-        "Jev-Omni": (7, 9),
-        "Laya": (7, -8),
-        "Open-Jev-27B-v1.1": (7, -8),
-        "Open-Jev-9B": (7, -8),
+        "JevAny-Qwen3.5-4B": (-12, 18, "right"),
+        "JevAny-Qwen3.5-4B-Direct-Token": (-12, -22, "right"),
+        "JevAny-Gemma-4B": (-12, 0, "right"),
+        "JevAny-Qwen3.8-27B": (0, 17, "center"),
+        "JevAny-Muse-Glimmer-30B": (8, -20, "left"),
+        "Bespoke-Nimble-9B": (8, 3, "left"),
+        "Intern-Decision-4B": (8, -14, "left"),
+        "Intern-Decision-2B": (8, -14, "left"),
+        "Intern-Decision-0.8B": (8, -14, "left"),
+        "decider-4b": (8, -14, "left"),
+        "decider-2b": (8, -14, "left"),
+        "Jev-Omni": (-8, 12, "right"),
+        "Laya": (8, -12, "left"),
+        "Open-Jev-27B-v1.1": (8, -14, "left"),
+        "Open-Jev-9B": (8, -14, "left"),
     },
     "jevbench": {
-        "JevAny-Qwen3.5-4B": (-4, -3),
-        "JevAny-Qwen3.5-4B-Direct-Token": (-4, 17),
-        "JevAny-Gemma-4B": (-4, -20),
-        "JevAny-Qwen3.8-27B": (-4, 15),
-        "JevAny-Muse-Glimmer-30B": (7, -18),
-        "Bespoke-Nimble-9B": (7, -12),
-        "Intern-Decision-4B": (7, 10),
-        "Intern-Decision-2B": (7, -8),
-        "Intern-Decision-0.8B": (7, -8),
-        "decider-4b": (7, -11),
-        "decider-2b": (7, 9),
-        "Jev-Omni": (7, -11),
-        "Laya": (7, -8),
-        "Open-Jev-27B-v1.1": (7, -8),
-        "Open-Jev-9B": (7, -8),
+        "JevAny-Qwen3.5-4B": (-12, -14, "right"),
+        "JevAny-Qwen3.5-4B-Direct-Token": (-12, 16, "right"),
+        "JevAny-Gemma-4B": (-12, -18, "right"),
+        "JevAny-Qwen3.8-27B": (0, 17, "center"),
+        "JevAny-Muse-Glimmer-30B": (8, -20, "left"),
+        "Bespoke-Nimble-9B": (8, -14, "left"),
+        "Intern-Decision-4B": (0, 15, "center"),
+        "Intern-Decision-2B": (8, -14, "left"),
+        "Intern-Decision-0.8B": (8, -14, "left"),
+        "decider-4b": (8, -13, "left"),
+        "decider-2b": (8, 9, "left"),
+        "Jev-Omni": (8, -14, "left"),
+        "Laya": (8, -12, "left"),
+        "Open-Jev-27B-v1.1": (8, -14, "left"),
+        "Open-Jev-9B": (8, -14, "left"),
     },
 }
 
@@ -105,8 +105,8 @@ def frontier(points: list[tuple[float, float, str]]) -> list[tuple[float, float,
 
 def plot(data: dict, output: Path) -> None:
     models = grouped(data["rows"])
-    fig, axes = plt.subplots(1, 2, figsize=(18, 10), dpi=150)
-    fig.subplots_adjust(left=0.055, right=0.985, top=0.80, bottom=0.18, wspace=0.17)
+    fig, axes = plt.subplots(1, 2, figsize=(18, 10.133), dpi=150)
+    fig.subplots_adjust(left=0.055, right=0.985, top=0.80, bottom=0.19, wspace=0.17)
     best_points: dict[str, list[tuple[float, float, str]]] = {"transfer": [], "jevbench": []}
 
     for ax, suite, title in zip(axes, ("transfer", "jevbench"), ("Transfer", "JevBench public")):
@@ -130,15 +130,14 @@ def plot(data: dict, output: Path) -> None:
                             arrowprops=dict(arrowstyle="-|>", color=arrow, lw=1.8), zorder=2)
             x, y = best[suite]["median_ms"], best[suite]["accuracy"]
             best_points[suite].append((x, y, model))
-            offset = OFFSETS.get(suite, {}).get(model, (6, -8 if not ours else 7))
-            ax.annotate(LABELS.get(model, model), (x, y), xytext=offset,
+            dx, dy, align = OFFSETS.get(suite, {}).get(model, (7, -10, "left"))
+            ax.annotate(LABELS.get(model, model), (x, y), xytext=(dx, dy),
                         textcoords="offset points", fontsize=10.5,
                         color="#151515" if ours else "#666666",
-                        fontweight="bold" if ours else "normal")
+                        fontweight="bold" if ours else "normal", ha=align)
 
         edge = frontier(best_points[suite])
         ax.plot([p[0] for p in edge], [p[1] for p in edge], color=FRONTIER, lw=2.2, zorder=1)
-        frontier_models = {p[2] for p in edge}
         for x, y, model in edge:
             if model.startswith("JevAny-"):
                 ax.scatter([x], [y], s=520, color="#cfe3fb", alpha=0.9,
@@ -146,6 +145,11 @@ def plot(data: dict, output: Path) -> None:
 
         ax.set_xscale("log")
         ax.set_xlim(6.7, 3200)
+        ax.set_xticks([10, 20, 50, 100, 200, 500, 1000, 2000])
+        ax.xaxis.set_major_formatter(FuncFormatter(
+            lambda value, _: f"{value / 1000:g} s" if value >= 1000 else f"{value:g} ms"
+        ))
+        ax.xaxis.set_minor_formatter(NullFormatter())
         ax.grid(True, color="#e5e5e2", linewidth=1)
         ax.set_axisbelow(True)
         ax.set_title(title, loc="left", fontsize=17, fontweight="bold", pad=12)
@@ -169,17 +173,19 @@ def plot(data: dict, output: Path) -> None:
         Line2D([], [], marker="o", linestyle="", markerfacecolor="white",
                markeredgecolor=JEVANY, markeredgewidth=2, markersize=9, label="JevAny, before"),
         Line2D([], [], marker="o", linestyle="", markerfacecolor=OTHER,
-               markeredgecolor="white", markersize=8, label="Comparison, after"),
+               markeredgecolor="white", markersize=8, label="Third-party, after"),
         Line2D([], [], marker="o", linestyle="", markerfacecolor="white",
-               markeredgecolor=OTHER, markeredgewidth=2, markersize=8, label="Comparison, before"),
+               markeredgecolor=OTHER, markeredgewidth=2, markersize=8, label="Third-party, before"),
+        Line2D([], [], marker="o", linestyle="", markerfacecolor="#cfe3fb",
+               markeredgecolor="none", markersize=16, label="JevAny on the frontier"),
         Line2D([], [], color=FRONTIER, lw=2.5, label="Pareto frontier (after)"),
     ]
     fig.legend(handles=legend, loc="upper left", bbox_to_anchor=(0.052, 0.88),
-               ncol=5, frameon=False, fontsize=12, handlelength=1.5, columnspacing=1.7)
+               ncol=6, frameon=False, fontsize=11.5, handlelength=1.4, columnspacing=1.4)
     fig.text(0.055, 0.055,
-             "After: optional linear-attention kernels and fused SDPA; single-GPU JevAny models also use CUDA graphs. "
-             "JevAny-27B/30B and Open-Jev-27B stay layer-sharded because they do not fit on one 40 GB GPU. "
-             "Comparison-model timings include each runtime's tokenization; JevAny timings cover the model call.",
+             "After: flash-linear-attention + causal-conv1d for models with Gated DeltaNet layers, plus fused SDPA.\n"
+             "Single-GPU JevAny models also use CUDA graphs; 27B/30B models stay layer-sharded over 40 GB GPUs.\n"
+             "JevAny times the model call; third-party timings include each runtime's tokenization.",
              fontsize=10.5, color="#5d5d5a", wrap=True)
     output.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output, facecolor="white")

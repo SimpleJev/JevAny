@@ -314,20 +314,16 @@ with `--device-map auto` and gain 8–10%.
 
 [![Accuracy vs median latency before and after acceleration for JevAny and other decision models](docs/efficiency-latency.png)](docs/EFFICIENCY.md)
 
-<div align="center">
-
-| Model | GPUs | Default | Accelerated | Transfer accuracy |
-|:---|---:|---:|---:|---:|
-| JevAny-Qwen3.5-4B | 1 | 104.6 ms | **25.3 ms** | 78.68% → 78.87% |
-| JevAny-Qwen3.5-4B-Direct-Token | 1 | 106.4 ms | **25.9 ms** | 78.11% → 78.39% |
-| JevAny-Gemma-4B | 1 | 106.3 ms | **31.9 ms** | 70.84% → 70.84% |
-| JevAny-Muse-Glimmer-30B | 3 | 171.2 ms | **154.2 ms** | 83.37% → 83.37% |
-| JevAny-Qwen3.8-27B<sup>†</sup> | 3 | 240.2 ms | **220.1 ms** | 85.66% → 85.66% |
+| Model | GPUs | Default | Accelerated | Speed-up | Transfer accuracy |
+|:---|---:|---:|---:|---:|---:|
+| JevAny-Qwen3.5-4B | 1 | 104.6 ms | **25.3 ms** | **4.1×** | 78.68% → 78.87% |
+| JevAny-Qwen3.5-4B-Direct-Token | 1 | 106.4 ms | **25.9 ms** | **4.1×** | 78.11% → 78.39% |
+| JevAny-Gemma-4B | 1 | 106.3 ms | **31.9 ms** | **3.3×** | 70.84% → 70.84% |
+| JevAny-Muse-Glimmer-30B | 3 | 171.2 ms | **154.2 ms** | **1.11×** | 83.37% → 83.37% |
+| JevAny-Qwen3.8-27B<sup>†</sup> | 3 | 240.2 ms | **220.1 ms** | **1.09×** | 85.66% → 85.66% |
 
 Median per-request latency on Transfer-v9, batch size 1.
 <sup>†</sup> Measured at step 22,160.
-
-</div>
 
 [Full tables, setup and other models](docs/EFFICIENCY.md) ·
 [How to enable](docs/DEPLOYMENT.md#optional-cuda-acceleration) ·
