@@ -42,6 +42,40 @@
 
 [![JevAny 在机器人、浏览器、软件、实验室和出行任务中选择动作](docs/demos/jevany-cases.gif)](docs/CASES.md)
 
+### Jev 作为 LLM Agent Harness
+
+Jev 也可以嵌入 LLM agent 循环：受控环境和网页任务的候选来自环境或 DOM；终端 harness
+的候选由 frontier LLM 生成。终端协议把规划、精确编辑、恢复和完成判断留给 LLM，Jev
+只选择模型声明的 routine 动作并在低置信度时回退。Terminal D0 使用相同候选协议；跨域
+baseline 则不提供 delegation tool，optional agent 可以选择 benchmark 暴露的任意动作，
+因此衡量的是完整 sandbox-harness intervention，而非纯 selector 或生产安全消融。
+
+任务开放度（**T0–T4**）与委托程度（**D0–D4**）是两条独立轴，详见
+[分层协议](docs/experiments/AGENT_HARNESS_FRONTIER_PROTOCOL.md)。实践上应当：只委托选择，
+不委托解题；候选必须是 2–4 个有效且实质不同的动作；策略、精确编辑、恢复和最终验证留给
+LLM；只批处理短而可组合的动作；始终保留基于置信度的 LLM fallback。
+
+| 证据 | 结果 | 结论 |
+|---|---|---|
+| GPT-5.6-sol · FrozenLake，10 pairs | 成功率保持 100%；calls −64.4%，tokens −63.1%，时间 −37.6% | 明确的受控环境收益 |
+| WebShop，10 pairs | 50%→60%，资源小幅下降 | 正向信号，但区间跨零 |
+| WebArena，固定 6 tasks | 50%→50%，calls/tokens 增加 | aggregate 无收益 |
+| Terminal-Bench，6 task pairs | 1/6→3/6，calls −9.0% | 单次探索，不能作因果结论 |
+
+**真实决策轨迹。** SQLite 恢复中，Jev 以 `0.81` 在原始页面、schema 和工具检查间
+选择原始页面，LLM 随后编写解析器并完成验证。WebShop seed `3100` 中，Jev 以 `0.99`
+选择了错误的近似颜色；LLM 观察失败后重新搜索并完成精确购买。这两个案例分别展示了
+有用的有界选择，以及为什么全局任务所有权必须保留给 LLM。
+
+**关键结论：**应该最大化“有价值的 LLM 调用替代”，而不是最大化委托率。Jev 适合
+有界、可逆、可局部判断的选择；当 agent 缺少任务级能力时，Jev 无法弥补。详见
+[96-pair 完整矩阵](reports/JevAny_Tech_Report_Agent_Harness_Appendix.md#f-repeated-cross-domain-matrix)、
+[Terminal-Bench 分解与委托 frontier](reports/JevAny_Tech_Report_Agent_Harness_Appendix.md#g-open-terminal-exploration)、
+[SQLite 决策 demo](reports/JevAny_Tech_Report_Agent_Harness_Appendix.md#h1-sqlite-recovery-a-meaningful-three-way-decision)、
+[WebShop 恢复 demo](reports/JevAny_Tech_Report_Agent_Harness_Appendix.md#h4-webshop-a-confident-local-mistake-and-frontier-recovery)、
+[任务/委托分层协议](docs/experiments/AGENT_HARNESS_FRONTIER_PROTOCOL.md)，以及
+[合并版技术报告](reports/JevAny_Tech_Report_with_Agent_Harness.pdf)。
+
 ## 📑 目录
 
 - [🎮 结果与演示](#结果与演示)
@@ -253,10 +287,11 @@ JevAny 决策可参考[集成文档](docs/INTEGRATIONS.md)。
 
 ## 📚 6. 文档与贡献 <a name="文档与贡献"></a>
 
-[训练](docs/TRAINING.md) · [部署](docs/DEPLOYMENT.md) · [API](docs/API.md) · [数据](docs/DATA.md) · [评测](docs/EVALUATION.md) · [贡献指南](CONTRIBUTING.md)
+[训练](docs/TRAINING.md) · [部署](docs/DEPLOYMENT.md) · [API](docs/API.md) · [数据](docs/DATA.md) · [评测](docs/EVALUATION.md) · [Agent harness 协议](docs/experiments/AGENT_HARNESS_FRONTIER_PROTOCOL.md) · [贡献指南](CONTRIBUTING.md)
 
 欢迎贡献模型适配、评测或应用示例，开发步骤见[贡献指南](CONTRIBUTING.md)。
-[技术报告](reports/JevAny_Tech_Report.pdf)介绍了模型设计、多模态路径、实验与开放问题。
+[合并版技术报告](reports/JevAny_Tech_Report_with_Agent_Harness.pdf)介绍了模型设计、多模态路径、
+agent-harness 实验、负面结果与开放问题；[原始发布报告](reports/JevAny_Tech_Report.pdf)保持不变。
 
 代码和入门数据采用 Apache-2.0。部分组件改编自 [Kev](https://github.com/jaredpalmer/kev)，
 归属说明见 [NOTICE](NOTICE) 和 [ACKNOWLEDGEMENTS.md](ACKNOWLEDGEMENTS.md)。
