@@ -314,6 +314,8 @@ and gain only from linear-attention kernels and fused SDPA.
 
 [![Accuracy vs median latency before and after acceleration for JevAny and other decision models](docs/efficiency-latency.png)](docs/EFFICIENCY.md)
 
+[![Median latency of each JevAny release before and after acceleration](docs/efficiency-ablation.svg)](docs/EFFICIENCY.md)
+
 | Model | A100 GPUs | Default | Accelerated | Speed-up | Transfer accuracy |
 |:---|---:|---:|---:|---:|---:|
 | JevAny-Qwen3.5-4B | 1 | 104.6 ms | **25.3 ms** | **4.1×** | 78.68% → 78.87% |

@@ -292,6 +292,8 @@ NLL、Brier 和 ECE 均在 Transfer 上计算。
 
 [![加速前后 JevAny 与其他决策模型的准确率-延迟对比](docs/efficiency-latency.png)](docs/EFFICIENCY.md)
 
+[![加速前后各 JevAny 版本的中位延迟](docs/efficiency-ablation.svg)](docs/EFFICIENCY.md)
+
 | 模型 | A100 GPU 数 | 默认 | 加速后 | 加速比 | Transfer 准确率 |
 |:---|---:|---:|---:|---:|---:|
 | JevAny-Qwen3.5-4B | 1 | 104.6 ms | **25.3 ms** | **4.1×** | 78.68% → 78.87% |
