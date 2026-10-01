@@ -105,8 +105,8 @@ def frontier(points: list[tuple[float, float, str]]) -> list[tuple[float, float,
 
 def draw_featured_card(ax: plt.Axes, row: dict) -> None:
     panel = row["panel"]
-    before = row["default"]
-    after = row["accelerated"]
+    before = row["before"]
+    after = row["after"]
     ax.set_facecolor("#f4f8fd")
     for spine in ax.spines.values():
         spine.set_color("#cfe3fb")

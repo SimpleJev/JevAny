@@ -311,13 +311,13 @@ On one H200, CUDA Graphs cut Qwen3.8-27B median latency from **113.54 to
 Muse-Glimmer-30B from **100.71 to 43.25 ms (2.33×)** on a balanced 44-request
 Transfer panel.
 Accuracy stayed at 207/231 and 38/44, with no argmax changes. The table uses
-each model's best measured single-GPU result: A100-40GB for the 4B models and
-H200 for the 27B and 30B models. Latency is comparable within each row; the
-fixed evaluation panels are listed explicitly.
+the H200 headline measurements for 27B and 30B, while retaining the original
+apples-to-apples A100-40GB comparison for the 4B models. Latency is comparable
+within each row; the fixed evaluation panels are listed explicitly.
 
 [![Accuracy vs median latency before and after acceleration for JevAny and other decision models](docs/efficiency-latency.png)](docs/EFFICIENCY.md)
 
-| Model | Hardware | Default | Accelerated | Speed-up | Accuracy check | Fixed panel |
+| Model | Hardware | Before | After | Speed-up | Accuracy check | Fixed panel |
 |:---|:---:|---:|---:|---:|---:|:---|
 | JevAny-Qwen3.5-4B | A100 | 104.6 ms | **25.3 ms** | **4.1×** | 78.68% → 78.87% | Transfer, 1,046 |
 | JevAny-Qwen3.5-4B-Direct-Token | A100 | 106.4 ms | **25.9 ms** | **4.1×** | 78.11% → 78.39% | Transfer, 1,046 |

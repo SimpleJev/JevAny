@@ -11,13 +11,14 @@
         "suite": "JevBench public",
         "records": 231
       },
-      "default": {
+      "before": {
+        "configuration": "BF16 merged LoRA + FLA + fused SDPA; CUDA graphs disabled",
         "median_ms": 113.54,
         "correct": 207,
         "total": 231
       },
-      "accelerated": {
-        "configuration": "fused SDPA + CUDA graphs",
+      "after": {
+        "configuration": "same matched path; CUDA graphs enabled",
         "median_ms": 30.53,
         "correct": 207,
         "total": 231
@@ -33,20 +34,36 @@
         "suite": "Transfer balanced sample",
         "records": 44
       },
-      "default": {
+      "before": {
+        "configuration": "unmerged LoRA + math SDPA; CUDA graphs disabled",
         "median_ms": 100.71,
         "correct": 38,
         "total": 44
       },
-      "accelerated": {
-        "configuration": "fused SDPA + CUDA graphs",
+      "intermediate": {
+        "configuration": "unmerged LoRA + fused SDPA; CUDA graphs disabled",
+        "median_ms": 87.6799295656383,
+        "median_speedup_from_before": 1.1485907560796185
+      },
+      "after": {
+        "configuration": "unmerged LoRA + fused SDPA + CUDA graphs",
         "median_ms": 43.25,
         "correct": 38,
-        "total": 44
+        "total": 44,
+        "median_speedup_from_intermediate": 2.0273546618482214,
+        "graph_calls": 96,
+        "eager_calls": 0
       },
       "median_speedup": 2.33,
       "argmax_flips": 0,
       "source": "single-H200 matched audit",
+      "code_revision": "f5110b8b87b63f230f26c9cecd5fd13968bc4463",
+      "checkpoint": {
+        "base_revision": "a4e59da52a7bc87ae7251dd5545c0dd437c44b68",
+        "adapter_sha256": "87434122ffa2cc9438baf1f0d6375fec75f47f246d070eb50eb2a543859c4832",
+        "head_sha256": "c19591f6293c52ab796f85e5db6e34fc08f5cfbec294614e16a76d2c476f69b1"
+      },
+      "panel_sha256": "0b6a56bd063bdf82fbecd5bb77c61f070f3c0168b6ce9f07b838147a3eafc511",
       "raw_comparison_sha256": "aa532515e591a5d518d66d82bbfd3c05f5b7db126bcf4f8fe2629dd844410218"
     }
   ]

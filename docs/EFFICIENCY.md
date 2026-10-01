@@ -18,7 +18,7 @@ and [`results/efficiency-a100-v1.json`](../results/efficiency-a100-v1.json).
 Whole-model CUDA Graph capture gives the largest-model speedups when the model
 fits on one H200:
 
-| Model | Hardware | Fixed latency panel | Default median | Accelerated median | Speed-up | Accuracy |
+| Model | Hardware | Fixed latency panel | Before median | After median | Speed-up | Accuracy |
 |:---|:---:|:---|---:|---:|---:|---:|
 | JevAny-Qwen3.8-27B | H200 | JevBench public, 231 | 113.54 ms | **30.53 ms** | **3.72×** | 207/231 → 207/231 |
 | JevAny-Muse-Glimmer-30B | H200 | Transfer balanced sample, 44 | 100.71 ms | **43.25 ms** | **2.33×** | 38/44 → 38/44 |

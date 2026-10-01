@@ -288,12 +288,12 @@ NLL、Brier 和 ECE 均在 Transfer 上计算。
 在单张 H200 上，CUDA Graph 将 Qwen3.8-27B 的中位延迟从
 **113.54 ms 降至 30.53 ms（3.72×）**；融合 SDPA 加 CUDA Graph 将
 Muse-Glimmer-30B 从 **100.71 ms 降至 43.25 ms（2.33×）**。
-两次测量均未改变 argmax。下表采用各模型最佳的单卡实测：4B 使用
-A100-40GB，27B 与 30B 使用 H200。延迟仅可在同一行内比较。
+两次测量均未改变 argmax。下表对 27B 与 30B 使用 H200 headline 实测，
+对 4B 保留原有的同硬件 A100-40GB 对照。延迟仅可在同一行内比较。
 
 [![加速前后 JevAny 与其他决策模型的准确率-延迟对比](docs/efficiency-latency.png)](docs/EFFICIENCY.md)
 
-| 模型 | 硬件 | 默认 | 加速后 | 加速比 | 准确率检查 | 固定面板 |
+| 模型 | 硬件 | 加速前 | 加速后 | 加速比 | 准确率检查 | 固定面板 |
 |:---|:---:|---:|---:|---:|---:|:---|
 | JevAny-Qwen3.5-4B | A100 | 104.6 ms | **25.3 ms** | **4.1×** | 78.68% → 78.87% | Transfer，1,046 |
 | JevAny-Qwen3.5-4B-Direct-Token | A100 | 106.4 ms | **25.9 ms** | **4.1×** | 78.11% → 78.39% | Transfer，1,046 |

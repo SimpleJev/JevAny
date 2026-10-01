@@ -346,17 +346,17 @@ NLL, Brier and ECE are measured on Transfer.
 Muse-Glimmer-30B from <strong>100.71 to 43.25 ms (2.33×)</strong> on a balanced 44-request
 Transfer panel.
 Accuracy stayed at 207/231 and 38/44, with no argmax changes. The table uses
-each model's best measured single-GPU result: A100-40GB for the 4B models and
-H200 for the 27B and 30B models. Latency is comparable within each row; the
-fixed evaluation panels are listed explicitly.</p>
+the H200 headline measurements for 27B and 30B, while retaining the original
+apples-to-apples A100-40GB comparison for the 4B models. Latency is comparable
+within each row; the fixed evaluation panels are listed explicitly.</p>
 <p><a href="EFFICIENCY.html"><img loading="lazy" alt="Accuracy vs median latency before and after acceleration for JevAny and other decision models" src="../files/docs/efficiency-latency.png" /></a></p>
 <div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
 <thead>
 <tr>
 <th style="text-align: left;">Model</th>
 <th style="text-align: center;">Hardware</th>
-<th style="text-align: right;">Default</th>
-<th style="text-align: right;">Accelerated</th>
+<th style="text-align: right;">Before</th>
+<th style="text-align: right;">After</th>
 <th style="text-align: right;">Speed-up</th>
 <th style="text-align: right;">Accuracy check</th>
 <th style="text-align: left;">Fixed panel</th>
