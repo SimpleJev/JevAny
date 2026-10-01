@@ -1,26 +1,21 @@
-"""Draw the JevAny 4B latency ablation from results/efficiency-a100-v1.json.
+"""Animate the JevAny 4B latency ablation from results/efficiency-a100-v1.json.
 
-Writes docs/efficiency-ablation.svg (both suites) and docs/efficiency-ablation.gif
-(Transfer-v9, every configuration racing on the same slowed-down clock).
+Writes docs/efficiency-ablation.gif: every Transfer-v9 configuration races on the
+same slowed-down clock.
 """
 
 from pathlib import Path
 import json
 
 import matplotlib
-
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-from matplotlib.patches import Patch
 from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "results" / "efficiency-a100-v1.json"
-SVG_OUT = ROOT / "docs" / "efficiency-ablation.svg"
 GIF_OUT = ROOT / "docs" / "efficiency-ablation.gif"
 
 INK, MUTED, RULE, PAGE = "#213248", "#64748B", "#E4E9EF", "#FCFCFB"
-REMAINING, KERNEL, GRAPH, DEFAULT = "#278577", "#A8D5CB", "#E8884A", "#8493A6"
+REMAINING, GRAPH, DEFAULT = "#278577", "#E8884A", "#8493A6"
 
 # Only releases that share one GPU and one fixed panel; 27B and 30B are reported
 # from H200 runs on different panels, so their latencies must not share a clock.
@@ -36,7 +31,6 @@ STAGES = [
     ("+ kernels, fused SDPA", "+ kernels + fused SDPA"),
     ("+ CUDA graphs", "+ kernels + fused SDPA + CUDA graphs"),
 ]
-SUITES = [("transfer", "Transfer-v9"), ("jevbench", "JevBench public")]
 
 
 def load_ladders(suite: str) -> list[tuple[str, int, list[tuple[str, float]]]]:
@@ -56,73 +50,6 @@ def load_ladders(suite: str) -> list[tuple[str, int, list[tuple[str, float]]]]:
 def speedup_text(total: float, final: float) -> str:
     ratio = total / final
     return f"{ratio:.2f}×" if ratio < 2 else f"{ratio:.1f}×"
-
-
-def draw_svg() -> None:
-    plt.rcParams.update({"font.family": "DejaVu Sans"})
-    fig, axes = plt.subplots(1, 2, figsize=(15.0, 5.2), facecolor=PAGE,
-                             gridspec_kw={"wspace": 0.22})
-    fig.text(0.04, 0.95, "Where the latency goes: each acceleration option on the 4B releases",
-             ha="left", va="top", fontsize=19, fontweight="bold", color=INK)
-    fig.text(0.04, 0.86, "Bar length is the Default median latency, split into what each option "
-             "removes and what is left. One A100-40GB, batch size 1.",
-             ha="left", va="top", fontsize=11.5, color=MUTED)
-    fig.subplots_adjust(left=0.04, right=0.975, top=0.70, bottom=0.2)
-    renderer = fig.canvas.get_renderer()
-
-    for ax, (suite, title) in zip(axes, SUITES):
-        ladders = load_ladders(suite)
-        ax.set_facecolor(PAGE)
-        ax.set_xlim(0, max(stops[0][1] for _, _, stops in ladders) * 1.2)
-        ax.set_ylim(-0.75, len(ladders) - 0.2)
-        to_px = ax.transData.transform
-
-        for y, (short, gpus, stops) in zip(range(len(ladders) - 1, -1, -1), ladders):
-            total, final = stops[0][1], stops[-1][1]
-            segments = [
-                (KERNEL if stage == "+ kernels, fused SDPA" else GRAPH, prev - ms, "#20483F" if stage != "+ CUDA graphs" else "white")
-                for (_, prev), (stage, ms) in zip(stops, stops[1:]) if prev - ms > 0
-            ]
-            segments.append((REMAINING, final, "white"))
-            left = 0.0
-            for color, width, text_color in segments:
-                ax.barh(y, width, left=left, height=0.46, color=color, lw=0)
-                label = f"{width:.0f} ms" if color == REMAINING else f"−{width:.0f}"
-                text = ax.text(left + width / 2, y, label, ha="center", va="center",
-                               fontsize=10, fontweight="bold", color=text_color)
-                text_px = text.get_window_extent(renderer).width
-                bar_px = to_px((left + width, y))[0] - to_px((left, y))[0]
-                if text_px + 8 > bar_px:
-                    text.set_position((left + width / 2, y - 0.27))
-                    text.set_va("top")
-                    text.set_color(MUTED)
-                    text.set_fontsize(9)
-                left += width
-
-            ax.text(total * 1.02, y, speedup_text(total, final), ha="left", va="center",
-                    fontsize=12, fontweight="bold", color=INK)
-            ax.text(0, y + 0.31, short + ("" if gpus == 1 else f" · {gpus} GPUs"), ha="left",
-                    va="bottom", fontsize=11.5, fontweight="bold", color=INK)
-            ax.text(total * 1.02, y + 0.31, f"from {total:.0f} ms", ha="left", va="bottom",
-                    fontsize=9, color=MUTED)
-
-        ax.set_title(title, loc="left", fontsize=13.5, fontweight="bold", color=INK, pad=14)
-        ax.set_xlabel("Median latency per request (ms)", fontsize=11, color=MUTED)
-        ax.set_yticks([])
-        ax.tick_params(axis="x", colors=MUTED, labelsize=10)
-        ax.xaxis.grid(True, color=RULE, lw=0.9)
-        ax.set_axisbelow(True)
-        for side in ("top", "right", "left"):
-            ax.spines[side].set_visible(False)
-        ax.spines["bottom"].set_color(RULE)
-
-    handles = [Patch(facecolor=KERNEL, label="saved by kernels / fused SDPA"),
-               Patch(facecolor=GRAPH, label="saved by CUDA graphs"),
-               Patch(facecolor=REMAINING, label="remaining latency")]
-    fig.legend(handles=handles, loc="lower left", bbox_to_anchor=(0.035, 0.0), ncol=3,
-               frameon=False, fontsize=10.5, labelcolor=INK)
-    fig.savefig(SVG_OUT, format="svg", facecolor=PAGE, metadata={"Date": None})
-    plt.close(fig)
 
 
 # GIF: one ms of model latency plays as SLOWDOWN ms of animation.
@@ -195,9 +122,8 @@ def draw_gif() -> None:
 
 
 def main() -> None:
-    draw_svg()
     draw_gif()
-    print(f"wrote {SVG_OUT.relative_to(ROOT)} and {GIF_OUT.relative_to(ROOT)}")
+    print(f"wrote {GIF_OUT.relative_to(ROOT)}")
 
 
 if __name__ == "__main__":
