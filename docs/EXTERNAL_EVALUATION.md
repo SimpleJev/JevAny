@@ -6,57 +6,113 @@
 
 We ran the complete `LocalLLaMA/typed-decisions` test split at revision
 `d0e2f0c4`: 400 cases, five questions per case and 2,000 scored decisions.
-Each local model ran on one H200 with batch size 1. Latency is per five-decision
-case; published comparator latency uses different hardware and is not compared.
+Every locally rerun model completed all 2,000 decisions. Runs used one H200,
+batch size 1 and the checkpoint's shipped calibration. Latency is per
+five-decision case; published comparator latency uses different hardware and is
+not compared.
 The soft gold label for each decision is the mean of three samples from a
 teacher of roughly 4B-class capability. Accuracy is therefore argmax agreement
 with that teacher-derived label, not objective correctness.
 
-| Local model | Accuracy (teacher agreement) ↑ | KL ↓ | Brier ↓ | ECE ↓ | Median / case ↓ |
+| Locally rerun model | Source | Accuracy ↑ | KL ↓ | Brier ↓ | ECE ↓ | Median / case ↓ |
+|---|---|---:|---:|---:|---:|---:|
+| **JevAny-Qwen3.8-27B** | Ours | **72.80%** | 0.293 | 0.131 | 0.053 | 279.8 ms |
+| JevAny-Muse-Glimmer-30B | Ours | 69.95% | **0.245** | **0.111** | **0.028** | 265.9 ms |
+| JevAny-Qwen3.5-4B-Direct-Token | Ours | 67.20% | 0.435 | 0.179 | 0.082 | 89.4 ms |
+| OpenDecider-small | Open external | 66.65% | 0.210 | 0.117 | 0.075 | 136.5 ms |
+| JevAny-Gemma-4B | Ours | 66.25% | 0.272 | 0.128 | 0.036 | 107.1 ms |
+| JevAny-Qwen3.5-4B | Ours | 63.50% | 0.479 | 0.218 | 0.115 | 85.5 ms |
+| Bongard-mini | Open external | 59.65% | 0.256 | 0.132 | 0.073 | 163.9 ms |
+| Jeff-Gemma4-E2B | Open external | 57.95% | 0.382 | 0.204 | 0.090 | 53.5 ms |
+| Jeff-Qwen3.5-2B | Open external | 55.45% | 0.386 | 0.210 | 0.099 | 42.2 ms |
+| Jeff-Qwen3.5-0.8B | Open external | 49.15% | 0.558 | 0.272 | 0.136 | 41.7 ms |
+| Laya (`55cf4c4`) | Open external | 36.20% | 0.576 | 0.316 | 0.174 | **19.7 ms** |
+
+The pinned dataset card also contains results that were not rerun locally. They
+are displayed separately because hardware, runtime and item-level outputs are
+not available under the local protocol. OpenDecider and Bongard are included
+here only to show their published references; the locally rerun rows above are
+used in the chart.
+
+| Published dataset-card row | Accuracy ↑ | KL ↓ | Brier ↓ | ECE ↓ | Status |
 |---|---:|---:|---:|---:|---:|
-| **JevAny-Qwen3.8-27B** | **72.80%** | 0.293 | 0.131 | 0.053 | 279.8 ms |
-| JevAny-Muse-Glimmer-30B | 69.95% | **0.245** | **0.111** | **0.028** | 265.9 ms |
-| JevAny-Qwen3.5-4B-Direct-Token | 67.20% | 0.435 | 0.179 | 0.082 | 89.4 ms |
-| JevAny-Gemma-4B | 66.25% | 0.272 | 0.128 | 0.036 | 107.1 ms |
-| JevAny-Qwen3.5-4B | 63.50% | 0.479 | 0.218 | 0.115 | 85.5 ms |
-| Laya (`55cf4c4`) | 36.20% | 0.576 | 0.316 | 0.174 | **19.7 ms** |
+| meraGPT Decider 1 | **76.80%** | **0.096** | **0.052** | 0.180 | Published only; not rerun |
+| Liquid AI d1 | 74.20% | 0.475 | 0.155 | 0.124 | Published only; not rerun |
+| TypeSafe Jev 1.13.0 | 72.70% | 1.442 | 0.148 | 0.144 | Published only; not rerun |
+| Featherless Simple Jev | 71.60% | 0.488 | 0.176 | — | Published only; not rerun |
+| prima-ratio + Gemma4 12B | 70.20% | 0.564 | 0.234 | 0.146 | Published open result; not rerun |
+| OpenDecider-small | 67.10% | 0.211 | 0.117 | — | Superseded by local rerun above |
+| Bongard-mini | 59.40% | 0.256 | 0.132 | 0.067 | Superseded by local rerun above |
 
-The exact open Laya rerun reproduces its published 36.2%, validating the
-request conversion. Among our models, 27B leads accuracy, Muse has the best
+The exact Laya rerun reproduces its published 36.2%, validating the request
+conversion. Among our releases, 27B leads accuracy, Muse has the best
 probability metrics, and direct-token improves over the 4B pointer by 3.7
-percentage points at similar latency. Closed hosted systems and dataset-card
-rows that we did not rerun are excluded from this comparison.
-
-[Machine-readable results and provenance](../results/external-decision-evals-20261001/typed-decisions.json)
+percentage points. Benchmark-trained specialist checkpoints, including
+OpenDecider-nano and the Laya Typed Decisions fine-tune, are excluded from the
+zero-shot comparison.
 
 ### JevJudge-Public
 
-We ran all 3,220 JevJudge-Public v0.3 test records at revision `4d576ded`.
-The suite contains 2,214 image, 724 text, and 282 video decisions across 22
-families. Every evaluated model rejected at least one record, so none is
-eligible for a full-suite headline. The accuracy and probability metrics below
-are answered-only internal diagnostics, not full-suite scores; coverage makes
-the context-limit and runtime rejections visible rather than replacing them
-with invented uniform predictions.
+For a common-input comparison, we selected the same nine current/open models
+reported on Typed Decisions and evaluated all 724 records declared
+`modality=text` in JevJudge-Public v0.3 at revision `4d576ded`. Every row below
+uses the same native state and typed question with labels and metadata hidden,
+and the fixed order matches the chart. No input is truncated: over-limit or
+invalid requests are rejected and count wrong in the primary all-requested
+accuracy. Probability metrics are computed on answered rows only and therefore
+must be read with coverage.
 
-| Diagnostic checkpoint | Answered / 3,220 | Coverage | Accuracy ↑ | NLL ↓ | Brier ↓ | ECE ↓ |
-|---|---:|---:|---:|---:|---:|---:|
-| JevAny-Qwen3.8-27B (internal step-022160) | 3,123 | 97.0% | 61.32% | 0.852 | 0.491 | 0.068 |
-| JevAny-Muse-Glimmer-30B | 3,140 | **97.5%** | 58.73% | 0.911 | 0.527 | 0.098 |
-| JevAny-Qwen3.5-4B-Direct-Token | 3,123 | 97.0% | 54.66% | 1.012 | 0.578 | 0.132 |
-| JevAny-Qwen3.5-4B | 3,123 | 97.0% | 54.53% | 1.057 | 0.590 | 0.119 |
-| JevAny-Gemma-4B | 634 | 19.7% | 50.32% | 1.057 | 0.600 | 0.102 |
+| Model | Answered / 724 | Coverage | All-requested accuracy ↑ | Answered accuracy | NLL ↓ | Brier ↓ | ECE ↓ |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| **JevAny-Qwen3.8-27B** | 637 | 88.0% | **58.29%** | 66.25% | **0.838** | **0.480** | 0.094 |
+| JevAny-Qwen3.5-4B-Direct-Token | 637 | 88.0% | 50.55% | 57.46% | 0.947 | 0.536 | 0.095 |
+| JevAny-Qwen3.5-4B | 637 | 88.0% | 50.00% | 56.83% | 1.033 | 0.573 | 0.082 |
+| OpenDecider-small | 724 | 100.0% | 54.97% | 54.97% | 0.971 | 0.547 | **0.033** |
+| Bongard-mini | 724 | 100.0% | 51.24% | 51.24% | 1.048 | 0.594 | 0.068 |
+| Jeff-Gemma4-E2B | 688 | 95.0% | 44.06% | 46.37% | 1.226 | 0.684 | 0.181 |
+| Jeff-Qwen3.5-2B | 693 | 95.7% | 39.64% | 41.41% | 1.237 | 0.693 | 0.205 |
+| Jeff-Qwen3.5-0.8B | 693 | 95.7% | 41.30% | 43.15% | 1.274 | 0.708 | 0.214 |
+| Laya | 724 | 100.0% | 38.67% | 38.67% | 2.293 | 0.717 | 0.208 |
 
-The Qwen3.8-27B row uses internal training checkpoint `step-022160`, not the
-released checkpoint, and is retained only as a diagnostic. Muse answers 17 more
-records than that checkpoint. Gemma's current runtime rejected the native media
-layout, so its text-heavy answered subset is not comparable to the other rows.
-The open Laya checkpoint completed the 724 text records at 38.67%; it has no
-image or video input and is kept as a text-only comparator. Because all models
-reject records and their answered subsets differ, these rows do not define a
-full-suite winner.
+Every model above received the same 724 requested records. Coverage differences
+are consequences of each model's rejection and context behavior, not different
+requested samples. Two additional open Kev rows were locally run on the same
+text set but lack a matching Typed Decisions result, so they remain
+supplemental rather than entering the dual-panel cohort:
 
-[Machine-readable results and provenance](../results/external-decision-evals-20261001/jevjudge-public.json)
+| Supplemental model | Answered / 724 | All-requested accuracy ↑ | Status |
+|---|---:|---:|---|
+| Kev-4B | 637 | 46.41% | Open; locally rerun |
+| Kev-27B | 724 | 38.54% | Open; locally rerun |
+
+This text-only slice represents four roles and has no quality-role records, so
+it is a diagnostic rather than JevJudge's official five-role full-multimodal
+headline. Earlier 3,220-record runs used different answered subsets and an
+internal Qwen checkpoint; they remain archived in
+[`jevjudge-public.json`](../results/external-decision-evals-20261001/jevjudge-public.json)
+but are not used for the main comparison.
+
+#### Reproducibility and tracked provenance
+
+- The chart source is
+  [`external-zero-shot-v1.json`](../results/external-zero-shot-v1.json), and the
+  deterministic renderer is
+  [`plot_external_zero_shot.py`](../scripts/plot_external_zero_shot.py).
+- The source summaries are recorded by repository-relative path and SHA-256 in
+  that artifact: `runs/external-open-baselines-20261001/summary.json` and
+  `runs/jevjudge-open-baselines-20261001/summary.json`. Per-model report and
+  prediction hashes remain in those summaries. The current 4B pointer text
+  slice comes from
+  `results/external-decision-evals-20261001/jevjudge-public.json` (tracked
+  SHA-256 `f2f0de…6bc`) at `step-013850`; its adapter SHA-256 is
+  `5acbae…907f`.
+- Typed Decisions uses dataset revision `d0e2f0c4`, parquet SHA-256
+  `4f294f…b647c`; JevJudge uses revision `4d576ded`, test SHA-256
+  `5c50f8…e83cb` and suite-manifest SHA-256 `ee52a1…15b68`.
+- Typed Decisions sends all five questions for a case in one serial request.
+  JevJudge sends one question per request. Neither protocol samples, truncates,
+  tunes calibration on the evaluation set, or substitutes predictions for
+  rejections.
 
 ### JevBench v1.5.4
 

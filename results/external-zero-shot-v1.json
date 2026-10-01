@@ -1,0 +1,82 @@
+{
+  "artifact_version": 1,
+  "title": "External zero-shot decision evaluation",
+  "generated_by": "scripts/plot_external_zero_shot.py",
+  "provenance": {
+    "typed_existing": {
+      "path": "results/external-decision-evals-20261001/typed-decisions.json",
+      "sha256": "a9fbcc06a5e957630e83f18c5dc01d41ff7b3e2289b0d816f2e1459ef814341e"
+    },
+    "typed_open_summary": {
+      "path": "runs/external-open-baselines-20261001/summary.json",
+      "sha256": "4b4f06f8f02ce6cb4a610f110450469c46b917fd9aa1d571077d0c054320eab2"
+    },
+    "jevjudge_text_summary": {
+      "path": "runs/jevjudge-open-baselines-20261001/summary.json",
+      "sha256": "d77a9a39f0c22862a2cdd53f839b3117c30e4fbb422744813ef106c8b82323ed"
+    },
+    "jevjudge_pointer_source": {
+      "path": "results/external-decision-evals-20261001/jevjudge-public.json",
+      "sha256": "f2f0ded50355e1ac3044f2a4fb1cd89ad30013611208df2fa9fd7708278d06bc"
+    }
+  },
+  "main_comparison_order": [
+    "JevAny-Qwen3.8-27B",
+    "JevAny-Qwen3.5-4B-Direct-Token",
+    "JevAny-Qwen3.5-4B",
+    "OpenDecider-small",
+    "Bongard-mini",
+    "Jeff-Gemma4-E2B",
+    "Jeff-Qwen3.5-2B",
+    "Jeff-Qwen3.5-0.8B",
+    "Laya"
+  ],
+  "typed_decisions": {
+    "benchmark": "LocalLLaMA/typed-decisions",
+    "revision": "d0e2f0c42fef86cc15d1688d25a19f5ba7c85b18",
+    "scope": "complete test split: 400 cases and 2,000 scored decisions",
+    "metric": "argmax agreement with the teacher-derived soft-gold label",
+    "models": [
+      {"model": "meraGPT Decider 1", "kind": "published_only", "status": "dataset-card result; not locally rerun", "accuracy": 0.768},
+      {"model": "Liquid AI d1", "kind": "published_only", "status": "dataset-card result; not locally rerun", "accuracy": 0.742},
+      {"model": "JevAny-Qwen3.8-27B", "kind": "ours", "status": "local full-split rerun", "accuracy": 0.728, "kl": 0.29284607004173263, "brier": 0.13141516555965035, "ece": 0.05304485014212309, "median_ms_per_case": 279.846342978999},
+      {"model": "TypeSafe Jev 1.13.0", "kind": "published_only", "status": "dataset-card result; not locally rerun", "accuracy": 0.727},
+      {"model": "Featherless Simple Jev", "kind": "published_only", "status": "dataset-card result; not locally rerun", "accuracy": 0.716},
+      {"model": "prima-ratio + Gemma4 12B", "kind": "published_only", "status": "published open result; not locally rerun", "accuracy": 0.702},
+      {"model": "JevAny-Muse-Glimmer-30B", "kind": "ours", "status": "local full-split rerun", "accuracy": 0.6995, "kl": 0.24526825101571734, "brier": 0.11076614862515069, "ece": 0.027932146407057316, "median_ms_per_case": 265.92537853866816},
+      {"model": "JevAny-Qwen3.5-4B-Direct-Token", "kind": "ours", "status": "local full-split rerun", "accuracy": 0.672, "kl": 0.4349209967113214, "brier": 0.17878543329515909, "ece": 0.08238339723477661, "median_ms_per_case": 89.42042104899883},
+      {"model": "OpenDecider-small", "kind": "open_rerun", "status": "local full-split rerun", "revision": "720ad2a630ab3011397a9f1d54d376cb4c075c25", "accuracy": 0.6665, "kl": 0.2099236548482815, "brier": 0.1169613214952737, "ece": 0.07510555694743767, "median_ms_per_case": 136.50422752834857},
+      {"model": "JevAny-Gemma-4B", "kind": "ours", "status": "local full-split rerun", "accuracy": 0.6625, "kl": 0.2715169187711413, "brier": 0.12813895549191406, "ece": 0.03607486958158731, "median_ms_per_case": 107.06288402434438},
+      {"model": "JevAny-Qwen3.5-4B", "kind": "ours", "status": "local full-split rerun", "accuracy": 0.635, "kl": 0.4787718293268527, "brier": 0.21769431550066473, "ece": 0.11542953593789122, "median_ms_per_case": 85.49249148927629},
+      {"model": "Bongard-mini", "kind": "open_rerun", "status": "local full-split rerun", "revision": "88bb70a7e6c3acec1d9c807305e8decf4904a07d", "accuracy": 0.5965, "kl": 0.2558114552680428, "brier": 0.13234037272325103, "ece": 0.07261521032216663, "median_ms_per_case": 163.91450550872833},
+      {"model": "Jeff-Gemma4-E2B", "kind": "open_rerun", "status": "local full-split rerun", "revision": "e3de3e99a979f92afd995d4e526c7e3170ae49cf", "accuracy": 0.5795, "kl": 0.3815869159250814, "brier": 0.20418426554519126, "ece": 0.08961670595487227, "median_ms_per_case": 53.51678095757961},
+      {"model": "Jeff-Qwen3.5-2B", "kind": "open_rerun", "status": "local full-split rerun", "revision": "00448e884cce9e34396d8c72e9a692b41383b1ee", "accuracy": 0.5545, "kl": 0.385616221156929, "brier": 0.2097740419344089, "ece": 0.09913300225531364, "median_ms_per_case": 42.15227148961276},
+      {"model": "Jeff-Qwen3.5-0.8B", "kind": "open_rerun", "status": "local full-split rerun", "revision": "51552f39a943d62e8387c4ea5e17026a1408729f", "accuracy": 0.4915, "kl": 0.5580246313827494, "brier": 0.2723575357634285, "ece": 0.13640585576556138, "median_ms_per_case": 41.72967548947781},
+      {"model": "Laya", "kind": "open_rerun", "status": "local full-split rerun", "revision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851", "accuracy": 0.362, "kl": 0.5757992905951531, "brier": 0.3156945969140454, "ece": 0.17423100706995998, "median_ms_per_case": 19.658496603369713}
+    ]
+  },
+  "jevjudge_text": {
+    "benchmark": "HuanxinSheng/JevJudge-Public",
+    "revision": "4d576ded443e159c18d46558d233c80fdf353849",
+    "scope": "all 724 records declared modality=text; four represented roles",
+    "metric": "all-requested accuracy; rejected or unanswered requests count wrong",
+    "official_headline": false,
+    "models": [
+      {"model": "JevAny-Qwen3.8-27B", "kind": "ours", "status": "local common-set rerun", "accuracy": 0.5828729281767956, "answered": 637, "requested": 724},
+      {"model": "OpenDecider-small", "kind": "open_rerun", "status": "local common-set rerun", "revision": "720ad2a630ab3011397a9f1d54d376cb4c075c25", "accuracy": 0.5497237569060773, "answered": 724, "requested": 724},
+      {"model": "Bongard-mini", "kind": "open_rerun", "status": "local common-set rerun", "revision": "88bb70a7e6c3acec1d9c807305e8decf4904a07d", "accuracy": 0.5124309392265194, "answered": 724, "requested": 724},
+      {"model": "JevAny-Qwen3.5-4B-Direct-Token", "kind": "ours", "status": "local common-set rerun", "accuracy": 0.505524861878453, "answered": 637, "requested": 724},
+      {"model": "JevAny-Qwen3.5-4B", "kind": "ours", "status": "local common-set text slice from step-013850", "checkpoint": "runs/four-backbone-decider-sft-20260927/qwen35-4b/checkpoints/step-013850", "revision_kind": "adapter_sha256", "revision": "5acbaec8d554517250bf9c626b3f4b9e2ec31fc67957f3486aa72e2c91ee907f", "head_sha256": "1967df5098c84e3114cc78947cf669f7075b1c93152c3329b492926c316ac7a8", "accuracy": 0.5, "answered": 637, "requested": 724},
+      {"model": "Kev-4B", "kind": "open_rerun", "status": "local common-set rerun", "revision": "139fdd94f1b6a6ad80cc15e08fcb99cac885a101", "accuracy": 0.46408839779005523, "answered": 637, "requested": 724},
+      {"model": "Jeff-Gemma4-E2B", "kind": "open_rerun", "status": "local common-set rerun", "revision": "e3de3e99a979f92afd995d4e526c7e3170ae49cf", "accuracy": 0.44060773480662985, "answered": 688, "requested": 724},
+      {"model": "Jeff-Qwen3.5-0.8B", "kind": "open_rerun", "status": "local common-set rerun", "revision": "51552f39a943d62e8387c4ea5e17026a1408729f", "accuracy": 0.4129834254143646, "answered": 693, "requested": 724},
+      {"model": "Jeff-Qwen3.5-2B", "kind": "open_rerun", "status": "local common-set rerun", "revision": "00448e884cce9e34396d8c72e9a692b41383b1ee", "accuracy": 0.39640883977900554, "answered": 693, "requested": 724},
+      {"model": "Laya", "kind": "open_rerun", "status": "local common-set rerun", "revision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851", "accuracy": 0.3867403314917127, "answered": 724, "requested": 724},
+      {"model": "Kev-27B", "kind": "open_rerun", "status": "local common-set rerun", "revision": "01b81998019be550f0ae858727df49bac9511195", "accuracy": 0.38535911602209943, "answered": 724, "requested": 724}
+    ]
+  },
+  "exclusions": [
+    "Benchmark-trained specialist checkpoints such as OpenDecider-nano and the Laya typed-decisions fine-tune are not included in this zero-shot comparison.",
+    "JevJudge text is a four-role diagnostic subset, not the official five-role full-multimodal headline."
+  ]
+}

@@ -304,15 +304,35 @@ NLL, Brier and ECE are measured on Transfer.
 [Machine-readable results](results/model-family-v2.json) ·
 [Method and ablation report](reports/JevAny_Tech_Report.pdf)
 
-Typed Decisions provides an additional public zero-shot comparison. Its
-accuracy is agreement with soft gold labels produced by a teacher of roughly
-4B-class capability, not a measure of objective correctness:
+The public external comparison uses the same nine-model cohort on the complete
+2,000-decision Typed Decisions test split and the same 724 JevJudge text
+requests. Typed Decisions measures agreement with teacher-derived soft gold,
+not objective correctness. JevJudge reports all-requested accuracy, so
+rejections count wrong.
 
-| Public suite | Coverage | Best local teacher agreement |
-|:---|---:|---:|
-| Typed Decisions | 2,000 / 2,000 decisions | **Qwen3.8-27B: 72.80%** |
+[![Two-panel comparison of the same JevAny and locally rerun open-model cohort on Typed Decisions and the JevJudge common text set](docs/external-zero-shot.svg)](docs/external-zero-shot.svg)
 
-[Full external results, probability metrics and reproducibility notes](docs/EXTERNAL_EVALUATION.md)
+| Model | Typed Decisions ↑ | JevJudge text ↑ | JevJudge coverage | Source / status |
+|:---|---:|---:|---:|:---|
+| **JevAny-Qwen3.8-27B** | **72.80%** | **58.29%** | 637 / 724 | Ours; locally rerun |
+| JevAny-Qwen3.5-4B-Direct-Token | 67.20% | 50.55% | 637 / 724 | Ours; locally rerun |
+| JevAny-Qwen3.5-4B | 63.50% | 50.00% | 637 / 724 | Ours; locally rerun |
+| OpenDecider-small | 66.65% | 54.97% | 724 / 724 | Open; locally rerun |
+| Bongard-mini | 59.65% | 51.24% | 724 / 724 | Open; locally rerun |
+| Jeff-Gemma4-E2B | 57.95% | 44.06% | 688 / 724 | Open; locally rerun |
+| Jeff-Qwen3.5-2B | 55.45% | 39.64% | 693 / 724 | Open; locally rerun |
+| Jeff-Qwen3.5-0.8B | 49.15% | 41.30% | 693 / 724 | Open; locally rerun |
+| Laya | 36.20% | 38.67% | 724 / 724 | Open; locally rerun |
+
+JevJudge text covers four roles and is a diagnostic, not the official
+five-role full-multimodal headline. Every model received the same 724 requests;
+coverage differences reflect model rejection and context capability, not
+different requested samples. Benchmark-trained specialist checkpoints are
+excluded from this zero-shot chart. Additional JevAny, Kev and published-only
+rows remain in the full external tables.
+
+[Full external tables and reproducibility notes](docs/EXTERNAL_EVALUATION.md) ·
+[Machine-readable chart results](results/external-zero-shot-v1.json)
 
 ### ⏱️ 3.1 Inference efficiency <a name="efficiency"></a>
 
