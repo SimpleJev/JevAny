@@ -151,10 +151,14 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--steps", type=int, default=12)
     parser.add_argument("--lr", type=float, default=0.0002)
-    parser.add_argument("--head-lr", type=float, default=0.0001)
+    parser.add_argument("--head-lr", type=float,
+                        help="pointer head learning rate (default: 0.0001); lm_token requires 0")
     parser.add_argument("--device", choices=["cpu", "cuda"], default="cuda")
     parser.add_argument("--dtype", choices=["fp32", "bf16"],
                         help="training autocast precision; defaults to bf16 on CUDA and fp32 on CPU")
+    parser.add_argument("--weights-dtype", choices=["fp32", "bf16"],
+                        help="frozen backbone precision; defaults to bf16 on CUDA and fp32 on CPU")
+    parser.add_argument("--decision-mode", choices=["pointer", "lm_token"], default="pointer")
     parser.add_argument("--branch-mode", choices=["auto", "packed", "rows"], default="auto")
     parser.add_argument("--media", choices=["image", "video"], help="exercise native media training")
     parser.add_argument("--mixed-text", action="store_true", help="include text-only rows in a media fixture")
@@ -166,8 +170,12 @@ def main(argv: list[str] | None = None) -> None:
     if args.rlcr and args.init_from is None:
         parser.error("--rlcr requires --init-from")
     training_dtype = args.dtype or ("bf16" if args.device == "cuda" else "fp32")
+    weights_dtype = args.weights_dtype or ("bf16" if args.device == "cuda" else "fp32")
+    head_lr = args.head_lr if args.head_lr is not None else (0 if args.decision_mode == "lm_token" else 0.0001)
     if training_dtype == "bf16" and args.device != "cuda":
         parser.error("--dtype bf16 requires --device cuda")
+    if args.decision_mode == "lm_token" and (args.rlcr or head_lr):
+        parser.error("lm_token requires supervised training and --head-lr 0")
     rank = int(os.environ.get("RANK", "0"))
     world_size = int(os.environ.get("WORLD_SIZE", "1"))
     local_rank = int(os.environ.get("LOCAL_RANK", "0"))
@@ -193,10 +201,10 @@ def main(argv: list[str] | None = None) -> None:
     command = [
         "--base", args.base, "--base-revision", args.revision,
         "--data", str(fixture / "train.jsonl"), "--out", str(checkpoint_path),
-        "--device", args.device, "--weights-dtype", "bf16" if args.device == "cuda" else "fp32",
-        "--dtype", training_dtype,
+        "--device", args.device, "--weights-dtype", weights_dtype,
+        "--dtype", training_dtype, "--decision-mode", args.decision_mode,
         "--epochs", str(args.steps), "--max-steps", str(args.steps), "--batch", "2", "--accum", "1",
-        "--lora", "4", "--head-dim", "32", "--lr", str(args.lr), "--head-lr", str(args.head_lr),
+        "--lora", "4", "--head-dim", "32", "--lr", str(args.lr), "--head-lr", str(head_lr),
         "--checkpointing", "1", "--weight-decay", "0", "--seed", "17",
         "--p-none", "0", "--p-none-distract", "0", "--p-distract", "0",
         "--branch-mode", args.branch_mode, "--eval-suite", str(fixture),
@@ -270,14 +278,18 @@ def main(argv: list[str] | None = None) -> None:
         lora_updated = any("lora_" in name and not torch.equal(value, initial[name])
                            for name, value in weights.items())
     serving = check_serving(local, fixture)
+    token_schema = tok.init_kwargs.get(
+        "jevany_token_schema", "explicit" if "jevany_decision_tokens" in tok.init_kwargs else "legacy",
+    )
     report = {
         "base": args.base, "base_revision": args.revision, "model_type": model.lm.config.model_type,
-        "branch_mode": model.branch_mode, "token_schema": tok.init_kwargs["jevany_token_schema"],
+        "branch_mode": model.branch_mode, "token_schema": token_schema,
         "decision_token_ids": [tok.convert_tokens_to_ids(token) for token in decision_tokens(tok)],
         "backbone_adapter": model.backbone_adapter, "media": args.media, "mixed_text": args.mixed_text,
         "trained_delimiter_embeddings": model.special_embeddings, "steps": args.steps,
-        "learning_rate": args.lr, "head_learning_rate": args.head_lr,
-        "training_dtype": training_dtype,
+        "learning_rate": args.lr, "head_learning_rate": head_lr,
+        "training_dtype": training_dtype, "weights_dtype": weights_dtype,
+        "decision_mode": model.decision_mode,
         "world_size": world_size, "losses": losses, "adapter_tensors_finite": finite,
         "evaluation_records": len(records),
         "lora_updated": lora_updated, "checkpoint_probability_max_delta": maximum_delta,
@@ -286,7 +298,7 @@ def main(argv: list[str] | None = None) -> None:
         "prefix_cache_supported": prefix_supported,
         "media_probability_max_delta": media_delta,
         "training": read_json(checkpoint_path / "training_metrics.json"),
-        "scope": "Real pretrained weights; repeated tiny training fixture; no generalization claim.",
+        "scope": "Repeated tiny training fixture for optimization and serialization; no generalization claim.",
     }
     report["passed"] = (
         finite and lora_updated and all(math.isfinite(point["nll"]) for point in losses)
