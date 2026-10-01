@@ -304,6 +304,16 @@ NLL, Brier and ECE are measured on Transfer.
 [Machine-readable results](results/model-family-v2.json) ·
 [Method and ablation report](reports/JevAny_Tech_Report.pdf)
 
+Two additional public suites confirm the same model ordering without closed
+API baselines:
+
+| Public suite | Coverage | Best local result |
+|:---|---:|---:|
+| Typed Decisions | 2,000 / 2,000 decisions | **Qwen3.8-27B: 72.80%** |
+| JevJudge-Public v0.3 | 3,123 / 3,220 records | **Qwen3.8-27B: 61.32% answered-only** |
+
+[Full external results, probability metrics and reproducibility notes](docs/EXTERNAL_EVALUATION.md)
+
 ### ⏱️ 3.1 Inference efficiency <a name="efficiency"></a>
 
 On one H200, CUDA Graphs cut Qwen3.8-27B median latency from **113.54 to
