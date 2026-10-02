@@ -25,6 +25,60 @@ released checkpoints and the supported-model catalog. Guides, the technical
 report and linked reference files are hosted on the site. GitHub remains an
 explicit source-code link; checkpoint download links point to Hugging Face.
 
+The README and `agent-harness.html` use the same paired comparisons from
+`scripts/render_agent_decision_demos_v2.py`. Three individual GIFs show WebShop,
+FrozenLake, and SQLite recovery. `docs/demos/jev-agent-harness.gif` joins those
+replays in that order into a nine-second overview, preserving every frame and
+its timing. The gallery uses matching MP4/WebM videos and WebP posters.
+
+Both lanes retain the measured completion-time ratio within each three-second loop.
+Recorded LLM call totals are prominent alongside each lane's clock. Task
+constraints stay visible; large actor panels identify the current phase,
+and recorded menus highlight the selected option. The footer shows LLM tokens
+saved, wall time saved, and the task result for this recorded pair. Large
+highlighted percentages lead the two savings cards, with absolute savings and
+original totals alongside them. Percentages use the LLM-only baseline. These
+are full-run measurements for one recorded pair.
+A fixed role bar shows each controller once and highlights only
+the current controller. When control returns to the LLM, the same LLM position
+lights up again. Both roles dim when the task completes, and completed lanes
+remain frozen.
+
+Shared robot portraits in `scripts/render_agent_robot_icons.py` distinguish the
+blue LLM from the smaller teal Jev. Planning lights and short motion trails
+animate only on the active controller; inactive portraits stay gray and still.
+These decorative animations do not represent measured inference time. Amber
+result symbols mark completion. Icons are drawn and antialiased locally with
+Pillow, so all three cases use the same artwork without external image assets.
+
+`agent-harness.html` leads with the overview, followed by the three individual
+replays and a short explanation of each delegation: choosing within LLM-provided
+menus, retaining one plan across local moves, and choosing useful evidence.
+It uses the same navy, blue, teal, and amber palette as the GIFs.
+Playback controls provide pause, seek, and fullscreen beneath the frame,
+keeping the savings visible even when paused. Native controls remain available
+when JavaScript is disabled. Only the overview
+starts automatically; videos pause offscreen and when the tab is hidden, and
+only one plays at a time. Reduced-motion preferences disable automatic playback.
+A manual pause or selection takes precedence over automatic playback.
+
+The gallery links to the recorded traces, delegation protocol, and full results.
+WebShop uses seed 3107 and Jev 4B from the D4 supplement; SQLite and FrozenLake
+keep their recorded cases. Savings describe one recorded pair, with the broader
+D2 matrix, separate D4 supplement, fallback cases, and uncertainty documented
+in the report. Rendering uses existing recordings and runs no model or environment.
+
+Regenerate all four GIFs and their site media from the repository root:
+
+```bash
+python3 -m pip install pillow imageio-ffmpeg
+python3 scripts/render_agent_decision_demos_v2.py --site-media
+```
+
+Omit `--site-media` to export only GIFs. Video conversion uses ffmpeg;
+imageio-ffmpeg is optional when ffmpeg is already on PATH. The legacy command
+`python3 scripts/render_agent_harness_demo.py` also exports this presentation.
+
 Regenerate the homepage's data sections and documentation from the repository:
 
 ```bash
