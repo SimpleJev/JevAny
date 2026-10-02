@@ -1,4 +1,4 @@
-"""Training-free option-letter inference over a frozen base or JevAny adapter.
+"""Training-free choice-token inference over a frozen base or JevAny adapter.
 
 This is the in-process backend for :mod:`jevany.letter_readout`.  It keeps the
 existing pointer path unchanged: a JevAny checkpoint can instead be applied to
@@ -297,7 +297,7 @@ class LetterReadoutPredictor:
         self.device = device
         self.options = options or LoadOptions()
         if self.options.temperature is not None:
-            raise ValueError("native-head temperature is not used by letter readout; use temperature")
+            raise ValueError("native-head temperature is not used by choice readout; use temperature")
         if self.options.cuda_graphs:
             raise ValueError("CUDA graph capture is available only for native readout")
         if self.exact_cuda_kernels_applied:
@@ -323,7 +323,7 @@ class LetterReadoutPredictor:
                 raise ValueError("revision accompanies a base; pin checkpoint revisions in owner/repo@revision")
             loaded = self.checkpoint = Checkpoint(checkpoint)
             if loaded.meta.special_embeddings:
-                raise ValueError("letter readout is not validated for checkpoints with trained special embeddings")
+                raise ValueError("choice readout is not validated for checkpoints with trained special embeddings")
             self.preprocessor, decision_model = loaded.load(device, self.options)
             self.native_model = decision_model
             self.pointer_model = decision_model
@@ -406,7 +406,7 @@ class LetterReadoutPredictor:
         if tied:
             embeddings = self.language_model.get_input_embeddings().weight
             if max(flat_token_ids) >= embeddings.shape[0]:
-                raise ValueError("letter choice token ID exceeds the tied vocabulary projection")
+                raise ValueError("choice token ID exceeds the tied vocabulary projection")
             index = torch.tensor(flat_token_ids, dtype=torch.long, device=embeddings.device)
             projection = embeddings.index_select(0, index).detach().clone()
             projection_bias = None
@@ -438,6 +438,7 @@ class LetterReadoutPredictor:
             "adapter_scale": adapter_scale,
             "tied_output_embeddings": tied,
             "unused_full_output_head_released": released_output_head,
+            "choice_token_rows": len(flat_token_ids),
             "letter_choice_token_rows": len(flat_token_ids),
             "output_softcap": self.output_softcap,
             "temperature": self.temperature,
@@ -503,7 +504,7 @@ class LetterReadoutPredictor:
         ids = _one_row_input_ids(ids)
         if ids.shape[1] + 1 > self.effective_max_tokens:
             raise ContextLengthError(
-                f"letter prompt needs {ids.shape[1] + 1} tokens including the answer; "
+                f"choice prompt needs {ids.shape[1] + 1} tokens including the answer; "
                 f"limit {self.effective_max_tokens}"
             )
         return ids.to(self.device)
@@ -567,7 +568,7 @@ class LetterReadoutPredictor:
         request = api_request(record)
         SystemOneRequest.model_validate(request)
         if request.get("media"):
-            raise ValueError("letter readout is text-only and does not accept media")
+            raise ValueError("choice readout is text-only and does not accept media")
         sync(self.device)
         started = time.perf_counter()
         letter_rows = [

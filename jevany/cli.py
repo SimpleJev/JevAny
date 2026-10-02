@@ -45,7 +45,7 @@ def decide_main(argv: list[str]) -> None:
     from dataclasses import fields
     from .inference import InferenceOptions, add_inference_arguments, inference_options_from_args
     from .placement import add_placement_arguments
-    from .readout import add_readout_arguments, letter_options_from_args
+    from .readout import add_readout_arguments, choice_options_from_args
 
     parser = argparse.ArgumentParser(prog="jevany decide")
     parser.add_argument("request", help="JSON request file; - reads stdin")
@@ -63,7 +63,7 @@ def decide_main(argv: list[str]) -> None:
     add_inference_arguments(parser)
     args = parser.parse_args(argv)
     try:
-        letter_options = letter_options_from_args(args)
+        choice_options = choice_options_from_args(args)
     except ValueError as error:
         parser.error(str(error))
     content = sys.stdin.read() if args.request == "-" else Path(args.request).read_text(encoding="utf-8")
@@ -73,12 +73,12 @@ def decide_main(argv: list[str]) -> None:
         from dataclasses import replace
         from .checkpoint import LoadOptions, load_options_from_args
         from .runtime import JevModel
-        if letter_options is not None and (
+        if choice_options is not None and (
             args.cuda_graphs or args.cuda_graph_max_tokens is not None
             or any(getattr(args, item.name) is not None for item in fields(InferenceOptions))
         ):
-            parser.error("CUDA graph and native inference-limit flags cannot be used with --readout letter; "
-                         "use --letter-max-tokens")
+            parser.error("CUDA graph and native inference-limit flags cannot be used with --readout choice; "
+                         "use --choice-max-tokens")
         options = load_options_from_args(args)
         if args.cuda_graphs or args.cuda_graph_max_tokens is not None:
             options = options or LoadOptions.from_env()
@@ -87,11 +87,11 @@ def decide_main(argv: list[str]) -> None:
                                                      if args.cuda_graph_max_tokens is not None
                                                      else options.cuda_graph_max_tokens))
         settings = ({
-            "readout": "letter",
-            "letter_temperature": letter_options.temperature,
-            "letter_pointer_weight": letter_options.pointer_weight,
-            "letter_max_tokens": letter_options.max_tokens,
-        } if letter_options is not None else {
+            "readout": "choice",
+            "choice_temperature": choice_options.temperature,
+            "choice_native_weight": choice_options.native_weight,
+            "choice_max_tokens": choice_options.max_tokens,
+        } if choice_options is not None else {
             "inference_options": inference_options_from_args(args),
         })
         client = JevModel.from_pretrained(

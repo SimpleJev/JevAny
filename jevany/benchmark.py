@@ -26,7 +26,7 @@ from jevany.device import default_device
 from jevany.metrics import EPSILON, grouped_metrics, metrics, unknowable_report
 from jevany.model import ContextLengthError
 from jevany.predictors import LocalPredictor, RemotePredictor
-from jevany.readout import add_readout_arguments, letter_options_from_args
+from jevany.readout import add_readout_arguments, choice_options_from_args, normalize_readout
 from jevany.suite import ENCODING, digest, load_split, read_manifest, record_digest, write_json
 
 
@@ -170,7 +170,7 @@ def evaluate_records(records, predictor, directory, temperature=1.0, heldout_sou
 EXAMPLES = """examples:
   jevany eval --run runs/my-jev --data data/starter/development.jsonl --out runs/my-jev/eval
   jevany eval --run SimpleJev/JevAny-Qwen3.5-4B-LoRA --suite data/eval-suite --out runs/eval
-  jevany eval --run SimpleJev/JevAny-Qwen3.5-4B-LoRA --readout letter --suite data/eval-suite --out runs/letter
+  jevany eval --run SimpleJev/JevAny-Qwen3.5-4B-LoRA --readout choice --suite data/eval-suite --out runs/choice
   jevany eval --remote http://127.0.0.1:8008 --data my-labelled.jsonl --out runs/remote-eval
 
 --data scores your own labelled JSONL (jevany.data.load_records); --suite scores a
@@ -195,12 +195,12 @@ def main(argv=None, prog=None):
     ap.add_argument("--date_facts", action="store_true", help="apply jevany.api.with_date_facts to every state before scoring (the opt-in serving preprocessor); reported in report.json")
     a = ap.parse_args(argv)
     try:
-        letter_options = letter_options_from_args(a)
+        choice_options = choice_options_from_args(a)
     except ValueError as error:
         ap.error(str(error))
     if bool(a.run) == bool(a.remote): ap.error("give exactly one of --run or --remote")
-    if a.remote and letter_options is not None:
-        ap.error("--readout letter is a local model setting; configure it on the remote server")
+    if a.remote and choice_options is not None:
+        ap.error("--readout choice is a local model setting; configure it on the remote server")
     if bool(a.suite) == bool(a.data): ap.error("give exactly one of --suite or --data")
     if a.data:
         records, heldout, split, source_hash = load_records(a.data), [], "custom", digest(Path(a.data))
@@ -212,34 +212,40 @@ def main(argv=None, prog=None):
         records = [{**r, "state": with_date_facts(r["state"])} for r in records]
     if a.remote:
         predictor = RemotePredictor(a.remote, a.remote_model, os.environ.get("JEVANY_REMOTE_API_KEY", "local"))
-    elif letter_options is not None:
+    elif choice_options is not None:
         from jevany.letter_predictor import LetterReadoutPredictor
         predictor = LetterReadoutPredictor(
             checkpoint=a.run,
             device=a.device,
             options=LoadOptions.from_env(),
-            temperature=letter_options.temperature,
-            pointer_weight=letter_options.pointer_weight,
-            max_tokens=letter_options.max_tokens,
+            temperature=choice_options.temperature,
+            native_weight=choice_options.native_weight,
+            max_tokens=choice_options.max_tokens,
         )
     else:
         predictor = LocalPredictor(a.run, a.device, LoadOptions.from_env())
     report, _ = evaluate_records(records, predictor, a.out, heldout_sources=tuple(heldout), skip_overlong=bool(a.data))
-    pointer_temperature = (getattr(predictor.pointer_model, "temperature", None)
-                           if letter_options is not None and predictor.pointer_weight else None)
+    native_temperature = (getattr(predictor.native_model, "temperature", None)
+                          if choice_options is not None and predictor.native_weight else None)
     calibration_applied = (None if a.remote else predictor.temperature != 1.0
-                           or pointer_temperature not in (None, 1.0))
+                           or native_temperature not in (None, 1.0))
     report.update(suite_sha256=source_hash, data=a.data, date_facts=a.date_facts, run=a.run or a.remote, split=split,
                   calibration_applied=calibration_applied,
                   base_loading=getattr(predictor, "base_loading", None),
                   remote={"base_url": a.remote, "requested_model": a.remote_model, "served_model": predictor.served_model} if a.remote else None)
     if not a.remote:
-        report["readout"] = a.readout
-    if letter_options is not None:
-        report["letter_readout"] = dict(predictor.provenance)
-        if pointer_temperature is not None:
-            report["letter_readout"]["pointer_temperature"] = pointer_temperature
-            report["calibration"]["pointer_temperature"] = pointer_temperature
+        report["readout"] = normalize_readout(a.readout)
+    if choice_options is not None:
+        choice_readout = dict(predictor.provenance)
+        if native_temperature is not None:
+            choice_readout["native_temperature"] = native_temperature
+            choice_readout["pointer_temperature"] = native_temperature
+            report["calibration"]["native_temperature"] = native_temperature
+            report["calibration"]["pointer_temperature"] = native_temperature
+        report["choice_readout"] = choice_readout
+        # Kept as an output alias for consumers of reports written before the
+        # public readout name changed to ``choice``.
+        report["letter_readout"] = dict(choice_readout)
     write_json(Path(a.out) / "report.json", report)
     print(json.dumps({"objective": report["objective"], "clean": report["clean"], "coverage": report["coverage"]}, indent=2))
 

@@ -140,12 +140,19 @@ def test_connecting_reports_identity_and_capabilities_from_v1_models(app, endpoi
         app.set_images(True)
 
 
-def test_playground_displays_letter_deployment_readout(app, endpoint):
+def test_playground_displays_choice_deployment_readout(app, endpoint):
+    endpoint.models[0]["readout"] = "choice"
+    assert app.connect(endpoint.url)["served"]["readout"] == "choice"
+    source = (Path(__file__).parents[1] / "jevany" / "demos" / "static" / "app.js").read_text()
+    assert 'served.readout === "choice" || served.readout === "letter"' in source
+    assert 'readout ? `${readout} readout`' in source
+
+
+def test_playground_labels_legacy_letter_descriptor_as_choice(app, endpoint):
     endpoint.models[0]["readout"] = "letter"
     assert app.connect(endpoint.url)["served"]["readout"] == "letter"
     source = (Path(__file__).parents[1] / "jevany" / "demos" / "static" / "app.js").read_text()
-    assert 'served.readout === "letter" ? "letter"' in source
-    assert 'readout ? `${readout} readout`' in source
+    assert 'served.readout === "choice" || served.readout === "letter"' in source
 
 
 def test_playground_accepts_older_model_descriptors_without_readout(app, endpoint):

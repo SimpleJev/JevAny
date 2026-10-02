@@ -217,7 +217,8 @@ async function liveStep(action) {
 }
 function renderConnection() {
   const media = link.media || {}, served = link.served;
-  const readout = served && served.readout === "letter" ? "letter" : served && served.decision_mode;
+  const readout = served && (served.readout === "choice" || served.readout === "letter")
+    ? "choice" : served && served.decision_mode;
   $("connect-url").disabled = $("connect-model").disabled = !link.editable;
   if (!$("connect-url").value) $("connect-url").value = link.base_url || link.default_base_url || "";
   if (!$("connect-model").value && link.model && link.model !== "jevany-latest") $("connect-model").value = link.model;
