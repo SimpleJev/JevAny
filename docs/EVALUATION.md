@@ -150,7 +150,7 @@ not accuracy. A native + choice stack can change both.
 The stack weight and additional temperature below are selected only on 1,046
 clean/knowable Transfer-v9 development decisions and then frozen. Transfer test,
 Typed Decisions, and JevJudge text are held out. JevBench is a public diagnostic.
-All values are accuracy.
+All values are accuracy percentages.
 
 | Weights | Readout | JevBench public | Transfer test | Typed test | JevJudge text |
 |---|---|---:|---:|---:|---:|
