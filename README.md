@@ -140,6 +140,7 @@ where Jev helps and when to return control to the LLM.
   - [🛠️ 1.2 JevAny Training](#training)
   - [🚀 1.3 JevAny Deployment](#deployment)
 - [🤗 2. Pretrained Models](#pretrained-models)
+  - [Training-free letter readout](#letter-readout)
 - [📊 3. Benchmark Results](#evaluation)
   - [⏱️ 3.1 Inference efficiency](#efficiency)
 - [🕹️ 4. Examples & Test Environments](#examples--test-environments)
@@ -294,6 +295,37 @@ Pointer and direct-token models share the same API. Pointer supports up to
 4,096 options within the context limit; direct-token supports up to 255.
 See [readout choices](docs/TRAINING.md#pointer-and-direct-token-readouts) for
 training and accuracy tradeoffs.
+
+### Training-free letter readout <a name="letter-readout"></a>
+
+The experimental letter readout presents up to 26 options as A–Z, then sums
+the frozen language model's next-token probability mass for every vocabulary
+token that decodes exactly to that uppercase letter. It can run on a base model
+without training, apply a JevAny adapter before the same readout, or combine the
+letter and native pointer distributions. The letter path is text-only and does
+not change the checkpoint metadata. Select it with `--readout letter` in
+`jevany eval`, `jevany decide`, or `jevany serve`; the checkpoint-native
+readout remains the default.
+
+[Method, limits and evaluation command](docs/LETTER_READOUT.md).
+
+[![Accuracy change from native pointer for letter readout and the fixed blend](docs/letter-readout-results.svg)](docs/LETTER_READOUT.md#results)
+
+- The fixed 50/50 blend improved 27B on both diagnostics: +0.43 accuracy
+  points on JevBench public and +0.67 on Transfer-v9. Neither gain is
+  statistically significant.
+- At 4B, the same blend gained +1.73 points on JevBench public but lost 0.10
+  on Transfer-v9. Letter readout is a paired target-domain ablation, not a
+  universal upgrade.
+- Letter-only measured a 1.05x/1.07x median speedup over native at 4B/27B
+  on one warmed H200 panel. Blending runs both paths and cost 1.81x/1.89x the
+  native median latency.
+
+> **Benchmark units:** Cygnet's official **73.70** on JevBench v1.5.4 is a
+> four-axis composite over 1,624 open and sealed decisions, not accuracy. Its
+> separate public-development result is **203/231 (87.9% accuracy)**. The
+> JevBench values in this section are also accuracy on those 231 public
+> development items, so they must not be compared directly with 73.70.
 
 ## 📊 3. Benchmark Results <a name="evaluation"></a>
 

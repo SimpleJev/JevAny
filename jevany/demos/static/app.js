@@ -217,6 +217,7 @@ async function liveStep(action) {
 }
 function renderConnection() {
   const media = link.media || {}, served = link.served;
+  const readout = served && served.readout === "letter" ? "letter" : served && served.decision_mode;
   $("connect-url").disabled = $("connect-model").disabled = !link.editable;
   if (!$("connect-url").value) $("connect-url").value = link.base_url || link.default_base_url || "";
   if (!$("connect-model").value && link.model && link.model !== "jevany-latest") $("connect-model").value = link.model;
@@ -230,7 +231,7 @@ function renderConnection() {
     served.aliases.length ? `aliases ${served.aliases.join(", ")}` : null,
     served.base ? `base ${served.base}` : null,
     served.device ? `device ${served.device}` : null,
-    served.decision_mode ? `${served.decision_mode} readout` : null,
+    readout ? `${readout} readout` : null,
     media.model_media_types && media.model_media_types.length
       ? `accepts ${media.model_media_types.join(", ")}` : "text only",
     link.checked ? `checked ${link.checked}` : null,

@@ -3,13 +3,14 @@
 """FastAPI server for prefill-only decisions.
 
 Run: uv run --extra serve python -m jevany.serve --run runs/rlcr --port 8008
+Use ``--readout letter`` for the training-free option-letter deployment path.
 
 TypeSafe-compatible: POST /v1/systemone and GET /v1/models (no auth). JEVANY_PREFIX_CACHE /
 JEVANY_PREFIX_MIN_TOKENS size the state-prefix cache; JEVANY_DATE_FACTS=1 enables deterministic date preprocessing.
 """
 import argparse, os
 from contextlib import asynccontextmanager
-from dataclasses import replace
+from dataclasses import fields, replace
 from pathlib import Path
 from fastapi import APIRouter, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,6 +18,7 @@ from fastapi.responses import JSONResponse
 from .api import SystemOneRequest, with_date_facts
 from .checkpoint import LoadOptions, add_placement_arguments, load_options_from_args
 from .inference import InferenceOptions, add_inference_arguments, inference_options_from_args
+from .readout import LetterReadoutOptions, add_readout_arguments, letter_options_from_args
 from .runtime import DEFAULT_CHECKPOINT, DecisionRuntime, JevModel
 DATE_FACTS = os.environ.get("JEVANY_DATE_FACTS", "0") == "1"
 MEDIA_ROOT = os.environ.get("JEVANY_MEDIA_ROOT")
@@ -146,6 +148,7 @@ def create_app(
     model: JevModel | None = None, device: str | None = None,
     dtype: str | None = None, model_name: str | None = None,
     options: LoadOptions | None = None, inference_options: InferenceOptions | None = None,
+    readout: str = "native", letter_options: LetterReadoutOptions | None = None,
 ) -> FastAPI:
     """Build an isolated app, loading one checkpoint during ASGI startup.
 
@@ -153,18 +156,37 @@ def create_app(
     and cache with Python callers. Loading options cannot accompany an injected
     model. Each worker loads its own full model; use one worker per device.
     """
-    if model is not None and any(value is not None for value in (
-        checkpoint, device, dtype, model_name, options, inference_options,
+    if model is not None and (readout != "native" or letter_options is not None or any(
+        value is not None for value in (checkpoint, device, dtype, model_name, options, inference_options)
     )):
         raise ValueError("pass either a loaded model or checkpoint loading options")
+    if readout not in ("native", "letter"):
+        raise ValueError("readout must be native or letter")
+    if readout == "native" and letter_options is not None:
+        raise ValueError("letter_options require readout='letter'")
+    if readout == "letter" and inference_options is not None:
+        raise ValueError("inference_options apply only to native readout; use letter_options.max_tokens")
+    if readout == "letter" and letter_options is None:
+        letter_options = LetterReadoutOptions()
 
     @asynccontextmanager
     async def lifespan(application: FastAPI):
-        local = model if model is not None else JevModel.from_pretrained(
-            DEFAULT_CHECKPOINT if checkpoint is None else checkpoint,
-            device=device, dtype=dtype, model_name=model_name, options=options,
-            inference_options=inference_options,
-        )
+        if model is not None:
+            local = model
+        else:
+            settings = ({
+                "readout": "letter",
+                "letter_temperature": letter_options.temperature,
+                "letter_pointer_weight": letter_options.pointer_weight,
+                "letter_max_tokens": letter_options.max_tokens,
+            } if letter_options is not None else {
+                "inference_options": inference_options,
+            })
+            local = JevModel.from_pretrained(
+                DEFAULT_CHECKPOINT if checkpoint is None else checkpoint,
+                device=device, dtype=dtype, model_name=model_name, options=options,
+                **settings,
+            )
         application.state.server = local.runtime
         try:
             yield
@@ -188,6 +210,7 @@ def main(argv=None):
     ap.add_argument("--model-name", help="identity reported in every response; defaults to the checkpoint name")
     ap.add_argument("--device", choices=["cpu", "mps", "cuda"], default=None)
     ap.add_argument("--dtype", choices=["fp32", "fp16", "bf16"])
+    add_readout_arguments(ap)
     add_placement_arguments(ap)
     ap.add_argument("--cuda-graphs", action="store_true",
                     help="capture CUDA graphs at startup (row-mode backbones on one GPU); same as JEVANY_CUDA_GRAPHS=1")
@@ -197,6 +220,16 @@ def main(argv=None):
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=8008)
     a = ap.parse_args(argv)
+    try:
+        letter_options = letter_options_from_args(a)
+    except ValueError as error:
+        ap.error(str(error))
+    if letter_options is not None and (
+        a.cuda_graphs or a.cuda_graph_max_tokens is not None
+        or any(getattr(a, item.name) is not None for item in fields(InferenceOptions))
+    ):
+        ap.error("CUDA graph and native inference-limit flags cannot be used with --readout letter; "
+                 "use --letter-max-tokens")
     options = load_options_from_args(a)
     if a.cuda_graphs or a.cuda_graph_max_tokens is not None:
         options = options or LoadOptions.from_env()
@@ -204,7 +237,10 @@ def main(argv=None):
                           cuda_graph_max_tokens=(a.cuda_graph_max_tokens if a.cuda_graph_max_tokens is not None
                                                  else options.cuda_graph_max_tokens))
     application = create_app(a.run, device=a.device, dtype=a.dtype, model_name=a.model_name,
-                             options=options, inference_options=inference_options_from_args(a))
+                             options=options,
+                             inference_options=(inference_options_from_args(a)
+                                                if letter_options is None else None),
+                             readout=a.readout, letter_options=letter_options)
     import uvicorn
     uvicorn.run(application, host=a.host, port=a.port)
 

@@ -62,6 +62,7 @@ class DecisionRuntime:
                 "devices": getattr(self.model, "devices", [self.device]),
                 "temperature": self.model.temperature,
                 "decision_mode": self.checkpoint.meta.decision_mode,
+                "readout": "native",
                 "backbone_adapter": self.model.backbone_adapter,
                 "branch_mode": self.model.branch_mode,
                 "acceleration": {
@@ -164,21 +165,35 @@ class JevModel(DecisionClient):
         device: str | None = None, dtype: str | None = None,
         model_name: str | None = None, options: LoadOptions | None = None,
         inference_options: InferenceOptions | None = None,
+        readout: str = "native", letter_temperature: float | None = None,
+        letter_pointer_weight: float | None = None, letter_max_tokens: int | None = None,
     ) -> "JevModel":
         """Load a local run or Hugging Face adapter ID (optionally ``owner/repo@revision``).
 
         The full backbone must fit on the selected device unless ``options.device_map``
         (or JEVANY_DEVICE_MAP) splits it over the visible GPUs. ``dtype`` accepts
         fp32, fp16 or bf16; omission uses the checkpoint/environment settings.
-        Files used by native media requests are trusted local paths.
+        ``readout='letter'`` replaces the checkpoint head with a training-free
+        option-letter projection; its temperature, pointer blend, and prompt
+        limit are deployment settings, not checkpoint metadata. Files used by
+        native media requests are trusted local paths.
         """
         import torch
+
+        if readout not in ("native", "letter"):
+            raise ValueError("readout must be native or letter")
+        letter_settings = (letter_temperature, letter_pointer_weight, letter_max_tokens)
+        if readout == "native" and any(value is not None for value in letter_settings):
+            raise ValueError("letter readout options require readout='letter'")
+        if readout == "letter" and inference_options is not None:
+            raise ValueError("inference_options apply only to native readout; use letter_max_tokens")
 
         device = default_device() if device is None else device
         if device not in ("cpu", "mps", "cuda"):
             raise ValueError("device must be cpu, mps or cuda")
         options = options or LoadOptions.from_env()
-        inference_options = inference_options or InferenceOptions.from_env()
+        if readout == "native":
+            inference_options = inference_options or InferenceOptions.from_env()
         if model_name is not None and (not isinstance(model_name, str) or not model_name.strip()):
             raise ValueError("model_name must be a nonempty string")
         if dtype is not None:
@@ -188,7 +203,25 @@ class JevModel(DecisionClient):
             options = replace(options, dtype=dtypes[dtype])
         if device == "mps" and options.attn is None:
             options = replace(options, attn="sdpa")
-        loaded = Checkpoint(checkpoint)
+        if readout == "letter" and options.cuda_graphs:
+            raise ValueError("CUDA graph capture is available only for native readout")
+        if readout == "letter" and options.temperature is not None:
+            raise ValueError("JEVANY_TEMPERATURE applies to the native head; use letter_temperature")
+        predictor = None
+        if readout == "letter":
+            from .letter_predictor import LetterReadoutPredictor
+
+            predictor = LetterReadoutPredictor(
+                checkpoint=checkpoint,
+                device=device,
+                options=options,
+                temperature=1.0 if letter_temperature is None else letter_temperature,
+                pointer_weight=0.0 if letter_pointer_weight is None else letter_pointer_weight,
+                max_tokens=16_384 if letter_max_tokens is None else letter_max_tokens,
+            )
+            loaded = predictor.checkpoint
+        else:
+            loaded = Checkpoint(checkpoint)
         if model_name is None:
             source = loaded.requested.partition("@")[0]
             if source == DEFAULT_CHECKPOINT:
@@ -197,6 +230,9 @@ class JevModel(DecisionClient):
                 model_name = "jevany-27b"
             else:
                 model_name = Path(source).name or Path(loaded.path).resolve().name
+        if predictor is not None:
+            from .letter_runtime import LetterDecisionRuntime
+            return cls(LetterDecisionRuntime(predictor, model_name))
         tokenizer, model = loaded.load(device, options)
         return cls(DecisionRuntime(loaded, tokenizer, model, device, model_name, inference_options))
 

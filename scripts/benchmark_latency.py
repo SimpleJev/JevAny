@@ -19,6 +19,7 @@ import torch
 from jevany.checkpoint import LoadOptions
 from jevany.device import sync
 from jevany.predictors import LocalPredictor
+from jevany.readout import add_readout_arguments, letter_options_from_args
 from jevany.suite import digest, load_split, record_digest
 
 
@@ -80,6 +81,7 @@ def measure(records, predictor, device, warmup=16, repeats=3, seed=0):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run", required=True)
+    add_readout_arguments(parser)
     parser.add_argument("--suite", required=True)
     parser.add_argument("--out", required=True)
     parser.add_argument("--device", choices=("cpu", "cuda", "mps"), default="cuda")
@@ -98,8 +100,14 @@ def main(argv=None):
                         help="keep PyTorch's fused SDPA kernels as `jevany serve` does, instead of the math kernel "
                              "LocalPredictor selects for fp32-exact evaluation")
     args = parser.parse_args(argv)
+    try:
+        letter_options = letter_options_from_args(args)
+    except ValueError as error:
+        parser.error(str(error))
     if args.records < 0 or min(args.warmup, args.repeats) < 1:
         parser.error("records must be nonnegative; warmup and repeats must be positive")
+    if letter_options is not None and (args.cuda_graphs or args.cuda_graph_max_tokens is not None):
+        parser.error("CUDA graphs apply only to native readout")
     target = Path(args.out)
     if target.exists():
         parser.error("refusing to overwrite an existing latency report")
@@ -124,17 +132,27 @@ def main(argv=None):
                           cuda_graph_max_tokens=(args.cuda_graph_max_tokens
                                                  if args.cuda_graph_max_tokens is not None
                                                  else options.cuda_graph_max_tokens))
-    predictor = LocalPredictor(args.run, args.device, options, max_packed=args.max_packed,
-                               exact_kernels=not args.serving_kernels)
+    if letter_options is None:
+        predictor = LocalPredictor(args.run, args.device, options, max_packed=args.max_packed,
+                                   exact_kernels=not args.serving_kernels)
+    else:
+        from jevany.letter_predictor import LetterReadoutPredictor
+        predictor = LetterReadoutPredictor(
+            checkpoint=args.run, device=args.device, options=options,
+            temperature=letter_options.temperature,
+            pointer_weight=letter_options.pointer_weight,
+            max_tokens=letter_options.max_tokens,
+        )
     report = measure(records, predictor, args.device, args.warmup, args.repeats, args.seed)
     report.update(
-        checkpoint=args.run, base_loading=predictor.base_loading,
+        checkpoint=args.run, base_loading=getattr(predictor, "base_loading", None),
         suite_manifest_sha256=digest(Path(args.suite) / "manifest.json"),
         split_sha256=digest(Path(args.suite) / "development.jsonl"),
         panel_id_sha256=record_digest(identities), panel_ids=identities,
         modality=args.modality,
         timing={
-            "forward": "ModelPredictor forward, probability/logit CPU transfer and output construction; excludes encoding",
+            "forward": ("predictor-reported model path; boundaries differ by readout and are not cross-readout "
+                        "comparable"),
             "end_to_end": "local preprocessing, media decode, tokenization, forward and output construction",
             "excluded": "model loading, warmup, network transport and report writing",
             "throughput": "serial reciprocal mean latency; not saturated server throughput",
@@ -145,7 +163,8 @@ def main(argv=None):
             "gpu": torch.cuda.get_device_name() if args.device == "cuda" else None,
             "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
             "gpus": torch.cuda.device_count() if args.device == "cuda" else 0,
-            "devices": getattr(predictor.model, "devices", None),
+            "devices": getattr(getattr(predictor, "model", getattr(predictor, "pointer_model", None)),
+                               "devices", None),
             "tf32": torch.backends.cuda.matmul.allow_tf32,
             "flash_sdp": torch.backends.cuda.flash_sdp_enabled(),
             "mem_efficient_sdp": torch.backends.cuda.mem_efficient_sdp_enabled(),
@@ -158,7 +177,12 @@ def main(argv=None):
             "device_map": options.device_map, "max_memory_gib": options.max_memory_gib,
             "cuda_graph_max_tokens": options.cuda_graph_max_tokens,
         },
-        cuda_graphs=getattr(predictor.model, "inference_acceleration", {}).get("cuda_graphs"),
+        readout=args.readout,
+        letter_readout=(dict(predictor.provenance) if letter_options is not None else None),
+        cuda_graphs=getattr(
+            getattr(predictor, "model", getattr(predictor, "pointer_model", None)),
+            "inference_acceleration", {},
+        ).get("cuda_graphs"),
     )
     target.parent.mkdir(parents=True, exist_ok=True)
     with target.open("x") as output:
