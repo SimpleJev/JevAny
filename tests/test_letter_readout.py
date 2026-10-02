@@ -4,6 +4,8 @@ import math
 import pytest
 
 from jevany.letter_readout import (
+    CHOICE_SYMBOLS,
+    CYGNET_LETTERS,
     LETTERS,
     SYSTEM_PROMPT,
     build_prompt,
@@ -45,21 +47,26 @@ def test_build_prompt_matches_cygnet_structured_rendering_and_option_order():
         "A. Refund the card",
         "B. Issue store credit",
         "",
-        "Answer with the letter of exactly one option, and nothing else:",
+        "Answer with the case-sensitive ID of exactly one option, and nothing else:",
     ])
     assert prompt == expected
     assert prompt.index("A. Refund") < prompt.index("B. Issue")
     assert "thinking" not in prompt.lower()
-    assert "LETTER and nothing else" in SYSTEM_PROMPT
+    assert "case-sensitive ID and nothing else" in SYSTEM_PROMPT
 
 
-def test_prompt_accepts_all_letters_and_rejects_invalid_option_counts():
-    prompt = build_prompt("state", "choose", [f"option {index}" for index in range(26)])
-    assert f"{LETTERS[-1]}. option 25" in prompt
+def test_prompt_preserves_cygnet_az_then_extends_to_lowercase_ids():
+    prompt = build_prompt(
+        "state", "choose", [f"option {index}" for index in range(len(CHOICE_SYMBOLS))]
+    )
+    assert LETTERS == CHOICE_SYMBOLS
+    assert f"{CYGNET_LETTERS[-1]}. option 25" in prompt
+    assert f"{CHOICE_SYMBOLS[26]}. option 26" in prompt
+    assert f"{CHOICE_SYMBOLS[-1]}. option 51" in prompt
     with pytest.raises(ValueError, match="at least one"):
         build_prompt("state", "choose", [])
-    with pytest.raises(ValueError, match="at most 26"):
-        build_prompt("state", "choose", list(range(27)))
+    with pytest.raises(ValueError, match="at most 52"):
+        build_prompt("state", "choose", list(range(53)))
     with pytest.raises(TypeError, match="ordered mapping"):
         build_prompt("state", "choose", "not an option sequence")
 
@@ -161,8 +168,8 @@ def test_invalid_probability_distributions_are_rejected(probabilities):
 
 def test_invalid_letters_token_maps_and_logits_are_rejected():
     tokenizer = FakeTokenizer(["A", "not B"])
-    with pytest.raises(ValueError, match="only single uppercase"):
-        letter_token_ids(tokenizer, ("A", "b"))
+    with pytest.raises(ValueError, match="single A-Z/a-z"):
+        letter_token_ids(tokenizer, ("A", "1"))
     with pytest.raises(ValueError, match="duplicates"):
         letter_token_ids(tokenizer, ("A", "A"))
     with pytest.raises(ValueError, match="no one-token aliases for: B"):

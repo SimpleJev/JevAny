@@ -23,7 +23,7 @@ from .checkpoint import Checkpoint, LoadOptions
 from .data import api_request, materialize
 from .device import sync
 from .letter_readout import (
-    LETTERS,
+    CHOICE_SYMBOLS,
     SYSTEM_PROMPT,
     build_prompt,
     letter_token_ids,
@@ -61,17 +61,19 @@ def _safe_chat_text(tokenizer, text: str) -> str:
     return escaped
 
 
-def _release_unused_output_head(decision_model) -> bool:
-    """Drop references to the full-vocabulary head unused by letter readout."""
+def _release_unused_output_head(decision_model, *, retain_native: bool = False) -> bool:
+    """Drop the full-vocabulary head unless a native LM-token pass needs it."""
 
     adapter = getattr(decision_model, "adapter", None)
     adapter_head = getattr(adapter, "_output_embeddings", None)
     native_head = getattr(decision_model, "lm_head", None)
+    if retain_native:
+        return False
     if adapter_head is None and native_head is None:
         return False
-    # The exact letter rows are copied immediately after this call.  Native
-    # lm-token inference is never invoked by this predictor, so both aliases
-    # can be detached even for direct-token checkpoints.
+    # Exact choice rows are copied from the tied embedding table or loaded
+    # independently from safetensors.  With no LM-token native pass, both
+    # aliases can therefore be detached to release the full vocabulary head.
     if native_head is not None:
         decision_model.lm_head = None
     if adapter_head is not None:
@@ -223,9 +225,10 @@ class LetterReadoutPredictor:
     """Benchmark predictor for an exact constrained first-token readout.
 
     Give either ``base`` for a frozen training-free model, or ``checkpoint``
-    to apply a JevAny LoRA before the same readout.  ``pointer_weight > 0``
-    additionally pools the checkpoint's native pointer probabilities in log
-    space; this costs one extra pointer-formatted prefill per request.
+    to apply a JevAny LoRA before the same readout.  ``native_weight > 0``
+    additionally pools the checkpoint's native probabilities in log space;
+    this costs one extra native-formatted prefill per request.  The legacy
+    ``pointer_weight`` spelling remains an alias for ``native_weight``.
     """
 
     def __init__(
@@ -237,7 +240,10 @@ class LetterReadoutPredictor:
         options: LoadOptions | None = None,
         revision: str | None = None,
         temperature: float = 1.0,
-        pointer_weight: float = 0.0,
+        pointer_weight: float | None = None,
+        native_weight: float | None = None,
+        return_components: bool = False,
+        exact_kernels: bool = True,
         max_tokens: int = 16_384,
     ) -> None:
         if (base is None) == (checkpoint is None):
@@ -247,11 +253,32 @@ class LetterReadoutPredictor:
         self.temperature = float(temperature)
         if not math.isfinite(self.temperature) or self.temperature <= 0:
             raise ValueError("temperature must be finite and positive")
+        if pointer_weight is not None and native_weight is not None:
+            raise ValueError("give at most one of native_weight or pointer_weight")
+        weight_source = (
+            "native_weight" if native_weight is not None
+            else "pointer_weight" if pointer_weight is not None
+            else "default"
+        )
+        selected_weight = (
+            native_weight if native_weight is not None
+            else pointer_weight if pointer_weight is not None
+            else 0.0
+        )
         # Reuse the same validation as the actual combination path.
-        geometric_blend([1.0], [1.0], pointer_weight)
-        self.pointer_weight = float(pointer_weight)
-        if checkpoint is None and self.pointer_weight:
-            raise ValueError("pointer_weight requires a JevAny checkpoint")
+        geometric_blend([1.0], [1.0], selected_weight)
+        self.native_weight = float(selected_weight)
+        # Public compatibility alias for existing runtime/CLI integrations.
+        self.pointer_weight = self.native_weight
+        if checkpoint is None and self.native_weight:
+            raise ValueError("native_weight requires a JevAny checkpoint")
+        if type(return_components) is not bool:
+            raise TypeError("return_components must be a boolean")
+        if type(exact_kernels) is not bool:
+            raise TypeError("exact_kernels must be a boolean")
+        self.return_components = return_components
+        self.exact_kernels = exact_kernels
+        self.exact_cuda_kernels_applied = device == "cuda" and exact_kernels
         if type(max_tokens) is not int or max_tokens < 2:
             raise ValueError("max_tokens must be an integer >= 2")
         self.max_tokens = max_tokens
@@ -261,7 +288,22 @@ class LetterReadoutPredictor:
             raise ValueError("native-head temperature is not used by letter readout; use temperature")
         if self.options.cuda_graphs:
             raise ValueError("CUDA graph capture is available only for native readout")
+        if self.exact_cuda_kernels_applied:
+            # Match LocalPredictor: benchmark evaluation disables approximate
+            # TF32 and fused SDPA kernels, while exact_kernels=False retains
+            # the serving-style PyTorch defaults.
+            torch.backends.cuda.matmul.allow_tf32 = False
+            torch.backends.cudnn.allow_tf32 = False
+            torch.backends.cuda.enable_flash_sdp(False)
+            torch.backends.cuda.enable_mem_efficient_sdp(False)
         self.checkpoint: Checkpoint | None = None
+        self.native_model = None
+        self.native_decision_mode = None
+        self._needs_native = checkpoint is not None and bool(
+            self.native_weight or self.return_components
+        )
+        # Compatibility alias retained for callers predating generalized
+        # native blending.
         self.pointer_model = None
 
         if checkpoint is not None:
@@ -270,10 +312,10 @@ class LetterReadoutPredictor:
             loaded = self.checkpoint = Checkpoint(checkpoint)
             if loaded.meta.special_embeddings:
                 raise ValueError("letter readout is not validated for checkpoints with trained special embeddings")
-            if self.pointer_weight and loaded.meta.decision_mode != "pointer":
-                raise ValueError("pointer_weight requires a native pointer checkpoint")
             self.preprocessor, decision_model = loaded.load(device, self.options)
+            self.native_model = decision_model
             self.pointer_model = decision_model
+            self.native_decision_mode = loaded.meta.decision_mode
             self.language_model = decision_model.lm
             canonical_base = loaded.meta.base
             canonical_revision = loaded.meta.base_revision
@@ -305,7 +347,10 @@ class LetterReadoutPredictor:
             projection_source, projection_revision = source, source_revision
             checkpoint_id, adapter_scale, adapter_applied = None, 0.0, False
 
-        released_output_head = _release_unused_output_head(decision_model)
+        released_output_head = _release_unused_output_head(
+            decision_model,
+            retain_native=(self._needs_native and self.native_decision_mode == "lm_token"),
+        )
         self.language_model.eval()
         override_config = (
             Path(self.options.base_load_path) / "config.json"
@@ -339,7 +384,7 @@ class LetterReadoutPredictor:
             hashlib.sha256(chat_template.encode()).hexdigest()
             if isinstance(chat_template, str) else None
         )
-        self.alias_token_ids = letter_token_ids(self.tokenizer, LETTERS)
+        self.alias_token_ids = letter_token_ids(self.tokenizer, CHOICE_SYMBOLS)
         flat_token_ids, alias_rows = [], {}
         for letter, token_ids in self.alias_token_ids.items():
             start = len(flat_token_ids)
@@ -368,12 +413,12 @@ class LetterReadoutPredictor:
             if not math.isfinite(self.output_softcap) or self.output_softcap <= 0:
                 raise ValueError("final_logit_softcapping must be finite and positive")
         self.provenance = {
-            "method": "exact option-letter choice projection",
-            "constraint_emulation": "exact decoded uppercase letters",
-            "prompt": "Cygnet-compatible",
+            "method": "training-free exact choice-token projection",
+            "constraint_emulation": "exact decoded one-character option IDs",
+            "prompt": "Cygnet-compatible A-Z; extended with a-z above 26 options",
             "system_prompt_sha256": hashlib.sha256(SYSTEM_PROMPT.encode()).hexdigest(),
             "chat_template_sha256": self.chat_template_sha256,
-            "prompt_format_version": 1,
+            "prompt_format_version": 2,
             "canonical_base": canonical_base,
             "canonical_revision": canonical_revision,
             "checkpoint": checkpoint_id,
@@ -384,10 +429,19 @@ class LetterReadoutPredictor:
             "letter_choice_token_rows": len(flat_token_ids),
             "output_softcap": self.output_softcap,
             "temperature": self.temperature,
+            "native_weight": self.native_weight,
+            "native_weight_argument": weight_source,
+            "native_decision_mode": self.native_decision_mode,
             "pointer_weight": self.pointer_weight,
-            "pointer_temperature": (
-                float(self.pointer_model.temperature) if self.pointer_weight else None
+            "native_temperature": (
+                float(self.native_model.temperature) if self._needs_native else None
             ),
+            "pointer_temperature": (
+                float(self.native_model.temperature) if self._needs_native else None
+            ),
+            "return_components": self.return_components,
+            "exact_kernels": self.exact_kernels,
+            "exact_cuda_kernels_applied": self.exact_cuda_kernels_applied,
             "max_tokens": self.max_tokens,
             "backbone_context_window": self.backbone_context_window,
             "effective_max_tokens": self.effective_max_tokens,
@@ -417,8 +471,10 @@ class LetterReadoutPredictor:
 
     def _letter_question(self, state, question: dict) -> tuple[list[str], list[float], list[float], int]:
         keys, descriptions = question_options(question)
-        if len(keys) > len(LETTERS):
-            raise ValueError(f"exact letter readout supports at most {len(LETTERS)} options")
+        if len(keys) > len(CHOICE_SYMBOLS):
+            raise ValueError(
+                f"exact choice-token readout supports at most {len(CHOICE_SYMBOLS)} options"
+            )
         prompt = build_prompt(state, question.get("instructions") or "", descriptions)
         ids = self._chat_ids(prompt)
         output = self.language_model(
@@ -434,15 +490,17 @@ class LetterReadoutPredictor:
         if self.output_softcap is not None:
             selected_logits = self.output_softcap * torch.tanh(selected_logits / self.output_softcap)
         selected_logits = selected_logits.cpu()
-        aliases = {letter: self.alias_rows[letter] for letter in LETTERS[:len(keys)]}
+        aliases = {
+            symbol: self.alias_rows[symbol] for symbol in CHOICE_SYMBOLS[:len(keys)]
+        }
         readout = read_letter_distribution(selected_logits, aliases, self.temperature)
         probabilities = [readout.calibrated_probabilities[letter] for letter in aliases]
         calibrated_logits = [readout.raw_log_masses[letter] / self.temperature for letter in aliases]
         return keys, probabilities, calibrated_logits, int(ids.shape[1])
 
-    def _pointer(self, record: dict) -> tuple[list[list[float]], int]:
+    def _native(self, record: dict) -> tuple[list[list[float]], int]:
         internal = materialize(record)
-        encoded = self.pointer_model.encode(
+        encoded = self.native_model.encode(
             self.preprocessor,
             internal,
             max_state=self.effective_max_tokens,
@@ -451,11 +509,16 @@ class LetterReadoutPredictor:
         )
         if len(encoded["ids"]) > self.effective_max_tokens:
             raise ContextLengthError(
-                f"pointer request needs {len(encoded['ids'])} packed tokens; "
+                f"native request needs {len(encoded['ids'])} packed tokens; "
                 f"limit {self.effective_max_tokens}"
             )
         return [F.softmax(logits, -1).float().cpu().tolist()
-                for logits in self.pointer_model.forward(encoded)], len(encoded["ids"])
+                for logits in self.native_model.forward(encoded)], len(encoded["ids"])
+
+    def _pointer(self, record: dict) -> tuple[list[list[float]], int]:
+        """Compatibility alias for the generalized native checkpoint pass."""
+
+        return self._native(record)
 
     @torch.inference_mode()
     def __call__(self, record: dict) -> dict:
@@ -469,37 +532,54 @@ class LetterReadoutPredictor:
             self._letter_question(request["state"], question)
             for question in request["questions"].values()
         ]
-        pointer_rows, pointer_tokens = (None, 0)
-        if self.pointer_weight:
-            pointer_rows, pointer_tokens = self._pointer(record)
-            if len(pointer_rows) != len(letter_rows):
-                raise ValueError("pointer and letter question counts differ")
+        native_rows, native_tokens = (None, 0)
+        if self._needs_native:
+            native_rows, native_tokens = self._native(record)
+            if len(native_rows) != len(letter_rows):
+                raise ValueError("native and choice question counts differ")
 
         probabilities, logits = {}, {}
+        choice_probabilities, native_probabilities = {}, {}
         for index, (question_id, (keys, letter_p, letter_z, _tokens)) in enumerate(
             zip(request["questions"], letter_rows, strict=True)
         ):
-            if pointer_rows is None:
+            choice_probabilities[question_id] = dict(zip(keys, letter_p, strict=True))
+            if native_rows is not None:
+                if len(native_rows[index]) != len(keys):
+                    raise ValueError(
+                        f"native and choice option counts differ for question {question_id!r}"
+                    )
+                native_probabilities[question_id] = dict(
+                    zip(keys, native_rows[index], strict=True)
+                )
+            if native_rows is None or not self.native_weight:
                 selected_p, selected_z = letter_p, letter_z
             else:
                 selected_p, selected_z = geometric_blend(
-                    letter_p, pointer_rows[index], self.pointer_weight
+                    letter_p, native_rows[index], self.native_weight
                 )
             probabilities[question_id] = dict(zip(keys, selected_p, strict=True))
             logits[question_id] = dict(zip(keys, selected_z, strict=True))
         sync(self.device)
-        return {
+        result = {
             "probabilities": probabilities,
             "logits": logits,
             "inference_temperature": self.temperature,
             "latency_ms": (time.perf_counter() - started) * 1000,
-            "input_tokens": sum(row[3] for row in letter_rows) + pointer_tokens,
+            "input_tokens": sum(row[3] for row in letter_rows) + native_tokens,
             "readout": {
                 "method": self.provenance["method"],
                 "adapter_applied": self.provenance["adapter_applied"],
+                "native_weight": self.native_weight,
+                "native_decision_mode": self.native_decision_mode,
                 "pointer_weight": self.pointer_weight,
             },
         }
+        if self.return_components:
+            result["component_probabilities"] = {"choice": choice_probabilities}
+            if native_rows is not None:
+                result["component_probabilities"]["native"] = native_probabilities
+        return result
 
 
 __all__ = ["LetterReadoutPredictor", "geometric_blend", "question_options"]

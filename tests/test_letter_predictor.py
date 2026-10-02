@@ -26,6 +26,21 @@ def test_letter_predictor_rejects_native_only_load_options_before_loading():
         )
 
 
+def test_letter_predictor_validates_generalized_native_arguments_before_loading():
+    with pytest.raises(ValueError, match="at most one"):
+        LetterReadoutPredictor(
+            checkpoint="unused", device="cpu", native_weight=0.5, pointer_weight=0.5,
+        )
+    with pytest.raises(ValueError, match="requires a JevAny checkpoint"):
+        LetterReadoutPredictor(base="unused", device="cpu", native_weight=0.5)
+    with pytest.raises(TypeError, match="return_components"):
+        LetterReadoutPredictor(checkpoint="unused", device="cpu", return_components=1)
+    with pytest.raises(TypeError, match="exact_kernels"):
+        LetterReadoutPredictor(checkpoint="unused", device="cpu", exact_kernels=1)
+    with pytest.raises(ValueError, match="pointer weight"):
+        LetterReadoutPredictor(checkpoint="unused", device="cpu", native_weight=1.01)
+
+
 def test_one_row_input_ids_normalizes_template_shapes_and_mappings():
     assert _one_row_input_ids(torch.tensor([1, 2])).tolist() == [[1, 2]]
     assert _one_row_input_ids({"input_ids": [[3, 4]]}).tolist() == [[3, 4]]
@@ -111,6 +126,56 @@ def test_release_unused_output_head_drops_lm_token_aliases():
     assert direct_token.lm_head is None
     assert direct_token.adapter._output_embeddings is None
     assert _release_unused_output_head(direct_token) is False
+
+
+def test_release_unused_output_head_retains_direct_token_native_head():
+    head = object()
+    direct_token = type("Model", (), {
+        "adapter": type("Adapter", (), {"_output_embeddings": head})(),
+        "lm_head": head,
+    })()
+
+    assert _release_unused_output_head(direct_token, retain_native=True) is False
+    assert direct_token.lm_head is head
+    assert direct_token.adapter._output_embeddings is head
+
+
+def test_return_components_exposes_unblended_choice_and_native_probabilities():
+    predictor = object.__new__(LetterReadoutPredictor)
+    predictor.device = "cpu"
+    predictor.temperature = 1.0
+    predictor.native_weight = 0.5
+    predictor.pointer_weight = 0.5
+    predictor.return_components = True
+    predictor._needs_native = True
+    predictor.native_decision_mode = "lm_token"
+    predictor.provenance = {
+        "method": "exact option-letter choice projection",
+        "adapter_applied": True,
+    }
+    predictor._letter_question = lambda state, question: (
+        ["left", "right"], [0.8, 0.2], [4.0, 1.0], 11,
+    )
+    predictor._native = lambda record: ([[0.2, 0.8]], 7)
+    record = {
+        "state": "state",
+        "questions": {"q": {
+            "type": "choice",
+            "instructions": "choose",
+            "criteria": {"left": "Left", "right": "Right"},
+            "label": "left",
+        }},
+    }
+
+    result = predictor(record)
+
+    assert result["component_probabilities"] == {
+        "choice": {"q": {"left": 0.8, "right": 0.2}},
+        "native": {"q": {"left": 0.2, "right": 0.8}},
+    }
+    assert result["probabilities"]["q"] == pytest.approx({"left": 0.5, "right": 0.5})
+    assert result["input_tokens"] == 18
+    assert result["readout"]["native_decision_mode"] == "lm_token"
 
 
 def test_question_options_preserve_choice_and_score_order_and_fix_noul_order():
