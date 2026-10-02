@@ -3,6 +3,7 @@ import copy
 import json
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 
 import pytest
 
@@ -20,7 +21,7 @@ class Endpoint:
     def __init__(self):
         self.models = [{
             "id": "sft", "aliases": ["jevany-latest"], "base": "Qwen/Qwen3.5-4B",
-            "device": "cpu", "decision_mode": "pointer",
+            "device": "cpu", "decision_mode": "pointer", "readout": "native",
             "capabilities": {"media_types": [], "context_window": 4096},
             "limits": {"media_enabled": False, "state_tokens": 8192},
         }]
@@ -129,6 +130,7 @@ def test_connecting_reports_identity_and_capabilities_from_v1_models(app, endpoi
     assert connection["served"]["base"] == "Qwen/Qwen3.5-4B"
     assert connection["served"]["aliases"] == ["jevany-latest"]
     assert connection["served"]["decision_mode"] == "pointer"
+    assert connection["served"]["readout"] == "native"
     assert connection["checked"] and isinstance(app.client, JevClient)
     # A text-only checkpoint keeps image input off and says why.
     assert connection["images"] is False and connection["image_requests"] is False
@@ -136,6 +138,21 @@ def test_connecting_reports_identity_and_capabilities_from_v1_models(app, endpoi
     assert "text-only" in connection["media"]["reason"]
     with pytest.raises(ValueError, match="text-only"):
         app.set_images(True)
+
+
+def test_playground_displays_letter_deployment_readout(app, endpoint):
+    endpoint.models[0]["readout"] = "letter"
+    assert app.connect(endpoint.url)["served"]["readout"] == "letter"
+    source = (Path(__file__).parents[1] / "jevany" / "demos" / "static" / "app.js").read_text()
+    assert 'served.readout === "letter" ? "letter"' in source
+    assert 'readout ? `${readout} readout`' in source
+
+
+def test_playground_accepts_older_model_descriptors_without_readout(app, endpoint):
+    endpoint.models[0].pop("readout")
+    connection = app.connect(endpoint.url)
+    assert connection["served"]["readout"] is None
+    assert connection["served"]["decision_mode"] == "pointer"
 
 
 def test_a_failed_connection_keeps_the_working_one(app, endpoint):
@@ -164,6 +181,7 @@ def test_a_failed_connection_keeps_the_working_one(app, endpoint):
     ({"capabilities": {"media_types": [{"type": "image"}]}}, "media_types for 'sft' .* not a list"),
     ({"aliases": "jevany-latest"}, "aliases for 'sft' that are not a list"),
     ({"device": {"name": "cuda"}}, "device for 'sft' that is not a name"),
+    ({"readout": {"mode": "letter"}}, "readout for 'sft' that is not a name"),
     ({"id": ""}, "did not report a model id"),
     ({"id": None}, "did not report a model id"),
 ])

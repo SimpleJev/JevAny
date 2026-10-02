@@ -13,6 +13,12 @@ MMLU, MMLU-Pro, SciQ, and four robustness slices. **JevBench** is accuracy acros
 all 231 public development items. NLL, Brier,
 and ECE in the main table are Transfer metrics; every run covers every item.
 
+Every JevBench value in this document is public-development accuracy
+(`correct / 231`). It is not the official JevBench v1.5.4 composite, which
+combines Intelligence, Calibration, Speed and Cost over 1,624 open and sealed
+decisions. See the [letter-readout guide](LETTER_READOUT.md#benchmark-units) for
+the side-by-side definitions.
+
 | Model | Transfer ↑ | JevBench ↑ | NLL ↓ | Brier ↓ | ECE ↓ |
 |---|---:|---:|---:|---:|---:|
 | Kev-4B | 74.19% | 75.32% | 0.858 | 0.380 | 0.125 |

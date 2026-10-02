@@ -92,7 +92,7 @@ def model_descriptor(base_url: str, entry: dict[str, Any]) -> dict[str, Any]:
         raise ValueError(f"{base_url} reported limits.media_enabled for {identity!r} "
                          "that is not a boolean")
     labels = {}
-    for name in ("base", "device", "decision_mode"):
+    for name in ("base", "device", "decision_mode", "readout"):
         value = entry.get(name)
         if value is not None and not isinstance(value, str):
             raise ValueError(f"{base_url} reported {name} for {identity!r} that is not a name")
@@ -177,6 +177,7 @@ class DemoApplication:
             "served": {
                 "id": served["id"], "aliases": served["aliases"], "base": served["base"],
                 "device": served["device"], "decision_mode": served["decision_mode"],
+                "readout": served.get("readout"),
                 "limits": served["limits"],
             } if served is not None else None,
             "media": self.media_state(),
