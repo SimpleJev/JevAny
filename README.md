@@ -384,9 +384,9 @@ is not compared across hardware.
 Median model-call latency, serial batch size 1. See the full report for the
 apples-to-apples A100 comparison and panel limitations.
 
-[![Animation: Default, kernels with fused SDPA, and CUDA graphs race on one A100 clock slowed twenty times for JevAny-4B, 4B-DT and Gemma-4B; CUDA graphs finish at 25–32 ms, 3.3–4.1× sooner than Default](docs/efficiency-ablation.gif)](docs/EFFICIENCY.md)
+[![Animation: normalized latency ladders for the 4B releases on A100 and the 27B and 30B releases on H200, with exact median latency and speed-up labels](docs/efficiency-ablation.gif)](docs/EFFICIENCY.md)
 
-<p align="center"><sub>4B releases on one A100-40GB, Transfer-v9. Each bar fills at 1/20 of real time and stops at that stage's median latency.</sub></p>
+<p align="center"><sub>4B on A100 and 27–30B on H200. Each row is normalized to its own baseline; compare stages only within that row.</sub></p>
 
 [Full tables, setup and other models](docs/EFFICIENCY.md) ·
 [How to enable](docs/DEPLOYMENT.md#optional-cuda-acceleration) ·

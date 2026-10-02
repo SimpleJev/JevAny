@@ -1,7 +1,8 @@
-"""Animate the JevAny 4B latency ablation from results/efficiency-a100-v1.json.
+"""Animate within-row latency reductions for the 4B and 27–30B releases.
 
-Writes docs/efficiency-ablation.gif: every Transfer-v9 configuration races on the
-same slowed-down clock.
+Writes docs/efficiency-ablation.gif. Each row is normalized to its own measured
+baseline because the 4B and large-model audits use different hardware or fixed
+evaluation panels. Exact median latency remains visible on every completed bar.
 """
 
 from pathlib import Path
@@ -11,56 +12,98 @@ import matplotlib
 from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / "results" / "efficiency-a100-v1.json"
+A100_SOURCE = ROOT / "results" / "efficiency-a100-v1.json"
+H200_SOURCE = ROOT / "results" / "efficiency-h200-best-v1.json"
 GIF_OUT = ROOT / "docs" / "efficiency-ablation.gif"
 
 INK, MUTED, RULE, PAGE = "#213248", "#64748B", "#E4E9EF", "#FCFCFB"
-REMAINING, GRAPH, DEFAULT = "#278577", "#E8884A", "#8493A6"
+GRAPH, DEFAULT = "#E8884A", "#8493A6"
+LANE_COLOR = {
+    "Default": DEFAULT,
+    "Graphs off": DEFAULT,
+    "+ kernels, fused SDPA": "#6DBBA9",
+    "+ fused SDPA": "#6DBBA9",
+    "+ CUDA graphs": "#278577",
+}
 
-# Only releases that share one GPU and one fixed panel; 27B and 30B are reported
-# from H200 runs on different panels, so their latencies must not share a clock.
-RELEASES = [
-    ("JevAny-Qwen3.5-4B", "JevAny-4B", 1),
-    ("JevAny-Qwen3.5-4B-Direct-Token", "JevAny-4B-DT", 1),
-    ("JevAny-Gemma-4B", "JevAny-Gemma-4B", 1),
+SMALL_RELEASES = [
+    ("JevAny-Qwen3.5-4B", "Qwen3.5-4B"),
+    ("JevAny-Qwen3.5-4B-Direct-Token", "Qwen3.5-4B-DT"),
+    ("JevAny-Gemma-4B", "Gemma-4B"),
 ]
-# Stage name -> configuration row. Kernels and fused SDPA are one stage: next to
-# CUDA graphs they move latency too little to read as separate steps.
-STAGES = [
+SMALL_STAGES = [
     ("Default", "Default"),
     ("+ kernels, fused SDPA", "+ kernels + fused SDPA"),
     ("+ CUDA graphs", "+ kernels + fused SDPA + CUDA graphs"),
 ]
 
 
-def load_ladders(suite: str) -> list[tuple[str, int, list[tuple[str, float]]]]:
-    rows = json.loads(SOURCE.read_text())["rows"]
-    index = {(r["model"], r["configuration"], r["gpus"]): r for r in rows}
-    ladders = []
-    for model, short, gpus in RELEASES:
+def load_groups() -> list[dict]:
+    a100_rows = json.loads(A100_SOURCE.read_text())["rows"]
+    a100_index = {(row["model"], row["configuration"], row["gpus"]): row for row in a100_rows}
+    small_rows = []
+    for model, short in SMALL_RELEASES:
         stops = [
-            (stage, index[(model, config, gpus)][suite]["median_ms"])
-            for stage, config in STAGES
-            if (model, config, gpus) in index
+            (stage, a100_index[(model, configuration, 1)]["transfer"]["median_ms"])
+            for stage, configuration in SMALL_STAGES
         ]
-        ladders.append((short, gpus, stops))
-    return ladders
+        small_rows.append({"name": short, "panel": "", "digits": 1, "stops": stops})
+
+    h200_rows = {row["model"]: row for row in json.loads(H200_SOURCE.read_text())["rows"]}
+    qwen = h200_rows["JevAny-Qwen3.8-27B"]
+    muse = h200_rows["JevAny-Muse-Glimmer-30B"]
+    large_rows = [
+        {
+            "name": "Qwen3.8-27B",
+            "panel": "JevBench · 231",
+            "digits": 2,
+            "stops": [
+                ("Graphs off", qwen["before"]["median_ms"]),
+                ("+ CUDA graphs", qwen["after"]["median_ms"]),
+            ],
+        },
+        {
+            "name": "Muse-Glimmer-30B",
+            "panel": "Transfer · 44",
+            "digits": 2,
+            "stops": [
+                ("Default", muse["before"]["median_ms"]),
+                ("+ fused SDPA", muse["intermediate"]["median_ms"]),
+                ("+ CUDA graphs", muse["after"]["median_ms"]),
+            ],
+        },
+    ]
+    return [
+        {
+            "title": "4B releases",
+            "detail": "1× A100-40GB · Transfer-v9 · 1,046 scored",
+            "rows": small_rows,
+        },
+        {
+            "title": "27–30B releases",
+            "detail": "1× H200 · fixed panel shown per row",
+            "rows": large_rows,
+        },
+    ]
 
 
-def speedup_text(total: float, final: float) -> str:
+def speedup_text(total: float, final: float, digits: int) -> str:
     ratio = total / final
-    return f"{ratio:.2f}×" if ratio < 2 else f"{ratio:.1f}×"
+    return f"{ratio:.2f}×" if digits == 2 or ratio < 2 else f"{ratio:.1f}×"
 
 
-# GIF: one ms of model latency plays as SLOWDOWN ms of animation. Render at
-# 1.5x density so labels stay crisp when GitHub scales the animation to the
-# README column width.
+def latency_text(latency: float, digits: int) -> str:
+    return f"{latency:.{digits}f} ms"
+
+
+# Render at 1.5× density so labels stay crisp at GitHub README width.
 SCALE = 1.5
-WIDTH, HEIGHT = round(1080 * SCALE), round(600 * SCALE)
-FRAME_MS, SLOWDOWN, START_HOLD_MS, END_HOLD_MS = 40, 20, 240, 900
-LANE_COLOR = {"Default": DEFAULT, "+ kernels, fused SDPA": "#6DBBA9", "+ CUDA graphs": REMAINING}
-BAR_X0, BAR_X1, LABEL_X = (round(value * SCALE) for value in (372, 930, 40))
-LANE_H, LANE_GAP, GROUP_GAP, TOP = (round(value * SCALE) for value in (28, 10, 20, 132))
+WIDTH, HEIGHT = round(1080 * SCALE), round(810 * SCALE)
+FRAME_MS, PLAY_MS, START_HOLD_MS, END_HOLD_MS = 40, 2200, 240, 900
+BAR_X0, BAR_X1, LABEL_X = (round(value * SCALE) for value in (390, 850, 40))
+LANE_H, LANE_GAP, MODEL_GAP, GROUP_GAP, TOP = (
+    round(value * SCALE) for value in (24, 7, 14, 22, 128)
+)
 
 
 def px(value: float) -> int:
@@ -74,60 +117,120 @@ def font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
     )
 
 
-def render_frame(ladders, clock_ms: float, axis_ms: float) -> Image.Image:
+def render_frame(groups: list[dict], progress: float) -> Image.Image:
     image = Image.new("RGB", (WIDTH, HEIGHT), PAGE)
     draw = ImageDraw.Draw(image)
-    draw.text((LABEL_X, px(26)), "How the 4B releases get faster", font=font(26, True), fill=INK)
-    draw.text((LABEL_X, px(66)), "Transfer-v9 median latency per request · one A100-40GB · batch size 1 · "
-              f"played {SLOWDOWN}× slower than real time", font=font(14), fill=MUTED)
-    draw.text((WIDTH - LABEL_X, px(26)), f"{min(clock_ms, axis_ms):5.0f} ms", font=font(26, True),
-              fill=INK, anchor="ra")
+    draw.text((LABEL_X, px(24)), "How JevAny gets faster — 4B to 30B", font=font(26, True), fill=INK)
+    draw.text(
+        (LABEL_X, px(64)),
+        "Median latency per request · batch size 1 · each row normalized to its own baseline",
+        font=font(14),
+        fill=MUTED,
+    )
+    draw.text(
+        (WIDTH - LABEL_X, px(27)),
+        f"{min(progress, 1.0) * 100:3.0f}%",
+        font=font(23, True),
+        fill=INK,
+        anchor="ra",
+    )
 
-    scale = (BAR_X1 - BAR_X0) / axis_ms
-    for tick in range(0, int(axis_ms) + 1, 20):
-        x = BAR_X0 + tick * scale
-        draw.line([(x, TOP - px(14)), (x, HEIGHT - px(52))], fill=RULE, width=px(1))
-        draw.text((x, HEIGHT - px(44)), f"{tick} ms", font=font(12), fill=MUTED, anchor="ma")
+    axis_y = HEIGHT - px(48)
+    for tick in range(0, 101, 20):
+        x = BAR_X0 + (BAR_X1 - BAR_X0) * tick / 100
+        draw.line([(x, TOP + px(25)), (x, axis_y - px(12))], fill=RULE, width=px(1))
+        draw.text((x, axis_y), f"{tick}%", font=font(11), fill=MUTED, anchor="ma")
 
     y = TOP
-    for short, gpus, stops in ladders:
-        name = short + ("" if gpus == 1 else f" · {gpus} GPUs")
-        draw.text((LABEL_X, y + LANE_H / 2), name, font=font(15, True), fill=INK, anchor="lm")
-        total = stops[0][1]
-        for stage, latency in stops:
-            done = clock_ms >= latency
-            draw.text((BAR_X0 - px(12), y + LANE_H / 2), stage, font=font(12), fill=MUTED, anchor="rm")
-            draw.rounded_rectangle([BAR_X0, y, BAR_X1, y + LANE_H], radius=px(4), fill="#EEF2F5")
-            length = min(clock_ms, latency) * scale
-            if length >= 1:
-                draw.rounded_rectangle([BAR_X0, y, BAR_X0 + length, y + LANE_H], radius=px(4),
-                                       fill=LANE_COLOR[stage])
-            if done:
-                label_x = BAR_X0 + length + px(8)
-                draw.text((label_x, y + LANE_H / 2), f"{latency:.0f} ms", font=font(13, True),
-                          fill=INK, anchor="lm")
-                if stage != "Default":
-                    width = draw.textlength(f"{latency:.0f} ms", font=font(13, True))
-                    draw.text((label_x + width + px(10), y + LANE_H / 2), speedup_text(total, latency),
-                              font=font(13, True), fill=GRAPH, anchor="lm")
-            y += LANE_H + LANE_GAP
-        y += GROUP_GAP
+    for group_index, group in enumerate(groups):
+        draw.text((LABEL_X, y), group["title"], font=font(15, True), fill=INK, anchor="la")
+        title_width = draw.textlength(group["title"], font=font(15, True))
+        draw.text(
+            (LABEL_X + title_width + px(12), y + px(1)),
+            group["detail"],
+            font=font(12),
+            fill=MUTED,
+            anchor="la",
+        )
+        draw.line([(LABEL_X, y + px(25)), (WIDTH - LABEL_X, y + px(25))], fill=RULE, width=px(1))
+        y += px(38)
+
+        for row in group["rows"]:
+            total = row["stops"][0][1]
+            for stop_index, (stage, latency) in enumerate(row["stops"]):
+                center_y = y + LANE_H / 2
+                if stop_index == 0:
+                    draw.text((LABEL_X, center_y), row["name"], font=font(13, True), fill=INK, anchor="lm")
+                    if row["panel"]:
+                        name_width = draw.textlength(row["name"], font=font(13, True))
+                        draw.text(
+                            (LABEL_X + name_width + px(8), center_y),
+                            row["panel"],
+                            font=font(10),
+                            fill=MUTED,
+                            anchor="lm",
+                        )
+                draw.text(
+                    (BAR_X0 - px(12), center_y), stage, font=font(11), fill=MUTED, anchor="rm"
+                )
+                draw.rounded_rectangle(
+                    [BAR_X0, y, BAR_X1, y + LANE_H], radius=px(4), fill="#EEF2F5"
+                )
+                relative_latency = latency / total
+                length = min(progress, relative_latency) * (BAR_X1 - BAR_X0)
+                if length >= 1:
+                    draw.rounded_rectangle(
+                        [BAR_X0, y, BAR_X0 + length, y + LANE_H],
+                        radius=px(4),
+                        fill=LANE_COLOR[stage],
+                    )
+                if progress >= relative_latency:
+                    label_x = BAR_X0 + length + px(8)
+                    latency_label = latency_text(latency, row["digits"])
+                    draw.text(
+                        (label_x, center_y), latency_label, font=font(12, True), fill=INK, anchor="lm"
+                    )
+                    if stop_index:
+                        latency_width = draw.textlength(latency_label, font=font(12, True))
+                        draw.text(
+                            (label_x + latency_width + px(8), center_y),
+                            speedup_text(total, latency, row["digits"]),
+                            font=font(12, True),
+                            fill=GRAPH,
+                            anchor="lm",
+                        )
+                y += LANE_H + LANE_GAP
+            y += MODEL_GAP - LANE_GAP
+        if group_index + 1 < len(groups):
+            y += GROUP_GAP
+
+    draw.text(
+        (LABEL_X, HEIGHT - px(18)),
+        "Hardware and panels differ; compare optimization stages only within each row.",
+        font=font(11),
+        fill=MUTED,
+        anchor="ld",
+    )
     return image
 
 
 def draw_gif() -> None:
-    ladders = load_ladders("transfer")
-    slowest = max(stops[0][1] for _, _, stops in ladders)
-    axis_ms = (int(slowest) // 20 + 1) * 20
-    play_ms = slowest * SLOWDOWN
-    clocks = [0.0] * (START_HOLD_MS // FRAME_MS)
-    clocks += [t / SLOWDOWN for t in range(0, int(play_ms) + FRAME_MS, FRAME_MS)]
-    clocks += [slowest] * (END_HOLD_MS // FRAME_MS)
-    frames = [render_frame(ladders, clock, axis_ms) for clock in clocks]
+    groups = load_groups()
+    progresses = [0.0] * (START_HOLD_MS // FRAME_MS)
+    progresses += [t / PLAY_MS for t in range(0, PLAY_MS + FRAME_MS, FRAME_MS)]
+    progresses += [1.0] * (END_HOLD_MS // FRAME_MS)
+    frames = [render_frame(groups, progress) for progress in progresses]
     palette = frames[-1].quantize(colors=128)
-    frames = [f.quantize(palette=palette, dither=Image.Dither.NONE) for f in frames]
-    frames[0].save(GIF_OUT, save_all=True, append_images=frames[1:], duration=FRAME_MS,
-                   loop=0, optimize=False, disposal=1)
+    frames = [frame.quantize(palette=palette, dither=Image.Dither.NONE) for frame in frames]
+    frames[0].save(
+        GIF_OUT,
+        save_all=True,
+        append_images=frames[1:],
+        duration=FRAME_MS,
+        loop=0,
+        optimize=False,
+        disposal=1,
+    )
 
 
 def main() -> None:
