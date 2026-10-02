@@ -8,6 +8,7 @@ from scripts.evaluate_choice_readout_matrix import (
     _typed_record,
     _typed_soft_metrics,
     evaluate,
+    reuse_completed,
 )
 
 
@@ -127,3 +128,33 @@ def test_evaluate_base_only_result_saves_choice_component(tmp_path):
     )
     assert set(prediction["component_probabilities"]) == {"choice"}
 
+
+def test_reuse_completed_validates_report_and_component_rows(tmp_path):
+    destination = tmp_path / "typed_test"
+    record = {
+        "state": "state",
+        "questions": {"q": {
+            "type": "choice", "criteria": {"a": None, "b": None},
+            "label": "a", "target": {"a": .75, "b": .25}, "src": "unit/reuse",
+        }},
+        "_meta": {
+            "id": "reuse", "group_id": "reuse", "source": "unit", "variant": "clean",
+        },
+    }
+
+    def predictor(_record):
+        return {
+            "probabilities": {"q": {"a": .75, "b": .25}},
+            "latency_ms": 1.0,
+            "input_tokens": 4,
+            "efficient_long_context_attention_used": False,
+        }
+
+    expected = evaluate("typed_test", [record], predictor, destination)
+    owner = type("Predictor", (), {"return_components": False})()
+
+    assert reuse_completed("typed_test", [record], owner, destination) == expected
+
+    (destination / "choice-rows.json").unlink()
+    with pytest.raises(RuntimeError, match="missing or incomplete"):
+        reuse_completed("typed_test", [record], owner, destination)

@@ -39,6 +39,10 @@ def test_letter_predictor_validates_generalized_native_arguments_before_loading(
         LetterReadoutPredictor(checkpoint="unused", device="cpu", exact_kernels=1)
     with pytest.raises(ValueError, match="pointer weight"):
         LetterReadoutPredictor(checkpoint="unused", device="cpu", native_weight=1.01)
+    with pytest.raises(ValueError, match="efficient_long_context_tokens"):
+        LetterReadoutPredictor(
+            checkpoint="unused", device="cpu", efficient_long_context_tokens=1,
+        )
 
 
 def test_one_row_input_ids_normalizes_template_shapes_and_mappings():
@@ -103,6 +107,16 @@ def test_safe_chat_text_escapes_gemma_and_bracket_style_controls():
     assert "‹start_of_turn>" in escaped
     assert "‹end_of_turn>" in escaped
     assert "［INST]" in escaped
+
+
+def test_long_context_attention_threshold_is_cuda_only():
+    predictor = object.__new__(LetterReadoutPredictor)
+    predictor.efficient_long_context_tokens = 16
+    predictor.device = "cpu"
+    assert not predictor._uses_efficient_attention(16)
+    predictor.device = "cuda"
+    assert not predictor._uses_efficient_attention(15)
+    assert predictor._uses_efficient_attention(16)
 
 
 def test_release_unused_output_head_drops_pointer_adapter_reference():
