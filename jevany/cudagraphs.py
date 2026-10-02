@@ -12,7 +12,8 @@ convolution), so tokens placed after the last real token cannot change a real to
 continue the row's positions, keeping position ids increasing.
 
 Results are not bit-identical to the eager path: padded shapes select different kernels. Replays reuse static
-buffers, so calls must not overlap; ``DecisionRuntime`` already serializes inference under its lock.
+buffers, so calls must not overlap; ``DecisionRuntime`` serializes inference under its lock (``model_lock`` when
+request batching is enabled). Batched requests always run the eager path.
 """
 import time
 

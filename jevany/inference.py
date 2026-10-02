@@ -12,7 +12,8 @@ class InferenceOptions:
     Token limits reject oversized inputs rather than truncating them. State and
     branch limits are also bounded by the backbone's context window. A branch
     includes the state; the packed limit covers the entire encoded request.
-    Set prefix_cache_size=0 to disable prefix reuse.
+    Set prefix_cache_size=0 to disable prefix reuse. max_batch_size > 1 lets
+    concurrent text requests share one forward pass; 1 scores each alone.
     """
 
     max_state_tokens: int = 8192
@@ -20,6 +21,7 @@ class InferenceOptions:
     max_packed_tokens: int = 8192
     prefix_cache_size: int = 4
     prefix_min_tokens: int = 384
+    max_batch_size: int = 1
 
     def __post_init__(self) -> None:
         for item in fields(self):
