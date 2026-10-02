@@ -83,11 +83,19 @@ def main() -> None:
         assert not urlparse(asset).scheme, f"External runtime dependency: {asset}"
         assert (SITE / unquote(asset)).is_file(), f"Missing asset: {asset}"
     cases = json.loads((SITE / "assets/data/cases.json").read_text())
+    messages = json.loads((SITE / "locales/zh-CN.json").read_text())
+    generated_messages = (SITE / "assets/i18n/zh-CN.js").read_text().split("window.jevanyMessages = ", 1)[1]
+    assert json.loads(generated_messages.removesuffix(";\n")) == messages, "Rebuild the Chinese homepage"
+    for case in cases:
+        assert case["title"] in messages and case["description"] in messages, f"Untranslated case: {case['id']}"
+    for source, translation in messages.items():
+        assert set(re.findall(r"\{\w+\}", source)) == set(re.findall(r"\{\w+\}", translation)), source
     sources = {p.stem for p in (SITE.parent / "docs/demos/cases").glob("*.gif")}
     assert len(cases) == len({case["id"] for case in cases}) == 30
     assert {case["id"] for case in cases} == sources
     backgrounds = ("grid", "grid-mobile")
     assert pages[(SITE / "index.html").resolve()].background_count == 1
+    assert pages[(SITE / "zh.html").resolve()].background_count == 1
     for name in backgrounds:
         for extension in ("mp4", "webm", "webp"):
             assert (SITE / f"assets/media/ambient/{name}.{extension}").stat().st_size > 1000
@@ -100,6 +108,7 @@ def main() -> None:
     assert catalog == json.loads((SITE.parent / "docs/supported-models.json").read_text())
     expected = sorted(results["released_models"] + results["references"], key=lambda m: m["jevbench_public_accuracy"], reverse=True)
     rows = pages[(SITE / "index.html").resolve()].benchmark_rows
+    assert rows == pages[(SITE / "zh.html").resolve()].benchmark_rows
     assert len(rows) == len(expected) == 9
     for row, model in zip(rows, expected):
         for metric in ("jevbench_public_accuracy", "transfer_v9_accuracy", "transfer_v9_nll", "transfer_v9_brier", "transfer_v9_ece"):

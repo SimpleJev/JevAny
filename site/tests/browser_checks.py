@@ -11,6 +11,8 @@ from urllib.parse import urlsplit
 
 from playwright.sync_api import Page, sync_playwright
 
+from localization_checks import check_localization
+
 
 SITE = Path(__file__).resolve().parents[1]
 
@@ -409,6 +411,7 @@ def check(url: str, output: Path) -> None:
         plain_page.goto(url + "docs/API.html", wait_until="networkidle")
         assert "One decision API" in plain_page.locator("h1").inner_text()
         plain.close()
+        check_localization(browser, url, output)
         assert not errors, errors
         result = {
             "status": "passed",
@@ -423,7 +426,8 @@ def check(url: str, output: Path) -> None:
                        "native pause", "CPU/GPU model selection and model card links",
                        "keyboard tabs", "clipboard and fallback",
                        "no overflow", "reduced motion", "save data", "network fallback",
-                       "MP4 fallback", "keyboard code scrolling", "no JavaScript fallback"],
+                       "MP4 fallback", "keyboard code scrolling", "no JavaScript fallback",
+                       "Chinese/English localization, language preference and highlighted docs navigation"],
             "console_errors": errors,
             "mp4_browser_decode": "passed" if mp4_decode_supported else "not available in this Chromium build; fallback URLs checked",
         }

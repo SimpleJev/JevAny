@@ -36,6 +36,18 @@ existing Markdown guides. It updates the marked sections of `index.html`,
 pages. GitHub Actions rebuilds and checks the site before publishing changes to
 `main`, uploading only the public site files.
 
+The header switches between English (`index.html`) and Simplified Chinese
+(`zh.html`), preserving the current section. The root URL uses the saved choice,
+then the browser language; explicit page URLs always take precedence. Both pages
+remain readable and linked without JavaScript. Docs opens the corresponding
+quickstart, with English-only reference guides identified on the Chinese page.
+
+Edit English homepage copy in `index.html` and Chinese translations in
+`locales/zh-CN.json`, then run the content builder. It generates `zh.html` and
+`assets/i18n/zh-CN.js` from the same catalog, including interactive messages.
+Missing homepage translations stop the build. Keep code, model identifiers and
+benchmark values unchanged; mark display-only identifiers with `translate="no"`.
+
 Thirty replay videos and the six scenes in the background come from
 `docs/demos/cases`. The scenes are joined without gutters and blurred together,
 with blended intermediate frames encoded into one 24 fps video. Landscape screens

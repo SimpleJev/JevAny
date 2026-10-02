@@ -15,6 +15,8 @@ from urllib.parse import unquote, urlsplit
 
 import markdown
 
+from localization import build_chinese_homepage, translate
+
 
 SITE = Path(__file__).resolve().parents[1]
 ROOT = SITE.parent
@@ -64,13 +66,13 @@ def benchmarks():
         value = display(model["jevbench_public_accuracy"], True)
         rows.append(
             f'<li class="benchmark-row {"ours" if ours else "baseline"}" {attrs}>'
-            f'<span class="benchmark-model"><span class="sr-only">{"JevAny " if ours else ""}</span>{escape(short)}</span>'
+            f'<span class="benchmark-model" translate="no"><span class="sr-only">{"JevAny " if ours else ""}</span>{escape(short)}</span>'
             f'<span class="benchmark-track" aria-hidden="true"><i style="width:{value}"></i></span>'
             f'<span class="benchmark-value">{value}</span></li>'
         )
         values = "".join(f"<td>{display(model[key], accuracy)}</td>" for key, (_, accuracy) in METRICS.items())
         tiers = "".join(f'<td>{display(model["jevbench_tiers"][tier], True)}</td>' for tier in ("easy", "original", "hard"))
-        table.append(f'<tr><th scope="row">{escape(name)}</th>{values}{tiers}</tr>')
+        table.append(f'<tr><th scope="row" translate="no">{escape(name)}</th>{values}{tiers}</tr>')
     return f"""
       <div class="benchmark-panel">
         <div class="benchmark-toolbar"><div class="metric-buttons" role="group" aria-label="Benchmark metric" hidden>{tabs}</div>
@@ -125,7 +127,7 @@ def models():
         family = next(f for f in ("Qwen", "Gemma", "Muse") if f in name)
         cards.append(
             f'<article class="checkpoint-card"><img src="assets/model-logos/jevany-{family.lower()}.svg" width="48" height="48" alt="">'
-            f'<h3>{escape(name.removeprefix("JevAny-"))}</h3><p>{blurbs[name]}</p>'
+            f'<h3 translate="no">{escape(name.removeprefix("JevAny-"))}</h3><p>{blurbs[name]}</p>'
             f'<a href="https://huggingface.co/{model["repository"]}"><span class="hf-mark" aria-hidden="true">🤗</span>Model card</a>'
             f'<a href="#get-started" data-local-model="{escape(model["repository"], quote=True)}">Run locally →</a>'
             f'<details class="checkpoint-details"><summary>Checkpoint details</summary>'
@@ -137,7 +139,7 @@ def models():
     support = []
     for family, entries in families.items():
         rows = "".join(
-            f'<tr><th scope="row"><code>{escape(m["id"])}</code></th><td>{escape(m["size"])}</td>'
+            f'<tr><th scope="row"><code>{escape(m["id"])}</code></th><td translate="no">{escape(m["size"])}</td>'
             f'<td>{escape(", ".join(["text"] + m["media"]))}</td></tr>' for m in entries
         )
         support.append(
@@ -213,7 +215,8 @@ def local_url(url, source, page):
 
 
 def doc_shell(title, body, toc, page, chinese=False):
-    home = relative_url(SITE / "index.html", page)
+    home = relative_url(SITE / ("zh.html" if chinese else "index.html"), page)
+    text = translate if chinese else lambda value: value
     css = relative_url(SITE / "styles.css", page)
     icon = relative_url(SITE / "assets/favicon.svg", page)
     links = [
@@ -227,18 +230,30 @@ def doc_shell(title, body, toc, page, chinese=False):
     nav = ""
     for label, filename in links:
         current = ' aria-current="page"' if page.name == filename else ""
+        label = text(label)
+        if chinese and filename != "zh.html":
+            label += "（英文）"
         nav += f'<a href="{relative_url(SITE / "docs" / filename, page)}"{current}>{label}</a>'
+    language_links = ""
+    if page.name in {"quickstart.html", "zh.html"}:
+        en_current = ' aria-current="page"' if not chinese else ""
+        zh_current = ' aria-current="page"' if chinese else ""
+        language_links = (
+            '<div class="language-switch" role="group" aria-label="' + text("Language") + '">'
+            f'<a href="quickstart.html" lang="en" hreflang="en" title="English"{en_current}>EN</a>'
+            f'<a href="zh.html" lang="zh-CN" hreflang="zh-CN" title="中文"{zh_current}>中文</a></div>'
+        )
     return f"""<!doctype html>
 <html lang="{"zh-CN" if chinese else "en"}"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a1114">
 <title>{escape(title)} — JevAny</title><link rel="stylesheet" href="{css}"><link rel="icon" href="{icon}" type="image/svg+xml"></head>
-<body class="docs-page"><a class="skip-link" href="#content">Skip to content</a>
+<body class="docs-page"><a class="skip-link" href="#content">{text("Skip to content")}</a>
 <header class="site-header wrap"><a class="brand" href="{home}"><img src="{icon}" width="30" height="30" alt=""><span>JevAny<span class="brand-period">.</span></span></a>
-<nav aria-label="Main navigation"><a href="{home}#benchmarks">Benchmarks</a><a href="{home}#models">Models</a><a href="{home}#get-started">Get started</a></nav></header>
-<div class="docs-layout wrap"><aside class="docs-sidebar"><a class="text-link" href="{home}">← Project homepage</a><nav aria-label="Documentation">{nav}</nav>
-<details class="doc-toc"><summary>On this page</summary>{toc}</details></aside>
-<main id="content" class="doc-content"><p class="eyebrow">JEVANY / DOCUMENTATION</p><h1>{escape(title)}</h1>{body}</main></div>
-<footer class="site-footer wrap"><a href="{home}">← Back to JevAny</a><a href="{relative_url(SITE / 'docs/license.html', page)}">Apache-2.0 code</a></footer></body></html>
+<nav aria-label="{text("Main navigation")}"><a href="{home}#benchmarks">{text("Benchmarks")}</a><a href="{home}#models">{text("Models")}</a><a href="{home}#get-started">{text("Get started")}</a></nav>{language_links}</header>
+<div class="docs-layout wrap"><aside class="docs-sidebar"><a class="text-link" href="{home}">{text("← Project homepage")}</a><nav aria-label="{text("Documentation")}">{nav}</nav>
+<details class="doc-toc"><summary>{text("On this page")}</summary>{toc}</details></aside>
+<main id="content" class="doc-content"><p class="eyebrow">{text("JEVANY / DOCUMENTATION")}</p><h1>{escape(title)}</h1>{body}</main></div>
+<footer class="site-footer wrap"><a href="{home}">{text("← Back to JevAny")}</a><a href="{relative_url(SITE / 'docs/license.html', page)}">{text("Apache-2.0 code")}</a></footer></body></html>
 """
 
 
@@ -298,6 +313,11 @@ def render_doc(source, page):
     body = re.sub(r"<table>(.*?)</table>", r'<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>\1</table></div>', body, flags=re.S)
     body = re.sub(r"<pre>", '<pre tabindex="0" role="region" aria-label="Code example">', body)
     body = body.replace("<img ", '<img loading="lazy" ')
+    if chinese:
+        body = body.replace("../index.html", "../zh.html")
+        for message in ("Explore interactive benchmark results", "Explore all 30 application replays →",
+                        "Documentation table", "Code example", "Your browser does not support video."):
+            body = body.replace(message, translate(message))
     page.parent.mkdir(parents=True, exist_ok=True)
     page.write_text(doc_shell(title, body, md.toc, page, chinese))
 
@@ -321,6 +341,7 @@ def main():
         html = re.sub(f"(<!-- generated:{name}:start -->).*?(<!-- generated:{name}:end -->)",
                       lambda m: m[1] + "\n" + content.strip() + "\n      " + m[2], html, flags=re.S)
     index.write_text(html)
+    build_chinese_homepage(html)
     data = SITE / "assets/data"
     data.mkdir(parents=True, exist_ok=True)
     (data / "cases.json").write_text(json.dumps(records, indent=2, ensure_ascii=False) + "\n")

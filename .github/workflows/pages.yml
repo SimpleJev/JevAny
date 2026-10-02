@@ -52,7 +52,7 @@ jobs:
       - name: Stage public files
         run: |
           mkdir -p _site
-          cp site/index.html site/styles.css site/app.js site/robots.txt site/sitemap.xml _site/
+          cp site/index.html site/zh.html site/styles.css site/app.js site/language.js site/robots.txt site/sitemap.xml _site/
           cp -r site/assets site/docs site/files _site/
       - uses: actions/upload-pages-artifact@v4
         if: github.event_name != 'pull_request'
