@@ -56,32 +56,17 @@ completion-time ratio. Click an animation to enlarge it.
 
 **Golden rules**
 
-**Delegate the selection bottleneck, not the task.** Jev is useful in the
-narrow gap where the LLM already knows the valid alternatives, but repeated
-frontier selection is costly or measurably unreliable.
+**Delegate the selection bottleneck, not the task.** Jev should either replace
+repeated LLM reasoning or correct a measured local ranking error; otherwise it
+is overhead.
 
-Jev has two valid jobs: **remove frontier work**, or **correct a measured local
-ranking weakness**. If it does neither, it is overhead.
-
-- **Judge the phase, not the benchmark.** WebShop and Terminal-Bench both mix
-  open-ended reasoning with bounded choices. Delegate only the bounded phase;
-  trivial choices are cheaper to execute directly, while missing strategies
-  stay with the LLM.
-- **The menu is the capability ceiling.** Give Jev 2–4 currently valid
-  counterfactual branches that include the correct action and lead to different
-  outcomes. Jev can rank expressed options; it cannot invent a missing plan.
-- **For efficiency, replace reasoning; do not append a judge.** One LLM plan
-  should fund several Jev choices. In the GPT-5.6-sol + 27B FrozenLake cell,
-  LLM calls fell 64.4%; WebArena, where delegation did not remove frontier
-  work, added 5.6% calls and 28.2% tokens. Quality-only use should first show a
-  ranking gain in paired or D1 shadow evaluation.
-- **Stay inside the feedback horizon.** Continue only while each action is
-  reversible and its semantic effect is immediately observable. Return to the
-  LLM on novelty, stale candidates, delayed feedback, or recovery.
-- **Promote autonomy with evidence.** Move from D0 LLM-only → D1 shadow → D2
-  one-step → D3 routine-default → D4 bounded subgoal. Keep only non-dominated
-  points: equal or higher verifier reward at lower cost, or higher reward with
-  the added cost explicitly reported. Delegation coverage itself is not a win.
+- Give Jev **2–4 valid branches** with distinct, observable outcomes and the
+  correct action included.
+- Reuse one LLM plan across reversible choices; return control on novelty,
+  stale candidates, delayed feedback, recovery, or completion.
+- Scale autonomy only with paired reward/cost evidence: D0 LLM-only → D1 shadow
+  → D2 one-step → D3 routine default → D4 bounded subgoal. Coverage is not
+  success.
 
 <table>
   <tr>
@@ -298,47 +283,39 @@ training and accuracy tradeoffs.
 
 ### Training-free choice-token readout <a name="choice-readout"></a><a name="letter-readout"></a>
 
-Choice-token readout assigns the ordered options to the exact one-token IDs
-`A–Z, a–z`, scores those 52 rows at the answer position, and renormalizes over
-the available options. It needs no readout training and works on a frozen base,
-after a JevAny Pointer or Direct-Token adapter, or in a log-linear stack with
-the checkpoint-native distribution. It can change the ranking and the selected
-answer; scalar temperature calibration only changes confidence.
+Choice-token is a training-free readout for up to 52 options: label them with
+the one-token IDs `A–Z, a–z`, score the answer-position logits, and renormalize.
+It works on a frozen base or with a Pointer/Direct-Token checkpoint; unlike
+temperature calibration, it can change the selected answer.
 
 ```bash
 jevany eval --run SimpleJev/JevAny-Qwen3.5-4B-Direct-Token-LoRA \
   --suite /path/to/suite --out runs/choice --device cuda --readout choice
 ```
 
-[Method, commands, limits and complete tables](docs/CHOICE_READOUT.md) ·
+[Method, commands and full results](docs/CHOICE_READOUT.md) ·
 [Machine-readable results](results/choice-readout-v2.json)
 
 [![Training-free choice-token, checkpoint-native, Transfer-dev-tuned blend, and external baseline accuracy on Typed Decisions and JevJudge text](docs/choice-readout-results.svg)](docs/CHOICE_READOUT.md#results)
 
-- Direct-Token 4B's Transfer-dev-tuned stack reaches **79.83%** on held-out
-  Transfer, **67.65%** on Typed Decisions, and **59.25%** on JevJudge text:
-  +0.96, +0.45, and +0.83 points over its native readout.
-- Pointer 27B's tuned stack reaches **89.10%** on held-out Transfer and
-  **73.30%** on Typed, but drops from **66.44% to 64.36%** on JevJudge text.
-  The target-domain result decides whether stacking is useful.
-- The frozen 4B choice path scores 52.75% on Typed; applying the Direct-Token
-  adapter raises the same choice path to 64.80%. On JevJudge text, the same
-  adapter slightly lowers it, from 58.70% to 57.60%.
+- **Best 4B blend:** Direct-Token reaches **79.83%** Transfer, **67.65%** Typed,
+  and **59.25%** JevJudge text—+0.96, +0.45, and +0.83 points over native.
+- **Best 27B blend:** Pointer reaches **89.10%** Transfer and **73.30%** Typed,
+  but falls from **66.44% to 64.36%** on JevJudge text.
+- **Training still matters:** on Typed, the frozen 4B path scores **52.75%**;
+  Direct-Token raises it to **64.80%**.
 
-**Practical rule**
+Tune one blend weight on development data, freeze it before evaluation, and
+blend only when native and choice errors are complementary. Temperature changes
+confidence, not argmax.
 
-- Use choice-token readout when the model can reason over the options and the
-  bottleneck is extracting a decision; it cannot create missing task ability.
-- Blend only when paired development errors show that native and choice rescue
-  each other, then freeze one weight before the target evaluation.
-- Use temperature for probability calibration, not accuracy: it cannot change
-  the argmax.
+> **Metric note:** Cygnet's **73.70** is a v1.5.4 composite over 1,624 open and
+> sealed items—not accuracy. Its comparable public-development accuracy is
+> **203/231 (87.9%)**.
 
-> **Benchmark units:** Cygnet's official **73.70** on JevBench v1.5.4 is a
-> four-axis composite over 1,624 open and sealed decisions, not accuracy. Its
-> separate public-development result is **203/231 (87.9% accuracy)**. The
-> JevBench values in this section are also accuracy on those 231 public
-> development items, so they must not be compared directly with 73.70.
+**Key takeaway:** Choice-token helps when extracting the decision—not reasoning
+ability—is the bottleneck; keep a blend only when it improves target-like
+held-out data.
 
 ## 📊 3. Benchmark Results <a name="evaluation"></a>
 
@@ -371,38 +348,28 @@ NLL, Brier and ECE are measured on Transfer.
 [Machine-readable results](results/model-family-v2.json) ·
 [Method and ablation report](reports/JevAny_Tech_Report.pdf)
 
-The external comparison below also uses checkpoint-native readouts. It uses the
-complete Typed Decisions test split, the full
-3,220-record JevJudge multimodal suite, and its 724-record text slice. The same
-13 models stay in the same order; `—` means unsupported native input or no
-matching result.
+The same 13-model cohort is compared by accuracy on Typed Decisions, JevJudge
+full (3,220 multimodal records), and its 724-record text subset. `—` means
+unsupported input or no matching result.
 
 [![Accuracy on Typed Decisions, full JevJudge, and the JevJudge text-only subset for the same thirteen-model cohort](docs/external-zero-shot.svg)](docs/external-zero-shot.svg)
 
-- **JevAny-Qwen3.8-27B:** 72.8% Typed accuracy, **62.3%** JevJudge full accuracy, and 66.4% JevJudge text-only accuracy.
-- All five JevAny releases completed 3,220/3,220 native text, image, and video records. Their full-suite accuracy ranges from 51.5% to 62.3%; the strongest complete open baseline scores 48.2%.
-- On the JevJudge text-only subset, Qwen3.8-27B scores 66.4% and Kev-27B scores 64.2%. Kev has no native image/video path, so its full result is `—`.
-- **Jev 1.13 (OpenRouter):** 72.7% Typed accuracy (published) and 65.1% JevJudge text-only accuracy; its full result is `—` because the endpoint is text-only. Published Decider 1 (76.8%) and Liquid d1 (74.2%) remain higher on Typed Decisions.
-
-All three panels use accuracy. JevJudge full covers all 3,220 multimodal records;
-text-only is its 724-record text subset. The benchmark's official `skill_role`
-metric remains in the detailed evaluation notes.
+- **JevAny-Qwen3.8-27B:** 72.8% Typed, **62.3%** JevJudge full, and 66.4% text;
+  the best other model with a full result is Jeff-Qwen3.5-2B at 48.2%.
+- **Other baselines:** Jev 1.13 scores 72.7% Typed and 65.1% text; Kev-27B
+  scores 64.2% text. Published Decider 1 and Liquid d1 lead Typed at 76.8% and
+  74.2%, but have no comparable full-suite result.
 
 [Full external tables and reproducibility notes](docs/EXTERNAL_EVALUATION.md) ·
 [Machine-readable chart results](results/external-zero-shot-v1.json)
 
 ### ⏱️ 3.1 Inference efficiency <a name="efficiency"></a>
 
-On one H200, CUDA Graphs cut Qwen3.8-27B median latency from **113.54 to
-30.53 ms (3.72×)** on 231 JevBench questions; fused SDPA plus CUDA Graphs cut
-Muse-Glimmer-30B from **100.71 to 43.25 ms (2.33×)** on a balanced 44-request
-Transfer panel.
-Accuracy stayed at 207/231 and 38/44, with no argmax changes. The table uses
-the H200 headline measurements for 27B and 30B, while retaining the original
-apples-to-apples A100-40GB comparison for the 4B models. Latency is comparable
-within each row; the fixed evaluation panels are listed explicitly. In the
-plot, diamonds show the 27B/30B H200 arrows and circles show the A100 cohort;
-the H200 points are not mixed into the A100 frontier.
+On H200, CUDA acceleration cuts Qwen3.8-27B median latency from **113.54 to
+30.53 ms (3.72×)** and Muse-Glimmer-30B from **100.71 to 43.25 ms (2.33×)**,
+with identical decisions (207/231 and 38/44). Each speedup is a within-row
+comparison; H200 and A100 rows use different fixed panels, so absolute latency
+is not compared across hardware.
 
 [![Accuracy vs median latency before and after acceleration for JevAny and other decision models](docs/efficiency-latency.png)](docs/EFFICIENCY.md)
 
@@ -411,8 +378,8 @@ the H200 points are not mixed into the A100 frontier.
 | JevAny-Qwen3.5-4B | A100 | 104.6 ms | **25.3 ms** | **4.1×** | 78.68% → 78.87% | Transfer, 1,046 |
 | JevAny-Qwen3.5-4B-Direct-Token | A100 | 106.4 ms | **25.9 ms** | **4.1×** | 78.11% → 78.39% | Transfer, 1,046 |
 | JevAny-Gemma-4B | A100 | 106.3 ms | **31.9 ms** | **3.3×** | 70.84% → 70.84% | Transfer, 1,046 |
-| JevAny-Muse-Glimmer-30B | H200 | 100.71 ms | **43.25 ms** | **2.33×** | 38/44 → 38/44 | Transfer sample, 44 |
-| JevAny-Qwen3.8-27B | H200 | 113.54 ms | **30.53 ms** | **3.72×** | 207/231 → 207/231 | JevBench public, 231 |
+| JevAny-Muse-Glimmer-30B | H200 | 100.71 ms | **43.25 ms** | **2.33×** | 86.36% → 86.36% | Transfer sample, 44 |
+| JevAny-Qwen3.8-27B | H200 | 113.54 ms | **30.53 ms** | **3.72×** | 89.61% → 89.61% | JevBench public, 231 |
 
 Median model-call latency, serial batch size 1. See the full report for the
 apples-to-apples A100 comparison and panel limitations.

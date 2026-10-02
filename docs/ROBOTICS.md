@@ -52,8 +52,9 @@ The environment records actual physics frames at 30 fps. The browser uses this
 timing and removes the additional pause between arm steps. It shows the selected
 action while playing the recorded physics frames.
 
-All three Playground GIFs use the same browser renderer, crop, 1120 × 900 canvas,
-25 fps sampling and 1.5× playback speed, with no added loop-boundary pauses.
+All three Playground GIFs use the same browser renderer and crop, a 1680 × 1350
+canvas captured from a 2× browser surface, 25 fps sampling and 1.5× playback
+speed, with no added loop-boundary pauses.
 To regenerate all three, start `jevany demo`, install Pillow, Playwright and its
 Chromium browser, then run:
 

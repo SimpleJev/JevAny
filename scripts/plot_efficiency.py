@@ -20,8 +20,6 @@ JEVANY_ARROW = "#7db7f4"
 OTHER = "#8c8d89"
 OTHER_ARROW = "#c2c2bf"
 FRONTIER = "#f26634"
-H200 = "#16877d"
-H200_ARROW = "#67b9b2"
 FEATURED_MODELS = {
     "JevAny-Qwen3.8-27B",
     "JevAny-Muse-Glimmer-30B",
@@ -226,8 +224,8 @@ def plot(data: dict, featured: dict, output: Path) -> None:
                            edgecolors="none", zorder=0)
 
         # Overlay the headline one-H200 pair without mixing it into the A100
-        # Pareto frontier. The diamond marker makes the hardware boundary
-        # visible while still putting the 27B/30B releases on the latency axes.
+        # Pareto frontier. Hardware remains explicit in the panel title and
+        # point label; all JevAny releases share one visual identity.
         featured_row = (
             featured_by_suite["Transfer balanced sample"]
             if suite == "transfer"
@@ -237,18 +235,18 @@ def plot(data: dict, featured: dict, output: Path) -> None:
         featured_after = featured_row["after"]
         featured_accuracy = featured_after["correct"] / featured_after["total"] * 100
         ax.scatter(
-            [featured_before["median_ms"]], [featured_accuracy], marker="D", s=118,
-            facecolors="white", edgecolors=H200, linewidths=2.2, zorder=7,
+            [featured_before["median_ms"]], [featured_accuracy], marker="o", s=118,
+            facecolors="white", edgecolors=JEVANY, linewidths=2.2, zorder=7,
         )
         ax.scatter(
-            [featured_after["median_ms"]], [featured_accuracy], marker="D", s=118,
-            facecolors=H200, edgecolors="white", linewidths=1.2, zorder=8,
+            [featured_after["median_ms"]], [featured_accuracy], marker="o", s=118,
+            facecolors=JEVANY, edgecolors="white", linewidths=1.2, zorder=8,
         )
         ax.annotate(
             "",
             xy=(featured_after["median_ms"], featured_accuracy),
             xytext=(featured_before["median_ms"], featured_accuracy),
-            arrowprops=dict(arrowstyle="-|>", color=H200_ARROW, lw=2.2),
+            arrowprops=dict(arrowstyle="-|>", color=JEVANY_ARROW, lw=2.2),
             zorder=6,
         )
         ax.annotate(
@@ -258,7 +256,7 @@ def plot(data: dict, featured: dict, output: Path) -> None:
             xytext=(9, 11),
             textcoords="offset points",
             fontsize=10.5,
-            color=H200,
+            color=JEVANY,
             fontweight="bold",
             ha="left",
         )
@@ -296,10 +294,6 @@ def plot(data: dict, featured: dict, output: Path) -> None:
                markeredgecolor="white", markersize=8, label="Third-party, after"),
         Line2D([], [], marker="o", linestyle="", markerfacecolor="white",
                markeredgecolor=OTHER, markeredgewidth=2, markersize=8, label="Third-party, before"),
-        Line2D([], [], marker="D", linestyle="", markerfacecolor=H200,
-               markeredgecolor="white", markersize=8, label="H200 featured, accelerated"),
-        Line2D([], [], marker="D", linestyle="", markerfacecolor="white",
-               markeredgecolor=H200, markeredgewidth=2, markersize=8, label="H200 featured, before"),
         Line2D([], [], marker="o", linestyle="", markerfacecolor="#cfe3fb",
                markeredgecolor="none", markersize=16, label="JevAny on the frontier"),
         Line2D([], [], color=FRONTIER, lw=2.5, label="Pareto frontier (after)"),
