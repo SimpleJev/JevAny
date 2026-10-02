@@ -548,6 +548,14 @@ See [DATA.md](DATA.md#native-media) for the request format and
 evaluation covers the 2,048-token training window.
 Confidence thresholds may need recalibration on your domain.
 
+Video decoding goes through the Transformers video processor. torchvision 0.26 and
+later no longer ship `read_video`, so with those releases install `torchcodec`
+and a system FFmpeg that it supports. Image requests do not need either.
+
+```bash
+python -m pip install torchcodec   # also requires FFmpeg libraries on the host
+```
+
 ## Extend backbone support
 
 Serving uses the same `backbone_adapter = "my_package.adapters:MyAdapter"` saved
