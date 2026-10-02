@@ -7,8 +7,11 @@ import re
 from urllib.parse import unquote, urlparse, urlsplit
 import xml.etree.ElementTree as ET
 
+import markdown
+
 
 SITE = Path(__file__).resolve().parents[1]
+PUBLIC_URL = "https://simplejev.github.io/JevAny/"
 
 
 class Page(HTMLParser):
@@ -50,6 +53,37 @@ class Page(HTMLParser):
             self.benchmark_rows.append(attributes)
 
 
+def check_readme_links(pages: dict[Path, Page]) -> int:
+    readmes = {"README.md", "README.zh-CN.md"}
+    count = 0
+    for name in sorted(readmes):
+        parser = Page()
+        parser.feed(markdown.markdown(
+            (SITE.parent / name).read_text(), extensions=["tables", "fenced_code", "toc"],
+        ))
+        for link in parser.links:
+            parts = urlsplit(link)
+            if link.startswith(PUBLIC_URL):
+                target = (SITE / unquote(parts.path.removeprefix("/JevAny/"))).resolve()
+                if target.is_dir():
+                    target /= "index.html"
+                assert target.is_file(), f"Missing website target in {name}: {link}"
+                if parts.fragment:
+                    assert unquote(parts.fragment) in pages[target].ids, f"Broken website anchor in {name}: {link}"
+                count += 1
+            elif not parts.scheme:
+                if not parts.path:
+                    assert unquote(parts.fragment) in parser.ids, f"Broken README anchor in {name}: {link}"
+                else:
+                    target = SITE.parent / unquote(parts.path)
+                    assert target.exists(), f"Broken repository link in {name}: {link}"
+                    assert target.suffix != ".md" or target.name in readmes, f"Link to the website guide in {name}: {link}"
+        for asset in parser.assets:
+            if not urlsplit(asset).scheme:
+                assert (SITE.parent / unquote(asset)).is_file(), f"Missing README image in {name}: {asset}"
+    return count
+
+
 def main() -> None:
     pages = {}
     for path in SITE.rglob("*.html"):
@@ -65,6 +99,7 @@ def main() -> None:
             parts = urlsplit(link)
             if parts.scheme:
                 assert not link.startswith("https://github.com/SimpleJev/JevAny/blob/"), link
+                assert not link.startswith(PUBLIC_URL), f"Preview link points to production in {path.name}: {link}"
                 continue
             target = (path.parent / unquote(parts.path)).resolve() if parts.path else path
             assert target.exists(), f"Broken link in {path.name}: {link}"
@@ -117,7 +152,8 @@ def main() -> None:
     assert sum(p.stat().st_size for p in (SITE / "assets").rglob("*") if p.is_file()) < 25_000_000
     ET.parse(SITE / "assets/favicon.svg")
     ET.parse(SITE / "sitemap.xml")
-    print(f"PASS: {len(pages)} pages, {links_count} links, {assets_count + len(assets)} assets, one background stream, 30 replays, exact benchmark data.")
+    readme_links = check_readme_links(pages)
+    print(f"PASS: {len(pages)} pages, {links_count} links, {assets_count + len(assets)} assets, {readme_links} README website links, one background stream, 30 replays, exact benchmark data.")
 
 
 if __name__ == "__main__":

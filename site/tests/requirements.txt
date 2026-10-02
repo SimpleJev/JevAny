@@ -1,1 +1,2 @@
+-r ../tools/requirements.txt
 playwright==1.55.0

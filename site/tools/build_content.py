@@ -20,6 +20,7 @@ from localization import build_chinese_homepage, translate
 
 SITE = Path(__file__).resolve().parents[1]
 ROOT = SITE.parent
+PUBLIC_URL = "https://simplejev.github.io/JevAny/"
 RESULTS = json.loads((ROOT / "results/model-family-v2.json").read_text())
 CATALOG = json.loads((ROOT / "docs/supported-models.json").read_text())
 LOGOS = json.loads((SITE / "assets/model-logos/sources.json").read_text())["families"]
@@ -171,11 +172,30 @@ def relative_url(target, page):
 
 def local_url(url, source, page):
     parts = urlsplit(unescape(url))
+    suffix = (f"?{parts.query}" if parts.query else "") + (f"#{parts.fragment}" if parts.fragment else "")
+    # README links use public URLs. Resolve them through the same source pipeline
+    # so previews stay local and referenced guides/downloads are rebuilt.
+    if url.startswith(PUBLIC_URL):
+        path = unquote(parts.path.removeprefix(urlsplit(PUBLIC_URL).path)) or "index.html"
+        destination = (SITE / path).resolve()
+        destination.relative_to(SITE.resolve())
+        if path.startswith("files/"):
+            original = ROOT / path.removeprefix("files/")
+            return local_url(os.path.relpath(original, source.parent) + suffix, source, page)
+        if path.startswith("docs/"):
+            candidates = [ROOT / name for name in SPECIAL_DOCS]
+            candidates.extend(ROOT.glob("*.md"))
+            for directory in ("docs", "reports", "results"):
+                candidates.extend((ROOT / directory).rglob("*.md"))
+            original = next((item for item in candidates if document_path(item) == destination), None)
+            if original is not None:
+                return local_url(os.path.relpath(original, source.parent) + suffix, source, page)
+        return relative_url(destination, page) + suffix
     # Convert links back to this repository to the same local documentation.
     prefix = "https://github.com/SimpleJev/JevAny/blob/main/"
     if url.startswith(prefix):
         return local_url(os.path.relpath(ROOT / parts.path.split("/blob/main/")[1], source.parent)
-                         + (f"#{parts.fragment}" if parts.fragment else ""), source, page)
+                         + suffix, source, page)
     if parts.scheme or url.startswith("//") or not parts.path:
         return url
     target = (source.parent / unquote(parts.path)).resolve()
@@ -211,7 +231,7 @@ def local_url(url, source, page):
             ATTACHMENTS.add(destination)
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(target, destination)
-    return relative_url(destination, page) + (f"#{parts.fragment}" if parts.fragment else "")
+    return relative_url(destination, page) + suffix
 
 
 def doc_shell(title, body, toc, page, chinese=False):
