@@ -51,26 +51,14 @@
 
 **快速判断原则**
 
-**委托“选择瓶颈”，而不是委托整个任务。** Jev 只在一个窄区间有价值：
-LLM 已经知道有效选项，但让大模型逐次做局部选择成本高，或已经测出排序不稳定。
+**委托“选择瓶颈”，而不是委托整个任务。** Jev 要么替代重复的 LLM 推理，
+要么修正已经测出的局部排序错误；两者都做不到时，它就只是额外开销。
 
-Jev 只有两种有效价值：**减少 frontier 工作量**，或**修正已经测出的局部排序弱点**。
-两者都做不到时，Jev 就只是额外开销。
-
-- **按阶段判断，不按 benchmark 名称判断。** WebShop 和 Terminal-Bench
-  都同时包含开放推理与有界选择。只委托后者；太简单的动作直接执行更便宜，
-  缺失的策略则继续交给 LLM。
-- **候选决定能力上限。** 给 Jev 2–4 个当前有效、包含正确动作且会导向
-  不同结果的反事实分支。Jev 能重排已有选项，不能发明缺失的计划。
-- **追求效率时，要替代推理，不要追加裁判。** 一次 LLM 计划应供多次 Jev
-  选择复用。在 GPT-5.6-sol + 27B 的 FrozenLake cell 中，LLM 调用减少
-  64.4%；WebArena 没有真正替代 frontier 工作，调用反而增加 5.6%，
-  tokens 增加 28.2%。纯效果收益应先在配对实验或 D1 shadow 中验证排序改善。
-- **只在反馈视界内委托。** 仅当动作可回退、语义效果能立即验证时继续；
-  遇到新状态、候选失效、延迟反馈或失败恢复，立即交回 LLM。
-- **用证据升级自治层级。** 从 D0 纯 LLM → D1 shadow → D2 单步选择 →
-  D3 常规决策默认委托 → D4 有界子任务逐级推进。只保留 Pareto 非劣点：
-  reward 不降且成本更低，或 reward 提升但明确披露额外成本。委托比例高本身不是收益。
+- 给 Jev **2–4 个有效分支**，各分支结果不同且可观察，并包含正确动作。
+- 让一次 LLM 计划在多个可回退的选择间复用；遇到新状态、候选失效、
+  延迟反馈、失败恢复或任务完成时交回控制权。
+- 只凭配对的 reward/成本证据提升自治层级：D0 纯 LLM → D1 shadow →
+  D2 单步 → D3 常规决策默认委托 → D4 有界子任务。覆盖率不等于成功。
 
 <table>
   <tr>
@@ -127,6 +115,7 @@ Jev 只有两种有效价值：**减少 frontier 工作量**，或**修正已经
   - [🛠️ 1.2 JevAny 训练](#训练)
   - [🚀 1.3 JevAny 部署](#部署)
 - [🤗 2. 预训练模型](#预训练模型)
+  - [免训练 choice-token 读出](#choice-readout)
 - [📊 3. 基准测试结果](#评测)
   - [⏱️ 3.1 推理效率](#推理效率)
 - [🕹️ 4. 示例与测试环境](#示例与测试环境)
@@ -270,8 +259,42 @@ Pointer 和 direct-token 模型使用相同 API。Pointer 在上下文允许的�
 4,096 个选项，direct-token 最多支持 255 个。
 训练与准确率的取舍见[输出方式说明](docs/TRAINING.md#pointer-and-direct-token-readouts)。
 
+### 免训练 choice-token 读出 <a name="choice-readout"></a><a name="letter-readout"></a>
+
+Choice-token 是一种无需额外训练的读出方式，最多支持 52 个选项：用单 token 的
+`A–Z, a–z` 给选项编号，在回答位置读取这些 ID 的 logits 并重新归一化。
+它既可用于冻结的基座模型，也可叠加在 Pointer / Direct-Token checkpoint 上；
+与温度校准不同，它可能改变最终选出的答案。
+
+```bash
+jevany eval --run SimpleJev/JevAny-Qwen3.5-4B-Direct-Token-LoRA \
+  --suite /path/to/suite --out runs/choice --device cuda --readout choice
+```
+
+[方法、命令与完整结果](docs/CHOICE_READOUT.md) ·
+[机器可读结果](results/choice-readout-v2.json)
+
+[![免训练 choice-token、checkpoint 原生读出、Transfer-dev 调参混合以及外部基线在 Typed Decisions 和 JevJudge 文本子集上的准确率](docs/choice-readout-results.svg)](docs/CHOICE_READOUT.md#results)
+
+- **最佳 4B 混合：**Direct-Token 达到 Transfer **79.83%**、Typed **67.65%**、
+  JevJudge 文本 **59.25%**，比原生读出分别高 0.96、0.45 和 0.83 个点。
+- **最佳 27B 混合：**Pointer 达到 Transfer **89.10%**、Typed **73.30%**，
+  但 JevJudge 文本从 **66.44% 降到 64.36%**。
+- **训练仍然重要：**冻结的 4B 基座在 Typed 上只有 **52.75%**，
+  Direct-Token 将其提升到 **64.80%**。
+
+在开发集上只调一个混合权重，评测前冻结；仅当原生读出与 choice 读出的错误
+互补时才使用混合。温度只改变置信度，不改变 argmax。
+
+> **指标说明：**Cygnet 的 **73.70** 是 v1.5.4 在 1,624 条公开与封闭题目上的
+> 综合分，不是准确率；其可比的公开开发集准确率为 **203/231（87.9%）**。
+
+**核心结论：**当瓶颈在于“把决策提取出来”而非推理能力时，choice-token 有帮助；
+只有在目标分布的留出数据上确有提升时才保留混合。
+
 ## 📊 3. 基准测试结果 <a name="评测"></a>
 
+下表使用各 checkpoint 的原生读出方式。
 JevAny-Qwen3.8-27B 在两项评测中准确率最高，NLL 和 Brier 也最低。
 4B 版本中，direct-token 的 JevBench 准确率最高，Pointer 的 Transfer 准确率最高。
 
@@ -300,19 +323,16 @@ NLL、Brier 和 ECE 均在 Transfer 上计算。
 [机器可读结果](results/model-family-v2.json) ·
 [方法与消融实验报告](reports/JevAny_Tech_Report.pdf)
 
-外部对比覆盖完整 Typed Decisions、JevJudge 3,220 条多模态全集及其 724 条
-文本切片。13 个模型在三个面板中保持同一顺序；`—` 表示不支持原生输入或
-没有对应结果。
+同一组 13 个模型按准确率在 Typed Decisions、JevJudge 全集（3,220 条多模态记录）
+及其 724 条文本子集上进行比较。`—` 表示不支持该输入或没有对应结果。
 
 [![同一组十三个模型在 Typed Decisions、JevJudge 全集和 JevJudge 纯文本子集上的准确率](docs/external-zero-shot.svg)](docs/external-zero-shot.svg)
 
-- **JevAny-Qwen3.8-27B：**Typed 准确率 72.8%，JevJudge 全集准确率 **62.3%**，JevJudge 纯文本准确率 66.4%。
-- 五个 JevAny 版本都完成了 3,220/3,220 条原生文本、图片和视频评测，全集准确率为 51.5%–62.3%；最强完整开源 baseline 为 48.2%。
-- JevJudge 纯文本子集中，Qwen3.8-27B 为 66.4%，Kev-27B 为 64.2%。Kev 没有原生图片/视频路径，因此全集为 `—`。
-- **Jev 1.13（OpenRouter）：**Typed 准确率 72.7%（公开报告），JevJudge 纯文本准确率 65.1%；由于 endpoint 仅支持文本，全集为 `—`。公开的 Decider 1（76.8%）和 Liquid d1（74.2%）在 Typed Decisions 上仍更高。
-
-三个面板现在统一使用准确率。JevJudge 全集包含全部 3,220 条多模态记录，
-纯文本面板是其中 724 条记录的子集；官方 `skill_role` 只保留在详细评测说明中。
+- **JevAny-Qwen3.8-27B：**Typed 72.8%，JevJudge 全集 **62.3%**，文本子集 66.4%；
+  其他有全集结果的模型中最强的是 Jeff-Qwen3.5-2B，为 48.2%。
+- **其他基线：**Jev 1.13 的 Typed 为 72.7%，文本子集为 65.1%；Kev-27B
+  文本子集为 64.2%。公开的 Decider 1 和 Liquid d1 在 Typed 上领先，
+  分别为 76.8% 和 74.2%，但没有可比的全集结果。
 
 [完整外部结果](docs/EXTERNAL_EVALUATION.md) ·
 [机器可读图表数据](results/external-zero-shot-v1.json)
