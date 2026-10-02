@@ -323,9 +323,8 @@ NLL、Brier 和 ECE 均在 Transfer 上计算。
 **113.54 ms 降至 30.53 ms（3.72×）**；融合 SDPA 加 CUDA Graph 将
 Muse-Glimmer-30B 从 **100.71 ms 降至 43.25 ms（2.33×）**。
 两次测量均未改变 argmax。下表对 27B 与 30B 使用 H200 headline 实测，
-对 4B 保留原有的同硬件 A100-40GB 对照。图中的菱形是 27B/30B 的 H200
-加速箭头，圆点是 A100 对照；H200 点不参与 A100 frontier。延迟仅可在
-同一行内比较。
+对 4B 保留同硬件 A100-40GB 对照。每个加速比只在同一行内比较；H200
+与 A100 使用不同固定面板，不能横向比较绝对延迟。
 
 [![加速前后 JevAny 与其他决策模型的准确率-延迟对比](docs/efficiency-latency.png)](docs/EFFICIENCY.md)
 
@@ -334,14 +333,14 @@ Muse-Glimmer-30B 从 **100.71 ms 降至 43.25 ms（2.33×）**。
 | JevAny-Qwen3.5-4B | A100 | 104.6 ms | **25.3 ms** | **4.1×** | 78.68% → 78.87% | Transfer，1,046 |
 | JevAny-Qwen3.5-4B-Direct-Token | A100 | 106.4 ms | **25.9 ms** | **4.1×** | 78.11% → 78.39% | Transfer，1,046 |
 | JevAny-Gemma-4B | A100 | 106.3 ms | **31.9 ms** | **3.3×** | 70.84% → 70.84% | Transfer，1,046 |
-| JevAny-Muse-Glimmer-30B | H200 | 100.71 ms | **43.25 ms** | **2.33×** | 38/44 → 38/44 | Transfer 样本，44 |
-| JevAny-Qwen3.8-27B | H200 | 113.54 ms | **30.53 ms** | **3.72×** | 207/231 → 207/231 | JevBench public，231 |
+| JevAny-Muse-Glimmer-30B | H200 | 100.71 ms | **43.25 ms** | **2.33×** | 86.36% → 86.36% | Transfer 样本，44 |
+| JevAny-Qwen3.8-27B | H200 | 113.54 ms | **30.53 ms** | **3.72×** | 89.61% → 89.61% | JevBench public，231 |
 
 中位模型调用延迟，串行 batch size 1。完整报告保留同硬件 A100 对照与面板限制。
 
-[![动图：JevAny-4B、4B-DT 与 Gemma-4B 的默认、kernel 加融合 SDPA、CUDA Graph 三个阶段在放慢二十倍的同一 A100 时钟上同时起跑；CUDA Graph 在 25–32 ms 完成，比默认快 3.3–4.1×](docs/efficiency-ablation.gif)](docs/EFFICIENCY.md)
+[![动图：A100 上的 4B 版本与 H200 上的 27B、30B 版本使用逐行归一化延迟阶梯，并标出真实中位延迟和加速倍数](docs/efficiency-ablation.gif)](docs/EFFICIENCY.md)
 
-<p align="center"><sub>单张 A100-40GB 上的 4B 版本，Transfer-v9。每根进度条以真实时间的 1/20 增长，停在该阶段的中位延迟处。</sub></p>
+<p align="center"><sub>A100 上的 4B 与 H200 上的 27–30B。每行按各自 baseline 归一化，只在行内比较优化阶段。</sub></p>
 
 [完整表格、实验设置与其他模型](docs/EFFICIENCY.md) ·
 [开启方法](docs/DEPLOYMENT.md#optional-cuda-acceleration) ·
