@@ -2,7 +2,7 @@
   "schema_version": 1,
   "artifact": "letter-readout-v1",
   "date": "2026-10-01",
-  "reproduction_code_revision": null,
+  "reproduction_code_revision": "6c3519560334a2f8aed8bb137f718f0c67ccb03e",
   "runtime_versions": {
     "python": "3.12.14",
     "torch": "2.14.0+cu130",
