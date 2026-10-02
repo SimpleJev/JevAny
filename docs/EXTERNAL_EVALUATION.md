@@ -201,15 +201,16 @@ build/report-repro-env/bin/python scripts/build_external_report_appendix.py \
 cp reports/JevAny_Tech_Report.pdf site/files/reports/JevAny_Tech_Report.pdf
 ```
 
-`--base-pages 19` always takes the original report and agent-harness pages and
-discards any previously appended evaluation pages before rebuilding Appendices
-L and M. The result is exactly 23 pages: 19 preserved pages plus four generated
-pages. The base and merged paths may therefore be identical without growing the
-report on repeated runs. Both outputs are written to temporary files in their
-destination directories and installed with `os.replace`; an interrupted build
-cannot leave a partial tracked PDF. `reports/` contains only one PDF—the merged
-report; the `site/files/` copy is its byte-identical deployment mirror. Appendix
-and merged PDF metadata use the fixed creation and modification timestamp
+`--base-pages 19` retains the report and agent-harness pages, synchronizes the
+superseded 27B release headline fields to step 44,319, and discards any
+previously appended evaluation pages before rebuilding Appendices L and M. The
+result is exactly 23 pages: 19 retained pages plus four generated pages. The
+base and merged paths may therefore be identical without growing the report on
+repeated runs. Both outputs are written to temporary files in their destination
+directories and installed with `os.replace`; an interrupted build cannot leave
+a partial tracked PDF. `reports/` contains only one PDF—the merged report; the
+`site/files/` copy is its byte-identical deployment mirror. Appendix and merged
+PDF metadata use the fixed creation and modification timestamp
 `D:20261002000000Z`. With the pinned inputs and dependencies, repeated commands
 produce byte-identical appendix and merged files.
 

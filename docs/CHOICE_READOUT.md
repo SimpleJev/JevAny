@@ -98,6 +98,24 @@ held-out panel runs:
 | JevAny 4B Direct-Token | 818/1,046 · 78.20% | 187/231 · 80.95% |
 | JevAny 27B Pointer | 900/1,046 · 86.04% | 208/231 · 90.04% |
 
+### Evaluated model sources
+
+| Run | Canonical public repository | Evaluated revision |
+|---|---|---|
+| Frozen Qwen3.5-4B | `Qwen/Qwen3.5-4B` | `851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a` |
+| JevAny 4B Pointer | `SimpleJev/JevAny-Qwen3.5-4B-LoRA` | `1c7aa9bab14ac347aeb917c0bcd757838a8a78ce` |
+| JevAny 4B Direct-Token | `SimpleJev/JevAny-Qwen3.5-4B-Direct-Token-LoRA` | Not verified for the evaluated local release |
+| Frozen Qwen3.8-27B | `Qwen/Qwen3.8-27B` | `1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0` |
+| JevAny 27B Pointer | `SimpleJev/JevAny-Qwen3.8-27B-LoRA` | `09c9e9102d5b8cc7d56558d25da1202a761b6c0d` |
+
+The Direct-Token run is still byte-identifiable: its evaluated adapter is
+`b768d54b9e5e20204b2db9e24c18ae6b10fa310b241d1931bac6b8882f127c53`
+and its native head is
+`d3909cffc156d077061114627c8aa22f60c7a8f1bdcfd20c489bb3bb009fc4a6`
+(SHA-256). The evaluation manifest and release metadata do not prove which
+immutable public-repository commit contains those exact files, so the result
+artifact records its public revision as `null` rather than guessing.
+
 ## Results
 
 ![Training-free choice-token, checkpoint-native, Transfer-dev-tuned blend, and external baseline accuracy on Typed Decisions and JevJudge text](choice-readout-results.svg)

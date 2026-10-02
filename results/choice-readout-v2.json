@@ -98,6 +98,20 @@
         "base": "Qwen/Qwen3.5-4B",
         "checkpoint": null
       },
+      "public_source": {
+        "repository": "Qwen/Qwen3.5-4B",
+        "url": "https://huggingface.co/Qwen/Qwen3.5-4B",
+        "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+        "revision_status": "verified",
+        "repository_evidence": "manifest.base_loading.canonical_base",
+        "revision_evidence": "manifest.base_loading.canonical_revision",
+        "evaluated_artifact_sha256": {},
+        "base_model": {
+          "repository": "Qwen/Qwen3.5-4B",
+          "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a"
+        },
+        "limitation": null
+      },
       "checkpoint_artifacts": null,
       "base_loading": {
         "canonical_base": "Qwen/Qwen3.5-4B",
@@ -228,6 +242,33 @@
       "source": {
         "base": null,
         "checkpoint": "/storage/home/tianxinwei/.cache/huggingface/hub/models--SimpleJev--JevAny-Qwen3.5-4B-LoRA/snapshots/1c7aa9bab14ac347aeb917c0bcd757838a8a78ce"
+      },
+      "public_source": {
+        "repository": "SimpleJev/JevAny-Qwen3.5-4B-LoRA",
+        "url": "https://huggingface.co/SimpleJev/JevAny-Qwen3.5-4B-LoRA",
+        "revision": "1c7aa9bab14ac347aeb917c0bcd757838a8a78ce",
+        "revision_status": "verified",
+        "repository_evidence": "manifest.source.checkpoint",
+        "revision_evidence": "manifest.source.checkpoint",
+        "evaluated_artifact_sha256": {
+          "adapter_model.safetensors": {
+            "sha256": "5acbaec8d554517250bf9c626b3f4b9e2ec31fc67957f3486aa72e2c91ee907f",
+            "bytes": 64993432
+          },
+          "head.pt": {
+            "sha256": "e5ea982efd06ecaf71b493045ebccdbfdca39f6fe128de164bf636d73152cd44",
+            "bytes": 5513315
+          },
+          "adapter_config.json": {
+            "sha256": "8a138b2c091d2ba463a8107e9e19182202395188750742047f4a12e8b59e1eda",
+            "bytes": 1265
+          }
+        },
+        "base_model": {
+          "repository": "Qwen/Qwen3.5-4B",
+          "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a"
+        },
+        "limitation": null
       },
       "checkpoint_artifacts": {
         "requested": "/storage/home/tianxinwei/.cache/huggingface/hub/models--SimpleJev--JevAny-Qwen3.5-4B-LoRA/snapshots/1c7aa9bab14ac347aeb917c0bcd757838a8a78ce",
@@ -377,6 +418,33 @@
         "base": null,
         "checkpoint": "/lustre-storage/fsx/tianxinwei/JevAny/releases/model-family-v2-20260929/JevAny-Qwen3.5-4B-Direct-Token-LoRA"
       },
+      "public_source": {
+        "repository": "SimpleJev/JevAny-Qwen3.5-4B-Direct-Token-LoRA",
+        "url": "https://huggingface.co/SimpleJev/JevAny-Qwen3.5-4B-Direct-Token-LoRA",
+        "revision": null,
+        "revision_status": "not_verified",
+        "repository_evidence": "results/model-family-v2.json#released_models",
+        "revision_evidence": null,
+        "evaluated_artifact_sha256": {
+          "adapter_model.safetensors": {
+            "sha256": "b768d54b9e5e20204b2db9e24c18ae6b10fa310b241d1931bac6b8882f127c53",
+            "bytes": 64993432
+          },
+          "head.pt": {
+            "sha256": "d3909cffc156d077061114627c8aa22f60c7a8f1bdcfd20c489bb3bb009fc4a6",
+            "bytes": 4699
+          },
+          "adapter_config.json": {
+            "sha256": "f84527483265b514d0a5f68d9c44e3d7952825c61d3659a858af8342e6ce9ff2",
+            "bytes": 1265
+          }
+        },
+        "base_model": {
+          "repository": "Qwen/Qwen3.5-4B",
+          "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a"
+        },
+        "limitation": "The evaluated checkpoint came from a local release. Its exact files are pinned below by SHA-256, but the run manifest and release metadata do not prove an immutable public-repository revision for those bytes."
+      },
       "checkpoint_artifacts": {
         "requested": "/lustre-storage/fsx/tianxinwei/JevAny/releases/model-family-v2-20260929/JevAny-Qwen3.5-4B-Direct-Token-LoRA",
         "resolved": "/lustre-storage/fsx/tianxinwei/JevAny/releases/model-family-v2-20260929/JevAny-Qwen3.5-4B-Direct-Token-LoRA",
@@ -525,6 +593,20 @@
         "base": "Qwen/Qwen3.8-27B",
         "checkpoint": null
       },
+      "public_source": {
+        "repository": "Qwen/Qwen3.8-27B",
+        "url": "https://huggingface.co/Qwen/Qwen3.8-27B",
+        "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+        "revision_status": "verified",
+        "repository_evidence": "manifest.base_loading.canonical_base",
+        "revision_evidence": "manifest.base_loading.canonical_revision",
+        "evaluated_artifact_sha256": {},
+        "base_model": {
+          "repository": "Qwen/Qwen3.8-27B",
+          "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
+        },
+        "limitation": null
+      },
       "checkpoint_artifacts": null,
       "base_loading": {
         "canonical_base": "Qwen/Qwen3.8-27B",
@@ -655,6 +737,33 @@
       "source": {
         "base": null,
         "checkpoint": "/storage/home/tianxinwei/.cache/huggingface/hub/models--SimpleJev--JevAny-Qwen3.8-27B-LoRA/snapshots/09c9e9102d5b8cc7d56558d25da1202a761b6c0d"
+      },
+      "public_source": {
+        "repository": "SimpleJev/JevAny-Qwen3.8-27B-LoRA",
+        "url": "https://huggingface.co/SimpleJev/JevAny-Qwen3.8-27B-LoRA",
+        "revision": "09c9e9102d5b8cc7d56558d25da1202a761b6c0d",
+        "revision_status": "verified",
+        "repository_evidence": "manifest.source.checkpoint",
+        "revision_evidence": "manifest.source.checkpoint",
+        "evaluated_artifact_sha256": {
+          "adapter_model.safetensors": {
+            "sha256": "f4b835f4f7be78a819067dac226feaad2fc7b9eb0b968c5e6e665ad5328e6731",
+            "bytes": 233584648
+          },
+          "head.pt": {
+            "sha256": "f78fa283f7e979ce418c5b137d24459350fecaea73e5766894532c1cd99684c7",
+            "bytes": 10756195
+          },
+          "adapter_config.json": {
+            "sha256": "31d8e262a21a45b80fd409f08d47930effd6cd9bc12156c59ad61e627f50a275",
+            "bytes": 1266
+          }
+        },
+        "base_model": {
+          "repository": "Qwen/Qwen3.8-27B",
+          "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
+        },
+        "limitation": null
       },
       "checkpoint_artifacts": {
         "requested": "/storage/home/tianxinwei/.cache/huggingface/hub/models--SimpleJev--JevAny-Qwen3.8-27B-LoRA/snapshots/09c9e9102d5b8cc7d56558d25da1202a761b6c0d",
@@ -846,6 +955,11 @@
         "note": "Aggregate metrics were added directly to the public evaluation table; item-level outputs are not tracked in this artifact."
       }
     }
+  },
+  "repository_catalog": {
+    "path": "results/model-family-v2.json",
+    "sha256": "a49f03bd9371f1846d78a09682f000cba9f64004d8d5a222b3868f11ccb48d8c",
+    "release": "model-family-v2"
   },
   "datasets": {
     "transfer_calibration": {

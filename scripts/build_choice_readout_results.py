@@ -18,12 +18,14 @@ import copy
 import hashlib
 import json
 import math
+import re
 from pathlib import Path
 from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_EXTERNAL = ROOT / "results/external-zero-shot-v1.json"
+DEFAULT_MODEL_CATALOG = ROOT / "results/model-family-v2.json"
 DEFAULT_JSON_OUT = ROOT / "results/choice-readout-v2.json"
 DEFAULT_SVG_OUT = ROOT / "docs/choice-readout-results.svg"
 
@@ -40,6 +42,7 @@ RUN_SPECS = (
     {
         "key": "base4",
         "family": "Qwen3.5-4B",
+        "public_repository": "Qwen/Qwen3.5-4B",
         "weights": "frozen_base",
         "native_readout": None,
         "native_decision_mode": None,
@@ -47,6 +50,7 @@ RUN_SPECS = (
     {
         "key": "pointer4",
         "family": "Qwen3.5-4B",
+        "public_repository": "SimpleJev/JevAny-Qwen3.5-4B-LoRA",
         "weights": "jevany_sft",
         "native_readout": "pointer",
         "native_decision_mode": "pointer",
@@ -54,6 +58,7 @@ RUN_SPECS = (
     {
         "key": "direct4",
         "family": "Qwen3.5-4B",
+        "public_repository": "SimpleJev/JevAny-Qwen3.5-4B-Direct-Token-LoRA",
         "weights": "jevany_sft",
         "native_readout": "direct-token",
         "native_decision_mode": "lm_token",
@@ -61,6 +66,7 @@ RUN_SPECS = (
     {
         "key": "base27",
         "family": "Qwen3.8-27B",
+        "public_repository": "Qwen/Qwen3.8-27B",
         "weights": "frozen_base",
         "native_readout": None,
         "native_decision_mode": None,
@@ -68,6 +74,7 @@ RUN_SPECS = (
     {
         "key": "pointer27",
         "family": "Qwen3.8-27B",
+        "public_repository": "SimpleJev/JevAny-Qwen3.8-27B-LoRA",
         "weights": "jevany_sft",
         "native_readout": "pointer",
         "native_decision_mode": "pointer",
@@ -244,6 +251,98 @@ def _validate_source(spec: dict, manifest: dict, context: str) -> None:
         )
 
 
+def _immutable_revision(value: Any) -> str | None:
+    if isinstance(value, str) and re.fullmatch(r"[0-9a-f]{40}", value):
+        return value
+    return None
+
+
+def _snapshot_revision(path: Any, repository: str) -> str | None:
+    """Return a Hub snapshot revision only when the path names this repository."""
+
+    if not isinstance(path, str):
+        return None
+    encoded_repository = repository.replace("/", "--")
+    match = re.search(
+        rf"(?:^|/)models--{re.escape(encoded_repository)}/snapshots/([0-9a-f]{{40}})(?:/|$)",
+        path,
+    )
+    return match.group(1) if match else None
+
+
+def _public_source(spec: dict, manifest: dict) -> dict:
+    """Expose reproducible public identity separately from local load paths.
+
+    A local release directory is not silently treated as a public Hub revision.
+    In that case the evaluated files remain identified by their SHA-256 values
+    and the missing public revision is explicit.
+    """
+
+    repository = spec["public_repository"]
+    base_loading = manifest.get("base_loading")
+    base_loading = base_loading if isinstance(base_loading, dict) else {}
+    base_repository = base_loading.get("canonical_base")
+    base_revision = _immutable_revision(base_loading.get("canonical_revision"))
+    if not isinstance(base_repository, str) or not base_repository:
+        raise ValueError(f"{spec['key']}: canonical base repository is missing")
+    if base_revision is None:
+        raise ValueError(f"{spec['key']}: immutable canonical base revision is missing")
+
+    artifacts = manifest.get("checkpoint_artifacts")
+    artifact_hashes = {}
+    if isinstance(artifacts, dict) and isinstance(artifacts.get("files"), dict):
+        for filename, metadata in artifacts["files"].items():
+            if not isinstance(metadata, dict) or not re.fullmatch(
+                r"[0-9a-f]{64}", str(metadata.get("sha256", ""))
+            ):
+                raise ValueError(
+                    f"{spec['key']}: checkpoint artifact {filename!r} lacks SHA-256"
+                )
+            artifact_hashes[filename] = {
+                "sha256": metadata["sha256"],
+                "bytes": metadata.get("bytes"),
+            }
+
+    if spec["weights"] == "frozen_base":
+        if repository != base_repository:
+            raise ValueError(
+                f"{spec['key']}: public base repository does not match canonical base"
+            )
+        revision = base_revision
+        revision_evidence = "manifest.base_loading.canonical_revision"
+        repository_evidence = "manifest.base_loading.canonical_base"
+        limitation = None
+    else:
+        source = manifest["source"]["checkpoint"]
+        revision = _snapshot_revision(source, repository)
+        revision_evidence = "manifest.source.checkpoint" if revision else None
+        repository_evidence = (
+            "manifest.source.checkpoint"
+            if revision
+            else "results/model-family-v2.json#released_models"
+        )
+        limitation = None if revision else (
+            "The evaluated checkpoint came from a local release. Its exact files "
+            "are pinned below by SHA-256, but the run manifest and release metadata "
+            "do not prove an immutable public-repository revision for those bytes."
+        )
+
+    return {
+        "repository": repository,
+        "url": f"https://huggingface.co/{repository}",
+        "revision": revision,
+        "revision_status": "verified" if revision else "not_verified",
+        "repository_evidence": repository_evidence,
+        "revision_evidence": revision_evidence,
+        "evaluated_artifact_sha256": artifact_hashes,
+        "base_model": {
+            "repository": base_repository,
+            "revision": base_revision,
+        },
+        "limitation": limitation,
+    }
+
+
 def _load_run(run_root: Path, spec: dict) -> dict:
     directory = run_root / spec["key"]
     manifest_path = directory / "manifest.json"
@@ -385,6 +484,7 @@ def _load_run(run_root: Path, spec: dict) -> dict:
             },
         },
         "source": copy.deepcopy(manifest.get("source")),
+        "public_source": _public_source(spec, manifest),
         "checkpoint_artifacts": copy.deepcopy(manifest.get("checkpoint_artifacts")),
         "base_loading": copy.deepcopy(manifest.get("base_loading")),
         "predictor": copy.deepcopy(manifest.get("predictor")),
@@ -467,10 +567,41 @@ def _load_external(path: Path) -> dict:
     }
 
 
-def build_results(run_root: Path, external_path: Path = DEFAULT_EXTERNAL) -> dict:
+def _load_repository_catalog(path: Path) -> dict:
+    catalog = _read_object(path)
+    released = catalog.get("released_models")
+    repositories = {
+        row.get("repository")
+        for row in released
+        if isinstance(row, dict) and isinstance(row.get("repository"), str)
+    } if isinstance(released, list) else set()
+    required = {
+        spec["public_repository"]
+        for spec in RUN_SPECS
+        if spec["weights"] != "frozen_base"
+    }
+    missing = required - repositories
+    if missing:
+        raise ValueError(
+            "model release catalog is missing canonical repositories: "
+            + ", ".join(sorted(missing))
+        )
+    return {
+        "path": _display_path(path),
+        "sha256": _sha256(path),
+        "release": catalog.get("release"),
+    }
+
+
+def build_results(
+    run_root: Path,
+    external_path: Path = DEFAULT_EXTERNAL,
+    model_catalog_path: Path = DEFAULT_MODEL_CATALOG,
+) -> dict:
     """Build a validated, JSON-serializable result artifact without writing it."""
 
     run_root = Path(run_root)
+    repository_catalog = _load_repository_catalog(Path(model_catalog_path))
     runs = [_load_run(run_root, spec) for spec in RUN_SPECS]
     if len({run["model"] for run in runs}) != len(runs):
         raise ValueError("the five run manifests must have unique model labels")
@@ -568,6 +699,7 @@ def build_results(run_root: Path, external_path: Path = DEFAULT_EXTERNAL) -> dic
         "code_revision": next(iter(revisions)),
         "source_runs": public_runs,
         "external_source": external["artifact"],
+        "repository_catalog": repository_catalog,
         "datasets": result_datasets,
         "legacy_results": {
             "status": "retained unchanged",
@@ -838,11 +970,12 @@ def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-root", type=Path, required=True)
     parser.add_argument("--external", type=Path, default=DEFAULT_EXTERNAL)
+    parser.add_argument("--model-catalog", type=Path, default=DEFAULT_MODEL_CATALOG)
     parser.add_argument("--json-out", type=Path, default=DEFAULT_JSON_OUT)
     parser.add_argument("--svg-out", type=Path, default=DEFAULT_SVG_OUT)
     args = parser.parse_args(argv)
 
-    artifact = build_results(args.run_root, args.external)
+    artifact = build_results(args.run_root, args.external, args.model_catalog)
     write_results(args.json_out, artifact)
     render_svg(artifact, args.svg_out)
     print(f"Wrote {_display_path(args.json_out)} and {_display_path(args.svg_out)}")

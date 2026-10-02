@@ -19,7 +19,14 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.patches import FancyBboxPatch
 from pypdf import PdfReader, PdfWriter
-from pypdf.generic import IndirectObject
+from pypdf._cmap import get_encoding
+from pypdf.generic import (
+    ArrayObject,
+    ContentStream,
+    IndirectObject,
+    NumberObject,
+    TextStringObject,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -56,6 +63,49 @@ MERGED_METADATA = {
     "/CreationDate": PDF_DATE_LITERAL,
     "/ModDate": PDF_DATE_LITERAL,
 }
+
+# The source report predates the final 27B release checkpoint.  Synchronize the
+# handful of release-headline fields while merging so the one published PDF
+# does not call two different checkpoints "current".  The original layout,
+# resources, links, and every unrelated result remain untouched.
+CURRENT_RELEASE_TEXT = {
+    1: (("85.76", "86.04", 2), ("90.48", "90.04", 2)),
+    4: (
+        ("22,160", "44,319", 1),
+        ("85.76", "86.04", 1),
+        ("90.48", "90.04", 1),
+        ("0.392", "0.388", 1),
+        ("0.200", "0.195", 1),
+        ("0.030", "0.026", 1),
+    ),
+    7: (("85.76", "86.04", 1),),
+    8: (
+        ("22,160", "44,319", 1),
+        ("18.83", "39.43", 1),
+        ("602.7", "1,261.7", 1),
+        ("1,423", "2,082", 1),
+    ),
+}
+
+CURRENT_COMPUTE_PROVENANCE = (
+    (
+        "onds;itsvalueusestherecordedrunstartandcheckpointtimestamp."
+        "Direct-token,Qwen27B,and",
+        "onds; its value uses the recorded run start and checkpoint timestamp. "
+        "Direct-token and Muse use",
+    ),
+    (
+        "Museusecheckpoint-nativeelapsedtime;Qwen4Bpointerusesterminaltrainertelemetrybecause",
+        "checkpoint-native elapsed time; Qwen 4B pointer uses terminal trainer telemetry. "
+        "Qwen 27B uses",
+    ),
+    (
+        "thereleasedcheckpointisthecompletedstep13,850run."
+        "Peakwithin-runparallelismwas40GPUs.",
+        "estimated cumulative seconds-per-record timing. "
+        "Peak within-run parallelism was 40 GPUs.",
+    ),
+)
 
 
 @contextmanager
@@ -112,26 +162,48 @@ def overview_page(pdf: PdfPages, data: dict, chart: Path) -> None:
     fig = plt.figure(figsize=(8.5, 11), facecolor="white")
     header(fig, "External decision-suite evaluation",
            "Accuracy on Typed Decisions · JevJudge-Public v0.3 full multimodal suite · text-only subset", 1)
-    ax = fig.add_axes([0.055, 0.42, 0.89, 0.36])
-    ax.imshow(mpimg.imread(chart))
-    ax.axis("off")
+    chart_image = mpimg.imread(chart)
+    # The source asset is a wide, three-panel README graphic. Rendering it as
+    # one image makes its labels roughly four points on a portrait report page.
+    # Crop the panels (including their titles and axes) and use a 1 + 2 layout
+    # so every label is materially larger while the source pixels stay intact.
+    height, width = chart_image.shape[:2]
+    if width >= 3 and height >= 3:
+        y_start, y_stop = int(height * 0.15), int(height * 0.91)
+        panels = (
+            (chart_image[y_start:y_stop, int(width * 0.02):int(width * 0.43)],
+             [0.065, 0.500, 0.870, 0.300]),
+            (chart_image[y_start:y_stop, int(width * 0.42):int(width * 0.71)],
+             [0.065, 0.115, 0.420, 0.335]),
+            (chart_image[y_start:y_stop, int(width * 0.70):int(width * 0.995)],
+             [0.515, 0.115, 0.420, 0.335]),
+        )
+        for panel, bounds in panels:
+            ax = fig.add_axes(bounds)
+            ax.imshow(panel)
+            ax.axis("off")
+    else:
+        # Keep tiny fixture images usable in report-generation tests.
+        ax = fig.add_axes([0.065, 0.115, 0.870, 0.685])
+        ax.imshow(chart_image)
+        ax.axis("off")
     full = {row["model"]: row for row in data["jevjudge_full"]["models"]}
     text = {row["model"]: row for row in data["jevjudge_text"]["models"]}
     typed = {row["model"]: row for row in data["typed_decisions"]["models"]}
-    qwen = full["JevAny-Qwen3.8-27B"]
-    jeff = full["Jeff-Qwen3.5-2B"]
-    card(fig, 0.065, "Full-suite accuracy",
-         f"Qwen3.8-27B: {qwen['accuracy'] * 100:.2f}%\n"
-         f"Jeff-2B: {jeff['accuracy'] * 100:.2f}%\n"
-         f"Gap: {(qwen['accuracy'] - jeff['accuracy']) * 100:.2f} points")
-    card(fig, 0.365, "Typed accuracy",
-         f"JevAny Qwen27: {typed['JevAny-Qwen3.8-27B']['accuracy'] * 100:.2f}%\n"
-         f"Jev 1.13: {typed['Jev 1.13 (OpenRouter)']['accuracy'] * 100:.2f}%\n"
-         "Typed result published · gap 0.10 pt")
-    card(fig, 0.665, "Text-only accuracy",
-         f"JevAny Qwen27: {text['JevAny-Qwen3.8-27B']['accuracy'] * 100:.2f}%\n"
-         f"Jev 1.13: {text['Jev 1.13 (OpenRouter)']['accuracy'] * 100:.2f}%\n"
-         f"Kev-27B: {text['Kev-27B']['accuracy'] * 100:.2f}%")
+    qwen_full = full["JevAny-Qwen3.8-27B"]
+    qwen_typed = typed["JevAny-Qwen3.8-27B"]
+    qwen_text = text["JevAny-Qwen3.8-27B"]
+    fig.text(
+        0.065, 0.818,
+        "Same 13-model order · — unsupported/no result · teal JevAny · gold Jev API · purple Kev · gray other open · hatch published",
+        color=MUTED, fontsize=7.8,
+    )
+    fig.text(
+        0.065, 0.795,
+        f"Qwen3.8-27B topline  ·  Typed {qwen_typed['accuracy'] * 100:.2f}%  ·  "
+        f"JevJudge full {qwen_full['accuracy'] * 100:.2f}%  ·  text-only {qwen_text['accuracy'] * 100:.2f}%",
+        color=TEAL, fontsize=8.2, weight="bold",
+    )
     pdf.savefig(fig)
     plt.close(fig)
 
@@ -407,31 +479,40 @@ def choice_method_page(pdf: PdfPages, data: dict) -> None:
         ("JevAny SFT", "Pointer", "Choice-token", f"{sources['pointer4']['family']}, {sources['pointer27']['family']}"),
         ("JevAny SFT", "Direct-Token", "Choice-token", sources["direct4"]["family"]),
     )
-    fig.text(0.065, 0.405, "Five-run comparison", color=INK, fontsize=12, weight="bold")
+    fig.text(0.065, 0.425, "Five-run comparison", color=INK, fontsize=12, weight="bold")
     columns = (0.065, 0.245, 0.420, 0.610)
     for x, label in zip(columns, ("Weights", "Native reference", "Training-free path", "Backbone family")):
-        fig.text(x, 0.370, label, color=MUTED, fontsize=8.0, weight="bold")
-    fig.lines.append(plt.Line2D([0.065, 0.935], [0.357, 0.357], transform=fig.transFigure,
+        fig.text(x, 0.390, label, color=MUTED, fontsize=8.0, weight="bold")
+    fig.lines.append(plt.Line2D([0.065, 0.935], [0.377, 0.377], transform=fig.transFigure,
                                 color=RULE, linewidth=1))
     for index, values in enumerate(table):
-        y = 0.326 - index * 0.055
+        y = 0.346 - index * 0.052
         for x, value in zip(columns, values):
             fig.text(x, y, value, color=INK, fontsize=8.4)
         fig.lines.append(plt.Line2D([0.065, 0.935], [y - 0.019, y - 0.019],
                                     transform=fig.transFigure, color="#EEF2F6", linewidth=0.7))
 
-    _rounded_box(fig, 0.065, 0.095, 0.870, 0.105, facecolor="#F7FAFC")
-    fig.text(0.083, 0.169, "Scope", color=INK, fontsize=9.5, weight="bold")
+    _rounded_box(
+        fig, 0.065, 0.123, 0.870, 0.075,
+        facecolor="#FFF8E8", edgecolor="#E7C46A",
+    )
+    fig.text(0.083, 0.176, "Release sync and protocol boundary", color="#8A5A00", fontsize=9.5, weight="bold")
     fig.text(
-        0.083, 0.142,
-        "Text only · up to 52 option IDs · JevJudge text 724 is supported.\n"
-        "The full 3,220-record multimodal suite is unsupported; media is never stripped into a score.",
-        color=MUTED, fontsize=8.2, linespacing=1.35,
+        0.083, 0.151,
+        "The merged report and README identify the current 27B release checkpoint: step 44,319.",
+        color=INK, fontsize=8.0,
     )
     fig.text(
-        0.083, 0.112,
-        "The earlier agent-harness appendix is unchanged; these readout experiments do not re-score agent tasks.",
-        color=MUTED, fontsize=8.2,
+        0.083, 0.132,
+        "Appendix M native rows are matched prompt-v2/runtime reruns; Appendix L's earlier external-study row can differ by one decision.",
+        color=INK, fontsize=8.0,
+    )
+    _rounded_box(fig, 0.065, 0.061, 0.870, 0.047, facecolor="#F7FAFC")
+    fig.text(0.083, 0.091, "Scope", color=INK, fontsize=8.7, weight="bold")
+    fig.text(
+        0.137, 0.091,
+        "Text only · up to 52 IDs · JevJudge text 724 supported · full multimodal unsupported · agent tasks unchanged",
+        color=MUTED, fontsize=7.6,
     )
     pdf.savefig(fig)
     plt.close(fig)
@@ -486,7 +567,7 @@ def choice_results_page(pdf: PdfPages, data: dict) -> None:
     header(
         fig,
         "Choice-token accuracy matrix",
-        "Matched runs · Transfer-dev settings frozen before every displayed evaluation panel",
+        "Matched runs · current 27B release step 44,319 · Transfer-dev settings frozen before evaluation",
         2,
         appendix="M",
         section="Choice-token readout",
@@ -655,6 +736,203 @@ def page_invariants(page) -> tuple:
     )
 
 
+def _font_text_maps(page) -> dict[str, tuple[dict[str, str], dict[str, str]]]:
+    maps = {}
+    fonts = page["/Resources"]["/Font"]
+    for name, reference in fonts.items():
+        _encoding, character_map = get_encoding(reference.get_object())
+        reverse = {
+            unicode_text: glyph
+            for glyph, unicode_text in character_map.items()
+            if isinstance(glyph, str)
+            and isinstance(unicode_text, str)
+            and len(unicode_text) == 1
+        }
+        maps[str(name)] = (character_map, reverse)
+    return maps
+
+
+def _decode_text_object(value, character_map: dict[str, str]) -> str:
+    return "".join(character_map.get(glyph, glyph) for glyph in str(value))
+
+
+def _encode_text_object(
+    text: str,
+    reverse_map: dict[str, str],
+    prototype,
+) -> TextStringObject:
+    try:
+        glyphs = "".join(reverse_map[character] for character in text)
+    except KeyError as error:
+        raise RuntimeError(f"release-sync font cannot encode {error.args[0]!r}") from error
+    original_length = len(prototype.original_bytes)
+    glyph_count = len(str(prototype))
+    if glyph_count == 0 or original_length % glyph_count:
+        raise RuntimeError("release-sync text object has an unsupported encoding width")
+    byte_width = original_length // glyph_count
+    if byte_width not in {1, 2}:
+        raise RuntimeError(f"release-sync text uses unsupported {byte_width}-byte glyphs")
+    raw = b"".join(ord(glyph).to_bytes(byte_width, "big") for glyph in glyphs)
+    result = TextStringObject(glyphs)
+    result._original_bytes = raw
+    return result
+
+
+def _word_array(text: str, reverse_map: dict[str, str], prototype) -> ArrayObject:
+    words = text.split()
+    result = ArrayObject()
+    for index, word in enumerate(words):
+        if index:
+            result.append(NumberObject(-300))
+        result.append(_encode_text_object(word, reverse_map, prototype))
+    return result
+
+
+def synchronize_current_release(page, page_number: int) -> bool:
+    """Replace the superseded 27B headline fields in the retained report core."""
+
+    replacements = CURRENT_RELEASE_TEXT.get(page_number)
+    if replacements is None:
+        return False
+    extracted = page.extract_text() or ""
+    legacy_counts = {old: extracted.count(old) for old, _new, _count in replacements}
+    if not any(legacy_counts.values()):
+        return False
+    for old, _new, expected_count in replacements:
+        if legacy_counts[old] != expected_count:
+            raise RuntimeError(
+                f"base report page {page_number}: expected {expected_count} occurrences "
+                f"of legacy value {old!r}, found {legacy_counts[old]}"
+            )
+
+    text_maps = _font_text_maps(page)
+    content = ContentStream(page.get_contents(), page.indirect_reference.pdf)
+    active_font = None
+    replaced_counts = {old: 0 for old, _new, _count in replacements}
+    provenance_replaced = 0
+    for operands, operator in content.operations:
+        if operator == b"Tf":
+            active_font = str(operands[0])
+            continue
+        if operator not in {b"Tj", b"TJ"} or active_font is None:
+            continue
+        character_map, reverse_map = text_maps[active_font]
+        values = operands[0] if operator == b"TJ" else ArrayObject([operands[0]])
+        decoded_line = "".join(
+            _decode_text_object(value, character_map)
+            for value in values
+            if hasattr(value, "original_bytes")
+        )
+
+        if page_number == 8:
+            provenance = next(
+                (replacement for legacy, replacement in CURRENT_COMPUTE_PROVENANCE
+                 if decoded_line == legacy),
+                None,
+            )
+            if provenance is not None:
+                prototype = next(
+                    value for value in values if hasattr(value, "original_bytes")
+                )
+                operands[0] = _word_array(provenance, reverse_map, prototype)
+                provenance_replaced += 1
+                continue
+
+        for index, value in enumerate(values):
+            if not hasattr(value, "original_bytes"):
+                continue
+            decoded = _decode_text_object(value, character_map)
+            updated = decoded
+            for old, new, _expected_count in replacements:
+                count = updated.count(old)
+                if count:
+                    updated = updated.replace(old, new)
+                    replaced_counts[old] += count
+            if updated != decoded:
+                values[index] = _encode_text_object(updated, reverse_map, value)
+        if operator == b"Tj":
+            operands[0] = values[0]
+
+    for old, _new, expected_count in replacements:
+        if replaced_counts[old] != expected_count:
+            raise RuntimeError(
+                f"base report page {page_number}: replaced {replaced_counts[old]} of "
+                f"{expected_count} expected {old!r} values"
+            )
+    if page_number == 8 and provenance_replaced != len(CURRENT_COMPUTE_PROVENANCE):
+        raise RuntimeError(
+            "base report page 8: could not synchronize the 27B compute provenance"
+        )
+    # In-place list edits do not invalidate ContentStream's raw-byte cache.
+    content.operations = content.operations
+    synchronized_parts = []
+    active_font = None
+    for operands, operator in content.operations:
+        if operator == b"Tf":
+            active_font = str(operands[0])
+            continue
+        if operator not in {b"Tj", b"TJ"} or active_font is None:
+            continue
+        character_map, _reverse_map = text_maps[active_font]
+        values = operands[0] if operator == b"TJ" else [operands[0]]
+        synchronized_parts.extend(
+            _decode_text_object(value, character_map)
+            for value in values
+            if hasattr(value, "original_bytes")
+        )
+    synchronized = "".join(synchronized_parts)
+    for old, new, expected_count in replacements:
+        if old in synchronized or synchronized.count(new) < expected_count:
+            raise RuntimeError(
+                f"base report page {page_number}: failed to synchronize {old!r} to {new!r}; "
+                f"old={synchronized.count(old)}, new={synchronized.count(new)}"
+            )
+    page.replace_contents(content)
+    return True
+
+
+def synchronize_report_boundary(page, page_number: int) -> bool:
+    """Update the old appendix claim that the merged core is byte-unchanged."""
+
+    if page_number != 10:
+        return False
+    extracted = page.extract_text() or ""
+    if "The original PDF is pre-" not in extracted:
+        return False
+    replacements = {
+        "original ": "merged ",
+        "pre-": "release-",
+        "serv": "synch",
+        "ed unchanged.": "ronized.",
+    }
+    counts = {old: 0 for old in replacements}
+    content = ContentStream(page.get_contents(), page.indirect_reference.pdf)
+    for operands, operator in content.operations:
+        if operator not in {b"Tj", b"TJ"}:
+            continue
+        values = operands[0] if operator == b"TJ" else ArrayObject([operands[0]])
+        for index, value in enumerate(values):
+            if not isinstance(value, TextStringObject):
+                continue
+            updated = str(value)
+            for old, new in replacements.items():
+                count = updated.count(old)
+                if count:
+                    updated = updated.replace(old, new)
+                    counts[old] += count
+            if updated != str(value):
+                values[index] = TextStringObject(updated)
+        if operator == b"Tj":
+            operands[0] = values[0]
+    if any(count != 1 for count in counts.values()):
+        raise RuntimeError(
+            f"base report page 10: could not synchronize appendix boundary: {counts}"
+        )
+    content.operations = content.operations
+    page.replace_contents(content)
+    return True
+
+
 def merge_report(base_report: Path, appendix_report: Path, merged_output: Path, base_pages: int) -> None:
     if base_pages != REPORT_BASE_PAGES:
         raise ValueError(f"--base-pages must be exactly {REPORT_BASE_PAGES}")
@@ -671,8 +949,15 @@ def merge_report(base_report: Path, appendix_report: Path, merged_output: Path, 
 
     writer = PdfWriter()
     writer.pdf_header = "%PDF-1.7"
+    synchronized_pages = set()
+    expected_base_invariants = {}
     for index in range(base_pages):
         writer.add_page(base.pages[index])
+        changed = synchronize_current_release(writer.pages[-1], index + 1)
+        changed = synchronize_report_boundary(writer.pages[-1], index + 1) or changed
+        if changed:
+            synchronized_pages.add(index)
+            expected_base_invariants[index] = page_invariants(writer.pages[-1])
     for page in appendix.pages:
         writer.add_page(page)
     writer.add_metadata(MERGED_METADATA)
@@ -685,8 +970,41 @@ def merge_report(base_report: Path, appendix_report: Path, merged_output: Path, 
         if len(merged.pages) != expected_pages:
             raise RuntimeError(f"expected {expected_pages} merged pages, got {len(merged.pages)}")
         for index in range(base_pages):
-            if page_invariants(base.pages[index]) != page_invariants(merged.pages[index]):
+            expected = (
+                expected_base_invariants[index]
+                if index in synchronized_pages
+                else page_invariants(base.pages[index])
+            )
+            actual = page_invariants(merged.pages[index])
+            if index in synchronized_pages:
+                # A writer-attached page temporarily extracts its glyph IDs,
+                # while the serialized page resolves them through ToUnicode.
+                # Compare every invariant except that transient text view.
+                expected = expected[:4] + expected[5:]
+                actual = actual[:4] + actual[5:]
+            if expected != actual:
                 raise RuntimeError(f"base page {index + 1} changed during merge")
+        for page_number, replacements in CURRENT_RELEASE_TEXT.items():
+            page_text = merged.pages[page_number - 1].extract_text() or ""
+            is_release_page = (page_number - 1) in synchronized_pages or any(
+                page_text.count(new) >= expected_count
+                for _old, new, expected_count in replacements
+            )
+            if not is_release_page:
+                continue
+            for old, new, expected_count in replacements:
+                if old in page_text or page_text.count(new) < expected_count:
+                    raise RuntimeError(
+                        f"serialized base page {page_number} does not contain the current "
+                        f"release value {new!r}"
+                    )
+        boundary_text = merged.pages[9].extract_text() or ""
+        boundary_text = boundary_text.replace("-\n", "-")
+        if "The original PDF is pre-" in boundary_text or (
+            "The merged PDF is release-synchronized." not in boundary_text
+            and 9 in synchronized_pages
+        ):
+            raise RuntimeError("serialized base page 10 has a stale appendix boundary")
 
 
 def main(argv: list[str] | None = None) -> None:

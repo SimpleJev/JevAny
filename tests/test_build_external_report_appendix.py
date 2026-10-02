@@ -2,6 +2,7 @@ import json
 import os
 import shutil
 from datetime import datetime, timezone
+from pathlib import Path
 
 import pytest
 
@@ -198,6 +199,13 @@ def _producer_metric(n, correct, excluded):
 
 def _producer_run(root, spec, ordinal):
     is_base = spec["weights"] == "frozen_base"
+    canonical_base = f"Qwen/{spec['family']}"
+    encoded_repository = spec["public_repository"].replace("/", "--")
+    checkpoint = (
+        f"/fixture/models--{encoded_repository}/snapshots/{str(ordinal + 1) * 40}"
+        if spec["key"] != "direct4"
+        else f"/fixture/local-release/{spec['key']}"
+    )
     components = ["choice"] if is_base else ["choice", "native"]
     model = f"producer-{spec['key']}"
     reports = {}
@@ -251,8 +259,8 @@ def _producer_run(root, spec, ordinal):
     manifest = {
         "model": model,
         "source": {
-            "base": f"fixture/{spec['family']}" if is_base else None,
-            "checkpoint": None if is_base else f"fixture/{spec['key']}",
+            "base": spec["public_repository"] if is_base else None,
+            "checkpoint": None if is_base else checkpoint,
         },
         "checkpoint_artifacts": None if is_base else {
             "requested": f"fixture/{spec['key']}",
@@ -264,12 +272,17 @@ def _producer_run(root, spec, ordinal):
                 },
             },
         },
-        "base_loading": {"requested": spec["family"], "resolved": "/fixture/base"},
+        "base_loading": {
+            "requested": spec["family"],
+            "resolved": "/fixture/base",
+            "canonical_base": canonical_base,
+            "canonical_revision": "a" * 40,
+        },
         "predictor": {
             "method": "training-free exact choice-token projection",
             "adapter_applied": not is_base,
             "native_decision_mode": spec["native_decision_mode"],
-            "canonical_base": spec["family"],
+            "canonical_base": canonical_base,
             "canonical_revision": "a" * 40,
         },
         "runtime": {
@@ -511,3 +524,33 @@ def test_choice_artifact_requires_full_3220_to_be_unsupported(tmp_path):
 
     with pytest.raises(ValueError, match="must be explicitly unsupported"):
         load_choice_artifact(choice)
+
+
+def test_published_report_uses_one_current_27b_release():
+    report = Path(__file__).resolve().parents[1] / "reports" / "JevAny_Tech_Report.pdf"
+    pdf = PdfReader(report)
+    assert len(pdf.pages) == 23
+
+    expected = {
+        1: ("86.04", "90.04"),
+        4: ("44,319", "86.04", "90.04", "0.388", "0.195", "0.026"),
+        7: ("86.04",),
+        8: ("44,319", "39.43", "1,261.7", "2,082"),
+    }
+    stale = (
+        "85.76", "90.48", "22,160", "18.83", "602.7", "1,423",
+        "0.392", "0.200", "0.030",
+    )
+    for page_number, values in expected.items():
+        text = pdf.pages[page_number - 1].extract_text() or ""
+        assert all(value in text for value in values)
+        assert all(value not in text for value in stale)
+    compute_text = pdf.pages[7].extract_text() or ""
+    assert "estimated cumulative seconds-per-record timing" in compute_text
+    boundary_text = (pdf.pages[9].extract_text() or "").replace("-\n", "-")
+    assert "The merged PDF is release-synchronized." in boundary_text
+    assert "The original PDF is pre-" not in boundary_text
+
+    method_text = pdf.pages[21].extract_text() or ""
+    assert "current 27B release checkpoint: step 44,319" in method_text
+    assert "matched prompt-v2/runtime reruns" in method_text

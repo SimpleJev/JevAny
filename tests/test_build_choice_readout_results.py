@@ -90,6 +90,14 @@ def _external_fixture(path):
 
 def _run_fixture(root, spec, ordinal):
     is_base = spec["weights"] == "frozen_base"
+    canonical_base = f"Qwen/{spec['family']}"
+    snapshot_revision = f"{ordinal + 1}" * 40
+    encoded_repository = spec["public_repository"].replace("/", "--")
+    checkpoint = (
+        f"/fixture/models--{encoded_repository}/snapshots/{snapshot_revision}"
+        if not is_base and spec["key"] != "direct4"
+        else f"/fixture/local-release/{spec['key']}"
+    )
     components = ["choice"] if is_base else ["choice", "native"]
     model = f"fixture-{spec['key']}"
     reports = {}
@@ -148,8 +156,8 @@ def _run_fixture(root, spec, ordinal):
     manifest = {
         "model": model,
         "source": {
-            "base": f"fixture/{spec['family']}" if is_base else None,
-            "checkpoint": None if is_base else f"fixture/{spec['key']}",
+            "base": spec["public_repository"] if is_base else None,
+            "checkpoint": None if is_base else checkpoint,
         },
         "checkpoint_artifacts": None if is_base else {
             "requested": f"fixture/{spec['key']}",
@@ -161,12 +169,17 @@ def _run_fixture(root, spec, ordinal):
                 }
             },
         },
-        "base_loading": {"requested": spec["family"], "resolved": "/fixture/base"},
+        "base_loading": {
+            "requested": spec["family"],
+            "resolved": "/fixture/base",
+            "canonical_base": canonical_base,
+            "canonical_revision": "a" * 40,
+        },
         "predictor": {
             "method": "training-free exact choice-token projection",
             "adapter_applied": not is_base,
             "native_decision_mode": spec["native_decision_mode"],
-            "canonical_base": spec["family"],
+            "canonical_base": canonical_base,
             "canonical_revision": "a" * 40,
         },
         "runtime": {
@@ -250,6 +263,40 @@ def test_build_results_preserves_all_five_run_types_and_protocol_groups(matrix):
     assert len(artifact["source_runs"][0]["artifacts"]["manifest"]["sha256"]) == 64
     assert artifact["source_runs"][0]["runtime"]["torch"] == "2.fixture"
 
+    sources = {run["key"]: run["public_source"] for run in artifact["source_runs"]}
+    assert sources["base4"] == {
+        "repository": "Qwen/Qwen3.5-4B",
+        "url": "https://huggingface.co/Qwen/Qwen3.5-4B",
+        "revision": "a" * 40,
+        "revision_status": "verified",
+        "repository_evidence": "manifest.base_loading.canonical_base",
+        "revision_evidence": "manifest.base_loading.canonical_revision",
+        "evaluated_artifact_sha256": {},
+        "base_model": {
+            "repository": "Qwen/Qwen3.5-4B",
+            "revision": "a" * 40,
+        },
+        "limitation": None,
+    }
+    assert sources["pointer4"]["revision"] == "2" * 40
+    assert sources["pointer4"]["revision_status"] == "verified"
+    assert sources["pointer27"]["revision"] == "5" * 40
+    assert sources["direct4"]["repository"] == (
+        "SimpleJev/JevAny-Qwen3.5-4B-Direct-Token-LoRA"
+    )
+    assert sources["direct4"]["revision"] is None
+    assert sources["direct4"]["revision_status"] == "not_verified"
+    assert sources["direct4"]["revision_evidence"] is None
+    assert "do not prove an immutable public-repository revision" in (
+        sources["direct4"]["limitation"]
+    )
+    assert sources["direct4"]["evaluated_artifact_sha256"] == {
+        "adapter_model.safetensors": {
+            "sha256": "3" * 64,
+            "bytes": 123,
+        }
+    }
+
 
 def test_build_results_rejects_component_count_drift(matrix):
     root, external = matrix
@@ -284,6 +331,17 @@ def test_build_results_rejects_cross_run_dataset_hash_drift(matrix):
 
     with pytest.raises(ValueError, match="dataset hashes differ"):
         build_results(root, external)
+
+
+def test_build_results_rejects_release_catalog_without_canonical_repositories(
+    matrix, tmp_path
+):
+    root, external = matrix
+    catalog = tmp_path / "model-catalog.json"
+    _write_json(catalog, {"release": "fixture", "released_models": []})
+
+    with pytest.raises(ValueError, match="missing canonical repositories"):
+        build_results(root, external, catalog)
 
 
 def test_synthetic_artifact_and_svg_are_written_only_to_requested_paths(matrix, tmp_path):
