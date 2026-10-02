@@ -52,33 +52,42 @@ def speedup_text(total: float, final: float) -> str:
     return f"{ratio:.2f}×" if ratio < 2 else f"{ratio:.1f}×"
 
 
-# GIF: one ms of model latency plays as SLOWDOWN ms of animation.
-WIDTH, HEIGHT = 1080, 600
+# GIF: one ms of model latency plays as SLOWDOWN ms of animation. Render at
+# 1.5x density so labels stay crisp when GitHub scales the animation to the
+# README column width.
+SCALE = 1.5
+WIDTH, HEIGHT = round(1080 * SCALE), round(600 * SCALE)
 FRAME_MS, SLOWDOWN, START_HOLD_MS, END_HOLD_MS = 40, 20, 240, 900
 LANE_COLOR = {"Default": DEFAULT, "+ kernels, fused SDPA": "#6DBBA9", "+ CUDA graphs": REMAINING}
-BAR_X0, BAR_X1, LABEL_X = 372, 930, 40
-LANE_H, LANE_GAP, GROUP_GAP, TOP = 28, 10, 20, 132
+BAR_X0, BAR_X1, LABEL_X = (round(value * SCALE) for value in (372, 930, 40))
+LANE_H, LANE_GAP, GROUP_GAP, TOP = (round(value * SCALE) for value in (28, 10, 20, 132))
+
+
+def px(value: float) -> int:
+    return round(value * SCALE)
 
 
 def font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
     name = "DejaVuSans-Bold.ttf" if bold else "DejaVuSans.ttf"
-    return ImageFont.truetype(str(Path(matplotlib.get_data_path()) / "fonts" / "ttf" / name), size)
+    return ImageFont.truetype(
+        str(Path(matplotlib.get_data_path()) / "fonts" / "ttf" / name), px(size)
+    )
 
 
 def render_frame(ladders, clock_ms: float, axis_ms: float) -> Image.Image:
     image = Image.new("RGB", (WIDTH, HEIGHT), PAGE)
     draw = ImageDraw.Draw(image)
-    draw.text((LABEL_X, 26), "How the 4B releases get faster", font=font(26, True), fill=INK)
-    draw.text((LABEL_X, 66), "Transfer-v9 median latency per request · one A100-40GB · batch size 1 · "
+    draw.text((LABEL_X, px(26)), "How the 4B releases get faster", font=font(26, True), fill=INK)
+    draw.text((LABEL_X, px(66)), "Transfer-v9 median latency per request · one A100-40GB · batch size 1 · "
               f"played {SLOWDOWN}× slower than real time", font=font(14), fill=MUTED)
-    draw.text((WIDTH - LABEL_X, 26), f"{min(clock_ms, axis_ms):5.0f} ms", font=font(26, True),
+    draw.text((WIDTH - LABEL_X, px(26)), f"{min(clock_ms, axis_ms):5.0f} ms", font=font(26, True),
               fill=INK, anchor="ra")
 
     scale = (BAR_X1 - BAR_X0) / axis_ms
     for tick in range(0, int(axis_ms) + 1, 20):
         x = BAR_X0 + tick * scale
-        draw.line([(x, TOP - 14), (x, HEIGHT - 52)], fill=RULE, width=1)
-        draw.text((x, HEIGHT - 44), f"{tick} ms", font=font(12), fill=MUTED, anchor="ma")
+        draw.line([(x, TOP - px(14)), (x, HEIGHT - px(52))], fill=RULE, width=px(1))
+        draw.text((x, HEIGHT - px(44)), f"{tick} ms", font=font(12), fill=MUTED, anchor="ma")
 
     y = TOP
     for short, gpus, stops in ladders:
@@ -87,19 +96,19 @@ def render_frame(ladders, clock_ms: float, axis_ms: float) -> Image.Image:
         total = stops[0][1]
         for stage, latency in stops:
             done = clock_ms >= latency
-            draw.text((BAR_X0 - 12, y + LANE_H / 2), stage, font=font(12), fill=MUTED, anchor="rm")
-            draw.rounded_rectangle([BAR_X0, y, BAR_X1, y + LANE_H], radius=4, fill="#EEF2F5")
+            draw.text((BAR_X0 - px(12), y + LANE_H / 2), stage, font=font(12), fill=MUTED, anchor="rm")
+            draw.rounded_rectangle([BAR_X0, y, BAR_X1, y + LANE_H], radius=px(4), fill="#EEF2F5")
             length = min(clock_ms, latency) * scale
             if length >= 1:
-                draw.rounded_rectangle([BAR_X0, y, BAR_X0 + length, y + LANE_H], radius=4,
+                draw.rounded_rectangle([BAR_X0, y, BAR_X0 + length, y + LANE_H], radius=px(4),
                                        fill=LANE_COLOR[stage])
             if done:
-                label_x = BAR_X0 + length + 8
+                label_x = BAR_X0 + length + px(8)
                 draw.text((label_x, y + LANE_H / 2), f"{latency:.0f} ms", font=font(13, True),
                           fill=INK, anchor="lm")
                 if stage != "Default":
                     width = draw.textlength(f"{latency:.0f} ms", font=font(13, True))
-                    draw.text((label_x + width + 10, y + LANE_H / 2), speedup_text(total, latency),
+                    draw.text((label_x + width + px(10), y + LANE_H / 2), speedup_text(total, latency),
                               font=font(13, True), fill=GRAPH, anchor="lm")
             y += LANE_H + LANE_GAP
         y += GROUP_GAP

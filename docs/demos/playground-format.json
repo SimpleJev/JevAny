@@ -1,11 +1,12 @@
 {
-  "format": "JevAny Playground v1; 1120x900",
+  "format": "JevAny Playground v2; 1680x1350; 2x browser capture",
+  "device_scale_factor": 2,
   "cases": [
     {
       "case": "arm",
       "size": [
-        1120,
-        900
+        1680,
+        1350
       ],
       "duration_ms": 3640,
       "samples": 173,
@@ -64,17 +65,17 @@
       "success": true,
       "clip": {
         "x": 96,
-        "y": 359,
+        "y": 591,
         "width": 1248,
         "height": 1003
       },
-      "bytes": 3402936
+      "bytes": 6649160
     },
     {
       "case": "doom",
       "size": [
-        1120,
-        900
+        1680,
+        1350
       ],
       "duration_ms": 2120,
       "samples": 53,
@@ -103,17 +104,17 @@
       "success": true,
       "clip": {
         "x": 96,
-        "y": 359,
+        "y": 591,
         "width": 1248,
         "height": 1003
       },
-      "bytes": 9384630
+      "bytes": 18038323
     },
     {
       "case": "crafter",
       "size": [
-        1120,
-        900
+        1680,
+        1350
       ],
       "duration_ms": 1840,
       "samples": 23,
@@ -146,11 +147,11 @@
       "success": true,
       "clip": {
         "x": 96,
-        "y": 359,
+        "y": 591,
         "width": 1248,
         "height": 1003
       },
-      "bytes": 2867236
+      "bytes": 5210022
     }
   ]
 }
