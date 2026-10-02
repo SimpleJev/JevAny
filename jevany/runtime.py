@@ -14,6 +14,7 @@ from .client import DecisionClient
 from .device import default_device, sync
 from .inference import InferenceOptions
 from .model import DecisionModel
+from .readout import resolve_readout_options
 
 DEFAULT_CHECKPOINT = "SimpleJev/JevAny-Qwen3.8-27B-LoRA"
 
@@ -165,7 +166,9 @@ class JevModel(DecisionClient):
         device: str | None = None, dtype: str | None = None,
         model_name: str | None = None, options: LoadOptions | None = None,
         inference_options: InferenceOptions | None = None,
-        readout: str = "native", letter_temperature: float | None = None,
+        readout: str = "native", choice_temperature: float | None = None,
+        choice_native_weight: float | None = None, choice_max_tokens: int | None = None,
+        letter_temperature: float | None = None,
         letter_pointer_weight: float | None = None, letter_max_tokens: int | None = None,
     ) -> "JevModel":
         """Load a local run or Hugging Face adapter ID (optionally ``owner/repo@revision``).
@@ -173,20 +176,25 @@ class JevModel(DecisionClient):
         The full backbone must fit on the selected device unless ``options.device_map``
         (or JEVANY_DEVICE_MAP) splits it over the visible GPUs. ``dtype`` accepts
         fp32, fp16 or bf16; omission uses the checkpoint/environment settings.
-        ``readout='letter'`` replaces the checkpoint head with a training-free
-        option-letter projection; its temperature, pointer blend, and prompt
-        limit are deployment settings, not checkpoint metadata. Files used by
-        native media requests are trusted local paths.
+        ``readout='choice'`` replaces the checkpoint head with a training-free
+        choice-token projection; its temperature, native blend, and prompt
+        limit are deployment settings, not checkpoint metadata. ``letter`` and
+        ``letter_*`` remain accepted legacy aliases. Files used by native media
+        requests are trusted local paths.
         """
         import torch
 
-        if readout not in ("native", "letter"):
-            raise ValueError("readout must be native or letter")
-        letter_settings = (letter_temperature, letter_pointer_weight, letter_max_tokens)
-        if readout == "native" and any(value is not None for value in letter_settings):
-            raise ValueError("letter readout options require readout='letter'")
-        if readout == "letter" and inference_options is not None:
-            raise ValueError("inference_options apply only to native readout; use letter_max_tokens")
+        readout, choice_options = resolve_readout_options(
+            readout,
+            choice_temperature=choice_temperature,
+            choice_native_weight=choice_native_weight,
+            choice_max_tokens=choice_max_tokens,
+            letter_temperature=letter_temperature,
+            letter_pointer_weight=letter_pointer_weight,
+            letter_max_tokens=letter_max_tokens,
+        )
+        if readout == "choice" and inference_options is not None:
+            raise ValueError("inference_options apply only to native readout; use choice_max_tokens")
 
         device = default_device() if device is None else device
         if device not in ("cpu", "mps", "cuda"):
@@ -203,21 +211,21 @@ class JevModel(DecisionClient):
             options = replace(options, dtype=dtypes[dtype])
         if device == "mps" and options.attn is None:
             options = replace(options, attn="sdpa")
-        if readout == "letter" and options.cuda_graphs:
+        if readout == "choice" and options.cuda_graphs:
             raise ValueError("CUDA graph capture is available only for native readout")
-        if readout == "letter" and options.temperature is not None:
-            raise ValueError("JEVANY_TEMPERATURE applies to the native head; use letter_temperature")
+        if readout == "choice" and options.temperature is not None:
+            raise ValueError("JEVANY_TEMPERATURE applies to the native head; use choice_temperature")
         predictor = None
-        if readout == "letter":
+        if readout == "choice":
             from .letter_predictor import LetterReadoutPredictor
 
             predictor = LetterReadoutPredictor(
                 checkpoint=checkpoint,
                 device=device,
                 options=options,
-                temperature=1.0 if letter_temperature is None else letter_temperature,
-                pointer_weight=0.0 if letter_pointer_weight is None else letter_pointer_weight,
-                max_tokens=16_384 if letter_max_tokens is None else letter_max_tokens,
+                temperature=choice_options.temperature,
+                native_weight=choice_options.native_weight,
+                max_tokens=choice_options.max_tokens,
             )
             loaded = predictor.checkpoint
         else:

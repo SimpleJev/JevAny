@@ -2,7 +2,7 @@
 
 ## Model family v2
 
-This section contains the full results for the five current LoRA SFT releases.
+This section contains checkpoint-native results for the five current LoRA SFT releases.
 Transfer also informed model development and serves as a diagnostic comparison.
 
 **Transfer** is the cross-domain evaluation built from
@@ -16,7 +16,7 @@ and ECE in the main table are Transfer metrics; every run covers every item.
 Every JevBench value in this document is public-development accuracy
 (`correct / 231`). It is not the official JevBench v1.5.4 composite, which
 combines Intelligence, Calibration, Speed and Cost over 1,624 open and sealed
-decisions. See the [letter-readout guide](LETTER_READOUT.md#benchmark-units) for
+decisions. See the [choice-token readout guide](CHOICE_READOUT.md#benchmark-units) for
 the side-by-side definitions.
 
 | Model | Transfer ↑ | JevBench ↑ | NLL ↓ | Brier ↓ | ECE ↓ |
@@ -95,7 +95,7 @@ a complete local Transfer API run and JevBench's published per-tier accuracy.
 - **Loss:** cross-entropy, pure InfoNCE, and mixed objectives; CE gave the best
   Transfer accuracy in the loss sweep, while small contrastive terms mainly
   improved calibration. The released checkpoints use CE.
-- **Readout family:** at 4B, direct-token improves JevBench (80.95% vs 80.09%),
+- **Trained checkpoint-native readout family:** at 4B, direct-token improves JevBench (80.95% vs 80.09%),
   while pointer is slightly stronger on Transfer (78.68% vs 78.20%).
 
 ### Reproducibility
@@ -139,6 +139,35 @@ world size; ablations, evaluation, and training after a selected checkpoint are
 excluded. Gemma uses run/checkpoint timestamps because its earlier checkpoint
 format did not store cumulative elapsed seconds; the other figures come from
 checkpoint or terminal trainer telemetry.
+
+## Training-free choice-token readout
+
+Choice-token readout constrains the next token to one of 52 exact option IDs
+and renormalizes their mass. It needs no additional training and can change the
+selected answer. Scalar temperature fitting is separate: it changes confidence,
+not accuracy. A native + choice stack can change both.
+
+The stack weight and additional temperature below are selected only on 1,046
+clean/knowable Transfer-v9 development decisions and then frozen. Transfer test,
+Typed Decisions, and JevJudge text are held out. JevBench is a public diagnostic.
+All values are accuracy percentages.
+
+| Weights | Readout | JevBench public | Transfer test | Typed test | JevJudge text |
+|---|---|---:|---:|---:|---:|
+| Frozen Qwen3.5-4B | Choice T=1 | 79.65% | 68.45% | 52.75% | 58.70% |
+| JevAny 4B Pointer | Native / Choice / Tuned | 80.09 / 81.39 / 80.95 | 77.92 / 73.61 / **78.01** | **63.50** / 57.80 / 62.90 | 58.01 / 52.62 / **59.53** |
+| JevAny 4B Direct-Token | Native / Choice / Tuned | 80.95 / **81.39** / 80.95 | 78.87 / 78.59 / **79.83** | 67.20 / 64.80 / **67.65** | 58.43 / 57.60 / **59.25** |
+| Frozen Qwen3.8-27B | Choice T=1 | 87.88% | 80.69% | 68.25% | 61.74% |
+| JevAny 27B Pointer | Native / Choice / Tuned | **90.04** / 89.61 / **90.04** | 87.95 / 86.04 / **89.10** | 72.80 / 72.60 / **73.30** | **66.44** / 57.87 / 64.36 |
+
+The 4B Direct-Token stack improves over its native readout on all three held-out
+panels. The 27B stack improves Transfer and Typed, ties JevBench, and hurts
+JevJudge text. Retain a stack only when paired development errors are
+complementary and the target distribution validates it.
+
+[Full method, fixed 50/50 controls and protocol](CHOICE_READOUT.md) ·
+[Machine-readable results](../results/choice-readout-v2.json) ·
+[Merged 23-page technical report](../reports/JevAny_Tech_Report.pdf)
 
 ## Earlier releases and evaluations
 

@@ -140,7 +140,7 @@ where Jev helps and when to return control to the LLM.
   - [🛠️ 1.2 JevAny Training](#training)
   - [🚀 1.3 JevAny Deployment](#deployment)
 - [🤗 2. Pretrained Models](#pretrained-models)
-  - [Training-free letter readout](#letter-readout)
+  - [Training-free choice-token readout](#choice-readout)
 - [📊 3. Benchmark Results](#evaluation)
   - [⏱️ 3.1 Inference efficiency](#efficiency)
 - [🕹️ 4. Examples & Test Environments](#examples--test-environments)
@@ -296,30 +296,43 @@ Pointer and direct-token models share the same API. Pointer supports up to
 See [readout choices](docs/TRAINING.md#pointer-and-direct-token-readouts) for
 training and accuracy tradeoffs.
 
-### Training-free letter readout <a name="letter-readout"></a>
+### Training-free choice-token readout <a name="choice-readout"></a><a name="letter-readout"></a>
 
-The experimental letter readout presents up to 26 options as A–Z, then sums
-the frozen language model's next-token probability mass for every vocabulary
-token that decodes exactly to that uppercase letter. It can run on a base model
-without training, apply a JevAny adapter before the same readout, or combine the
-letter and native pointer distributions. The letter path is text-only and does
-not change the checkpoint metadata. Select it with `--readout letter` in
-`jevany eval`, `jevany decide`, or `jevany serve`; the checkpoint-native
-readout remains the default.
+Choice-token readout assigns the ordered options to the exact one-token IDs
+`A–Z, a–z`, scores those 52 rows at the answer position, and renormalizes over
+the available options. It needs no readout training and works on a frozen base,
+after a JevAny Pointer or Direct-Token adapter, or in a log-linear stack with
+the checkpoint-native distribution. It can change the ranking and the selected
+answer; scalar temperature calibration only changes confidence.
 
-[Method, limits and evaluation command](docs/LETTER_READOUT.md).
+```bash
+jevany eval --run SimpleJev/JevAny-Qwen3.5-4B-Direct-Token-LoRA \
+  --suite /path/to/suite --out runs/choice --device cuda --readout choice
+```
 
-[![Accuracy change from native pointer for letter readout and the fixed blend](docs/letter-readout-results.svg)](docs/LETTER_READOUT.md#results)
+[Method, commands, limits and complete tables](docs/CHOICE_READOUT.md) ·
+[Machine-readable results](results/choice-readout-v2.json)
 
-- The fixed 50/50 blend improved 27B on both diagnostics: +0.43 accuracy
-  points on JevBench public and +0.67 on Transfer-v9. Neither gain is
-  statistically significant.
-- At 4B, the same blend gained +1.73 points on JevBench public but lost 0.10
-  on Transfer-v9. Letter readout is a paired target-domain ablation, not a
-  universal upgrade.
-- Letter-only measured a 1.05x/1.07x median speedup over native at 4B/27B
-  on one warmed H200 panel. Blending runs both paths and cost 1.81x/1.89x the
-  native median latency.
+[![Training-free choice-token, checkpoint-native, Transfer-dev-tuned blend, and external baseline accuracy on Typed Decisions and JevJudge text](docs/choice-readout-results.svg)](docs/CHOICE_READOUT.md#results)
+
+- Direct-Token 4B's Transfer-dev-tuned stack reaches **79.83%** on held-out
+  Transfer, **67.65%** on Typed Decisions, and **59.25%** on JevJudge text:
+  +0.96, +0.45, and +0.83 points over its native readout.
+- Pointer 27B's tuned stack reaches **89.10%** on held-out Transfer and
+  **73.30%** on Typed, but drops from **66.44% to 64.36%** on JevJudge text.
+  The target-domain result decides whether stacking is useful.
+- The frozen 4B choice path scores 52.75% on Typed; applying the Direct-Token
+  adapter raises the same choice path to 64.80%. On JevJudge text, the same
+  adapter slightly lowers it, from 58.70% to 57.60%.
+
+**Practical rule**
+
+- Use choice-token readout when the model can reason over the options and the
+  bottleneck is extracting a decision; it cannot create missing task ability.
+- Blend only when paired development errors show that native and choice rescue
+  each other, then freeze one weight before the target evaluation.
+- Use temperature for probability calibration, not accuracy: it cannot change
+  the argmax.
 
 > **Benchmark units:** Cygnet's official **73.70** on JevBench v1.5.4 is a
 > four-axis composite over 1,624 open and sealed decisions, not accuracy. Its
@@ -329,6 +342,7 @@ readout remains the default.
 
 ## 📊 3. Benchmark Results <a name="evaluation"></a>
 
+The release table below uses each checkpoint's native readout.
 JevAny-Qwen3.8-27B leads both benchmarks and has the lowest NLL and Brier.
 Among 4B releases, direct-token leads on JevBench; pointer leads on Transfer.
 
@@ -357,7 +371,8 @@ NLL, Brier and ECE are measured on Transfer.
 [Machine-readable results](results/model-family-v2.json) ·
 [Method and ablation report](reports/JevAny_Tech_Report.pdf)
 
-The external comparison uses the complete Typed Decisions test split, the full
+The external comparison below also uses checkpoint-native readouts. It uses the
+complete Typed Decisions test split, the full
 3,220-record JevJudge multimodal suite, and its 724-record text slice. The same
 13 models stay in the same order; `—` means unsupported native input or no
 matching result.

@@ -1,4 +1,4 @@
-"""One-token option-letter readout primitives for frozen causal LMs.
+"""One-token option-ID readout primitives for frozen causal LMs.
 
 The Cygnet-compatible prompt and letter aggregation semantics are adapted from
 the MIT-licensed ``blockbrain-ai/cygnet-recipe`` shim at commit ``3cf591c``
@@ -18,11 +18,18 @@ from dataclasses import dataclass
 from typing import Any
 
 
-LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+CYGNET_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+# Preserve Cygnet's exact A-Z assignment for its supported range, then extend
+# with distinct lowercase one-character IDs for larger decision sets. This
+# covers JevJudge's 28-30-option text requests without dropping records.
+CHOICE_SYMBOLS = CYGNET_LETTERS + "abcdefghijklmnopqrstuvwxyz"
+# Backward-compatible implementation name. Public documentation calls these
+# option IDs and the method training-free choice readout.
+LETTERS = CHOICE_SYMBOLS
 SYSTEM_PROMPT = (
     "You are a calibration engine. You never answer in prose. You are given a state, a question and "
     "a numbered set of options, and you choose exactly one option. You reply with that option's "
-    "LETTER and nothing else — a single character, no words, no punctuation, no explanation."
+    "case-sensitive ID and nothing else — a single character, no words, no punctuation, no explanation."
 )
 
 _NEGATIVE_INFINITY = float("-inf")
@@ -63,7 +70,7 @@ def _ordered_descriptions(options: Mapping[Any, Any] | Sequence[Any]) -> list[An
 
 
 def build_prompt(state: Any, instructions: Any, options: Mapping[Any, Any] | Sequence[Any]) -> str:
-    """Build Cygnet's measured user prompt, assigning options A through Z.
+    """Build the measured user prompt, assigning one-character option IDs.
 
     Mapping insertion order or sequence order is the option order.  Structured
     state is rendered with ``indent=1`` as in Cygnet.  This function only
@@ -78,22 +85,22 @@ def build_prompt(state: Any, instructions: Any, options: Mapping[Any, Any] | Seq
     )
     lines = [state_text.rstrip(), "", instruction_text.rstrip(), "", "Options:"]
     lines.extend(f"{LETTERS[index]}. {description}" for index, description in enumerate(descriptions))
-    lines.extend(("", "Answer with the letter of exactly one option, and nothing else:"))
+    lines.extend(("", "Answer with the case-sensitive ID of exactly one option, and nothing else:"))
     return "\n".join(lines)
 
 
 def _validate_letters(letters: Sequence[str]) -> tuple[str, ...]:
     if isinstance(letters, (bytes, bytearray)):
-        raise TypeError("letters must be a sequence of A-Z strings")
+        raise TypeError("option IDs must be a sequence of one-character strings")
     selected = tuple(letters)
     if not selected:
-        raise ValueError("letters must not be empty")
+        raise ValueError("option IDs must not be empty")
     if len(selected) > len(LETTERS):
         raise ValueError(f"letters may contain at most {len(LETTERS)} entries")
-    if any(type(letter) is not str or len(letter) != 1 or letter not in LETTERS for letter in selected):
-        raise ValueError("letters must contain only single uppercase A-Z strings")
+    if any(type(letter) is not str or len(letter) != 1 or letter not in CHOICE_SYMBOLS for letter in selected):
+        raise ValueError("option IDs must be distinct single A-Z/a-z characters")
     if len(set(selected)) != len(selected):
-        raise ValueError("letters must not contain duplicates")
+        raise ValueError("option IDs must not contain duplicates")
     return selected
 
 
@@ -113,12 +120,12 @@ def _decode_token(tokenizer: Any, token_id: int) -> str:
 
 
 def letter_token_ids(tokenizer: Any, letters: Sequence[str]) -> dict[str, tuple[int, ...]]:
-    """Scan the vocabulary for every token ID decoding to each exact letter.
+    """Scan the vocabulary for every token ID decoding to each exact option ID.
 
     Token text is intentionally never used as a dictionary key: distinct token
     IDs may decode to identical text, and every such ID contributes probability
-    mass.  Tokens decoding to ``" A"``, ``"A."``, or ``"a"`` are excluded:
-    Cygnet's structured-output choice admits the exact uppercase string only.
+    mass. Tokens decoding to ``" A"`` or ``"A."`` are excluded. Case is
+    significant: ``A`` and ``a`` are different option IDs when both are used.
     ``len(tokenizer)`` must describe the full vocabulary, including added tokens.
     """
 
@@ -338,6 +345,8 @@ def read_letter_distribution(
 
 
 __all__ = [
+    "CHOICE_SYMBOLS",
+    "CYGNET_LETTERS",
     "LETTERS",
     "SYSTEM_PROMPT",
     "LetterReadout",

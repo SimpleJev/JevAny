@@ -1,4 +1,4 @@
-"""System One runtime adapter for the training-free option-letter predictor."""
+"""System One runtime adapter for the training-free choice-token predictor."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from .api import SystemOneRequest, output_tokens, to_answers, to_record, validate_response
+from .letter_readout import CHOICE_SYMBOLS
 
 
 def _unlabelled_record(request: SystemOneRequest) -> dict[str, Any]:
@@ -41,7 +42,7 @@ class LetterDecisionRuntime:
         if not isinstance(self.model_id, str) or not self.model_id.strip():
             raise ValueError("model_name must be a nonempty string")
         if self.predictor.checkpoint is None:
-            raise ValueError("serving letter readout requires a JevAny checkpoint")
+            raise ValueError("serving choice readout requires a JevAny checkpoint")
 
     @property
     def checkpoint(self):
@@ -52,25 +53,26 @@ class LetterDecisionRuntime:
         return [] if self.model_id == "jevany-latest" else ["jevany-latest"]
 
     def clear_cache(self) -> None:
-        """Letter readout currently keeps no mutable prefix cache."""
+        """Choice readout currently keeps no mutable prefix cache."""
 
     def describe(self) -> dict[str, Any]:
-        """Describe the effective letter readout and its checkpoint overlay."""
+        """Describe the effective choice readout and its checkpoint overlay."""
 
         checkpoint = self.checkpoint
-        pointer_model = self.predictor.pointer_model
-        capabilities = pointer_model.inference_capabilities
+        native_model = self.predictor.native_model
+        capabilities = native_model.inference_capabilities
         context_window = capabilities.context_window
         effective_window = self.predictor.effective_max_tokens
-        acceleration = getattr(pointer_model, "inference_acceleration", {
+        acceleration = getattr(native_model, "inference_acceleration", {
             "compile_mode": None,
             "lora_merged": False,
             "approximate_bf16_merge": False,
             "cuda_graphs": None,
         })
-        letter_readout = dict(self.predictor.provenance)
-        if self.predictor.pointer_weight:
-            letter_readout["pointer_temperature"] = pointer_model.temperature
+        choice_readout = dict(self.predictor.provenance)
+        if self.predictor.native_weight:
+            choice_readout["native_temperature"] = native_model.temperature
+            choice_readout["pointer_temperature"] = native_model.temperature
         with self.lock:
             return {
                 "id": self.model_id,
@@ -79,13 +81,15 @@ class LetterDecisionRuntime:
                 "base": checkpoint.meta.base,
                 "lora": checkpoint.meta.lora,
                 "device": self.predictor.device,
-                "device_map": getattr(pointer_model, "device_map", None),
-                "devices": getattr(pointer_model, "devices", [self.predictor.device]),
+                "device_map": getattr(native_model, "device_map", None),
+                "devices": getattr(native_model, "devices", [self.predictor.device]),
                 "temperature": self.predictor.temperature,
                 "decision_mode": checkpoint.meta.decision_mode,
-                "readout": "letter",
-                "letter_readout": letter_readout,
-                "backbone_adapter": pointer_model.backbone_adapter,
+                "readout": "choice",
+                "choice_readout": choice_readout,
+                # Legacy descriptor alias retained for older clients.
+                "letter_readout": dict(choice_readout),
+                "backbone_adapter": native_model.backbone_adapter,
                 "branch_mode": "chat",
                 "acceleration": acceleration,
                 "capabilities": {
@@ -98,7 +102,7 @@ class LetterDecisionRuntime:
                     "state_tokens": effective_window,
                     "branch_tokens": effective_window,
                     "packed_tokens": effective_window,
-                    "choices": 26,
+                    "choices": len(CHOICE_SYMBOLS),
                 },
                 "prefix_cache": {
                     "enabled": False,
@@ -111,12 +115,12 @@ class LetterDecisionRuntime:
             }
 
     def answer(self, request: SystemOneRequest) -> dict[str, Any]:
-        """Run letter inference and return a validated System One response."""
+        """Run choice-token inference and return a validated System One response."""
 
         if request.model not in (self.model_id, *self.aliases):
             raise ValueError(f"unknown model {request.model!r}; this deployment serves {self.model_id!r}")
         if request.media:
-            raise ValueError("letter readout does not support media requests")
+            raise ValueError("choice readout does not support media requests")
         _, metadata = to_record(request)
         with self.lock:
             prediction = self.predictor(_unlabelled_record(request))
