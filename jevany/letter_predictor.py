@@ -1,9 +1,9 @@
 """Training-free choice-token inference over a frozen base or JevAny adapter.
 
-This is the in-process backend for :mod:`jevany.letter_readout`.  It keeps the
-existing pointer path unchanged: a JevAny checkpoint can instead be applied to
-the chat prompt before the frozen vocabulary readout, and its pointer
-distribution can optionally be combined with the letter distribution.
+This is the in-process backend for :mod:`jevany.letter_readout`. A JevAny
+checkpoint can be applied to the chat prompt before the frozen vocabulary
+readout, and its Pointer or Direct-Token native distribution can optionally be
+combined with the choice distribution.
 """
 
 from __future__ import annotations
