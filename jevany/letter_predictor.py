@@ -9,6 +9,7 @@ distribution can optionally be combined with the letter distribution.
 from __future__ import annotations
 
 from collections.abc import Mapping
+from contextlib import nullcontext
 import hashlib
 import json
 import math
@@ -17,6 +18,7 @@ from pathlib import Path
 
 import torch
 import torch.nn.functional as F
+from torch.nn.attention import SDPBackend, sdpa_kernel
 
 from .api import SystemOneRequest, question_keys
 from .checkpoint import Checkpoint, LoadOptions
@@ -244,6 +246,7 @@ class LetterReadoutPredictor:
         native_weight: float | None = None,
         return_components: bool = False,
         exact_kernels: bool = True,
+        efficient_long_context_tokens: int | None = None,
         max_tokens: int = 16_384,
     ) -> None:
         if (base is None) == (checkpoint is None):
@@ -278,7 +281,16 @@ class LetterReadoutPredictor:
             raise TypeError("exact_kernels must be a boolean")
         self.return_components = return_components
         self.exact_kernels = exact_kernels
-        self.exact_cuda_kernels_applied = device == "cuda" and exact_kernels
+        self.exact_cuda_kernels_applied = str(device).startswith("cuda") and exact_kernels
+        if (
+            efficient_long_context_tokens is not None
+            and (
+                type(efficient_long_context_tokens) is not int
+                or efficient_long_context_tokens < 2
+            )
+        ):
+            raise ValueError("efficient_long_context_tokens must be an integer >= 2 or None")
+        self.efficient_long_context_tokens = efficient_long_context_tokens
         if type(max_tokens) is not int or max_tokens < 2:
             raise ValueError("max_tokens must be an integer >= 2")
         self.max_tokens = max_tokens
@@ -442,12 +454,39 @@ class LetterReadoutPredictor:
             "return_components": self.return_components,
             "exact_kernels": self.exact_kernels,
             "exact_cuda_kernels_applied": self.exact_cuda_kernels_applied,
+            "efficient_long_context_tokens": self.efficient_long_context_tokens,
+            "long_context_attention": (
+                "fused SDPA (Flash/Efficient, no math fallback) at or above the "
+                "recorded threshold; exact math SDPA below it"
+                if self.efficient_long_context_tokens is not None
+                else None
+            ),
             "max_tokens": self.max_tokens,
             "backbone_context_window": self.backbone_context_window,
             "effective_max_tokens": self.effective_max_tokens,
             "dtype": str(next(self.language_model.parameters()).dtype),
             "device": device,
         }
+
+    def _uses_efficient_attention(self, token_count: int) -> bool:
+        return (
+            str(self.device).startswith("cuda")
+            and getattr(self, "efficient_long_context_tokens", None) is not None
+            and token_count >= self.efficient_long_context_tokens
+        )
+
+    def _attention_context(self, token_count: int):
+        if not self._uses_efficient_attention(token_count):
+            return nullcontext()
+        # Exact math SDPA materializes an O(sequence^2) attention matrix.  A
+        # few public JevJudge text records exceed 30K tokens, which can require
+        # roughly 60 GiB for that matrix alone.  Release cached short-record
+        # workspaces and force a memory-linear fused backend for those records.
+        torch.cuda.empty_cache()
+        return sdpa_kernel(
+            [SDPBackend.FLASH_ATTENTION, SDPBackend.EFFICIENT_ATTENTION],
+            set_priority=True,
+        )
 
     def _chat_ids(self, prompt: str) -> torch.Tensor:
         messages = [
@@ -477,11 +516,12 @@ class LetterReadoutPredictor:
             )
         prompt = build_prompt(state, question.get("instructions") or "", descriptions)
         ids = self._chat_ids(prompt)
-        output = self.language_model(
-            input_ids=ids,
-            attention_mask=torch.ones_like(ids),
-            use_cache=False,
-        )
+        with self._attention_context(int(ids.shape[1])):
+            output = self.language_model(
+                input_ids=ids,
+                attention_mask=torch.ones_like(ids),
+                use_cache=False,
+            )
         hidden = output.last_hidden_state[0, -1]
         projection = self.letter_projection
         selected_logits = F.linear(
@@ -512,8 +552,10 @@ class LetterReadoutPredictor:
                 f"native request needs {len(encoded['ids'])} packed tokens; "
                 f"limit {self.effective_max_tokens}"
             )
-        return [F.softmax(logits, -1).float().cpu().tolist()
-                for logits in self.native_model.forward(encoded)], len(encoded["ids"])
+        with self._attention_context(len(encoded["ids"])):
+            rows = [F.softmax(logits, -1).float().cpu().tolist()
+                    for logits in self.native_model.forward(encoded)]
+        return rows, len(encoded["ids"])
 
     def _pointer(self, record: dict) -> tuple[list[list[float]], int]:
         """Compatibility alias for the generalized native checkpoint pass."""
@@ -567,6 +609,10 @@ class LetterReadoutPredictor:
             "inference_temperature": self.temperature,
             "latency_ms": (time.perf_counter() - started) * 1000,
             "input_tokens": sum(row[3] for row in letter_rows) + native_tokens,
+            "efficient_long_context_attention_used": (
+                any(self._uses_efficient_attention(row[3]) for row in letter_rows)
+                or self._uses_efficient_attention(native_tokens)
+            ),
             "readout": {
                 "method": self.provenance["method"],
                 "adapter_applied": self.provenance["adapter_applied"],
