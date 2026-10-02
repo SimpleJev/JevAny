@@ -64,3 +64,21 @@ jobs:
           path: |
             ci-results.xml
             ci-dependencies.txt
+
+  report-test:
+    name: report appendix
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: reports/requirements.txt
+      - name: Install report dependencies
+        run: python -m pip install --disable-pip-version-check -r reports/requirements.txt pytest==9.1.1
+      - name: Test report artifact and PDF builders
+        run: >-
+          python -m pytest -q
+          tests/test_build_choice_readout_results.py
+          tests/test_build_external_report_appendix.py
