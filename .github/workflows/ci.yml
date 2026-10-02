@@ -77,7 +77,13 @@ jobs:
           cache-dependency-path: reports/requirements.txt
       - name: Install report dependencies
         run: python -m pip install --disable-pip-version-check -r reports/requirements.txt pytest==9.1.1
+      - name: Verify report environment
+        run: |
+          python -m pip check
+          python -c "import matplotlib, pypdf, pytest; print(matplotlib.__version__, pypdf.__version__, pytest.__version__)"
       - name: Test report artifact and PDF builders
+        env:
+          JEVANY_REPORT_TESTS_REQUIRED: '1'
         run: >-
           python -m pytest -q
           tests/test_build_choice_readout_results.py

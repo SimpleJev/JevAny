@@ -4,6 +4,7 @@
 import argparse
 from contextlib import contextmanager
 from datetime import datetime, timezone
+import hashlib
 import json
 import math
 import os
@@ -18,6 +19,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.patches import FancyBboxPatch
 from pypdf import PdfReader, PdfWriter
+from pypdf.generic import IndirectObject
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -594,17 +596,62 @@ def build_appendix(
             )
 
 
+def _canonical_pdf_object(value, active: set[int] | None = None):
+    """Resolve PDF references into a stable, object-number-independent value."""
+
+    if isinstance(value, IndirectObject):
+        return _canonical_pdf_object(value.get_object(), active)
+    if active is None:
+        active = set()
+    if isinstance(value, dict):
+        marker = id(value)
+        if marker in active:
+            return ("cycle",)
+        active.add(marker)
+        try:
+            items = tuple(sorted(
+                (
+                    str(key),
+                    _canonical_pdf_object(item, active),
+                )
+                for key, item in value.items()
+                if str(key) != "/Length"
+            ))
+            stream = None
+            if hasattr(value, "get_data"):
+                stream = hashlib.sha256(value.get_data()).hexdigest()
+            return ("dict", items, stream)
+        finally:
+            active.remove(marker)
+    if isinstance(value, (list, tuple)):
+        return tuple(_canonical_pdf_object(item, active) for item in value)
+    if isinstance(value, bytes):
+        return ("bytes", hashlib.sha256(value).hexdigest())
+    if value is None or isinstance(value, (bool, int, float, str)):
+        return value
+    return str(value)
+
+
 def page_invariants(page) -> tuple:
     """Return page properties that must survive the merge unchanged."""
     contents = page.get_contents()
     content_bytes = contents.get_data() if contents is not None else b""
+    annotations = []
+    for reference in page.get("/Annots", []):
+        annotation = reference.get_object()
+        # /P is a back-reference to the owning page and would make the
+        # otherwise stable annotation target depend on PDF object numbers.
+        annotations.append(_canonical_pdf_object({
+            key: value for key, value in annotation.items() if str(key) != "/P"
+        }))
     return (
         tuple(float(value) for value in page.mediabox),
         tuple(float(value) for value in page.cropbox),
         page.rotation,
         content_bytes,
         page.extract_text() or "",
-        len(page.get("/Annots", [])),
+        _canonical_pdf_object(page.get("/Resources")),
+        tuple(annotations),
     )
 
 
