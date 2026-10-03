@@ -1,0 +1,28 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["summary", "coverage_complete", "uncertainties", "findings"],
+  "properties": {
+    "summary": {"type": "string"},
+    "coverage_complete": {"type": "boolean"},
+    "uncertainties": {"type": "array", "items": {"type": "string"}},
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["severity", "category", "file", "side", "line", "title", "reason", "evidence"],
+        "properties": {
+          "severity": {"type": "string", "enum": ["low", "medium", "high", "critical"]},
+          "category": {"type": "string", "enum": ["correctness", "factual", "security", "compatibility", "reproducibility"]},
+          "file": {"type": "string"},
+          "side": {"type": "string", "enum": ["old", "new"]},
+          "line": {"type": "integer", "minimum": 1},
+          "title": {"type": "string"},
+          "reason": {"type": "string"},
+          "evidence": {"type": "string"}
+        }
+      }
+    }
+  }
+}
