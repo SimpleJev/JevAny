@@ -563,6 +563,16 @@ class PublicationTests(unittest.TestCase):
 
 
 class WorkflowTests(unittest.TestCase):
+    def test_ci_run_identity_survives_yaml_comment_parsing(self):
+        for name in ["ci.yml", "pages.yml"]:
+            workflow = yaml.safe_load((ROOT.parent / "workflows" / name).read_text())
+            identity = workflow["run-name"]
+            self.assertTrue(identity.startswith("${{"))
+            self.assertTrue(identity.endswith("}}"))
+            self.assertIn("PR #{0} | base {1} | head {2}", identity)
+            self.assertIn("github.event.pull_request.base.sha", identity)
+            self.assertIn("github.event.pull_request.head.sha", identity)
+
     def test_ci_policy_matches_repository_jobs_and_pages_paths(self):
         workflows = ROOT.parent / "workflows"
         ci = yaml.safe_load((workflows / "ci.yml").read_text())
