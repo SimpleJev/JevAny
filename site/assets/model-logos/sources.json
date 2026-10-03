@@ -29,5 +29,11 @@
     "provenance": "../../../docs/model-logos/checkpoint-sources.json",
     "design": "JevAny project mark with the base-model logo at bottom right",
     "copied_by": "../../tools/build_content.py"
+  },
+  "baseline_marks": {
+    "source": "../../../docs/model-logos/{kev.svg,typesafe.png,laya.svg}",
+    "provenance": "../../../docs/model-logos/checkpoint-sources.json",
+    "license_files": ["LICENSE-laya"],
+    "copied_by": "../../tools/build_content.py"
   }
 }

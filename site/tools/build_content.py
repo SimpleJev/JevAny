@@ -24,6 +24,12 @@ PUBLIC_URL = "https://simplejev.github.io/JevAny/"
 RESULTS = json.loads((ROOT / "results/model-family-v2.json").read_text())
 CATALOG = json.loads((ROOT / "docs/supported-models.json").read_text())
 LOGOS = json.loads((SITE / "assets/model-logos/sources.json").read_text())["families"]
+BASELINE_LOGOS = {
+    "Kev-4B": "kev.svg",
+    "Kev-27B": "kev.svg",
+    "Jev 1.13.0": "typesafe.png",
+    "Laya": "laya.svg",
+}
 METRICS = {
     "jevbench_public_accuracy": ("JevBench", True),
     "transfer_v9_accuracy": ("Transfer", True),
@@ -63,17 +69,26 @@ def benchmarks():
         name = model_name(model)
         ours = "repository" in model
         attrs = " ".join(f'data-{key.replace("_", "-")}="{model[key]}"' for key in METRICS)
-        short = name.removeprefix("JevAny-").replace("-Direct-Token", " · Direct-token")
+        if ours:
+            family = next(f for f in ("Qwen", "Gemma", "Muse") if f in name)
+            logo = f"jevany-{family.lower()}.svg"
+        else:
+            logo = BASELINE_LOGOS[name]
+        label = (
+            f'<span class="benchmark-model" translate="no">'
+            f'<img src="assets/model-logos/{logo}" width="24" height="24" alt="">'
+            f'<span>{escape(name)}</span></span>'
+        )
         value = display(model["jevbench_public_accuracy"], True)
         rows.append(
             f'<li class="benchmark-row {"ours" if ours else "baseline"}" {attrs}>'
-            f'<span class="benchmark-model" translate="no"><span class="sr-only">{"JevAny " if ours else ""}</span>{escape(short)}</span>'
+            f'{label}'
             f'<span class="benchmark-track" aria-hidden="true"><i style="width:{value}"></i></span>'
             f'<span class="benchmark-value">{value}</span></li>'
         )
         values = "".join(f"<td>{display(model[key], accuracy)}</td>" for key, (_, accuracy) in METRICS.items())
         tiers = "".join(f'<td>{display(model["jevbench_tiers"][tier], True)}</td>' for tier in ("easy", "original", "hard"))
-        table.append(f'<tr><th scope="row" translate="no">{escape(name)}</th>{values}{tiers}</tr>')
+        table.append(f'<tr><th scope="row">{label}</th>{values}{tiers}</tr>')
     return f"""
       <div class="benchmark-panel">
         <div class="benchmark-toolbar"><div class="metric-buttons" role="group" aria-label="Benchmark metric" hidden>{tabs}</div>
@@ -347,6 +362,8 @@ def main():
     ROOT = ROOT.resolve()
     for family in ("qwen", "gemma", "muse"):
         filename = f"jevany-{family}.svg"
+        shutil.copyfile(ROOT / "docs/model-logos" / filename, SITE / "assets/model-logos" / filename)
+    for filename in (*sorted(set(BASELINE_LOGOS.values())), "LICENSE-laya"):
         shutil.copyfile(ROOT / "docs/model-logos" / filename, SITE / "assets/model-logos" / filename)
     for source in sorted((ROOT / "docs").glob("*.md")):
         DOCUMENTS[source] = document_path(source)

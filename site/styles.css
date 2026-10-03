@@ -302,10 +302,12 @@ img[src$="/zai.svg"] { filter: invert(.85); }
 .chart-heading { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 12px; margin: 30px 0 22px; }
 .chart-heading h3 { font-size: 17px; }
 .chart-heading p { color: #a8bbb0; font-size: 12px; }
-.chart-axis { display: flex; justify-content: space-between; margin: 0 77px 8px 236px; color: #93a59c; font-size: 12px; }
+.chart-axis { display: flex; justify-content: space-between; margin: 0 77px 8px 276px; color: #93a59c; font-size: 12px; }
 .benchmark-chart { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
-.benchmark-row { display: grid; grid-template-columns: 220px minmax(0, 1fr) 61px; align-items: center; gap: 16px; min-height: 55px; }
-.benchmark-model { display: block; font-size: 13px; color: #e1ece5; line-height: 1.5; }
+.benchmark-row { display: grid; grid-template-columns: 260px minmax(0, 1fr) 61px; align-items: center; gap: 16px; min-height: 55px; }
+.benchmark-model { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 13px; color: #e1ece5; line-height: 1.5; }
+.benchmark-model img { width: 24px; height: 24px; flex: 0 0 24px; object-fit: contain; }
+.benchmark-model > span { min-width: 0; overflow-wrap: anywhere; }
 .benchmark-track { height: 22px; background: repeating-linear-gradient(90deg, #b6dac508 0, #b6dac508 1px, transparent 1px, transparent 25%); border-right: 1px solid #b6dac512; }
 .benchmark-track i { display: block; height: 100%; background: linear-gradient(90deg, #619e80, var(--mint)); border-radius: 0 3px 3px 0; transition: width .4s ease; }
 .benchmark-row.baseline .benchmark-track i { background: #70867d; }
@@ -411,8 +413,8 @@ caption { padding: 16px 18px; text-align: left; color: #adbcaf; font-size: 12px;
 @media (max-width: 1100px) {
   .checkpoint-card { padding: 20px; }
   .checkpoint-card h3 { font-size: 17px; }
-  .benchmark-row { grid-template-columns: 195px minmax(0, 1fr) 60px; }
-  .chart-axis { margin-left: 211px; }
+  .benchmark-row { grid-template-columns: 230px minmax(0, 1fr) 60px; }
+  .chart-axis { margin-left: 246px; }
   .docs-layout { gap: 35px; grid-template-columns: 175px minmax(0, 1fr); }
 }
 @media (max-width: 800px) {
@@ -463,11 +465,12 @@ caption { padding: 16px 18px; text-align: left; color: #adbcaf; font-size: 12px;
   .chart-heading { margin-block: 23px 18px; gap: 6px; }
   .chart-heading h3 { font-size: 15px; }
   .chart-heading p { font-size: 12px; line-height: 1.7; }
-  .benchmark-row { grid-template-columns: 112px minmax(0, 1fr) 48px; gap: 8px; min-height: 58px; }
-  .benchmark-model { font-size: 12px; overflow-wrap: anywhere; }
+  .benchmark-row { grid-template-columns: minmax(0, 1fr) 48px; gap: 6px 8px; min-height: 0; padding-block: 10px; }
+  .benchmark-model { font-size: 12px; }
+  .benchmark-row .benchmark-model { grid-column: 1 / -1; }
   .benchmark-value { font-size: 12px; }
   .benchmark-track { height: 17px; }
-  .chart-axis { margin-left: 120px; margin-right: 56px; font-size: 12px; }
+  .chart-axis { margin-left: 0; margin-right: 56px; font-size: 12px; }
   .disclosure summary { font-size: 12px; padding: 15px; }
   .benchmark-note { font-size: 12px; }
   .benchmark-links { gap: 3px 18px; font-size: 12px; }
