@@ -47,9 +47,9 @@ class ChineseHomepage(HTMLParser):
         if tag == "html":
             attrs["lang"] = "zh-CN"
         if tag == "link" and attrs.get("rel") == "canonical":
-            attrs["href"] = "https://simplejev.github.io/JevAny/zh.html"
+            attrs["href"] = "https://simplejev.org/JevAny/zh.html"
         if tag == "meta" and attrs.get("property") == "og:url":
-            attrs["content"] = "https://simplejev.github.io/JevAny/zh.html"
+            attrs["content"] = "https://simplejev.org/JevAny/zh.html"
         if attrs.get("data-language"):
             attrs.pop("aria-current", None)
             if attrs["data-language"] == "zh-CN":
