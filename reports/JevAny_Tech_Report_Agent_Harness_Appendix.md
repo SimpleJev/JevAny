@@ -1,11 +1,11 @@
-# JevAny Technical Report — Agent-Harness Appendix
+# JevAny Technical Report — Evaluation Appendices
 
 **Evidence snapshot:** 30 September 2026
 **Appendix revision:** 1 October 2026
-**Scope:** bounded Jev decision-making inside LLM agents
+**Scope:** bounded Jev decision-making inside LLM agents and external decision-suite evaluation
 
-This appendix extends the released nine-page *JevAny Technical Report*. The
-original PDF is preserved unchanged. It studies a specific systems question:
+These appendices extend the released nine-page *JevAny Technical Report*. The
+original pages are preserved unchanged. The agent-harness study asks a specific systems question:
 can an LLM retain task reasoning and completion ownership while delegating
 bounded, basic decisions to Jev?
 
@@ -470,3 +470,54 @@ study.
 Raw sources, failed runs, development versions, exact model IDs, hashes, and
 selected-command traces are retained. Estimated dollar values use recorded
 frontier API pricing and exclude Jev GPU rental and energy.
+
+## L. External decision-suite evaluation
+
+The public comparison adds the complete 2,000-decision Typed Decisions test
+split and JevJudge-Public v0.3. JevJudge contains 3,220 native decision
+requests: 724 text, 2,214 image and 282 video records across 22 families and
+five judge roles. A full-suite score requires 3,220/3,220 valid predictions;
+models without a native required modality receive no score.
+
+JevJudge's official `skill_role` first chance-corrects each family, averages
+family skill inside each role, and then equally averages the five roles. Plain
+accuracy instead weights every item equally and does not remove chance. The
+uniform baseline illustrates the distinction: 40.0% plain accuracy but −0.77%
+`skill_role`.
+
+| Model | Typed accuracy | JevJudge full accuracy | Official `skill_role` (95% CI) | Full coverage |
+|---|---:|---:|---:|---:|
+| JevAny-Qwen3.8-27B | 72.80% | **62.27%** | 35.55% [32.84, 38.18] | 3,220/3,220 |
+| Jev 1.13 (OpenRouter) | 72.70% | — | — | Text-only endpoint |
+| JevAny-Muse-Glimmer-30B | 69.95% | 58.70% | 29.65% [26.71, 32.31] | 3,220/3,220 |
+| JevAny-Qwen3.5-4B-Direct-Token | 67.20% | 54.94% | 23.85% [20.96, 26.70] | 3,220/3,220 |
+| JevAny-Qwen3.5-4B | 63.50% | 54.75% | 23.23% [20.49, 25.84] | 3,220/3,220 |
+| JevAny-Gemma-4B | 66.25% | 51.49% | 17.92% [15.25, 20.37] | 3,220/3,220 |
+| Jeff-Qwen3.5-2B | 55.45% | 48.23% | 13.57% [10.80, 15.99] | 3,220/3,220 |
+| Jeff-Qwen3.5-0.8B | 49.15% | 47.95% | 11.23% [8.65, 13.44] | 3,220/3,220 |
+
+Jev 1.13's 72.70% Typed result is published on the pinned dataset card; the
+separate OpenRouter rerun scores 65.06% on the 724-record JevJudge text-only
+subset. The endpoint is text-only, so no full-suite score is reported.
+
+All five JevAny releases exceed the two open external checkpoints that can run
+the complete native multimodal suite. OpenDecider-small and Jeff-Gemma4 are
+text-only; Bongard-mini has no video path; Kev's pinned runtime does not consume
+image or video media. These systems show `—` in the full-suite comparison
+rather than a media-stripped score.
+
+The separate 724-record text-only accuracy view places JevAny-Qwen3.8-27B at
+66.44%, Jev 1.13 at 65.06%, Kev-27B at 64.23%, Muse-Glimmer-30B at 62.57%,
+and the remaining scored systems at 42.82%–58.56%. Kev uses a full-context
+4,096-token chunked-KV
+protocol with no token truncation. Its old 38.54% 27B row is invalid: the
+malformed path encoded only 7–63 effective tokens and omitted the state and
+instructions.
+
+All reported full-suite intervals use 1,000 source-stratified `group_id`
+bootstrap replicates with seed `20261001`. NLL is computed from the returned
+probability assigned to the gold label. The frozen dataset revision is
+`4d576ded443e159c18d46558d233c80fdf353849`; the test SHA-256 is
+`5c50f89e…e83cb`. Aggregate values, exact model revisions, raw-run hashes and
+media compatibility evidence are recorded in
+`results/external-zero-shot-v1.json` and `docs/EXTERNAL_EVALUATION.md`.

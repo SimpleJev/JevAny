@@ -1,20 +1,701 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a1114">
-<title>JevBench and Kev evaluation — JevAny</title><link rel="stylesheet" href="../styles.css"><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"></head>
+<title>External decision-suite evaluation — JevAny</title><link rel="stylesheet" href="../styles.css"><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"></head>
 <body class="docs-page"><a class="skip-link" href="#content">Skip to content</a>
 <header class="site-header wrap"><a class="brand" href="../index.html"><img src="../assets/favicon.svg" width="30" height="30" alt=""><span>JevAny<span class="brand-period">.</span></span></a>
 <nav aria-label="Main navigation"><a href="../index.html#benchmarks">Benchmarks</a><a href="../index.html#models">Models</a><a href="../index.html#get-started">Get started</a></nav></header>
 <div class="docs-layout wrap"><aside class="docs-sidebar"><a class="text-link" href="../index.html">← Project homepage</a><nav aria-label="Documentation"><a href="quickstart.html">Quickstart</a><a href="TRAINING.html">Training</a><a href="DATA.html">Data</a><a href="DEPLOYMENT.html">Deployment</a><a href="API.html">API reference</a><a href="examples.html">Examples</a><a href="CASES.html">Cases</a><a href="EVALUATION.html">Evaluation</a><a href="ALGORITHM.html">Method</a><a href="INTEGRATIONS.html">Integrations</a><a href="zh.html">中文文档</a></nav>
 <details class="doc-toc"><summary>On this page</summary><div class="toc">
 <ul>
-<li><a href="#results-september-27-2026">Results — September 27, 2026</a></li>
+<li><a href="#public-suite-additions-october-1-2026">Public-suite additions — October 1, 2026</a><ul>
+<li><a href="#typed-decisions">Typed Decisions</a><ul>
+<li><a href="#supplemental-typed-decisions-rows">Supplemental Typed Decisions rows</a></li>
+</ul>
+</li>
+<li><a href="#jevjudge-public">JevJudge-Public</a><ul>
+<li><a href="#jevjudge-text-only-accuracy">JevJudge text-only accuracy</a></li>
+<li><a href="#superseded-diagnostics">Superseded diagnostics</a></li>
+<li><a href="#reproducibility-and-tracked-provenance">Reproducibility and tracked provenance</a></li>
+<li><a href="#rebuild-the-merged-technical-report">Rebuild the merged technical report</a></li>
+</ul>
+</li>
+<li><a href="#jevbench-v154">JevBench v1.5.4</a></li>
+<li><a href="#jev-decision-index">Jev Decision Index</a></li>
+</ul>
+</li>
+<li><a href="#kev-and-earlier-jevany-comparison-matrix-september-27-2026">Kev and earlier JevAny comparison matrix — September 27, 2026</a><ul>
+<li><a href="#results">Results</a></li>
+</ul>
+</li>
 <li><a href="#reproduce">Reproduce</a></li>
 <li><a href="#what-the-scores-mean">What the scores mean</a></li>
 </ul>
 </div>
 </details></aside>
-<main id="content" class="doc-content"><p class="eyebrow">JEVANY / DOCUMENTATION</p><h1>JevBench and Kev evaluation</h1><p>The frozen recipe evaluates both released JevAny checkpoints and all 14 distinct
+<main id="content" class="doc-content"><p class="eyebrow">JEVANY / DOCUMENTATION</p><h1>External decision-suite evaluation</h1><h2 id="public-suite-additions-october-1-2026">Public-suite additions — October 1, 2026</h2>
+<h3 id="typed-decisions">Typed Decisions</h3>
+<p>We ran the complete <code>LocalLLaMA/typed-decisions</code> test split at revision
+<code>d0e2f0c4</code>: 400 cases, five questions per case and 2,000 scored decisions.
+Every locally rerun model completed all 2,000 decisions. Runs used one H200,
+batch size 1 and the checkpoint's shipped calibration. Latency is per
+five-decision case; published comparator latency uses different hardware and is
+not compared.
+The soft gold label for each decision is the mean of three samples from a
+teacher of roughly 4B-class capability. Accuracy is therefore argmax agreement
+with that teacher-derived label, not objective correctness.
+Rows follow the fixed common-cohort order used in the figure, rather than
+being independently sorted by score.</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Locally rerun model</th>
+<th>Source</th>
+<th style="text-align: right;">Accuracy ↑</th>
+<th style="text-align: right;">KL ↓</th>
+<th style="text-align: right;">Brier ↓</th>
+<th style="text-align: right;">ECE ↓</th>
+<th style="text-align: right;">Median / case ↓</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>JevAny-Qwen3.8-27B</strong></td>
+<td>Ours</td>
+<td style="text-align: right;"><strong>72.80%</strong></td>
+<td style="text-align: right;">0.293</td>
+<td style="text-align: right;">0.131</td>
+<td style="text-align: right;">0.053</td>
+<td style="text-align: right;">279.8 ms</td>
+</tr>
+<tr>
+<td>JevAny-Muse-Glimmer-30B</td>
+<td>Ours</td>
+<td style="text-align: right;">69.95%</td>
+<td style="text-align: right;"><strong>0.245</strong></td>
+<td style="text-align: right;"><strong>0.111</strong></td>
+<td style="text-align: right;"><strong>0.028</strong></td>
+<td style="text-align: right;">265.9 ms</td>
+</tr>
+<tr>
+<td>JevAny-Qwen3.5-4B-Direct-Token</td>
+<td>Ours</td>
+<td style="text-align: right;">67.20%</td>
+<td style="text-align: right;">0.435</td>
+<td style="text-align: right;">0.179</td>
+<td style="text-align: right;">0.082</td>
+<td style="text-align: right;">89.4 ms</td>
+</tr>
+<tr>
+<td>JevAny-Qwen3.5-4B</td>
+<td>Ours</td>
+<td style="text-align: right;">63.50%</td>
+<td style="text-align: right;">0.479</td>
+<td style="text-align: right;">0.218</td>
+<td style="text-align: right;">0.115</td>
+<td style="text-align: right;">85.5 ms</td>
+</tr>
+<tr>
+<td>JevAny-Gemma-4B</td>
+<td>Ours</td>
+<td style="text-align: right;">66.25%</td>
+<td style="text-align: right;">0.272</td>
+<td style="text-align: right;">0.128</td>
+<td style="text-align: right;">0.036</td>
+<td style="text-align: right;">107.1 ms</td>
+</tr>
+<tr>
+<td>OpenDecider-small</td>
+<td>Open external</td>
+<td style="text-align: right;">66.65%</td>
+<td style="text-align: right;">0.210</td>
+<td style="text-align: right;">0.117</td>
+<td style="text-align: right;">0.075</td>
+<td style="text-align: right;">136.5 ms</td>
+</tr>
+<tr>
+<td>Bongard-mini</td>
+<td>Open external</td>
+<td style="text-align: right;">59.65%</td>
+<td style="text-align: right;">0.256</td>
+<td style="text-align: right;">0.132</td>
+<td style="text-align: right;">0.073</td>
+<td style="text-align: right;">163.9 ms</td>
+</tr>
+<tr>
+<td>Jeff-Gemma4-E2B</td>
+<td>Open external</td>
+<td style="text-align: right;">57.95%</td>
+<td style="text-align: right;">0.382</td>
+<td style="text-align: right;">0.204</td>
+<td style="text-align: right;">0.090</td>
+<td style="text-align: right;">53.5 ms</td>
+</tr>
+<tr>
+<td>Jeff-Qwen3.5-2B</td>
+<td>Open external</td>
+<td style="text-align: right;">55.45%</td>
+<td style="text-align: right;">0.386</td>
+<td style="text-align: right;">0.210</td>
+<td style="text-align: right;">0.099</td>
+<td style="text-align: right;">42.2 ms</td>
+</tr>
+<tr>
+<td>Jeff-Qwen3.5-0.8B</td>
+<td>Open external</td>
+<td style="text-align: right;">49.15%</td>
+<td style="text-align: right;">0.558</td>
+<td style="text-align: right;">0.272</td>
+<td style="text-align: right;">0.136</td>
+<td style="text-align: right;">41.7 ms</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="supplemental-typed-decisions-rows">Supplemental Typed Decisions rows</h4>
+<p>Laya is retained as a request-conversion check but is not in the common
+chart cohort. The pinned dataset card also contains results that were not
+rerun locally; their hardware, runtime and item-level outputs are unavailable
+under the local protocol. The chart's Jev 1.13 (OpenRouter) row uses the
+published TypeSafe Jev 1.13.0 result for Typed Decisions and the 724-record
+OpenRouter rerun for JevJudge text-only. OpenDecider and Bongard appear below
+only as published references, while their locally rerun rows above are used in
+the chart.</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Supplemental row</th>
+<th style="text-align: right;">Accuracy ↑</th>
+<th style="text-align: right;">KL ↓</th>
+<th style="text-align: right;">Brier ↓</th>
+<th style="text-align: right;">ECE ↓</th>
+<th style="text-align: right;">Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Laya (<code>55cf4c4</code>)</td>
+<td style="text-align: right;">36.20%</td>
+<td style="text-align: right;">0.576</td>
+<td style="text-align: right;">0.316</td>
+<td style="text-align: right;">0.174</td>
+<td style="text-align: right;">Open; local full-split rerun</td>
+</tr>
+<tr>
+<td>meraGPT Decider 1</td>
+<td style="text-align: right;"><strong>76.80%</strong></td>
+<td style="text-align: right;"><strong>0.096</strong></td>
+<td style="text-align: right;"><strong>0.052</strong></td>
+<td style="text-align: right;">0.180</td>
+<td style="text-align: right;">Published only; not rerun</td>
+</tr>
+<tr>
+<td>Liquid AI d1</td>
+<td style="text-align: right;">74.20%</td>
+<td style="text-align: right;">0.475</td>
+<td style="text-align: right;">0.155</td>
+<td style="text-align: right;">0.124</td>
+<td style="text-align: right;">Published only; not rerun</td>
+</tr>
+<tr>
+<td>TypeSafe Jev 1.13.0</td>
+<td style="text-align: right;">72.70%</td>
+<td style="text-align: right;">1.442</td>
+<td style="text-align: right;">0.148</td>
+<td style="text-align: right;">0.144</td>
+<td style="text-align: right;">Published only; not rerun</td>
+</tr>
+<tr>
+<td>Featherless Simple Jev</td>
+<td style="text-align: right;">71.60%</td>
+<td style="text-align: right;">0.488</td>
+<td style="text-align: right;">0.176</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">Published only; not rerun</td>
+</tr>
+<tr>
+<td>prima-ratio + Gemma4 12B</td>
+<td style="text-align: right;">70.20%</td>
+<td style="text-align: right;">0.564</td>
+<td style="text-align: right;">0.234</td>
+<td style="text-align: right;">0.146</td>
+<td style="text-align: right;">Published open result; not rerun</td>
+</tr>
+<tr>
+<td>OpenDecider-small</td>
+<td style="text-align: right;">67.10%</td>
+<td style="text-align: right;">0.211</td>
+<td style="text-align: right;">0.117</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">Superseded by local rerun above</td>
+</tr>
+<tr>
+<td>Bongard-mini</td>
+<td style="text-align: right;">59.40%</td>
+<td style="text-align: right;">0.256</td>
+<td style="text-align: right;">0.132</td>
+<td style="text-align: right;">0.067</td>
+<td style="text-align: right;">Superseded by local rerun above</td>
+</tr>
+</tbody>
+</table></div>
+<p>The exact Laya rerun reproduces its published 36.2%, validating the request
+conversion. Among our releases, 27B leads accuracy, Muse has the best
+probability metrics, and direct-token improves over the 4B pointer by 3.7
+percentage points. Benchmark-trained specialist checkpoints, including
+OpenDecider-nano and the Laya Typed Decisions fine-tune, are excluded from the
+zero-shot comparison.</p>
+<h3 id="jevjudge-public">JevJudge-Public</h3>
+<p>We evaluated the complete v0.3 test split at revision <code>4d576ded</code>: 3,220
+records, including 724 text, 2,214 image and 282 video requests from 22
+families and five judge roles. A score requires all 3,220 native requests with
+zero rejected or truncated records. Models without a complete matching result,
+whether from modality incompatibility or no published/local run, show <code>—</code>;
+media are never removed to manufacture a score.</p>
+<p>The official headline is <code>skill_role</code>. Each family first receives
+<code>(A-c)/(1-c)</code>, where <code>A</code> is balanced accuracy for fixed option sets or accuracy
+for varying option sets, and <code>c</code> is the corresponding chance or majority-label
+floor. Family skill is averaged inside each role, then the five roles are
+equally averaged. Plain accuracy weights every item equally and does not remove
+chance performance.</p>
+<p>For a direct visual comparison with the 724-record text subset, the README
+figure uses plain accuracy in both JevJudge panels. The official <code>skill_role</code>
+score remains reported below and in the technical report.</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Model</th>
+<th style="text-align: right;">Accuracy ↑</th>
+<th style="text-align: right;">Official <code>skill_role</code> ↑ (95% CI)</th>
+<th style="text-align: right;">NLL ↓</th>
+<th style="text-align: right;">Brier ↓</th>
+<th style="text-align: right;">ECE ↓</th>
+<th>Full-suite status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>JevAny-Qwen3.8-27B</strong></td>
+<td style="text-align: right;"><strong>62.27%</strong></td>
+<td style="text-align: right;">35.55% [32.84, 38.18]</td>
+<td style="text-align: right;"><strong>0.878</strong></td>
+<td style="text-align: right;"><strong>0.500</strong></td>
+<td style="text-align: right;">0.094</td>
+<td>3,220/3,220</td>
+</tr>
+<tr>
+<td>Jev 1.13 (OpenRouter)</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td>Text-only endpoint</td>
+</tr>
+<tr>
+<td>JevAny-Muse-Glimmer-30B</td>
+<td style="text-align: right;">58.70%</td>
+<td style="text-align: right;">29.65% [26.71, 32.31]</td>
+<td style="text-align: right;">0.911</td>
+<td style="text-align: right;">0.528</td>
+<td style="text-align: right;">0.100</td>
+<td>3,220/3,220</td>
+</tr>
+<tr>
+<td>JevAny-Qwen3.5-4B-Direct-Token</td>
+<td style="text-align: right;">54.94%</td>
+<td style="text-align: right;">23.85% [20.96, 26.70]</td>
+<td style="text-align: right;">1.005</td>
+<td style="text-align: right;">0.573</td>
+<td style="text-align: right;">0.131</td>
+<td>3,220/3,220</td>
+</tr>
+<tr>
+<td>JevAny-Qwen3.5-4B</td>
+<td style="text-align: right;">54.75%</td>
+<td style="text-align: right;">23.23% [20.49, 25.84]</td>
+<td style="text-align: right;">1.051</td>
+<td style="text-align: right;">0.586</td>
+<td style="text-align: right;">0.117</td>
+<td>3,220/3,220</td>
+</tr>
+<tr>
+<td>JevAny-Gemma-4B</td>
+<td style="text-align: right;">51.49%</td>
+<td style="text-align: right;">17.92% [15.25, 20.37]</td>
+<td style="text-align: right;">1.003</td>
+<td style="text-align: right;">0.578</td>
+<td style="text-align: right;"><strong>0.078</strong></td>
+<td>3,220/3,220</td>
+</tr>
+<tr>
+<td>Kev-27B</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td>No native image/video path</td>
+</tr>
+<tr>
+<td>Kev-4B</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td>No native image/video path</td>
+</tr>
+<tr>
+<td>OpenDecider-small</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td>Text only</td>
+</tr>
+<tr>
+<td>Bongard-mini</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td>No native video path</td>
+</tr>
+<tr>
+<td>Jeff-Gemma4-E2B</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td>Text-only checkpoint</td>
+</tr>
+<tr>
+<td>Jeff-Qwen3.5-2B</td>
+<td style="text-align: right;">48.23%</td>
+<td style="text-align: right;">13.57% [10.80, 15.99]</td>
+<td style="text-align: right;">1.105</td>
+<td style="text-align: right;">0.628</td>
+<td style="text-align: right;">0.137</td>
+<td>3,220/3,220</td>
+</tr>
+<tr>
+<td>Jeff-Qwen3.5-0.8B</td>
+<td style="text-align: right;">47.95%</td>
+<td style="text-align: right;">11.23% [8.65, 13.44]</td>
+<td style="text-align: right;">1.118</td>
+<td style="text-align: right;">0.629</td>
+<td style="text-align: right;">0.123</td>
+<td>3,220/3,220</td>
+</tr>
+</tbody>
+</table></div>
+<p>Confidence intervals use 1,000 <code>group_id</code> cluster-bootstrap replicates,
+stratified over 16 sources with seed <code>20261001</code>. Qwen3.8-27B's 62.27% plain
+accuracy and 35.55% <code>skill_role</code> are not competing measurements: the latter
+removes chance and equally weights the five roles. The uniform baseline has
+40.0% plain accuracy but −0.77% <code>skill_role</code>.</p>
+<h4 id="jevjudge-text-only-accuracy">JevJudge text-only accuracy</h4>
+<p>The separate text-only view uses all 724 records declared <code>modality=text</code>, the same
+native state and typed question, a 65,536-token ceiling and no input
+truncation. It is a subset of the 3,220-record full suite, covers four roles,
+and is not the official five-role headline.</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Model</th>
+<th style="text-align: right;">Accuracy ↑</th>
+<th style="text-align: right;">NLL ↓</th>
+<th style="text-align: right;">Brier ↓</th>
+<th style="text-align: right;">ECE ↓</th>
+<th style="text-align: right;">Coverage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>JevAny-Qwen3.8-27B</strong></td>
+<td style="text-align: right;"><strong>66.44%</strong></td>
+<td style="text-align: right;"><strong>0.824</strong></td>
+<td style="text-align: right;">0.476</td>
+<td style="text-align: right;">0.103</td>
+<td style="text-align: right;">724/724</td>
+</tr>
+<tr>
+<td>Jev 1.13 (OpenRouter)</td>
+<td style="text-align: right;">65.06%</td>
+<td style="text-align: right;">0.836</td>
+<td style="text-align: right;"><strong>0.461</strong></td>
+<td style="text-align: right;">0.076</td>
+<td style="text-align: right;">724/724</td>
+</tr>
+<tr>
+<td>JevAny-Muse-Glimmer-30B</td>
+<td style="text-align: right;">62.57%</td>
+<td style="text-align: right;">0.873</td>
+<td style="text-align: right;">0.503</td>
+<td style="text-align: right;">0.099</td>
+<td style="text-align: right;">724/724</td>
+</tr>
+<tr>
+<td>JevAny-Qwen3.5-4B-Direct-Token</td>
+<td style="text-align: right;">58.56%</td>
+<td style="text-align: right;">0.915</td>
+<td style="text-align: right;">0.516</td>
+<td style="text-align: right;">0.089</td>
+<td style="text-align: right;">724/724</td>
+</tr>
+<tr>
+<td>JevAny-Qwen3.5-4B</td>
+<td style="text-align: right;">57.87%</td>
+<td style="text-align: right;">0.997</td>
+<td style="text-align: right;">0.554</td>
+<td style="text-align: right;">0.074</td>
+<td style="text-align: right;">724/724</td>
+</tr>
+<tr>
+<td>JevAny-Gemma-4B</td>
+<td style="text-align: right;">51.10%</td>
+<td style="text-align: right;">1.030</td>
+<td style="text-align: right;">0.590</td>
+<td style="text-align: right;">0.100</td>
+<td style="text-align: right;">724/724</td>
+</tr>
+<tr>
+<td>Kev-27B</td>
+<td style="text-align: right;">64.23%</td>
+<td style="text-align: right;">0.877</td>
+<td style="text-align: right;">0.483</td>
+<td style="text-align: right;">0.072</td>
+<td style="text-align: right;">724/724</td>
+</tr>
+<tr>
+<td>Kev-4B</td>
+<td style="text-align: right;">54.42%</td>
+<td style="text-align: right;">1.008</td>
+<td style="text-align: right;">0.568</td>
+<td style="text-align: right;">0.096</td>
+<td style="text-align: right;">724/724</td>
+</tr>
+<tr>
+<td>OpenDecider-small</td>
+<td style="text-align: right;">54.97%</td>
+<td style="text-align: right;">0.971</td>
+<td style="text-align: right;">0.547</td>
+<td style="text-align: right;"><strong>0.033</strong></td>
+<td style="text-align: right;">724/724</td>
+</tr>
+<tr>
+<td>Bongard-mini</td>
+<td style="text-align: right;">51.24%</td>
+<td style="text-align: right;">1.048</td>
+<td style="text-align: right;">0.594</td>
+<td style="text-align: right;">0.068</td>
+<td style="text-align: right;">724/724</td>
+</tr>
+<tr>
+<td>Jeff-Gemma4-E2B</td>
+<td style="text-align: right;">46.69%</td>
+<td style="text-align: right;">1.210</td>
+<td style="text-align: right;">0.681</td>
+<td style="text-align: right;">0.181</td>
+<td style="text-align: right;">724/724</td>
+</tr>
+<tr>
+<td>Jeff-Qwen3.5-2B</td>
+<td style="text-align: right;">42.82%</td>
+<td style="text-align: right;">1.214</td>
+<td style="text-align: right;">0.682</td>
+<td style="text-align: right;">0.191</td>
+<td style="text-align: right;">724/724</td>
+</tr>
+<tr>
+<td>Jeff-Qwen3.5-0.8B</td>
+<td style="text-align: right;">43.51%</td>
+<td style="text-align: right;">1.256</td>
+<td style="text-align: right;">0.703</td>
+<td style="text-align: right;">0.211</td>
+<td style="text-align: right;">724/724</td>
+</tr>
+</tbody>
+</table></div>
+<p>Jev 1.13's Typed value is the pinned dataset-card result; its JevJudge
+text-only value is the separate 724/724 OpenRouter full-context rerun. The
+full-suite result remains <code>—</code> because the endpoint is text-only.</p>
+<p>Kev uses a full-context 4,096-token chunked-KV protocol. BF16 chunking is not
+numerically bit-exact: the new Kev-4B run changes three argmax decisions versus
+the earlier single-pass result and moves accuracy from 54.28% to 54.42%. No
+state tokens are dropped. The old Kev-27B 38.54% run is invalid: its effective
+inputs were only 7–63 tokens and did not encode the state or instructions.</p>
+<h4 id="superseded-diagnostics">Superseded diagnostics</h4>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Row</th>
+<th style="text-align: right;">Result</th>
+<th>Why it is not used</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Kev-27B old path</td>
+<td style="text-align: right;">38.54% text accuracy</td>
+<td>Malformed 7–63-token inputs; state and instructions absent</td>
+</tr>
+<tr>
+<td>Kev-4B earlier path</td>
+<td style="text-align: right;">54.28% text accuracy</td>
+<td>Valid single-pass result; superseded by shared chunked-KV protocol</td>
+</tr>
+<tr>
+<td>Laya</td>
+<td style="text-align: right;">38.67% text accuracy</td>
+<td>Runtime silently truncates to <code>max_len=512</code></td>
+</tr>
+<tr>
+<td>Earlier JevAny full runs</td>
+<td style="text-align: right;">Partial coverage</td>
+<td>Strict 8K/16K context rejected long records</td>
+</tr>
+</tbody>
+</table></div>
+<p>The earlier rows and internal Qwen checkpoint remain archived in
+<a href="../files/results/external-decision-evals-20261001/jevjudge-public.json"><code>jevjudge-public.json</code></a>
+and are not used in the figure.</p>
+<h4 id="reproducibility-and-tracked-provenance">Reproducibility and tracked provenance</h4>
+<ul>
+<li>The chart source is
+  <a href="../files/results/external-zero-shot-v1.json"><code>external-zero-shot-v1.json</code></a>, and the
+  deterministic renderer is
+  <a href="../files/scripts/plot_external_zero_shot.py"><code>plot_external_zero_shot.py</code></a>.</li>
+<li>The two external-evaluation pages appended to the single merged technical
+  report are generated by
+  <a href="../files/scripts/build_external_report_appendix.py"><code>build_external_report_appendix.py</code></a>.</li>
+<li>The tracked artifact contains the aggregate rows needed to regenerate the
+  figure. Raw local run locations and SHA-256 hashes are recorded for audit but
+  are not included in the repository. JevAny full results come from
+  <code>runs/jevjudge-full-current-20261001</code> (summary SHA-256 <code>fcc3025c…b6609</code>);
+  Jeff full results come from the corrected derived summary SHA-256
+  <code>3c348c94…c00b3</code>; Kev text comes from summary SHA-256 <code>4e1f4485…6598</code>.
+  Jev 1.13's OpenRouter text aggregate was added in source commit
+  <code>2ff9d301…3c6f</code>; item-level outputs are not tracked in this artifact.</li>
+<li>Typed Decisions uses dataset revision <code>d0e2f0c4</code>, parquet SHA-256
+  <code>4f294f…b647c</code>; JevJudge uses revision <code>4d576ded</code>, test SHA-256
+  <code>5c50f8…e83cb</code> and suite-manifest SHA-256 <code>ee52a1…15b68</code>.</li>
+<li>Typed Decisions sends all five questions for a case in one serial request.
+  JevJudge sends one question per request. Neither main protocol samples or
+  tunes calibration on the evaluation set; NLL is computed from the returned
+  probability assigned to the gold label.</li>
+<li>The two long eight-image Qwen/Muse records use memory-efficient SDPA with
+  unchanged inputs. Gemma consumes all three decoded source frames for the one
+  clip shorter than its four-frame request. Jeff video runs use the checkpoint's
+  native Qwen3VL processor under Transformers 5.17.0; that version is pinned
+  because later releases change the default per-frame pixel cap.</li>
+</ul>
+<h4 id="rebuild-the-merged-technical-report">Rebuild the merged technical report</h4>
+<p>The PDF build uses CPython 3.13.5 and the complete pinned dependency set in
+<a href="../files/reports/requirements.txt"><code>reports/requirements.txt</code></a>. From the repository
+root, run exactly:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python3.13 -m venv build/report-repro-env
+build/report-repro-env/bin/python -m pip install \
+  --disable-pip-version-check -r reports/requirements.txt
+build/report-repro-env/bin/python scripts/plot_external_zero_shot.py
+build/report-repro-env/bin/python scripts/build_external_report_appendix.py \
+  --data results/external-zero-shot-v1.json \
+  --chart docs/external-zero-shot.png \
+  --output build/JevAny_Tech_Report_External_Evaluation_Appendix.pdf \
+  --base-report reports/JevAny_Tech_Report.pdf \
+  --merged-output reports/JevAny_Tech_Report.pdf \
+  --base-pages 19
+</code></pre>
+<p><code>--base-pages 19</code> always takes the original report and agent-harness pages and
+discards any previously appended external pages before adding the newly built
+two-page appendix. The base and merged paths may therefore be identical without
+growing the report on repeated runs. Both outputs are written to temporary
+files in their destination directories and installed with <code>os.replace</code>; an
+interrupted build cannot leave a partial tracked PDF. Appendix and merged PDF
+metadata use the fixed creation and modification timestamp
+<code>D:20261001000000Z</code>. With the pinned inputs and dependencies, repeated commands
+produce byte-identical appendix and merged files.</p>
+<h3 id="jevbench-v154">JevBench v1.5.4</h3>
+<p>JevBench v1.5.4 has 1,624 questions: 904 open and 720 sealed. Its method defines
+the 904 open questions as 534 older questions, 120 new public drafts, and a
+250-question public draw from the sealed pool. Of the older questions, 231 are
+published and 303 remain unpublished, producing the reported 601 published
+open total. However, the official page, API, repository history, releases and
+Hugging Face Space expose only the original 231 prompts; no downloadable bundle
+for the other 370 was published. The API contains system aggregates and
+explicitly omits item-level fields.</p>
+<p>The five JevAny releases remain directly comparable on those 231 downloadable
+questions in the main <a href="quickstart.html#evaluation">benchmark table</a>. A complete
+1,624-question result requires an
+<a href="https://benchmarkheaven.com/jev-models/request-evaluation">official evaluation request</a>,
+where the maintainer runs a fixed API or public offline checkpoint and returns
+aggregate results. We therefore preserve the v1.5.4 official aggregates
+without claiming a local 601- or 1,624-question rerun.</p>
+<p>Kev has four open-weight, open-code entries in the official aggregate:</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Open system</th>
+<th>Frozen checkpoint</th>
+<th style="text-align: right;">v1.5.4 score A</th>
+<th style="text-align: right;">Rank A</th>
+<th style="text-align: right;">Completed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Kev-4B</td>
+<td><code>jaredpalmer/kev-4b@qwen3</code></td>
+<td style="text-align: right;"><strong>38.07</strong></td>
+<td style="text-align: right;">37 / 106</td>
+<td style="text-align: right;">1,624 / 1,624</td>
+</tr>
+<tr>
+<td>Kev-8B</td>
+<td><code>jaredpalmer/kev-8b</code></td>
+<td style="text-align: right;">34.15</td>
+<td style="text-align: right;">38 / 106</td>
+<td style="text-align: right;">1,624 / 1,624</td>
+</tr>
+<tr>
+<td>Kev-0.6B</td>
+<td><code>jaredpalmer/kev-0.6b</code></td>
+<td style="text-align: right;">1.26</td>
+<td style="text-align: right;">78 / 106</td>
+<td style="text-align: right;">1,624 / 1,624</td>
+</tr>
+<tr>
+<td>Kev-0.5B</td>
+<td><code>jaredpalmer/kev-0.5b</code></td>
+<td style="text-align: right;">0.00</td>
+<td style="text-align: right;">92 / 106</td>
+<td style="text-align: right;">1,624 / 1,624</td>
+</tr>
+</tbody>
+</table></div>
+<p>The official evaluator ran these public checkpoints in an evaluator-owned
+offline pod. Their weights and <a href="https://github.com/jaredpalmer/kev">code</a> are
+available, but the full item-level outcome cannot be independently reproduced
+while the sealed questions remain private. The Kev-4B row is the older Qwen3
+research preview, not the current Qwen3.5 checkpoint under the repository's
+default revision.</p>
+<p>No exact current JevAny release appears in the official aggregate. These Kev
+values are official composite scores, not the accuracy metric used by the
+downloadable 231-item public evaluation below.</p>
+<p><a href="../files/results/external-decision-evals-20261001/jevbench-v1.5.4.json">Pinned official aggregates and reproducibility boundary</a></p>
+<h3 id="jev-decision-index">Jev Decision Index</h3>
+<p>The <code>multimodalart/jev-decision-index</code> Space at revision <code>7cdcea3d</code> is a static
+aggregate registry and methodology page, not an item-level evaluation corpus.
+It indexes 120,340 requests across 43 suites and 70 model rows, but does not
+publish the request records or per-item predictions required for a new local
+run. Its Space metadata also declares no license. It produces no new JevAny
+score and is not included in the result showcase.</p>
+<p><a href="../files/results/external-decision-evals-20261001/jev-decision-index.json">Pinned index provenance</a></p>
+<h2 id="kev-and-earlier-jevany-comparison-matrix-september-27-2026">Kev and earlier JevAny comparison matrix — September 27, 2026</h2>
+<p>The frozen recipe evaluates both released JevAny checkpoints and all 14 distinct
 Kev checkpoints available through the main repositories and release tags on
 September 27, 2026. Identical release aliases share a result. Unreleased
 development branches are listed separately in the recipe.</p>
@@ -29,7 +710,7 @@ counts, hashes, and mirror revisions remain in <code>manifest.json</code> under
 <code>unavailable</code>; reproducing them requires access to those private partitions.
 JevBench results cover its 231 public decisions; its sealed leaderboard composite
 is outside this public evaluation.</p>
-<h2 id="results-september-27-2026">Results — September 27, 2026</h2>
+<h3 id="results">Results</h3>
 <p>The completed public matrix contains 16 checkpoints × 67 panels. Each model
 attempted all 22,219 unique requests, representing 56,677 original panel
 records. Historical panels share identical requests, which are counted once in

@@ -1,0 +1,65 @@
+{
+  "artifact_version": 1,
+  "kind": "static_aggregate_registry_provenance",
+  "space": {
+    "repository": "multimodalart/jev-decision-index",
+    "repository_type": "space",
+    "revision": "7cdcea3dd14615192ff2e1f6fd13936a547b55d8",
+    "url": "https://huggingface.co/spaces/multimodalart/jev-decision-index",
+    "license": null,
+    "license_caveat": "No license is declared in the Space metadata or README. Licenses named for linked models, datasets or repositories do not grant a blanket license for this Space bundle."
+  },
+  "inspected": [
+    {"path": "README.md", "purpose": "Space scope and leaderboard-generation description"},
+    {"path": "data/index.json", "sha256": "a5a4aa0a2cce152056964a5c732c919f55fd8e0d1115f9cb7f849c35322eb9df", "purpose": "Static aggregate leaderboard"},
+    {"path": "data/methodology.json", "sha256": "2ff75bb862498ddba4c4e39698bbe57118ad26252d21fa4de6e6ba4641ee1612", "purpose": "Suite, adaptation, exclusion and scoring methodology"},
+    {"path": "index.html", "purpose": "Static leaderboard renderer"},
+    {"path": "methodology.html", "purpose": "Static methodology renderer"}
+  ],
+  "edition": {
+    "id": "v0.2.1",
+    "label": "Decision Index 0.2.1",
+    "release": "release-v2.1",
+    "generated_utc": "2026-09-28T00:39:36+00:00",
+    "panel_id": "decision-index-0.2.1",
+    "corpus_sha256": "b2b56d6fb636837ca469e689087bdbf373dda8de7638aa2da6793e6eda0792d5"
+  },
+  "aggregate_scope": {
+    "requests": 120340,
+    "scoreable_requests": 119898,
+    "suite_benchmarks": 43,
+    "jev_benchmarks": 42,
+    "index_panel_benchmarks": 38,
+    "benchmark_metadata_rows": 54,
+    "jev_reference": "jev-1.13.0",
+    "reproduction_model_rows": 70,
+    "areas": ["knowledge", "language", "retrieval", "tools", "arts"],
+    "headline": "balanced_skill",
+    "reproduction_hardware": "1 x NVIDIA RTX PRO 6000",
+    "dropped_interactive_environments": ["MiniWoB++", "Boxoban", "RTFM", "ScienceWorld", "Hanabi", "Codenames"]
+  },
+  "available_results": {
+    "level": "aggregate",
+    "contents": [
+      "Jev reference scores, category scores, benchmark scores, coverage and latency metadata",
+      "Aggregate rows for 70 open reproduction/model entries",
+      "Benchmark metadata, chance levels, category mappings and score formulas",
+      "Exclusion rules, adaptation classes, answer-gap summaries and reproduction-script references"
+    ],
+    "not_in_space_bundle": [
+      "The row-level selected evaluation corpus",
+      "Per-request prompts and gold answers",
+      "Per-request model predictions for local rescoring"
+    ]
+  },
+  "local_evaluation": {
+    "performed": false,
+    "reason": "The Space is a static aggregate registry and methodology bundle, not an item-level runnable evaluation corpus. Its methodology references selected-rows.jsonl.gz and per-engine results outside the Space bundle."
+  },
+  "mapping_to_jevany": {
+    "direct_request_mapping_available": false,
+    "use": "Published aggregate context and baseline discovery only; it cannot produce a new JevAny score without the external frozen corpus and harness."
+  },
+  "raw_snapshot": "/lustre-storage/fsx/tianxinwei/JevAny/runs/external-decision-evals-20261001/artifacts/jev-decision-index",
+  "retrieved_utc_date": "2026-10-01"
+}

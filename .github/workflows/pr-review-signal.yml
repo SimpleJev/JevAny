@@ -1,0 +1,17 @@
+name: PR review signal
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft, edited, closed]
+
+# No checkout, no secrets, no write token, and no PR-controlled shell inputs.
+# The default-branch controller responds to workflow_run and queries GitHub
+# directly. It does not download any artifact or trust this job's output.
+permissions: {}
+
+jobs:
+  signal:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 1
+    steps:
+      - run: echo 'PR metadata changed; the default-branch controller will collect fresh evidence.'

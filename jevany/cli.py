@@ -45,6 +45,7 @@ def decide_main(argv: list[str]) -> None:
     from dataclasses import fields
     from .inference import InferenceOptions, add_inference_arguments, inference_options_from_args
     from .placement import add_placement_arguments
+    from .readout import add_readout_arguments, choice_options_from_args
 
     parser = argparse.ArgumentParser(prog="jevany decide")
     parser.add_argument("request", help="JSON request file; - reads stdin")
@@ -54,12 +55,17 @@ def decide_main(argv: list[str]) -> None:
     parser.add_argument("--device", choices=["cpu", "mps", "cuda"])
     parser.add_argument("--dtype", choices=["fp32", "fp16", "bf16"])
     parser.add_argument("--model-name", help="identity for a locally loaded checkpoint")
+    add_readout_arguments(parser)
     add_placement_arguments(parser)
     parser.add_argument("--cuda-graphs", action="store_true", help="capture CUDA graphs for the local checkpoint")
     parser.add_argument("--cuda-graph-max-tokens", type=int,
                         help="largest captured row; longer rows run eagerly (default 2048)")
     add_inference_arguments(parser)
     args = parser.parse_args(argv)
+    try:
+        choice_options = choice_options_from_args(args)
+    except ValueError as error:
+        parser.error(str(error))
     content = sys.stdin.read() if args.request == "-" else Path(args.request).read_text(encoding="utf-8")
     from .api import SystemOneRequest
     request = SystemOneRequest.model_validate_json(content)
@@ -67,6 +73,12 @@ def decide_main(argv: list[str]) -> None:
         from dataclasses import replace
         from .checkpoint import LoadOptions, load_options_from_args
         from .runtime import JevModel
+        if choice_options is not None and (
+            args.cuda_graphs or args.cuda_graph_max_tokens is not None
+            or any(getattr(args, item.name) is not None for item in fields(InferenceOptions))
+        ):
+            parser.error("CUDA graph and native inference-limit flags cannot be used with --readout choice; "
+                         "use --choice-max-tokens")
         options = load_options_from_args(args)
         if args.cuda_graphs or args.cuda_graph_max_tokens is not None:
             options = options or LoadOptions.from_env()
@@ -74,18 +86,25 @@ def decide_main(argv: list[str]) -> None:
                               cuda_graph_max_tokens=(args.cuda_graph_max_tokens
                                                      if args.cuda_graph_max_tokens is not None
                                                      else options.cuda_graph_max_tokens))
+        settings = ({
+            "readout": "choice",
+            "choice_temperature": choice_options.temperature,
+            "choice_native_weight": choice_options.native_weight,
+            "choice_max_tokens": choice_options.max_tokens,
+        } if choice_options is not None else {
+            "inference_options": inference_options_from_args(args),
+        })
         client = JevModel.from_pretrained(
             args.checkpoint, device=args.device, dtype=args.dtype, model_name=args.model_name,
-            options=options,
-            inference_options=inference_options_from_args(args),
+            options=options, **settings,
         )
     else:
-        if (args.device or args.dtype or args.model_name is not None
+        if (args.device or args.dtype or args.model_name is not None or args.readout != "native"
                 or args.device_map is not None or args.max_memory_gib is not None or args.cuda_graphs
                 or args.cuda_graph_max_tokens is not None
                 or any(getattr(args, item.name) is not None for item in fields(InferenceOptions))):
-            parser.error("device, dtype, placement, model-name, cuda-graphs and inference limit options require "
-                         "--checkpoint")
+            parser.error("device, dtype, placement, model-name, readout, cuda-graphs and inference limit options "
+                         "require --checkpoint")
         from .client import JevClient
         client = JevClient(args.base_url)
     print(json.dumps(client(request), indent=2, ensure_ascii=False))

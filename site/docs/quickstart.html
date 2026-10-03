@@ -4,7 +4,7 @@
 <title>Get started with JevAny — JevAny</title><link rel="stylesheet" href="../styles.css"><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"></head>
 <body class="docs-page"><a class="skip-link" href="#content">Skip to content</a>
 <header class="site-header wrap"><a class="brand" href="../index.html"><img src="../assets/favicon.svg" width="30" height="30" alt=""><span>JevAny<span class="brand-period">.</span></span></a>
-<nav aria-label="Main navigation"><a href="../index.html#benchmarks">Benchmarks</a><a href="../index.html#models">Models</a><a href="../index.html#get-started">Get started</a></nav></header>
+<nav aria-label="Main navigation"><a href="../index.html#benchmarks">Benchmarks</a><a href="../index.html#models">Models</a><a href="../index.html#get-started">Get started</a></nav><div class="language-switch" role="group" aria-label="Language"><a href="quickstart.html" lang="en" hreflang="en" title="English" aria-current="page">EN</a><a href="zh.html" lang="zh-CN" hreflang="zh-CN" title="中文">中文</a></div></header>
 <div class="docs-layout wrap"><aside class="docs-sidebar"><a class="text-link" href="../index.html">← Project homepage</a><nav aria-label="Documentation"><a href="quickstart.html" aria-current="page">Quickstart</a><a href="TRAINING.html">Training</a><a href="DATA.html">Data</a><a href="DEPLOYMENT.html">Deployment</a><a href="API.html">API reference</a><a href="examples.html">Examples</a><a href="CASES.html">Cases</a><a href="EVALUATION.html">Evaluation</a><a href="ALGORITHM.html">Method</a><a href="INTEGRATIONS.html">Integrations</a><a href="zh.html">中文文档</a></nav>
 <details class="doc-toc"><summary>On this page</summary><div class="toc">
 <ul>
@@ -32,7 +32,10 @@
 </ul>
 </li>
 <li><a href="#5-supported-model-families">🧩 5. Supported Model Families</a></li>
-<li><a href="#6-documentation-and-contributing">📚 6. Documentation and Contributing</a></li>
+<li><a href="#6-documentation-and-contributing">📚 6. Documentation and Contributing</a><ul>
+<li><a href="#contributing">🤝 Contributing</a></li>
+</ul>
+</li>
 </ul>
 </div>
 </details></aside>
@@ -55,18 +58,37 @@ JevAny checkpoint. The current default release is
 try your own inputs and see its choices and probabilities.</p>
 <p><a href="../index.html#case-library">Explore all 30 application replays →</a></p>
 <h3 id="jev-inside-llm-agent-loops">⚡ Jev inside LLM agent loops</h3>
-<p>Jev chooses among valid, reversible actions proposed by the LLM, which handles
-planning, recovery, and completion. The animations compare LLM only (left) with
-LLM + Jev (right) at equal reward. Steps are illustrated; accelerated playback
-preserves each pair's measured completion-time ratio. Click an animation to enlarge it.</p>
+<p>Jev chooses among bounded candidate actions supplied by the environment or
+proposed by the LLM, which handles planning, recovery, and completion. The
+animations compare LLM only (left) with LLM + Jev (right) at equal reward.
+Steps are illustrated; accelerated playback preserves each pair's measured
+completion-time ratio. Click an animation to enlarge it.</p>
 <p><strong>Golden rules</strong></p>
+<p><strong>Delegate the selection bottleneck, not the task.</strong> Jev is useful in the
+narrow gap where the LLM already knows the valid alternatives, but repeated
+frontier selection is costly or measurably unreliable.</p>
+<p>Jev has two valid jobs: <strong>remove frontier work</strong>, or <strong>correct a measured local
+ranking weakness</strong>. If it does neither, it is overhead.</p>
 <ul>
-<li>Delegate when the LLM can propose 2–4 valid, meaningfully different,
-  reversible actions and the next observation can verify the choice.</li>
-<li>Keep planning, open-ended search, exact edits, recovery, high-risk actions,
-  and completion with the LLM.</li>
-<li>Use Jev only when reward stays equal or improves while decision steps, tokens,
-  or time fall; otherwise return control to the LLM.</li>
+<li><strong>Judge the phase, not the benchmark.</strong> WebShop and Terminal-Bench both mix
+  open-ended reasoning with bounded choices. Delegate only the bounded phase;
+  trivial choices are cheaper to execute directly, while missing strategies
+  stay with the LLM.</li>
+<li><strong>The menu is the capability ceiling.</strong> Give Jev 2–4 currently valid
+  counterfactual branches that include the correct action and lead to different
+  outcomes. Jev can rank expressed options; it cannot invent a missing plan.</li>
+<li><strong>For efficiency, replace reasoning; do not append a judge.</strong> One LLM plan
+  should fund several Jev choices. In the GPT-5.6-sol + 27B FrozenLake cell,
+  LLM calls fell 64.4%; WebArena, where delegation did not remove frontier
+  work, added 5.6% calls and 28.2% tokens. Quality-only use should first show a
+  ranking gain in paired or D1 shadow evaluation.</li>
+<li><strong>Stay inside the feedback horizon.</strong> Continue only while each action is
+  reversible and its semantic effect is immediately observable. Return to the
+  LLM on novelty, stale candidates, delayed feedback, or recovery.</li>
+<li><strong>Promote autonomy with evidence.</strong> Move from D0 LLM-only → D1 shadow → D2
+  one-step → D3 routine-default → D4 bounded subgoal. Keep only non-dominated
+  points: equal or higher verifier reward at lower cost, or higher reward with
+  the added cost explicitly reported. Delegation coverage itself is not a win.</li>
 </ul>
 <div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
   <tr>
@@ -153,6 +175,7 @@ where Jev helps and when to return control to the LLM.</p>
 <li><a href="#examples--test-environments">🕹️ 4. Examples &amp; Test Environments</a></li>
 <li><a href="#supported-model-families">🧩 5. Supported Model Families</a></li>
 <li><a href="#documentation-and-contributing">📚 6. Documentation and Contributing</a></li>
+<li><a href="#contributing">🤝 Contributing</a></li>
 </ul>
 <h2 id="1-quickstart">⚡ 1. Quickstart <a name="quickstart"></a></h2>
 <p>Use Python 3.12 or newer. Clone the repository and install the lightweight package:</p>
@@ -340,72 +363,103 @@ NLL, Brier and ECE are measured on Transfer.
 <p><a href="EVALUATION.html#model-family-v2">Full results and protocols</a> ·
 <a href="../files/results/model-family-v2.json">Machine-readable results</a> ·
 <a href="../files/reports/JevAny_Tech_Report.pdf">Method and ablation report</a></p>
+<p>The external comparison uses the complete Typed Decisions test split, the full
+3,220-record JevJudge multimodal suite, and its 724-record text slice. The same
+13 models stay in the same order; <code>—</code> means unsupported native input or no
+matching result.</p>
+<p><a href="../files/docs/external-zero-shot.svg"><img loading="lazy" alt="Accuracy on Typed Decisions, full JevJudge, and the JevJudge text-only subset for the same thirteen-model cohort" src="../files/docs/external-zero-shot.svg" /></a></p>
+<ul>
+<li><strong>JevAny-Qwen3.8-27B:</strong> 72.8% Typed accuracy, <strong>62.3%</strong> JevJudge full accuracy, and 66.4% JevJudge text-only accuracy.</li>
+<li>All five JevAny releases completed 3,220/3,220 native text, image, and video records. Their full-suite accuracy ranges from 51.5% to 62.3%; the strongest complete open baseline scores 48.2%.</li>
+<li>On the JevJudge text-only subset, Qwen3.8-27B scores 66.4% and Kev-27B scores 64.2%. Kev has no native image/video path, so its full result is <code>—</code>.</li>
+<li><strong>Jev 1.13 (OpenRouter):</strong> 72.7% Typed accuracy (published) and 65.1% JevJudge text-only accuracy; its full result is <code>—</code> because the endpoint is text-only. Published Decider 1 (76.8%) and Liquid d1 (74.2%) remain higher on Typed Decisions.</li>
+</ul>
+<p>All three panels use accuracy. JevJudge full covers all 3,220 multimodal records;
+text-only is its 724-record text subset. The benchmark's official <code>skill_role</code>
+metric remains in the detailed evaluation notes.</p>
+<p><a href="EXTERNAL_EVALUATION.html">Full external tables and reproducibility notes</a> ·
+<a href="../files/results/external-zero-shot-v1.json">Machine-readable chart results</a></p>
 <h3 id="31-inference-efficiency">⏱️ 3.1 Inference efficiency <a name="efficiency"></a></h3>
-<p>On one H200, direct CUDA Graphs cut Qwen3.8-27B median latency from
-<strong>113.54 ms to 30.53 ms (3.72×)</strong> with 207/231 correct answers before and
-after. The A100-40GB comparison below uses batch size 1: 4B models fit on one
-GPU and use CUDA Graphs, while 27B and 30B are layer-sharded over three GPUs
-and gain only from linear-attention kernels and fused SDPA.</p>
+<p>On one H200, CUDA Graphs cut Qwen3.8-27B median latency from <strong>113.54 to
+30.53 ms (3.72×)</strong> on 231 JevBench questions; fused SDPA plus CUDA Graphs cut
+Muse-Glimmer-30B from <strong>100.71 to 43.25 ms (2.33×)</strong> on a balanced 44-request
+Transfer panel.
+Accuracy stayed at 207/231 and 38/44, with no argmax changes. The table uses
+the H200 headline measurements for 27B and 30B, while retaining the original
+apples-to-apples A100-40GB comparison for the 4B models. Latency is comparable
+within each row; the fixed evaluation panels are listed explicitly. In the
+plot, diamonds show the 27B/30B H200 arrows and circles show the A100 cohort;
+the H200 points are not mixed into the A100 frontier.</p>
 <p><a href="EFFICIENCY.html"><img loading="lazy" alt="Accuracy vs median latency before and after acceleration for JevAny and other decision models" src="../files/docs/efficiency-latency.png" /></a></p>
 <div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
 <thead>
 <tr>
 <th style="text-align: left;">Model</th>
-<th style="text-align: right;">A100 GPUs</th>
-<th style="text-align: right;">Default</th>
-<th style="text-align: right;">Accelerated</th>
+<th style="text-align: center;">Hardware</th>
+<th style="text-align: right;">Before</th>
+<th style="text-align: right;">After</th>
 <th style="text-align: right;">Speed-up</th>
-<th style="text-align: right;">Transfer accuracy</th>
+<th style="text-align: right;">Accuracy check</th>
+<th style="text-align: left;">Fixed panel</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td style="text-align: left;">JevAny-Qwen3.5-4B</td>
-<td style="text-align: right;">1</td>
+<td style="text-align: center;">A100</td>
 <td style="text-align: right;">104.6 ms</td>
 <td style="text-align: right;"><strong>25.3 ms</strong></td>
 <td style="text-align: right;"><strong>4.1×</strong></td>
 <td style="text-align: right;">78.68% → 78.87%</td>
+<td style="text-align: left;">Transfer, 1,046</td>
 </tr>
 <tr>
 <td style="text-align: left;">JevAny-Qwen3.5-4B-Direct-Token</td>
-<td style="text-align: right;">1</td>
+<td style="text-align: center;">A100</td>
 <td style="text-align: right;">106.4 ms</td>
 <td style="text-align: right;"><strong>25.9 ms</strong></td>
 <td style="text-align: right;"><strong>4.1×</strong></td>
 <td style="text-align: right;">78.11% → 78.39%</td>
+<td style="text-align: left;">Transfer, 1,046</td>
 </tr>
 <tr>
 <td style="text-align: left;">JevAny-Gemma-4B</td>
-<td style="text-align: right;">1</td>
+<td style="text-align: center;">A100</td>
 <td style="text-align: right;">106.3 ms</td>
 <td style="text-align: right;"><strong>31.9 ms</strong></td>
 <td style="text-align: right;"><strong>3.3×</strong></td>
 <td style="text-align: right;">70.84% → 70.84%</td>
+<td style="text-align: left;">Transfer, 1,046</td>
 </tr>
 <tr>
 <td style="text-align: left;">JevAny-Muse-Glimmer-30B</td>
-<td style="text-align: right;">3</td>
-<td style="text-align: right;">171.2 ms</td>
-<td style="text-align: right;"><strong>154.2 ms</strong></td>
-<td style="text-align: right;"><strong>1.11×</strong></td>
-<td style="text-align: right;">83.37% → 83.37%</td>
+<td style="text-align: center;">H200</td>
+<td style="text-align: right;">100.71 ms</td>
+<td style="text-align: right;"><strong>43.25 ms</strong></td>
+<td style="text-align: right;"><strong>2.33×</strong></td>
+<td style="text-align: right;">38/44 → 38/44</td>
+<td style="text-align: left;">Transfer sample, 44</td>
 </tr>
 <tr>
-<td style="text-align: left;">JevAny-Qwen3.8-27B<sup>†</sup></td>
-<td style="text-align: right;">3</td>
-<td style="text-align: right;">240.2 ms</td>
-<td style="text-align: right;"><strong>220.1 ms</strong></td>
-<td style="text-align: right;"><strong>1.09×</strong></td>
-<td style="text-align: right;">85.66% → 85.66%</td>
+<td style="text-align: left;">JevAny-Qwen3.8-27B</td>
+<td style="text-align: center;">H200</td>
+<td style="text-align: right;">113.54 ms</td>
+<td style="text-align: right;"><strong>30.53 ms</strong></td>
+<td style="text-align: right;"><strong>3.72×</strong></td>
+<td style="text-align: right;">207/231 → 207/231</td>
+<td style="text-align: left;">JevBench public, 231</td>
 </tr>
 </tbody>
 </table></div>
-<p>Median per-request latency on Transfer-v9, batch size 1.
-<sup>†</sup> Measured at step 22,160.</p>
+<p>Median model-call latency, serial batch size 1. See the full report for the
+apples-to-apples A100 comparison and panel limitations.</p>
+<p><a href="EFFICIENCY.html"><img loading="lazy" alt="Animation: Default, kernels with fused SDPA, and CUDA graphs race on one A100 clock slowed twenty times for JevAny-4B, 4B-DT and Gemma-4B; CUDA graphs finish at 25–32 ms, 3.3–4.1× sooner than Default" src="../files/docs/efficiency-ablation.gif" /></a></p>
+<p align="center"><sub>4B releases on one A100-40GB, Transfer-v9. Each bar fills at 1/20 of real time and stops at that stage's median latency.</sub></p>
+
 <p><a href="EFFICIENCY.html">Full tables, setup and other models</a> ·
 <a href="DEPLOYMENT.html#optional-cuda-acceleration">How to enable</a> ·
-<a href="../files/results/efficiency-a100-v1.json">Machine-readable results</a></p>
+<a href="../files/results/efficiency-h200-best-v1.json">H200 results</a> ·
+<a href="../files/results/efficiency-a100-v1.json">A100 results</a></p>
 <h2 id="4-examples-test-environments">🕹️ 4. Examples &amp; Test Environments <a name="examples--test-environments"></a></h2>
 <p>The playground includes the three environments below. These GIFs preserve
 historical model actions and option probabilities; run the current
@@ -444,12 +498,32 @@ combine JevAny decisions with an LLM planner.</p>
 <p><a href="TRAINING.html#backbone-support"><img loading="lazy" alt="26 supported models across Qwen, Gemma, Muse, Mistral, GLM, Nemotron and Llama" src="../files/docs/supported-model-families.svg" /></a></p>
 <h2 id="6-documentation-and-contributing">📚 6. Documentation and Contributing <a name="documentation-and-contributing"></a></h2>
 <p><a href="TRAINING.html">Training</a> · <a href="DEPLOYMENT.html">Deployment</a> · <a href="API.html">API</a> · <a href="DATA.html">Data</a> · <a href="EVALUATION.html">Evaluation</a> · <a href="experiments-AGENT_HARNESS_FRONTIER_PROTOCOL.html">Agent harness protocol</a> · <a href="contributing.html">Contributing</a></p>
-<p>To contribute a model adapter, evaluation or application example, start with the
-<a href="contributing.html">contribution guide</a>. The
-<a href="../files/reports/JevAny_Tech_Report.pdf">technical report</a> describes model design,
+<p>The <a href="../files/reports/JevAny_Tech_Report.pdf">technical report</a> describes model design,
 multimodal support, the agent-harness study and appendix, negative results, and
 open questions.</p>
 <p>Code and starter data are Apache-2.0. Some components are adapted from
 <a href="https://github.com/jaredpalmer/kev">Kev</a>; see <a href="../files/NOTICE">NOTICE</a> and
-<a href="ACKNOWLEDGEMENTS.html">ACKNOWLEDGEMENTS.md</a>. Base models and upstream datasets retain their own terms.</p></main></div>
+<a href="ACKNOWLEDGEMENTS.html">ACKNOWLEDGEMENTS.md</a>. Base models and upstream datasets retain their own terms.</p>
+<h3 id="contributing">🤝 Contributing <a name="contributing"></a></h3>
+<p>We're building open infrastructure for System 1 decision models, and we'd
+love your help. Small improvements are welcome. Here are a few ways to get
+involved:</p>
+<ul>
+<li><strong>Docs and translations:</strong> clarify a setup step, add troubleshooting tips, or
+  translate a guide.</li>
+<li><strong>Bug fixes and tests:</strong> share a reproducible issue, fix a bug, or add a
+  regression test.</li>
+<li><strong>Applications and integrations:</strong> show JevAny choosing tools, routing tickets,
+  or taking actions in a game or robot environment.</li>
+<li><strong>Models, training and inference:</strong> add a model adapter, improve a training
+  recipe, or make inference faster with reproducible measurements.</li>
+<li><strong>Data and evaluation:</strong> contribute a public-data converter, add a benchmark
+  case, or document where a model makes the wrong decision.</li>
+</ul>
+<p>CI checks and automated AI code review provide feedback on PRs, with
+maintainers handling review and merging. Small fixes can go straight to a
+PR; for larger changes, open an issue to discuss the approach first.</p>
+<p>Read the <a href="contributing.html">contribution guide</a>
+for setup and development steps, or <a href="https://github.com/SimpleJev/JevAny/issues">browse the issues</a>
+to find a place to start.</p></main></div>
 <footer class="site-footer wrap"><a href="../index.html">← Back to JevAny</a><a href="license.html">Apache-2.0 code</a></footer></body></html>

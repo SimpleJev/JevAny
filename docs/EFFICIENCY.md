@@ -1,44 +1,56 @@
 # Inference efficiency
 
 Measured accuracy and per-request latency of the JevAny releases and other
-decision models before and after inference acceleration, on NVIDIA
-A100-SXM4-40GB GPUs. How to enable each option is described in
-[Optional CUDA acceleration](DEPLOYMENT.md#optional-cuda-acceleration); the
-numbers are also in [`results/efficiency-a100-v1.json`](../results/efficiency-a100-v1.json).
+decision models before and after inference acceleration. The 27B and 30B
+headline rows use their best single-H200 measurements; the 4B and third-party
+comparison remains on A100-SXM4-40GB. All JevAny runs use the same blue circle
+before/after style; the figure labels H200 runs and excludes them from the A100
+Pareto frontier. Compare latency only within a before/after row, never across
+hardware or panels. How to enable each option is described in
+[Optional CUDA acceleration](DEPLOYMENT.md#optional-cuda-acceleration).
+The plotted data are in
+[`results/efficiency-h200-best-v1.json`](../results/efficiency-h200-best-v1.json)
+and [`results/efficiency-a100-v1.json`](../results/efficiency-a100-v1.json).
 
 [![Accuracy vs median latency before and after acceleration](efficiency-latency.png)](efficiency-latency.png)
 
 ## Summary
 
-On one H200, direct CUDA Graphs reduced JevAny-Qwen3.8-27B JevBench median
-latency from **113.54 ms to 30.53 ms (3.72×)**. Both matched paths answered
-207/231 correctly with no argmax changes. Mean latency fell from 138.49 ms to
-81.20 ms; p95 was effectively unchanged at 279.17 versus 281.52 ms. See the
+Whole-model CUDA Graph capture gives the largest-model speedups when the model
+fits on one H200:
+
+| Model | Hardware | Fixed latency panel | Before median | After median | Speed-up | Accuracy |
+|:---|:---:|:---|---:|---:|---:|---:|
+| JevAny-Qwen3.8-27B | H200 | JevBench public, 231 | 113.54 ms | **30.53 ms** | **3.72×** | 207/231 → 207/231 |
+| JevAny-Muse-Glimmer-30B | H200 | Transfer balanced sample, 44 | 100.71 ms | **43.25 ms** | **2.33×** | 38/44 → 38/44 |
+
+Neither run had an argmax change. The 30B audit separates fused SDPA's 1.15×
+median gain from CUDA Graphs' further 2.03× gain, with 96 graph calls and no
+eager fallback. Its [machine-readable result](../results/efficiency-h200-best-v1.json)
+uses 44 short requests. The two H200 rows use different fixed panels, so their
+absolute latency and accuracy are not directly comparable. See the
 [serving configuration](DEPLOYMENT.md#optional-cuda-acceleration).
 
-The table and plot below are the separate A100-40GB comparison. The 27B and
-30B models require layer sharding on 40 GB cards, which prevents whole-model
-CUDA Graph capture; their 1.1× rows measure kernels + fused SDPA instead.
+The A100-40GB comparison below keeps the 4B JevAny rows and third-party models
+on one hardware class. The figure overlays the current 27B and 30B one-H200
+measurements with explicit H200 labels but does not include them in the A100
+frontier. Historical layer-sharded A100 measurements for those releases remain
+in the machine-readable source and are omitted from the tables and plot.
 
 | Model | GPUs | Default median | Accelerated median | Speed-up | Transfer accuracy |
 |:---|---:|---:|---:|---:|---:|
 | JevAny-Qwen3.5-4B | 1 | 104.6 ms | 25.3 ms | 4.1× | 78.68% → 78.87% |
 | JevAny-Qwen3.5-4B-Direct-Token | 1 | 106.4 ms | 25.9 ms | 4.1× | 78.11% → 78.39% |
 | JevAny-Gemma-4B | 1 | 106.3 ms | 31.9 ms | 3.3× | 70.84% → 70.84% |
-| JevAny-Muse-Glimmer-30B | 3 | 171.2 ms | 154.2 ms | 1.1× | 83.37% → 83.37% |
-| JevAny-Qwen3.8-27B | 3 | 240.2 ms | 220.1 ms | 1.1× | 85.66% → 85.66% |
-| JevAny-Qwen3.8-27B | 2 | — | 212.5 ms | — | 85.66% |
 
 Medians are on Transfer-v9. The single-GPU 4B models gain most from CUDA
-graphs, which remove per-kernel launch overhead at batch size one. The 27B and
-30B models do not fit on one 40 GB GPU, so they run layer-sharded with
-`--device-map auto` and without CUDA graphs. They gain only from the
-linear-attention kernels and fused SDPA. Two GPUs with `--max-memory-gib 31`
-are enough for the 27B model and are as fast as three.
+graphs, which remove per-kernel launch overhead at batch size one.
 
 ## Setup
 
 - **Requests:** batch size 1, serial requests; every request has one question.
+- **Hardware:** headline 27B/30B rows use one H200; the comparison panels and
+  detailed tables use A100-SXM4-40GB nodes.
 - **Suites:**
   - Transfer-v9 development split: 1,264 requests, of which 1,046 are scored.
   - JevBench public: 231 questions.
@@ -47,8 +59,9 @@ are enough for the 27B model and are as fast as three.
     probability transfer to the CPU) and exclude tokenization.
   - Third-party rows time each project's own inference call, which includes
     its tokenization.
-- **Warm-up:** re-runs drop their first five requests. The Default rows of the
-  27B, 30B and third-party models come from the original evaluation runs.
+- **Warm-up:** A100 re-runs drop their first five requests; third-party Default
+  rows come from the original evaluation runs. H200 warm-up is recorded with
+  each fixed-panel measurement.
 - **Accuracy** is re-measured in every configuration, so each table shows how
   far the faster kernels move predictions.
 
@@ -78,12 +91,6 @@ so the kernels do not apply. Jev-Omni and Laya were therefore not re-run.
 | JevAny-Gemma-4B | Default | 1 | 70.84% | 107.1 | 106.3 | 109.3 |
 |  | + kernels + fused SDPA | 1 | 71.03% | 98.8 | 97.9 | 101.4 |
 |  | + kernels + fused SDPA + CUDA graphs | 1 | 70.84% | 34.5 | **31.9** | 39.9 |
-| JevAny-Qwen3.8-27B | Default | 3 | 85.66% | 247.0 | 240.2 | 261.1 |
-|  | + kernels + fused SDPA | 3 | 85.66% | 222.1 | 220.1 | 225.7 |
-|  | + kernels + fused SDPA | 2 | 85.66% | 214.7 | 212.5 | 220.0 |
-| JevAny-Muse-Glimmer-30B | Default | 3 | 83.37% | 173.8 | 171.2 | 178.6 |
-|  | + kernels + fused SDPA | 3 | 83.37% | 156.5 | 154.2 | 158.9 |
-|  | + kernels + fused SDPA | 2 | 83.37% | 164.0 | 156.8 | 181.1 |
 | Open-Jev-27B-v1.1 | Default | 3 | 76.39% | 1709.6 | 1348.6 | 4336.8 |
 |  | + kernels | 3 | 76.29% | 594.2 | 447.6 | 1486.8 |
 | Open-Jev-9B | Default | 1 | 72.37% | 746.4 | 572.6 | 1906.3 |
@@ -118,12 +125,6 @@ so the kernels do not apply. Jev-Omni and Laya were therefore not re-run.
 | JevAny-Gemma-4B | Default | 1 | 75.76% | 179.2 | 107.2 | 453.7 |
 |  | + kernels + fused SDPA | 1 | 75.76% | 138.3 | 103.4 | 281.2 |
 |  | + kernels + fused SDPA + CUDA graphs | 1 | 75.32% | 94.0 | **32.1** | 288.0 |
-| JevAny-Qwen3.8-27B | Default | 3 | 88.31% | 533.8 | 251.6 | 1591.0 |
-|  | + kernels + fused SDPA | 3 | 88.31% | 366.1 | 220.9 | 931.8 |
-|  | + kernels + fused SDPA | 2 | 88.31% | 363.2 | 218.8 | 932.6 |
-| JevAny-Muse-Glimmer-30B | Default | 3 | 85.71% | 416.9 | 170.8 | 1362.7 |
-|  | + kernels + fused SDPA | 3 | 85.71% | 304.4 | 154.1 | 884.1 |
-|  | + kernels + fused SDPA | 2 | 85.71% | 320.6 | 181.1 | 880.7 |
 | Open-Jev-27B-v1.1 | Default | 3 | 85.71% | 2201.9 | 1785.3 | 5477.1 |
 |  | + kernels | 3 | 85.28% | 939.9 | 671.3 | 2744.4 |
 | Open-Jev-9B | Default | 1 | 77.06% | 902.0 | 761.0 | 2043.0 |
@@ -148,9 +149,6 @@ included in the mean. Its median and p90 describe steady-state latency.
 
 ## Notes
 
-- **Checkpoint version:** JevAny-Qwen3.8-27B was measured at step 22,160. The
-  current step 44,319 release has the same architecture, so the latencies
-  apply. Its accuracy is reported in [EVALUATION.md](EVALUATION.md).
 - **JevBench conversion:** JevBench was converted from the public data with
   `scripts/build_external_eval.py`. The resulting `development.jsonl` differs
   from the official `jevbench-public-v1.4.2.2` file, so JevBench accuracies here
@@ -158,9 +156,11 @@ included in the mean. Its median and p90 describe steady-state latency.
 - **JevBench p90 with CUDA graphs:** p90 is slightly higher with graphs than
   without, because long requests were padded to the next captured length. The
   current 2,048-token capture limit keeps those requests on eager inference.
-- **Comparing across rows:** every row uses the same GPU type, but some
-  comparisons span different nodes of the cluster. That adds a few percent of
-  run-to-run variation.
+- **Comparing across rows:** each before/after pair uses one GPU type and fixed
+  panel. The detailed comparison tables use A100s, but some rows span different
+  nodes of the cluster, adding a few percent of run-to-run variation. Do not
+  compare their absolute latency with the H200 headline cards.
 
 Regenerate the figure from the repository root with
-`python scripts/plot_efficiency.py`.
+`python scripts/plot_efficiency.py`; it reads both efficiency JSON files linked
+above by default.
