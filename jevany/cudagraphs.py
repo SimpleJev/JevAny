@@ -89,7 +89,9 @@ class RowGraphs:
         static_pos[0, :length] = torch.tensor(pos, device=self.device)
         static_pos[0, length:] = torch.arange(pos[-1] + 1, pos[-1] + 1 + n - length, device=self.device)
         graph.replay()
-        return out[0, :length].to(torch.float32, copy=True)   # the next replay overwrites `out`
+        # Readout immediately selects its token vectors and computes fresh logits
+        # before another replay can overwrite this view; no full-row FP32 copy.
+        return out[0, :length]
 
     def forward_rows_batch(self, encs):
         """Logits like DecisionModel.forward_rows_batch for a single-question request, or None (run eagerly)."""

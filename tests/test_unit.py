@@ -376,6 +376,7 @@ def test_checkpoint_meta_round_trip_and_defaults(tmp_path):
     opts = LoadOptions.from_env({"JEVANY_DTYPE": "bf16", "JEVANY_MERGE": "0", "JEVANY_ATTN": "sdpa", "JEVANY_TEMPERATURE": "1.0", "JEVANY_LORA_SCALE": "0.5", "JEVANY_BASE_LOAD_PATH": "/models/qwen"})
     assert opts == LoadOptions(dtype=torch.bfloat16, merge=False, attn="sdpa", lora_scale=0.5,
                                temperature=1.0, base_load_path="/models/qwen")
+    assert LoadOptions.from_env({"JEVANY_DTYPE": "fp32"}).dtype == torch.float32
     fast = LoadOptions.from_env({"JEVANY_MERGE_BF16": "1", "JEVANY_COMPILE": "1"})
     assert fast.merge_bf16 is True and fast.compile_mode == "reduce-overhead"
     assert LoadOptions.from_env({"JEVANY_COMPILE": "default"}).compile_mode == "default"
