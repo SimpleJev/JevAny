@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render recorded Terminal-Bench, WebShop, and FrozenLake harness traces."""
+"""Shared theme and legacy helpers; the CLI exports the current paired demos."""
 
 from __future__ import annotations
 
@@ -444,7 +444,7 @@ def summary_frame() -> Image.Image:
     return image
 
 
-def main() -> None:
+def legacy_main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--out", default="docs/demos/jev-agent-harness.gif")
     parser.add_argument("--sqlite-out", default="docs/demos/jev-agent-harness-sqlite.gif")
@@ -561,6 +561,12 @@ def main() -> None:
         sqlite_frames + webshop_frames + frozen_lake_frames + [summary_frame()],
         sqlite_durations + webshop_durations + frozen_lake_durations + [2700],
     )
+
+
+def main() -> None:
+    from render_agent_decision_demos_v2 import main as render_current_demos
+
+    render_current_demos()
 
 
 if __name__ == "__main__":
