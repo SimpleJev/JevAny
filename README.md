@@ -131,6 +131,7 @@ where Jev helps and when to return control to the LLM.
 - [🕹️ 4. Examples & Test Environments](#examples--test-environments)
 - [🧩 5. Supported Model Families](#supported-model-families)
 - [📚 6. Documentation and Contributing](#documentation-and-contributing)
+  - [🤝 Contributing](#contributing)
 
 ## ⚡ 1. Quickstart <a name="quickstart"></a>
 
@@ -456,12 +457,35 @@ combine JevAny decisions with an LLM planner.
 
 [Documentation hub](https://simplejev.github.io/JevAny/index.html#documentation) · [Training](https://simplejev.github.io/JevAny/docs/TRAINING.html) · [Deployment](https://simplejev.github.io/JevAny/docs/DEPLOYMENT.html) · [API](https://simplejev.github.io/JevAny/docs/API.html) · [Data](https://simplejev.github.io/JevAny/docs/DATA.html) · [Evaluation](https://simplejev.github.io/JevAny/docs/EVALUATION.html) · [Agent harness protocol](https://simplejev.github.io/JevAny/docs/experiments-AGENT_HARNESS_FRONTIER_PROTOCOL.html) · [Contributing](https://simplejev.github.io/JevAny/docs/contributing.html)
 
-To contribute a model adapter, evaluation or application example, start with the
-[contribution guide](https://simplejev.github.io/JevAny/docs/contributing.html). The
-[technical report](https://simplejev.github.io/JevAny/files/reports/JevAny_Tech_Report.pdf) describes model design,
+The [technical report](https://simplejev.github.io/JevAny/files/reports/JevAny_Tech_Report.pdf) describes model design,
 multimodal support, the agent-harness study and appendix, negative results, and
 open questions.
 
 Code and starter data are Apache-2.0. Some components are adapted from
 [Kev](https://github.com/jaredpalmer/kev); see [NOTICE](NOTICE) and
 [acknowledgements](https://simplejev.github.io/JevAny/docs/ACKNOWLEDGEMENTS.html). Base models and upstream datasets retain their own terms.
+
+### 🤝 Contributing <a name="contributing"></a>
+
+We're building open infrastructure for System 1 decision models, and we'd
+love your help. Small improvements are welcome. Here are a few ways to get
+involved:
+
+- **Docs and translations:** clarify a setup step, add troubleshooting tips, or
+  translate a guide.
+- **Bug fixes and tests:** share a reproducible issue, fix a bug, or add a
+  regression test.
+- **Applications and integrations:** show JevAny choosing tools, routing tickets,
+  or taking actions in a game or robot environment.
+- **Models, training and inference:** add a model adapter, improve a training
+  recipe, or make inference faster with reproducible measurements.
+- **Data and evaluation:** contribute a public-data converter, add a benchmark
+  case, or document where a model makes the wrong decision.
+
+CI checks and automated AI code review provide feedback on PRs, with
+maintainers handling review and merging. Small fixes can go straight to a
+PR; for larger changes, open an issue to discuss the approach first.
+
+Read the [contribution guide](https://simplejev.github.io/JevAny/docs/contributing.html)
+for setup and development steps, or [browse the issues](https://github.com/SimpleJev/JevAny/issues)
+to find a place to start.

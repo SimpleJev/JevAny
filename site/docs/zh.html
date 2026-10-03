@@ -32,7 +32,10 @@
 </ul>
 </li>
 <li><a href="#5">🧩 5. 支持的模型系列</a></li>
-<li><a href="#6">📚 6. 文档与贡献</a></li>
+<li><a href="#6">📚 6. 文档与贡献</a><ul>
+<li><a href="#_3">🤝 参与贡献</a></li>
+</ul>
+</li>
 </ul>
 </div>
 </details></aside>
@@ -159,6 +162,7 @@ LLM 已经知道有效选项，但让大模型逐次做局部选择成本高，�
 <li><a href="#示例与测试环境">🕹️ 4. 示例与测试环境</a></li>
 <li><a href="#支持的模型系列">🧩 5. 支持的模型系列</a></li>
 <li><a href="#文档与贡献">📚 6. 文档与贡献</a></li>
+<li><a href="#contributing">🤝 参与贡献</a></li>
 </ul>
 <h2 id="1">⚡ 1. 快速上手 <a name="快速上手"></a></h2>
 <p>使用 Python 3.12 或更新版本，克隆仓库并安装轻量客户端：</p>
@@ -458,10 +462,23 @@ JevAny 决策可参考<a href="INTEGRATIONS.html">集成文档</a>。</p>
 <p><a href="TRAINING.html#backbone-support"><img loading="lazy" alt="支持的 26 个模型，涵盖 Qwen、Gemma、Muse、Mistral、GLM、Nemotron 和 Llama" src="../files/docs/supported-model-families.svg" /></a></p>
 <h2 id="6">📚 6. 文档与贡献 <a name="文档与贡献"></a></h2>
 <p><a href="TRAINING.html">训练</a> · <a href="DEPLOYMENT.html">部署</a> · <a href="API.html">API</a> · <a href="DATA.html">数据</a> · <a href="EVALUATION.html">评测</a> · <a href="experiments-AGENT_HARNESS_FRONTIER_PROTOCOL.html">Agent harness 协议</a> · <a href="contributing.html">贡献指南</a></p>
-<p>欢迎贡献模型适配、评测或应用示例，开发步骤见<a href="contributing.html">贡献指南</a>。
-<a href="../files/reports/JevAny_Tech_Report.pdf">技术报告</a>介绍了模型设计、多模态路径、
+<p><a href="../files/reports/JevAny_Tech_Report.pdf">技术报告</a>介绍了模型设计、多模态路径、
 agent-harness 实验与附录、负面结果和开放问题。</p>
 <p>代码和入门数据采用 Apache-2.0。部分组件改编自 <a href="https://github.com/jaredpalmer/kev">Kev</a>，
 归属说明见 <a href="../files/NOTICE">NOTICE</a> 和 <a href="ACKNOWLEDGEMENTS.html">ACKNOWLEDGEMENTS.md</a>。
-基座模型与上游数据集保留各自条款。</p></main></div>
+基座模型与上游数据集保留各自条款。</p>
+<h3 id="_3">🤝 参与贡献 <a name="contributing"></a></h3>
+<p>我们正在建设面向 System 1 决策模型的开源基础设施，欢迎你一起参与。
+从你熟悉的地方开始，小改进也很有帮助：</p>
+<ul>
+<li><strong>文档与翻译：</strong>说明一个安装步骤、补充排错经验，或翻译一篇指南。</li>
+<li><strong>问题修复与测试：</strong>提供问题复现、修复 bug，或补上回归测试。</li>
+<li><strong>应用与集成：</strong>展示如何用 JevAny 选择工具、分流工单，或在游戏和机器人环境中选择动作。</li>
+<li><strong>模型、训练与推理：</strong>适配一个模型、改进训练配置，或提交有可复现测量结果的推理加速方案。</li>
+<li><strong>数据与评测：</strong>贡献公开数据转换工具、补充评测用例，或记录模型做出错误决策的场景。</li>
+</ul>
+<p>提交 PR 后，CI 检查和自动 AI code review 会提供反馈，维护者负责审核与合并。
+小修复可以直接提交 PR，较大的改动建议先开 issue 讨论方案。</p>
+<p>开发步骤见<a href="contributing.html">贡献指南</a>，
+也可以从<a href="https://github.com/SimpleJev/JevAny/issues">现有 issues</a> 中找一个感兴趣的问题开始。</p></main></div>
 <footer class="site-footer wrap"><a href="../zh.html">← 返回 JevAny</a><a href="license.html">代码许可：Apache-2.0</a></footer></body></html>

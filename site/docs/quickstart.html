@@ -32,7 +32,10 @@
 </ul>
 </li>
 <li><a href="#5-supported-model-families">🧩 5. Supported Model Families</a></li>
-<li><a href="#6-documentation-and-contributing">📚 6. Documentation and Contributing</a></li>
+<li><a href="#6-documentation-and-contributing">📚 6. Documentation and Contributing</a><ul>
+<li><a href="#contributing">🤝 Contributing</a></li>
+</ul>
+</li>
 </ul>
 </div>
 </details></aside>
@@ -172,6 +175,7 @@ where Jev helps and when to return control to the LLM.</p>
 <li><a href="#examples--test-environments">🕹️ 4. Examples &amp; Test Environments</a></li>
 <li><a href="#supported-model-families">🧩 5. Supported Model Families</a></li>
 <li><a href="#documentation-and-contributing">📚 6. Documentation and Contributing</a></li>
+<li><a href="#contributing">🤝 Contributing</a></li>
 </ul>
 <h2 id="1-quickstart">⚡ 1. Quickstart <a name="quickstart"></a></h2>
 <p>Use Python 3.12 or newer. Clone the repository and install the lightweight package:</p>
@@ -494,12 +498,32 @@ combine JevAny decisions with an LLM planner.</p>
 <p><a href="TRAINING.html#backbone-support"><img loading="lazy" alt="26 supported models across Qwen, Gemma, Muse, Mistral, GLM, Nemotron and Llama" src="../files/docs/supported-model-families.svg" /></a></p>
 <h2 id="6-documentation-and-contributing">📚 6. Documentation and Contributing <a name="documentation-and-contributing"></a></h2>
 <p><a href="TRAINING.html">Training</a> · <a href="DEPLOYMENT.html">Deployment</a> · <a href="API.html">API</a> · <a href="DATA.html">Data</a> · <a href="EVALUATION.html">Evaluation</a> · <a href="experiments-AGENT_HARNESS_FRONTIER_PROTOCOL.html">Agent harness protocol</a> · <a href="contributing.html">Contributing</a></p>
-<p>To contribute a model adapter, evaluation or application example, start with the
-<a href="contributing.html">contribution guide</a>. The
-<a href="../files/reports/JevAny_Tech_Report.pdf">technical report</a> describes model design,
+<p>The <a href="../files/reports/JevAny_Tech_Report.pdf">technical report</a> describes model design,
 multimodal support, the agent-harness study and appendix, negative results, and
 open questions.</p>
 <p>Code and starter data are Apache-2.0. Some components are adapted from
 <a href="https://github.com/jaredpalmer/kev">Kev</a>; see <a href="../files/NOTICE">NOTICE</a> and
-<a href="ACKNOWLEDGEMENTS.html">ACKNOWLEDGEMENTS.md</a>. Base models and upstream datasets retain their own terms.</p></main></div>
+<a href="ACKNOWLEDGEMENTS.html">ACKNOWLEDGEMENTS.md</a>. Base models and upstream datasets retain their own terms.</p>
+<h3 id="contributing">🤝 Contributing <a name="contributing"></a></h3>
+<p>We're building open infrastructure for System 1 decision models, and we'd
+love your help. Small improvements are welcome. Here are a few ways to get
+involved:</p>
+<ul>
+<li><strong>Docs and translations:</strong> clarify a setup step, add troubleshooting tips, or
+  translate a guide.</li>
+<li><strong>Bug fixes and tests:</strong> share a reproducible issue, fix a bug, or add a
+  regression test.</li>
+<li><strong>Applications and integrations:</strong> show JevAny choosing tools, routing tickets,
+  or taking actions in a game or robot environment.</li>
+<li><strong>Models, training and inference:</strong> add a model adapter, improve a training
+  recipe, or make inference faster with reproducible measurements.</li>
+<li><strong>Data and evaluation:</strong> contribute a public-data converter, add a benchmark
+  case, or document where a model makes the wrong decision.</li>
+</ul>
+<p>CI checks and automated AI code review provide feedback on PRs, with
+maintainers handling review and merging. Small fixes can go straight to a
+PR; for larger changes, open an issue to discuss the approach first.</p>
+<p>Read the <a href="contributing.html">contribution guide</a>
+for setup and development steps, or <a href="https://github.com/SimpleJev/JevAny/issues">browse the issues</a>
+to find a place to start.</p></main></div>
 <footer class="site-footer wrap"><a href="../index.html">← Back to JevAny</a><a href="license.html">Apache-2.0 code</a></footer></body></html>

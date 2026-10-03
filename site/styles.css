@@ -381,6 +381,14 @@ caption { padding: 16px 18px; text-align: left; color: #adbcaf; font-size: 12px;
 .doc-cards p { font-size: 14px; line-height: 1.9; color: var(--muted); }
 .doc-cards p:lang(zh-CN) { text-wrap: pretty; }
 
+.contribute-section { display: grid; grid-template-columns: 1fr 1.2fr; gap: 70px; padding-block: 64px 76px; border-top: 1px solid var(--line); }
+.contribute-section h2 { font-size: 38px; }
+.contribute-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 24px; margin-top: 28px; }
+.contribute-review { color: var(--muted); font-size: 13px; line-height: 1.9; margin-top: 24px; max-width: 420px; }
+.contribute-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 24px; }
+.contribute-list h3 { font-size: 16px; margin-bottom: 6px; }
+.contribute-list p { color: var(--muted); font-size: 14px; line-height: 1.8; }
+
 .docs-page { background: #0a1315; }
 .docs-layout { display: grid; grid-template-columns: 205px minmax(0, 1fr); gap: 65px; padding-block: 45px 80px; }
 .docs-sidebar { align-self: start; position: sticky; top: 24px; font-size: 12px; max-height: calc(100vh - 48px); overflow: auto; }
@@ -432,6 +440,7 @@ caption { padding: 16px 18px; text-align: left; color: #adbcaf; font-size: 12px;
   .checkpoint-card:first-child { grid-column: 1 / -1; }
   .checkpoint-card p { min-height: 44px; }
   .doc-cards, .case-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .contribute-section { grid-template-columns: 1fr; gap: 38px; }
   .docs-layout { grid-template-columns: 1fr; padding-top: 22px; }
   .docs-sidebar { position: static; max-height: none; }
   .docs-sidebar > nav { display: flex; overflow-x: auto; padding-block: 12px; gap: 4px; }
@@ -485,6 +494,8 @@ caption { padding: 16px 18px; text-align: left; color: #adbcaf; font-size: 12px;
   .family-details summary small { font-size: 12px; }
   .family-details td, .family-details th { padding: 12px; }
   .docs-section { padding-bottom: 48px; }
+  .contribute-section { padding-block: 40px 48px; }
+  .contribute-section h2 { font-size: 30px; }
   .doc-cards a { padding: 22px; }
   .doc-cards h3 { margin-top: 14px; }
   .doc-content { font-size: 13px; }

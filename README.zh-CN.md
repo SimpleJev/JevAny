@@ -121,6 +121,7 @@
 - [🕹️ 4. 示例与测试环境](#示例与测试环境)
 - [🧩 5. 支持的模型系列](#支持的模型系列)
 - [📚 6. 文档与贡献](#文档与贡献)
+  - [🤝 参与贡献](#contributing)
 
 ## ⚡ 1. 快速上手 <a name="快速上手"></a>
 
@@ -425,10 +426,26 @@ JevAny 决策可参考[集成文档](https://simplejev.github.io/JevAny/docs/INT
 
 [文档总览](https://simplejev.github.io/JevAny/zh.html#documentation) · [训练](https://simplejev.github.io/JevAny/docs/TRAINING.html) · [部署](https://simplejev.github.io/JevAny/docs/DEPLOYMENT.html) · [API](https://simplejev.github.io/JevAny/docs/API.html) · [数据](https://simplejev.github.io/JevAny/docs/DATA.html) · [评测](https://simplejev.github.io/JevAny/docs/EVALUATION.html) · [Agent harness 协议](https://simplejev.github.io/JevAny/docs/experiments-AGENT_HARNESS_FRONTIER_PROTOCOL.html) · [贡献指南](https://simplejev.github.io/JevAny/docs/contributing.html)
 
-欢迎贡献模型适配、评测或应用示例，开发步骤见[贡献指南](https://simplejev.github.io/JevAny/docs/contributing.html)。
 [技术报告](https://simplejev.github.io/JevAny/files/reports/JevAny_Tech_Report.pdf)介绍了模型设计、多模态路径、
 agent-harness 实验与附录、负面结果和开放问题。
 
 代码和入门数据采用 Apache-2.0。部分组件改编自 [Kev](https://github.com/jaredpalmer/kev)，
 归属说明见 [NOTICE](NOTICE) 和 [致谢与归属](https://simplejev.github.io/JevAny/docs/ACKNOWLEDGEMENTS.html)。
 基座模型与上游数据集保留各自条款。
+
+### 🤝 参与贡献 <a name="contributing"></a>
+
+我们正在建设面向 System 1 决策模型的开源基础设施，欢迎你一起参与。
+从你熟悉的地方开始，小改进也很有帮助：
+
+- **文档与翻译：**说明一个安装步骤、补充排错经验，或翻译一篇指南。
+- **问题修复与测试：**提供问题复现、修复 bug，或补上回归测试。
+- **应用与集成：**展示如何用 JevAny 选择工具、分流工单，或在游戏和机器人环境中选择动作。
+- **模型、训练与推理：**适配一个模型、改进训练配置，或提交有可复现测量结果的推理加速方案。
+- **数据与评测：**贡献公开数据转换工具、补充评测用例，或记录模型做出错误决策的场景。
+
+提交 PR 后，CI 检查和自动 AI code review 会提供反馈，维护者负责审核与合并。
+小修复可以直接提交 PR，较大的改动建议先开 issue 讨论方案。
+
+开发步骤见[贡献指南](https://simplejev.github.io/JevAny/docs/contributing.html)，
+也可以从[现有 issues](https://github.com/SimpleJev/JevAny/issues) 中找一个感兴趣的问题开始。
