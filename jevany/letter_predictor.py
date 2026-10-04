@@ -300,6 +300,8 @@ class LetterReadoutPredictor:
             raise ValueError("native-head temperature is not used by choice readout; use temperature")
         if self.options.cuda_graphs:
             raise ValueError("CUDA graph capture is available only for native readout")
+        if self.options.fused_kernels:
+            raise ValueError("fused kernels are available only for native readout")
         if self.exact_cuda_kernels_applied:
             # Match LocalPredictor: benchmark evaluation disables approximate
             # TF32 and fused SDPA kernels, while exact_kernels=False retains

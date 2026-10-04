@@ -226,6 +226,9 @@ def main(argv=None):
                     help="capture CUDA graphs at startup (row-mode backbones on one GPU); same as JEVANY_CUDA_GRAPHS=1")
     ap.add_argument("--cuda-graph-max-tokens", type=int,
                     help="largest captured row; longer rows run eagerly (default 2048)")
+    ap.add_argument("--fused-kernels", action="store_true",
+                    help="fused Qwen3.5 inference kernels (merged LoRA, one GPU, flash-linear-attention); "
+                         "same as JEVANY_FUSED_KERNELS=1")
     add_inference_arguments(ap)
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=8008)
@@ -240,12 +243,16 @@ def main(argv=None):
     ):
         ap.error("CUDA graph and native inference-limit flags cannot be used with --readout choice; "
                  "use --choice-max-tokens")
+    if choice_options is not None and a.fused_kernels:
+        ap.error("--fused-kernels applies only to native readout")
     options = load_options_from_args(a)
     if a.cuda_graphs or a.cuda_graph_max_tokens is not None:
         options = options or LoadOptions.from_env()
         options = replace(options, cuda_graphs=True,
                           cuda_graph_max_tokens=(a.cuda_graph_max_tokens if a.cuda_graph_max_tokens is not None
                                                  else options.cuda_graph_max_tokens))
+    if a.fused_kernels:
+        options = replace(options or LoadOptions.from_env(), fused_kernels=True)
     application = create_app(a.run, device=a.device, dtype=a.dtype, model_name=a.model_name,
                              options=options,
                              inference_options=(inference_options_from_args(a)

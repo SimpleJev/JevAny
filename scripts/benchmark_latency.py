@@ -96,6 +96,8 @@ def main(argv=None):
                         help="replay captured CUDA graphs (LoadOptions.cuda_graphs; also JEVANY_CUDA_GRAPHS=1)")
     parser.add_argument("--cuda-graph-max-tokens", type=int,
                         help="largest captured row; longer rows run eagerly (default 2048)")
+    parser.add_argument("--fused-kernels", action="store_true",
+                        help="fused Qwen3.5 inference kernels (LoadOptions.fused_kernels; also JEVANY_FUSED_KERNELS=1)")
     parser.add_argument("--serving-kernels", action="store_true",
                         help="keep PyTorch's fused SDPA kernels as `jevany serve` does, instead of the math kernel "
                              "LocalPredictor selects for fp32-exact evaluation")
@@ -108,6 +110,8 @@ def main(argv=None):
         parser.error("records must be nonnegative; warmup and repeats must be positive")
     if letter_options is not None and (args.cuda_graphs or args.cuda_graph_max_tokens is not None):
         parser.error("CUDA graphs apply only to native readout")
+    if letter_options is not None and args.fused_kernels:
+        parser.error("fused kernels apply only to native readout")
     target = Path(args.out)
     if target.exists():
         parser.error("refusing to overwrite an existing latency report")
@@ -132,6 +136,8 @@ def main(argv=None):
                           cuda_graph_max_tokens=(args.cuda_graph_max_tokens
                                                  if args.cuda_graph_max_tokens is not None
                                                  else options.cuda_graph_max_tokens))
+    if args.fused_kernels:
+        options = replace(options, fused_kernels=True)
     if letter_options is None:
         predictor = LocalPredictor(args.run, args.device, options, max_packed=args.max_packed,
                                    exact_kernels=not args.serving_kernels)
@@ -176,6 +182,7 @@ def main(argv=None):
             "merge_bf16": options.merge_bf16, "compile_mode": options.compile_mode,
             "device_map": options.device_map, "max_memory_gib": options.max_memory_gib,
             "cuda_graph_max_tokens": options.cuda_graph_max_tokens,
+            "fused_kernels": options.fused_kernels,
         },
         readout=args.readout,
         letter_readout=(dict(predictor.provenance) if letter_options is not None else None),
@@ -183,6 +190,10 @@ def main(argv=None):
             getattr(predictor, "model", getattr(predictor, "pointer_model", None)),
             "inference_acceleration", {},
         ).get("cuda_graphs"),
+        fused_kernels=getattr(
+            getattr(predictor, "model", getattr(predictor, "pointer_model", None)),
+            "inference_acceleration", {},
+        ).get("fused_kernels"),
     )
     target.parent.mkdir(parents=True, exist_ok=True)
     with target.open("x") as output:
