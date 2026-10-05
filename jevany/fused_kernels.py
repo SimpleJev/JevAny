@@ -13,8 +13,9 @@ its GEMMs. ``fuse_qwen3_5`` rewrites a merged, eval-mode backbone in place:
 * decoder weights are stored transposed, so cuBLAS reads both GEMM operands in their natural layout.
 
 The fused matrices replace the originals and the original ``nn.Linear`` modules keep views of them, so memory does
-not grow. A fused forward runs only for inference without a cache, attention mask or packed-sequence metadata, which
-is how row-mode inference and CUDA-graph capture call the backbone; any other call takes the original forward. The
+not grow. The Gated DeltaNet path runs only without a cache, attention mask or packed-sequence metadata and the
+attention path only without a cache, which covers row-mode inference and CUDA-graph capture; other calls and training
+take the original forwards. The
 FLA kernels keep intermediates in fp32 where transformers rounds to BF16 between operations, so probabilities are
 close to, not identical with, the unfused path.
 """
