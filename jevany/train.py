@@ -208,7 +208,9 @@ def training_requests(a, tok, manifest, model, inputs=None):
         reqs = kept
     if not reqs:
         raise ValueError("empty training set")
-    eval_only = set(EVAL_ONLY) | set(manifest.get("eval_only_sources", []) if manifest else [])
+    eval_only = set(EVAL_ONLY)
+    if manifest:
+        eval_only |= set(manifest.get("eval_only_sources", [])) | set(manifest.get("holdout_sources", []))
     forbidden = {r["_meta"]["source"] for r in reqs} & eval_only
     if forbidden:
         raise ValueError(f"training data contains eval-only sources: {sorted(forbidden)}")
