@@ -44,6 +44,10 @@ suite partitions. Token limits and backbone compatibility are checked when
 training starts; these startup checks finish before the output directory is
 created, so a corrected input can reuse the intended output path.
 
+Use `--no-rlcr`, `--no-multimodal`, or `--no-eval-before-start` to disable a
+boolean setting enabled in a recipe. When resuming a checkpoint, the original
+training settings remain required; use `--init-from` for a different experiment.
+
 `data_admission.json` records the input, admitted and rejected row counts, with
 the ID and reason for each row rejected by context limits. Other encoding errors
 stop the run. `training_metrics.json` repeats the input-scale counts as

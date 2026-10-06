@@ -34,7 +34,7 @@ def configure_parser(parser: argparse.ArgumentParser, argv: list[str] | None) ->
                 if key not in actions or key in ("help", "config", "dry_run"):
                     raise ValueError(f"unknown training setting: {key}")
                 action = actions[key]
-                expected = bool if isinstance(action, argparse._StoreTrueAction) else action.type or str
+                expected = bool if isinstance(action, (argparse._StoreTrueAction, argparse.BooleanOptionalAction)) else action.type or str
                 valid_type = type(value) is expected or (expected is float and type(value) is int)
                 if not valid_type:
                     raise ValueError(f"{key} must be {expected.__name__}")
