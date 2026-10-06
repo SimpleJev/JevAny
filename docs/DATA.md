@@ -12,6 +12,50 @@ For larger data, `jevany data build-sft` and `jevany data build-rlcr` expose the
 public-source builders from an installed package. See [TRAINING.md](TRAINING.md)
 for a text-only build and recipe commands.
 
+## Import a local multiple-choice export
+
+`jevany data convert` works in the base installation, without downloading a
+dataset or loading a model. Each input line contains a question, options and
+an answer:
+
+```json
+{"question":"Which direction reaches the station?","hint":"The station is south.","options":["north","south"],"answer":"B","group_id":"station-route"}
+```
+
+Save this as `questions.jsonl`, then import one explicit split:
+
+```bash
+jevany data convert questions.jsonl --out data/my-task \
+  --source my-task --revision export-1 --split train
+jevany data validate data/my-task/train.jsonl
+jevany data check-suite data/my-task
+```
+
+The output directory contains `train.jsonl` and `manifest.json`, with source
+revision, input checksum, record counts and an output checksum. Convert each
+upstream split to a new directory; the command does not shuffle or split data,
+skip invalid rows, or overwrite an existing directory. Use the training file
+with `jevany train --data` and a separate development file with `--eval-data`.
+The trainer performs token-context admission when training starts.
+
+Each conversion directory contains one partition. `check-suite` compares
+partitions listed together in one suite manifest; it does not compare separate
+conversion directories.
+
+`options` can be a list or its Python-literal string representation.
+For named keys, use `choices: {"text": [...], "label": [...]}`.
+`answer` or `answerKey` resolves in this order: an exact option key, exact
+option text, a letter (`A`, `B`, …), or a zero-based index. Missing answers,
+negative indices, duplicate keys and mismatched text/label arrays are rejected.
+Omit `label` to generate index keys; an explicitly empty label array is invalid.
+`question` may also be an object with a `stem` string.
+
+Optional `hint`, `fact1`, `fact2` and `combinedfact` fields become evidence.
+Use the same `group_id` for related rows; conversion preserves it under the
+source name, including when converting different upstream splits.
+Labels and provenance remain outside the model-facing request.
+Conversion errors identify the input file and line.
+
 ## Question Types
 
 ### Choice
@@ -132,6 +176,14 @@ release corpus. Review upstream licenses before downloading, training on, or
 redistributing any converted data.
 
 ## Evaluation Separation
+
+For a frozen suite with a `manifest.json`, run `jevany data check-suite PATH`.
+It checks declared partitions' checksums and counts, labelled question validity,
+source restrictions, and overlap in normalized decision text or group IDs across
+partitions. It reports the partitions checked and any skipped partition.
+The locked test partition is not read unless you pass `--allow-test`, so
+train/test overlap is checked only with that flag.
+A suite containing only the locked test partition requires that flag.
 
 Keep training, calibration, and evaluation records separate. Fit calibration
 parameters only on the calibration partition, preserve group identifiers for

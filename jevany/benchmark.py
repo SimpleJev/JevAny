@@ -207,7 +207,7 @@ def main(argv=None, prog=None):
     else:
         split = "test" if a.allow_test else "development"
         records = load_split(a.suite, split, allow_test=a.allow_test)
-        heldout = read_manifest(a.suite)["holdout_sources"]; source_hash = digest(Path(a.suite) / "manifest.json")
+        heldout = read_manifest(a.suite).get("holdout_sources", []); source_hash = digest(Path(a.suite) / "manifest.json")
     if a.date_facts:
         records = [{**r, "state": with_date_facts(r["state"])} for r in records]
     if a.remote:

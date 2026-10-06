@@ -112,13 +112,16 @@ def decide_main(argv: list[str]) -> None:
 
 def data_main(argv: list[str]) -> None:
     parser = argparse.ArgumentParser(prog="jevany data", description="Prepare and validate labelled System One JSONL.")
-    parser.add_argument("action", choices=["init", "validate", "build-sft", "build-rlcr"])
+    parser.add_argument("action", choices=["init", "validate", "convert", "check-suite", "build-sft", "build-rlcr"])
     if not argv or argv[0] in ("-h", "--help"):
         parser.parse_args(argv or ["--help"])
         return
     action = parser.parse_args(argv[:1]).action
     rest = argv[1:]
-    if action == "build-sft":
+    if action == "convert":
+        from .datasets.convert import main as convert
+        convert(rest)
+    elif action == "build-sft":
         from .datasets.build_sft import main as build
         build(rest)
     elif action == "build-rlcr":
@@ -130,6 +133,12 @@ def data_main(argv: list[str]) -> None:
             sub.add_argument("--out", default="data/starter")
             from .datasets import init_starter
             print(init_starter(sub.parse_args(rest).out))
+        elif action == "check-suite":
+            sub.add_argument("path")
+            sub.add_argument("--allow-test", action="store_true", help="also validate the locked test partition")
+            from .suite import validate_suite
+            args = sub.parse_args(rest)
+            print(json.dumps(validate_suite(args.path, allow_test=args.allow_test), indent=2))
         else:
             sub.add_argument("path")
             from .data import validate_dataset

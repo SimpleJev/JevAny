@@ -599,7 +599,7 @@ def wandb_eval_metrics(summary):
 
 def pinned_revision(a, manifest):
     """The base commit this run trains against: the suite's pin, or --base_revision when the suite has none."""
-    revision = manifest["base_revisions"].get(a.base) if manifest else None
+    revision = manifest.get("base_revisions", {}).get(a.base) if manifest else None
     if a.base_revision:
         if revision and revision != a.base_revision: raise ValueError("--base_revision conflicts with the suite's pinned revision")
         revision = a.base_revision
@@ -683,7 +683,7 @@ def main(argv=None, *, parser_class=argparse.ArgumentParser):
         torch.backends.cuda.matmul.allow_tf32 = True; torch.backends.cudnn.allow_tf32 = True
     autocast = torch.autocast("cuda", dtype=torch.bfloat16) if a.dtype == "bf16" else contextlib.nullcontext()
     revision = pinned_revision(a, manifest)
-    holdout = manifest["holdout_sources"] if manifest else []
+    holdout = manifest.get("holdout_sources", []) if manifest else []
     model_source = a.base_load_path or a.base
     load_revision = None if a.base_load_path else revision
     initial_checkpoint = Checkpoint(a.resume or a.init_from) if a.resume or a.init_from else None
