@@ -13,9 +13,12 @@ class TextGenerator(Protocol):
 
 def json_object(text: str) -> dict:
     """Parse one JSON object, accepting a fenced response from an LLM."""
-    match = re.search(r"```(?:json)?\s*(\{.*\})\s*```", text, re.DOTALL | re.IGNORECASE)
-    payload = match.group(1) if match else text[text.find("{"):text.rfind("}") + 1]
-    value = json.loads(payload)
+    try:
+        value = json.loads(text)
+    except json.JSONDecodeError:
+        match = re.search(r"```(?:json)?\s*(.*)\s*```", text, re.DOTALL | re.IGNORECASE)
+        payload = match.group(1) if match else text[text.find("{"):text.rfind("}") + 1]
+        value = json.loads(payload)
     if not isinstance(value, dict):
         raise ValueError("planner output must be a JSON object")
     return value

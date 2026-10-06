@@ -26,6 +26,13 @@ class Noul(BaseModel):
     instructions: JSONContent = None
     criteria: dict[str, JSONContent] | None = None
 
+    @model_validator(mode="after")
+    def _check(self):
+        unknown = set(self.criteria or {}) - {"false", "true"}
+        if unknown:
+            raise ValueError(f"noul criteria only accepts false and true; unknown keys: {sorted(unknown)}")
+        return self
+
 
 class Choice(BaseModel):
     type: Literal["choice"] = "choice"

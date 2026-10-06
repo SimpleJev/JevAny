@@ -27,6 +27,9 @@ Training data adds a label and optionally a soft target to each question.
 | `noul` | Optional `true` / `false` descriptions | `type`, `noul` (probability of true) |
 | `score` | Ordered level descriptions | `type`, `score`, `legend`, `probabilities`, `confidence` |
 
+`noul` criteria may describe either or both of `false` and `true`. Other keys
+are rejected so a misspelled description cannot silently disappear.
+
 Responses contain `model`, `answers` keyed by the same question IDs, and `usage`
 with `input_tokens` and `output_tokens`. JevAny also reports `latency_ms`.
 `output_tokens` counts the serialized answer; the model does not decode text.
