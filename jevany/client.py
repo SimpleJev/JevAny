@@ -123,6 +123,10 @@ class DecisionClient:
     def __call__(self, request: SystemOneRequest | dict) -> dict[str, Any]:
         raise NotImplementedError
 
+    def models(self) -> list[dict[str, Any]]:
+        """Return the identities, capabilities and limits available through this client."""
+        raise NotImplementedError
+
 
 class JevClient(DecisionClient):
     """Call a JevAny server or a compatible TypeSafe endpoint.

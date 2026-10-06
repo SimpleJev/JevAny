@@ -69,6 +69,10 @@ support/statistics. The HTTP description also includes the server's media-file
 policy. Requests exceeding those limits return HTTP 422 without truncation.
 See [DEPLOYMENT.md](DEPLOYMENT.md#inference-settings) for configuration.
 
+Both `JevModel` and `JevClient` provide `models()`, returning a list of model
+descriptions. Local inference returns its single loaded model; HTTP inference
+queries the deployment and includes its server-specific policy.
+
 ## Compatibility with Jev
 
 The reference is TypeSafe's [HTTP API](https://docs.typesafe.ai/api) and

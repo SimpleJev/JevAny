@@ -74,7 +74,8 @@ class DecisionRuntime:
                     "linear_attention_kernels": (linear_attention_kernels()
                                                  if getattr(self.model, "hybrid", False) else None),
                 },
-                "capabilities": asdict(capabilities), "limits": self.limits,
+                "capabilities": {**asdict(capabilities), "media_types": list(capabilities.media_types)},
+                "limits": self.limits,
                 "prefix_cache": {
                     "enabled": self.inference_options.prefix_cache_size > 0 and capabilities.prefix_cache,
                     "size": self.inference_options.prefix_cache_size,
@@ -247,6 +248,10 @@ class JevModel(DecisionClient):
     def describe(self) -> dict[str, Any]:
         """Return identity, backbone capabilities, effective limits and cache statistics."""
         return self.runtime.describe()
+
+    def models(self) -> list[dict[str, Any]]:
+        """List this local model using the same discovery method as JevClient."""
+        return [self.describe()]
 
     def clear_cache(self) -> None:
         """Release this model's cached state prefixes."""

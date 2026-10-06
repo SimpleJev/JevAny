@@ -110,6 +110,10 @@ def test_checkpoint_python_http_and_prefix_parity(tmp_path, family, request_body
         assert description["limits"]["branch_tokens"] == 512
         assert description["prefix_cache"]["hits"] == 2 * cache_enabled
         assert description["branch_mode"] == local.runtime.model.branch_mode
+        local_models = local.models()
+        assert len(local_models) == 1
+        for field in ("id", "aliases", "capabilities", "branch_mode", "prefix_cache"):
+            assert local_models[0][field] == description[field]
         kernels = description["acceleration"]["linear_attention_kernels"]
         assert (kernels is None) == (not local.runtime.model.hybrid)
         assert kernels is None or set(kernels) == {"flash_linear_attention", "causal_conv1d"}
