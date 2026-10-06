@@ -12,7 +12,7 @@ class TextGenerator(Protocol):
 
 
 def json_object(text: str) -> dict:
-    """Parse one JSON object, accepting a fenced response from an LLM."""
+    """Parse one JSON object; Markdown fences must contain only JSON."""
     try:
         value = json.loads(text)
     except json.JSONDecodeError:
@@ -73,7 +73,12 @@ Do not answer any question or include labels. The evidence is attached as state 
 Task: {task}
 {evidence_label}: {json.dumps(evidence_context, ensure_ascii=False)}"""
         generated = self.generator.generate(prompt, {"max_output_tokens": 2048})
-        compiled = json_object(generated["text"])
+        try:
+            compiled = json_object(generated["text"])
+        except ValueError as error:
+            raise ValueError(
+                f"planner returned invalid JSON (stop_reason={generated.get('stop_reason')!r}): {error}"
+            ) from error
         if set(compiled) != {"questions"}:
             raise ValueError("planner output must contain only questions")
         request = {"state": {"task": task, "evidence": evidence},

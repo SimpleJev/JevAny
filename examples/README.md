@@ -195,13 +195,14 @@ Recorded game imagery and upstream notices are described in
 ## Command-line application examples
 
 Run from the repository root after [starting a server](../docs/DEPLOYMENT.md).
-These examples adapt three scenarios from the existing
-[showcase](../docs/CASES.md) into small, text-only applications.
+These examples show tool selection, classification and action loops in small,
+text-only applications. More scenarios are in the [showcase](../docs/CASES.md).
 
 ```bash
 python -m examples.inbox
 python -m examples.sql_repair
 python -m examples.service_recovery
+python -m examples.tool_routing
 ```
 
 | Example | What happens | Local effect |
@@ -209,9 +210,22 @@ python -m examples.service_recovery
 | [Inbox](inbox.py) | Three messages are classified with choice and binary questions | Prints decisions; does not send or move mail |
 | [SQL repair](sql_repair.py) | The model picks a provided query; SQLite runs it; an independent calculation checks totals | In-memory database |
 | [Service recovery](service_recovery.py) | A bounded agent selects, prepares, canaries and promotes a replica | Local simulator, at most 12 decisions |
+| [Tool routing](tool_routing.py) | Selects a support tool when its probability reaches a configurable threshold | Prints a tool name or a deferred decision; the caller owns execution |
 
 The SQL and recovery programs execute and report the model's choices, and exit
 with status 1 if their checks fail. Results can vary between runs.
+
+The tool-routing example accepts your own message:
+
+```bash
+python -m examples.tool_routing "How long do I have to return my purchase?" \
+  --min-probability 0.8
+```
+
+When the selected tool's probability is below the threshold, the result has
+`"tool": null` and `"deferred": true`. Choose a threshold using your own held-out
+data. Routing uses the selected option's probability; the API's separate
+`confidence` field is adjusted for the number of options.
 
 Use your own server or load a checkpoint directly, with the same application code:
 
@@ -236,6 +250,19 @@ The [recovery example](service_recovery.py) shows this protocol.
 jevany decide examples/request.json
 jevany decide examples/request.json --checkpoint runs/my-jev
 ```
+
+The [local planner harness](harness.py) compiles a task with a text
+Chat Completions server, then passes its typed questions to JevAny:
+
+```bash
+python -m examples.harness --planner-model my-planner \
+  --task "Choose a support team." --evidence '{"ticket":"My package is late."}'
+```
+
+This uses a planner at `http://127.0.0.1:8000/v1` and a JevAny server at
+`http://127.0.0.1:8008`; both addresses are configurable. It also accepts
+`--checkpoint` for local decisions. See [INTEGRATIONS.md](../docs/INTEGRATIONS.md)
+for the planner contract and optional authentication.
 
 The Bedrock [harness](bedrock_harness.py) and
 [symbolic tree](bedrock_symbolic.py) examples use an LLM planner to construct
