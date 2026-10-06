@@ -53,13 +53,16 @@ def action_request(goal, observation, actions: Mapping[str, str], history, model
     }
 
 
-def run_episode(env: DiscreteEnvironment, decide: DecisionFunction, goal: str, *, seed=None,
-                max_steps=32, history_limit=8, model="jevany-latest") -> Episode:
+def run_episode(env: DiscreteEnvironment, decide: DecisionFunction, goal: str, *, seed: int | None = None,
+                max_steps: int = 32, history_limit: int = 8, model: str = "jevany-latest") -> Episode:
     """Run one episode against a RAGEN-style discrete environment.
 
     The environment owns transition and reward logic. JevAny only sees the rendered
     observation, recent actions, and the finite action set exposed at each turn.
+    Set history_limit to zero to omit recent actions from the decision request.
     """
+    if history_limit < 0:
+        raise ValueError("history_limit must be nonnegative")
     observation = _observation(env.reset(seed=seed))
     trace, history, total_reward, success = [], [], 0.0, False
     action_names = getattr(env, "ACTION_LOOKUP", {})
@@ -69,7 +72,8 @@ def run_episode(env: DiscreteEnvironment, decide: DecisionFunction, goal: str, *
             break
         actions = {str(position): str(action_names.get(action, action))
                    for position, action in enumerate(raw_actions)}
-        request = action_request(goal, observation, actions, history[-history_limit:], model)
+        recent = history[-history_limit:] if history_limit else []
+        request = action_request(goal, observation, actions, recent, model)
         response = validate_response(request, decide(request))
         answer = response["answers"]["action"]
         action_key = str(answer["choice"])

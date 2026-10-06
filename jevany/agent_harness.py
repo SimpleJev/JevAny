@@ -116,6 +116,8 @@ class BedrockJevAgent:
             raise ValueError("token, turn, and delegation limits must be positive")
         if not 0 <= confidence_threshold <= 1:
             raise ValueError("confidence_threshold must be in [0, 1]")
+        if history_limit < 0:
+            raise ValueError("history_limit must be nonnegative")
         self.client = client
         self.model = model
         self.decide = decide
@@ -260,8 +262,9 @@ class BedrockJevAgent:
                     reason = "terminal"
                     break
                 delegated_goal = f"Global goal: {goal}\nDelegated subgoal: {subgoal}"
+                recent = history[-self.history_limit:] if self.history_limit else []
                 request = action_request(
-                    delegated_goal, observation, actions, history[-self.history_limit:], self.jev_model,
+                    delegated_goal, observation, actions, recent, self.jev_model,
                 )
                 before = time.perf_counter()
                 jev_decisions += 1
