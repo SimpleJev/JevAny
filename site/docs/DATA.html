@@ -8,6 +8,7 @@
 <div class="docs-layout wrap"><aside class="docs-sidebar"><a class="text-link" href="../index.html">← Project homepage</a><nav aria-label="Documentation"><a href="quickstart.html">Quickstart</a><a href="TRAINING.html">Training</a><a href="DATA.html" aria-current="page">Data</a><a href="DEPLOYMENT.html">Deployment</a><a href="API.html">API reference</a><a href="examples.html">Examples</a><a href="CASES.html">Cases</a><a href="EVALUATION.html">Evaluation</a><a href="ALGORITHM.html">Method</a><a href="INTEGRATIONS.html">Integrations</a><a href="zh.html">中文文档</a></nav>
 <details class="doc-toc"><summary>On this page</summary><div class="toc">
 <ul>
+<li><a href="#import-a-local-multiple-choice-export">Import a local multiple-choice export</a></li>
 <li><a href="#question-types">Question Types</a><ul>
 <li><a href="#choice">Choice</a></li>
 <li><a href="#noul">Noul</a></li>
@@ -31,6 +32,39 @@ is for learning the workflow. Validate it with
 <p>For larger data, <code>jevany data build-sft</code> and <code>jevany data build-rlcr</code> expose the
 public-source builders from an installed package. See <a href="TRAINING.html">TRAINING.md</a>
 for a text-only build and recipe commands.</p>
+<h2 id="import-a-local-multiple-choice-export">Import a local multiple-choice export</h2>
+<p><code>jevany data convert</code> works in the base installation, without downloading a
+dataset or loading a model. Each input line contains a question, options and
+an answer:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-json">{&quot;question&quot;:&quot;Which direction reaches the station?&quot;,&quot;hint&quot;:&quot;The station is south.&quot;,&quot;options&quot;:[&quot;north&quot;,&quot;south&quot;],&quot;answer&quot;:&quot;B&quot;,&quot;group_id&quot;:&quot;station-route&quot;}
+</code></pre>
+<p>Save this as <code>questions.jsonl</code>, then import one explicit split:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany data convert questions.jsonl --out data/my-task \
+  --source my-task --revision export-1 --split train
+jevany data validate data/my-task/train.jsonl
+jevany data check-suite data/my-task
+</code></pre>
+<p>The output directory contains <code>train.jsonl</code> and <code>manifest.json</code>, with source
+revision, input checksum, record counts and an output checksum. Convert each
+upstream split to a new directory; the command does not shuffle or split data,
+skip invalid rows, or overwrite an existing directory. Use the training file
+with <code>jevany train --data</code> and a separate development file with <code>--eval-data</code>.
+The trainer performs token-context admission when training starts.</p>
+<p>Each conversion directory contains one partition. <code>check-suite</code> compares
+partitions listed together in one suite manifest; it does not compare separate
+conversion directories.</p>
+<p><code>options</code> can be a list or its Python-literal string representation.
+For named keys, use <code>choices: {"text": [...], "label": [...]}</code>.
+<code>answer</code> or <code>answerKey</code> resolves in this order: an exact option key, exact
+option text, a letter (<code>A</code>, <code>B</code>, …), or a zero-based index. Missing answers,
+negative indices, duplicate keys and mismatched text/label arrays are rejected.
+Omit <code>label</code> to generate index keys; an explicitly empty label array is invalid.
+<code>question</code> may also be an object with a <code>stem</code> string.</p>
+<p>Optional <code>hint</code>, <code>fact1</code>, <code>fact2</code> and <code>combinedfact</code> fields become evidence.
+Use the same <code>group_id</code> for related rows; conversion preserves it under the
+source name, including when converting different upstream splits.
+Labels and provenance remain outside the model-facing request.
+Conversion errors identify the input file and line.</p>
 <h2 id="question-types">Question Types</h2>
 <h3 id="choice">Choice</h3>
 <pre tabindex="0" role="region" aria-label="Code example"><code class="language-json">{
@@ -122,6 +156,13 @@ public experiments and custom training. They do not reconstruct the current
 release corpus. Review upstream licenses before downloading, training on, or
 redistributing any converted data.</p>
 <h2 id="evaluation-separation">Evaluation Separation</h2>
+<p>For a frozen suite with a <code>manifest.json</code>, run <code>jevany data check-suite PATH</code>.
+It checks declared partitions' checksums and counts, labelled question validity,
+source restrictions, and overlap in normalized decision text or group IDs across
+partitions. It reports the partitions checked and any skipped partition.
+The locked test partition is not read unless you pass <code>--allow-test</code>, so
+train/test overlap is checked only with that flag.
+A suite containing only the locked test partition requires that flag.</p>
 <p>Keep training, calibration, and evaluation records separate. Fit calibration
 parameters only on the calibration partition, preserve group identifiers for
 related questions, and check normalized text hashes before evaluation. Current

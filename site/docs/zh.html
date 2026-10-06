@@ -19,7 +19,10 @@
 <li><a href="#13-jevany">🚀 1.3 JevAny 部署</a></li>
 </ul>
 </li>
-<li><a href="#2">🤗 2. 预训练模型</a></li>
+<li><a href="#2">🤗 2. 预训练模型</a><ul>
+<li><a href="#choice-token">免训练 choice-token 读出</a></li>
+</ul>
+</li>
 <li><a href="#3">📊 3. 基准测试结果</a><ul>
 <li><a href="#31">⏱️ 3.1 推理效率</a></li>
 </ul>
@@ -48,10 +51,10 @@
 
 <h2 id="_1">🎮 结果与演示 <a name="结果与演示"></a><a name="演示"></a></h2>
 <p><a href="../zh.html#benchmarks">查看交互式评测结果</a></p>
-<p><a href="#评测">完整基准测试结果与评测说明</a>。</p>
+<p><a href="../zh.html#benchmarks">交互式基准评测结果</a>。</p>
 <p>以下 30 个案例是由早期兼容 checkpoint 录制的历史回放，展示了 JevAny 在机器人、浏览器、软件、实验室和出行任务中的动作选择；
 当前默认发布模型为
-<a href="https://huggingface.co/SimpleJev/JevAny-Qwen3.8-27B-LoRA">JevAny-Qwen3.8-27B</a>。<a href="CASES.html">查看全部案例</a>，
+<a href="https://huggingface.co/SimpleJev/JevAny-Qwen3.8-27B-LoRA">JevAny-Qwen3.8-27B</a>。<a href="../zh.html#case-library">查看全部案例</a>，
 或<a href="#本地体验">在本地运行模型</a>，输入自己的任务，查看模型的选择和各选项概率。</p>
 <p><a href="../zh.html#case-library">查看全部 30 个应用回放 →</a></p>
 <h3 id="jev-llm-agent">⚡ Jev 加入 LLM Agent 循环</h3>
@@ -59,25 +62,14 @@
 下方动图对比左侧纯 LLM 与右侧 LLM + Jev，两侧 reward 相同；步骤为示意，
 加速播放保留各组记录的实测耗时比例，点击可放大查看。</p>
 <p><strong>快速判断原则</strong></p>
-<p><strong>委托“选择瓶颈”，而不是委托整个任务。</strong> Jev 只在一个窄区间有价值：
-LLM 已经知道有效选项，但让大模型逐次做局部选择成本高，或已经测出排序不稳定。</p>
-<p>Jev 只有两种有效价值：<strong>减少 frontier 工作量</strong>，或<strong>修正已经测出的局部排序弱点</strong>。
-两者都做不到时，Jev 就只是额外开销。</p>
+<p><strong>委托“选择瓶颈”，而不是委托整个任务。</strong> Jev 要么替代重复的 LLM 推理，
+要么修正已经测出的局部排序错误；两者都做不到时，它就只是额外开销。</p>
 <ul>
-<li><strong>按阶段判断，不按 benchmark 名称判断。</strong> WebShop 和 Terminal-Bench
-  都同时包含开放推理与有界选择。只委托后者；太简单的动作直接执行更便宜，
-  缺失的策略则继续交给 LLM。</li>
-<li><strong>候选决定能力上限。</strong> 给 Jev 2–4 个当前有效、包含正确动作且会导向
-  不同结果的反事实分支。Jev 能重排已有选项，不能发明缺失的计划。</li>
-<li><strong>追求效率时，要替代推理，不要追加裁判。</strong> 一次 LLM 计划应供多次 Jev
-  选择复用。在 GPT-5.6-sol + 27B 的 FrozenLake cell 中，LLM 调用减少
-  64.4%；WebArena 没有真正替代 frontier 工作，调用反而增加 5.6%，
-  tokens 增加 28.2%。纯效果收益应先在配对实验或 D1 shadow 中验证排序改善。</li>
-<li><strong>只在反馈视界内委托。</strong> 仅当动作可回退、语义效果能立即验证时继续；
-  遇到新状态、候选失效、延迟反馈或失败恢复，立即交回 LLM。</li>
-<li><strong>用证据升级自治层级。</strong> 从 D0 纯 LLM → D1 shadow → D2 单步选择 →
-  D3 常规决策默认委托 → D4 有界子任务逐级推进。只保留 Pareto 非劣点：
-  reward 不降且成本更低，或 reward 提升但明确披露额外成本。委托比例高本身不是收益。</li>
+<li>给 Jev <strong>2–4 个有效分支</strong>，各分支结果不同且可观察，并包含正确动作。</li>
+<li>让一次 LLM 计划在多个可回退的选择间复用；遇到新状态、候选失效、
+  延迟反馈、失败恢复或任务完成时交回控制权。</li>
+<li>只凭配对的 reward/成本证据提升自治层级：D0 纯 LLM → D1 shadow →
+  D2 单步 → D3 常规决策默认委托 → D4 有界子任务。覆盖率不等于成功。</li>
 </ul>
 <div class="table-scroll" tabindex="0" role="region" aria-label="文档表格"><table>
   <tr>
@@ -157,6 +149,7 @@ LLM 已经知道有效选项，但让大模型逐次做局部选择成本高，�
 <li><a href="#训练">🛠️ 1.2 JevAny 训练</a></li>
 <li><a href="#部署">🚀 1.3 JevAny 部署</a></li>
 <li><a href="#预训练模型">🤗 2. 预训练模型</a></li>
+<li><a href="#choice-readout">免训练 choice-token 读出</a></li>
 <li><a href="#评测">📊 3. 基准测试结果</a></li>
 <li><a href="#推理效率">⏱️ 3.1 推理效率</a></li>
 <li><a href="#示例与测试环境">🕹️ 4. 示例与测试环境</a></li>
@@ -312,8 +305,36 @@ print(&quot;Probabilities:&quot;, answer[&quot;probabilities&quot;])
 <p>Pointer 和 direct-token 模型使用相同 API。Pointer 在上下文允许的范围内支持最多
 4,096 个选项，direct-token 最多支持 255 个。
 训练与准确率的取舍见<a href="TRAINING.html#pointer-and-direct-token-readouts">输出方式说明</a>。</p>
+<h3 id="choice-token">免训练 choice-token 读出 <a name="choice-readout"></a><a name="letter-readout"></a></h3>
+<p>Choice-token 是一种无需额外训练的读出方式，最多支持 52 个选项：用单 token 的
+<code>A–Z, a–z</code> 给选项编号，在回答位置读取这些 ID 的 logits 并重新归一化。
+它既可用于冻结的基座模型，也可叠加在 Pointer / Direct-Token checkpoint 上；
+与温度校准不同，它可能改变最终选出的答案。</p>
+<pre tabindex="0" role="region" aria-label="代码示例"><code class="language-bash">jevany eval --run SimpleJev/JevAny-Qwen3.5-4B-Direct-Token-LoRA \
+  --suite /path/to/suite --out runs/choice --device cuda --readout choice
+</code></pre>
+<p><a href="CHOICE_READOUT.html">方法、命令与完整结果</a> ·
+<a href="../files/results/choice-readout-v2.json">机器可读结果</a></p>
+<p><a href="CHOICE_READOUT.html#results"><img loading="lazy" alt="免训练 choice-token、checkpoint 原生读出、Transfer-dev 调参混合以及外部基线在 Typed Decisions 和 JevJudge 文本子集上的准确率" src="../files/docs/choice-readout-results.svg" /></a></p>
+<ul>
+<li><strong>最佳 4B 混合：</strong>Direct-Token 达到 Transfer <strong>79.83%</strong>、Typed <strong>67.65%</strong>、
+  JevJudge 文本 <strong>59.25%</strong>，比原生读出分别高 0.96、0.45 和 0.83 个点。</li>
+<li><strong>最佳 27B 混合：</strong>Pointer 达到 Transfer <strong>89.10%</strong>、Typed <strong>73.30%</strong>，
+  但 JevJudge 文本从 <strong>66.44% 降到 64.36%</strong>。</li>
+<li><strong>训练仍然重要：</strong>冻结的 4B 基座在 Typed 上只有 <strong>52.75%</strong>，
+  Direct-Token 将其提升到 <strong>64.80%</strong>。</li>
+</ul>
+<p>在开发集上只调一个混合权重，评测前冻结；仅当原生读出与 choice 读出的错误
+互补时才使用混合。温度只改变置信度，不改变 argmax。</p>
+<blockquote>
+<p><strong>指标说明：</strong>Cygnet 的 <strong>73.70</strong> 是 v1.5.4 在 1,624 条公开与封闭题目上的
+综合分，不是准确率；其可比的公开开发集准确率为 <strong>203/231（87.9%）</strong>。</p>
+</blockquote>
+<p><strong>核心结论：</strong>当瓶颈在于“把决策提取出来”而非推理能力时，choice-token 有帮助；
+只有在目标分布的留出数据上确有提升时才保留混合。</p>
 <h2 id="3">📊 3. 基准测试结果 <a name="评测"></a></h2>
-<p>JevAny-Qwen3.8-27B 在两项评测中准确率最高，NLL 和 Brier 也最低。
+<p>下表使用各 checkpoint 的原生读出方式。
+JevAny-Qwen3.8-27B 在两项评测中准确率最高，NLL 和 Brier 也最低。
 4B 版本中，direct-token 的 JevBench 准确率最高，Pointer 的 Transfer 准确率最高。</p>
 <p><a href="../zh.html#benchmarks">查看交互式评测结果</a></p>
 <div align="center">
@@ -336,20 +357,18 @@ NLL、Brier 和 ECE 均在 Transfer 上计算。
 </div>
 
 <p><a href="EVALUATION.html#model-family-v2">完整结果与评测协议</a> ·
-<a href="../files/results/model-family-v2.json">机器可读结果</a> ·
+<a href="../assets/data/model-family-v2.json">机器可读结果</a> ·
 <a href="../files/reports/JevAny_Tech_Report.pdf">方法与消融实验报告</a></p>
-<p>外部对比覆盖完整 Typed Decisions、JevJudge 3,220 条多模态全集及其 724 条
-文本切片。13 个模型在三个面板中保持同一顺序；<code>—</code> 表示不支持原生输入或
-没有对应结果。</p>
-<p><a href="../files/docs/external-zero-shot.svg"><img loading="lazy" alt="同一组十三个模型在 Typed Decisions、JevJudge 全集和 JevJudge 纯文本子集上的准确率" src="../files/docs/external-zero-shot.svg" /></a></p>
+<p>同一组 13 个模型按准确率在 Typed Decisions、JevJudge 全集（3,220 条多模态记录）
+及其 724 条文本子集上进行比较。<code>—</code> 表示不支持该输入或没有对应结果。</p>
+<p><a href="EXTERNAL_EVALUATION.html"><img loading="lazy" alt="同一组十三个模型在 Typed Decisions、JevJudge 全集和 JevJudge 纯文本子集上的准确率" src="../files/docs/external-zero-shot.svg" /></a></p>
 <ul>
-<li><strong>JevAny-Qwen3.8-27B：</strong>Typed 准确率 72.8%，JevJudge 全集准确率 <strong>62.3%</strong>，JevJudge 纯文本准确率 66.4%。</li>
-<li>五个 JevAny 版本都完成了 3,220/3,220 条原生文本、图片和视频评测，全集准确率为 51.5%–62.3%；最强完整开源 baseline 为 48.2%。</li>
-<li>JevJudge 纯文本子集中，Qwen3.8-27B 为 66.4%，Kev-27B 为 64.2%。Kev 没有原生图片/视频路径，因此全集为 <code>—</code>。</li>
-<li><strong>Jev 1.13（OpenRouter）：</strong>Typed 准确率 72.7%（公开报告），JevJudge 纯文本准确率 65.1%；由于 endpoint 仅支持文本，全集为 <code>—</code>。公开的 Decider 1（76.8%）和 Liquid d1（74.2%）在 Typed Decisions 上仍更高。</li>
+<li><strong>JevAny-Qwen3.8-27B：</strong>Typed 72.8%，JevJudge 全集 <strong>62.3%</strong>，文本子集 66.4%；
+  其他有全集结果的模型中最强的是 Jeff-Qwen3.5-2B，为 48.2%。</li>
+<li><strong>其他基线：</strong>Jev 1.13 的 Typed 为 72.7%，文本子集为 65.1%；Kev-27B
+  文本子集为 64.2%。公开的 Decider 1 和 Liquid d1 在 Typed 上领先，
+  分别为 76.8% 和 74.2%，但没有可比的全集结果。</li>
 </ul>
-<p>三个面板现在统一使用准确率。JevJudge 全集包含全部 3,220 条多模态记录，
-纯文本面板是其中 724 条记录的子集；官方 <code>skill_role</code> 只保留在详细评测说明中。</p>
 <p><a href="EXTERNAL_EVALUATION.html">完整外部结果</a> ·
 <a href="../files/results/external-zero-shot-v1.json">机器可读图表数据</a></p>
 <h3 id="31">⏱️ 3.1 推理效率 <a name="推理效率"></a></h3>
@@ -357,9 +376,8 @@ NLL、Brier 和 ECE 均在 Transfer 上计算。
 <strong>113.54 ms 降至 30.53 ms（3.72×）</strong>；融合 SDPA 加 CUDA Graph 将
 Muse-Glimmer-30B 从 <strong>100.71 ms 降至 43.25 ms（2.33×）</strong>。
 两次测量均未改变 argmax。下表对 27B 与 30B 使用 H200 headline 实测，
-对 4B 保留原有的同硬件 A100-40GB 对照。图中的菱形是 27B/30B 的 H200
-加速箭头，圆点是 A100 对照；H200 点不参与 A100 frontier。延迟仅可在
-同一行内比较。</p>
+对 4B 保留同硬件 A100-40GB 对照。每个加速比只在同一行内比较；H200
+与 A100 使用不同固定面板，不能横向比较绝对延迟。</p>
 <p><a href="EFFICIENCY.html"><img loading="lazy" alt="加速前后 JevAny 与其他决策模型的准确率-延迟对比" src="../files/docs/efficiency-latency.png" /></a></p>
 <div class="table-scroll" tabindex="0" role="region" aria-label="文档表格"><table>
 <thead>
@@ -407,7 +425,7 @@ Muse-Glimmer-30B 从 <strong>100.71 ms 降至 43.25 ms（2.33×）</strong>。
 <td style="text-align: right;">100.71 ms</td>
 <td style="text-align: right;"><strong>43.25 ms</strong></td>
 <td style="text-align: right;"><strong>2.33×</strong></td>
-<td style="text-align: right;">38/44 → 38/44</td>
+<td style="text-align: right;">86.36% → 86.36%</td>
 <td style="text-align: left;">Transfer 样本，44</td>
 </tr>
 <tr>
@@ -416,14 +434,14 @@ Muse-Glimmer-30B 从 <strong>100.71 ms 降至 43.25 ms（2.33×）</strong>。
 <td style="text-align: right;">113.54 ms</td>
 <td style="text-align: right;"><strong>30.53 ms</strong></td>
 <td style="text-align: right;"><strong>3.72×</strong></td>
-<td style="text-align: right;">207/231 → 207/231</td>
+<td style="text-align: right;">89.61% → 89.61%</td>
 <td style="text-align: left;">JevBench public，231</td>
 </tr>
 </tbody>
 </table></div>
 <p>中位模型调用延迟，串行 batch size 1。完整报告保留同硬件 A100 对照与面板限制。</p>
-<p><a href="EFFICIENCY.html"><img loading="lazy" alt="动图：JevAny-4B、4B-DT 与 Gemma-4B 的默认、kernel 加融合 SDPA、CUDA Graph 三个阶段在放慢二十倍的同一 A100 时钟上同时起跑；CUDA Graph 在 25–32 ms 完成，比默认快 3.3–4.1×" src="../files/docs/efficiency-ablation.gif" /></a></p>
-<p align="center"><sub>单张 A100-40GB 上的 4B 版本，Transfer-v9。每根进度条以真实时间的 1/20 增长，停在该阶段的中位延迟处。</sub></p>
+<p><a href="EFFICIENCY.html"><img loading="lazy" alt="动图：A100 上的 4B 版本与 H200 上的 27B、30B 版本使用逐行归一化延迟阶梯，并标出真实中位延迟和加速倍数" src="../files/docs/efficiency-ablation.gif" /></a></p>
+<p align="center"><sub>A100 上的 4B 与 H200 上的 27–30B。每行按各自 baseline 归一化，只在行内比较优化阶段。</sub></p>
 
 <p><a href="EFFICIENCY.html">完整表格、实验设置与其他模型</a> ·
 <a href="DEPLOYMENT.html#optional-cuda-acceleration">开启方法</a> ·
@@ -459,13 +477,13 @@ jevany demo --base-url http://127.0.0.1:8008 --text-only
 JevAny 决策可参考<a href="INTEGRATIONS.html">集成文档</a>。</p>
 <h2 id="5">🧩 5. 支持的模型系列 <a name="支持的模型系列"></a></h2>
 <p><a href="TRAINING.html#backbone-support">模型 ID、支持的输入与运行要求</a>。</p>
-<p><a href="TRAINING.html#backbone-support"><img loading="lazy" alt="支持的 26 个模型，涵盖 Qwen、Gemma、Muse、Mistral、GLM、Nemotron 和 Llama" src="../files/docs/supported-model-families.svg" /></a></p>
+<p><a href="../zh.html#supported-models"><img loading="lazy" alt="支持的 26 个模型，涵盖 Qwen、Gemma、Muse、Mistral、GLM、Nemotron 和 Llama" src="../files/docs/supported-model-families.svg" /></a></p>
 <h2 id="6">📚 6. 文档与贡献 <a name="文档与贡献"></a></h2>
-<p><a href="TRAINING.html">训练</a> · <a href="DEPLOYMENT.html">部署</a> · <a href="API.html">API</a> · <a href="DATA.html">数据</a> · <a href="EVALUATION.html">评测</a> · <a href="experiments-AGENT_HARNESS_FRONTIER_PROTOCOL.html">Agent harness 协议</a> · <a href="contributing.html">贡献指南</a></p>
+<p><a href="../zh.html#documentation">文档总览</a> · <a href="TRAINING.html">训练</a> · <a href="DEPLOYMENT.html">部署</a> · <a href="API.html">API</a> · <a href="DATA.html">数据</a> · <a href="EVALUATION.html">评测</a> · <a href="experiments-AGENT_HARNESS_FRONTIER_PROTOCOL.html">Agent harness 协议</a> · <a href="contributing.html">贡献指南</a></p>
 <p><a href="../files/reports/JevAny_Tech_Report.pdf">技术报告</a>介绍了模型设计、多模态路径、
 agent-harness 实验与附录、负面结果和开放问题。</p>
 <p>代码和入门数据采用 Apache-2.0。部分组件改编自 <a href="https://github.com/jaredpalmer/kev">Kev</a>，
-归属说明见 <a href="../files/NOTICE">NOTICE</a> 和 <a href="ACKNOWLEDGEMENTS.html">ACKNOWLEDGEMENTS.md</a>。
+归属说明见 <a href="../files/NOTICE">NOTICE</a> 和 <a href="ACKNOWLEDGEMENTS.html">致谢与归属</a>。
 基座模型与上游数据集保留各自条款。</p>
 <h3 id="_3">🤝 参与贡献 <a name="contributing"></a></h3>
 <p>我们正在建设面向 System 1 决策模型的开源基础设施，欢迎你一起参与。

@@ -208,7 +208,9 @@ def training_requests(a, tok, manifest, model, inputs=None):
         reqs = kept
     if not reqs:
         raise ValueError("empty training set")
-    eval_only = set(EVAL_ONLY) | set(manifest.get("eval_only_sources", []) if manifest else [])
+    eval_only = set(EVAL_ONLY)
+    if manifest:
+        eval_only |= set(manifest.get("eval_only_sources", [])) | set(manifest.get("holdout_sources", []))
     forbidden = {r["_meta"]["source"] for r in reqs} & eval_only
     if forbidden:
         raise ValueError(f"training data contains eval-only sources: {sorted(forbidden)}")
@@ -329,7 +331,8 @@ def parse_args(argv=None, *, parser_class=argparse.ArgumentParser):
     ap.add_argument("--lora", type=int, default=16)
     ap.add_argument("--decision_mode", choices=("pointer", "lm_token"), default="pointer",
                     help="pointer head or next-token prediction through the frozen original LM head")
-    ap.add_argument("--rlcr", action="store_true", help="optimize correctness plus Brier reward over noisy pointer distributions")
+    ap.add_argument("--rlcr", action=argparse.BooleanOptionalAction, default=False,
+                    help="optimize correctness plus Brier reward over noisy pointer distributions")
     ap.add_argument("--rlcr_group_size", type=int, default=32, help="noisy answer-confidence candidates per question")
     ap.add_argument("--rlcr_sigma_start", type=float, default=0.4, help="initial standard deviation of pointer-logit exploration")
     ap.add_argument("--rlcr_sigma_end", type=float, default=0.1, help="final standard deviation of pointer-logit exploration")
@@ -346,7 +349,8 @@ def parse_args(argv=None, *, parser_class=argparse.ArgumentParser):
     ap.add_argument("--option_isolation", type=int, choices=[0, 1], default=0, help="option spans are isolated sub-branches with shared positions (exact permutation invariance)")
     ap.add_argument("--special_embeddings", type=int, choices=[0, 1], default=0,
                     help="also train existing delimiter embeddings; newly added delimiters are always trained")
-    ap.add_argument("--multimodal", action="store_true", help="use the base model's native media adapter")
+    ap.add_argument("--multimodal", action=argparse.BooleanOptionalAction, default=False,
+                    help="use the base model's native media adapter")
     ap.add_argument("--max_state", type=int, default=MAX_STATE, help="maximum state tokens admitted for training")
     ap.add_argument("--max_branch", type=int, default=MAX_BRANCH, help="maximum tokens in one state-plus-question branch")
     ap.add_argument("--max_packed", type=int, default=MAX_PACKED, help="maximum tokens in one packed training record")
@@ -370,7 +374,8 @@ def parse_args(argv=None, *, parser_class=argparse.ArgumentParser):
                                                "use --out for a new output directory")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--max_steps", type=int, default=0, help="stop after this many optimizer steps; 0 runs the full schedule")
-    ap.add_argument("--eval_before_start", action="store_true", help="score the evaluation suite before the first optimizer step")
+    ap.add_argument("--eval_before_start", action=argparse.BooleanOptionalAction, default=False,
+                    help="score the evaluation suite before the first optimizer step")
     ap.add_argument("--eval_every_steps", type=int, default=0, help="score after every N optimizer steps and at the final step; 0 disables periodic evaluation")
     ap.add_argument("--eval_records", type=int, default=0, help="deterministic record limit per evaluation split; 0 uses the full split")
     ap.add_argument("--eval_suite", default="", help="suite to score during training; defaults to --suite")
@@ -594,7 +599,7 @@ def wandb_eval_metrics(summary):
 
 def pinned_revision(a, manifest):
     """The base commit this run trains against: the suite's pin, or --base_revision when the suite has none."""
-    revision = manifest["base_revisions"].get(a.base) if manifest else None
+    revision = manifest.get("base_revisions", {}).get(a.base) if manifest else None
     if a.base_revision:
         if revision and revision != a.base_revision: raise ValueError("--base_revision conflicts with the suite's pinned revision")
         revision = a.base_revision
@@ -678,7 +683,7 @@ def main(argv=None, *, parser_class=argparse.ArgumentParser):
         torch.backends.cuda.matmul.allow_tf32 = True; torch.backends.cudnn.allow_tf32 = True
     autocast = torch.autocast("cuda", dtype=torch.bfloat16) if a.dtype == "bf16" else contextlib.nullcontext()
     revision = pinned_revision(a, manifest)
-    holdout = manifest["holdout_sources"] if manifest else []
+    holdout = manifest.get("holdout_sources", []) if manifest else []
     model_source = a.base_load_path or a.base
     load_revision = None if a.base_load_path else revision
     initial_checkpoint = Checkpoint(a.resume or a.init_from) if a.resume or a.init_from else None

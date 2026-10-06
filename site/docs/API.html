@@ -57,6 +57,8 @@ Training data adds a label and optionally a soft target to each question.</p>
 </tr>
 </tbody>
 </table></div>
+<p><code>noul</code> criteria may describe either or both of <code>false</code> and <code>true</code>. Other keys
+are rejected so a misspelled description cannot silently disappear.</p>
 <p>Responses contain <code>model</code>, <code>answers</code> keyed by the same question IDs, and <code>usage</code>
 with <code>input_tokens</code> and <code>output_tokens</code>. JevAny also reports <code>latency_ms</code>.
 <code>output_tokens</code> counts the serialized answer; the model does not decode text.
@@ -90,6 +92,9 @@ branch layout, context window, media types, active token limits and prefix-cache
 support/statistics. The HTTP description also includes the server's media-file
 policy. Requests exceeding those limits return HTTP 422 without truncation.
 See <a href="DEPLOYMENT.html#inference-settings">DEPLOYMENT.md</a> for configuration.</p>
+<p>Both <code>JevModel</code> and <code>JevClient</code> provide <code>models()</code>, returning a list of model
+descriptions. Local inference returns its single loaded model; HTTP inference
+queries the deployment and includes its server-specific policy.</p>
 <h2 id="compatibility-with-jev">Compatibility with Jev</h2>
 <p>The reference is TypeSafe's <a href="https://docs.typesafe.ai/api">HTTP API</a> and
 <a href="https://docs.typesafe.ai/sdk/python/usage">Python SDK</a>, checked on September 26,

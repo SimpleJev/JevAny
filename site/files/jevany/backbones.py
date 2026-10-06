@@ -498,7 +498,11 @@ def get_backbone_adapter(name: str = "auto", *, multimodal: bool = False,
     module, separator, attribute = name.partition(":")
     if not separator or not module or not attribute:
         raise ValueError(f"backbone_adapter must be auto, {', '.join(builtins)}, or module:Class")
-    adapter_class = getattr(importlib.import_module(module), attribute)
+    try:
+        adapter_class = getattr(importlib.import_module(module), attribute)
+    except (ImportError, AttributeError) as error:
+        raise ValueError(f"cannot load backbone_adapter {name!r}: {error}; "
+                         "check the module:Class name and install the adapter's dependencies") from error
     if not isinstance(adapter_class, type) or not issubclass(adapter_class, BackboneAdapter):
         raise ValueError(f"{name} must subclass jevany.backbones.BackboneAdapter")
     return adapter_class()

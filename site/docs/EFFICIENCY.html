@@ -19,10 +19,11 @@
 <main id="content" class="doc-content"><p class="eyebrow">JEVANY / DOCUMENTATION</p><h1>Inference efficiency</h1><p>Measured accuracy and per-request latency of the JevAny releases and other
 decision models before and after inference acceleration. The 27B and 30B
 headline rows use their best single-H200 measurements; the 4B and third-party
-comparison remains on A100-SXM4-40GB. The figure shows the H200 runs as diamond
-before/after pairs and excludes them from the A100 Pareto frontier: compare
-latency only within a before/after row, never across hardware or panels. How to enable each option is described
-in <a href="DEPLOYMENT.html#optional-cuda-acceleration">Optional CUDA acceleration</a>.
+comparison remains on A100-SXM4-40GB. All JevAny runs use the same blue circle
+before/after style; the figure labels H200 runs and excludes them from the A100
+Pareto frontier. Compare latency only within a before/after row, never across
+hardware or panels. How to enable each option is described in
+<a href="DEPLOYMENT.html#optional-cuda-acceleration">Optional CUDA acceleration</a>.
 The plotted data are in
 <a href="../files/results/efficiency-h200-best-v1.json"><code>results/efficiency-h200-best-v1.json</code></a>
 and <a href="../files/results/efficiency-a100-v1.json"><code>results/efficiency-a100-v1.json</code></a>.</p>
@@ -71,7 +72,7 @@ absolute latency and accuracy are not directly comparable. See the
 <a href="DEPLOYMENT.html#optional-cuda-acceleration">serving configuration</a>.</p>
 <p>The A100-40GB comparison below keeps the 4B JevAny rows and third-party models
 on one hardware class. The figure overlays the current 27B and 30B one-H200
-measurements with distinct diamonds but does not include them in the A100
+measurements with explicit H200 labels but does not include them in the A100
 frontier. Historical layer-sharded A100 measurements for those releases remain
 in the machine-readable source and are omitted from the tables and plot.</p>
 <div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>

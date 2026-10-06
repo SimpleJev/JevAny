@@ -1,0 +1,539 @@
+{
+  "schema_version": 1,
+  "artifact": "letter-readout-v1",
+  "date": "2026-10-01",
+  "reproduction_code_revision": "6c3519560334a2f8aed8bb137f718f0c67ccb03e",
+  "runtime_versions": {
+    "python": "3.12.14",
+    "torch": "2.14.0+cu130",
+    "transformers": "5.17.0",
+    "peft": "0.21",
+    "cuda": "13.0"
+  },
+  "method": {
+    "source": "blockbrain-ai/cygnet-recipe",
+    "source_commit": "3cf591c692dec649f7c134449814610307c7bb3a",
+    "system_prompt_sha256": "547f5cb476dc1d82a769f3f59e22fe0f216569064afb2545ed655b39dae97ca1",
+    "prompt_format_version": 1,
+    "letter_constraint": "exact decoded uppercase option-letter tokens",
+    "temperature": 1.0,
+    "readouts": {
+      "native": "released JevAny pointer distribution",
+      "letter": "Cygnet-compatible option-letter distribution",
+      "fixed_blend_0_5": "equal-weight log-linear pool of native and letter distributions"
+    },
+    "calibration_note": "No calibration temperature was fitted. Probability metrics are T=1 diagnostics; fit temperature separately for every model, readout, and deployment domain.",
+    "latency_note": "The included latency diagnostic is one warmed, single-concurrency pass over a heterogeneous panel, not saturated server throughput or a general native-pointer speed claim."
+  },
+  "checkpoints": {
+    "JevAny-Qwen3.5-4B": {
+      "repository": "SimpleJev/JevAny-Qwen3.5-4B-LoRA",
+      "revision": "1c7aa9bab14ac347aeb917c0bcd757838a8a78ce",
+      "adapter_model_sha256": "5acbaec8d554517250bf9c626b3f4b9e2ec31fc67957f3486aa72e2c91ee907f",
+      "head_sha256": "e5ea982efd06ecaf71b493045ebccdbfdca39f6fe128de164bf636d73152cd44",
+      "chat_template_file_sha256": "a4aee8afcf2e0711942cf848899be66016f8d14a889ff9ede07bca099c28f715",
+      "base_repository": "Qwen/Qwen3.5-4B",
+      "base_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a"
+    },
+    "JevAny-Qwen3.8-27B": {
+      "repository": "SimpleJev/JevAny-Qwen3.8-27B-LoRA",
+      "revision": "09c9e9102d5b8cc7d56558d25da1202a761b6c0d",
+      "adapter_model_sha256": "f4b835f4f7be78a819067dac226feaad2fc7b9eb0b968c5e6e665ad5328e6731",
+      "head_sha256": "f78fa283f7e979ce418c5b137d24459350fecaea73e5766894532c1cd99684c7",
+      "chat_template_file_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+      "base_repository": "Qwen/Qwen3.8-27B",
+      "base_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
+    }
+  },
+  "statistical_test": {
+    "name": "paired exact McNemar test",
+    "alternative": "two-sided",
+    "alpha": 0.05,
+    "unit": "question",
+    "multiple_comparison_correction": false
+  },
+  "benchmarks": {
+    "jevbench_public": {
+      "suite": "jevbench-public-v1.4.2.2",
+      "suite_sha256": "b6d6eb34fdbbf46ec11be8657da5e513e3538990d7a00ca5582c55d8bd7941c6",
+      "status": "public development diagnostic; not a sealed Benchmark Heaven score",
+      "metric": "accuracy",
+      "questions": 231,
+      "tiers": {
+        "easy": 48,
+        "original": 72,
+        "hard": 111
+      },
+      "models": [
+        {
+          "model": "JevAny-Qwen3.5-4B",
+          "base_letter": {
+            "n": 231,
+            "correct": 184,
+            "accuracy": 0.7965367965367965,
+            "nll": 0.4631228783151049,
+            "brier": 0.25911242467062046,
+            "ece": 0.0505181019529289,
+            "tier_accuracy": {
+              "easy": 1.0,
+              "original": 0.9027777777777778,
+              "hard": 0.6396396396396397
+            }
+          },
+          "native": {
+            "n": 231,
+            "correct": 185,
+            "accuracy": 0.8008658008658008,
+            "nll": 0.45442260797755696,
+            "brier": 0.2580561954112597,
+            "ece": 0.04133161157562565,
+            "tier_accuracy": {
+              "easy": 1.0,
+              "original": 0.9583333333333334,
+              "hard": 0.6126126126126126
+            }
+          },
+          "letter": {
+            "n": 231,
+            "correct": 188,
+            "accuracy": 0.8138528138528138,
+            "nll": 0.475148694944674,
+            "brier": 0.25513853613313997,
+            "ece": 0.0617453116217458,
+            "tier_accuracy": {
+              "easy": 1.0,
+              "original": 0.9027777777777778,
+              "hard": 0.6756756756756757
+            }
+          },
+          "fixed_blend_0_5": {
+            "n": 231,
+            "correct": 189,
+            "accuracy": 0.8181818181818182,
+            "nll": 0.41445873918667836,
+            "brier": 0.234810495757078,
+            "ece": 0.021174767184223755,
+            "tier_accuracy": {
+              "easy": 1.0,
+              "original": 0.9861111111111112,
+              "hard": 0.6306306306306306
+            }
+          },
+          "paired_vs_native": {
+            "letter": {
+              "accuracy_delta": 0.012987012987012991,
+              "candidate_wins": 21,
+              "native_wins": 18,
+              "p_value": 0.7492586247608415,
+              "significant_at_0_05": false
+            },
+            "fixed_blend_0_5": {
+              "accuracy_delta": 0.01731601731601734,
+              "candidate_wins": 9,
+              "native_wins": 5,
+              "p_value": 0.4239501953125,
+              "significant_at_0_05": false
+            }
+          }
+        },
+        {
+          "model": "JevAny-Qwen3.8-27B",
+          "base_letter": {
+            "n": 231,
+            "correct": 204,
+            "accuracy": 0.8831168831168831,
+            "nll": 0.2809382817846397,
+            "brier": 0.15819298805247695,
+            "ece": 0.044271003248192484,
+            "tier_accuracy": {
+              "easy": 1.0,
+              "original": 0.9722222222222222,
+              "hard": 0.7747747747747747
+            }
+          },
+          "native": {
+            "n": 231,
+            "correct": 207,
+            "accuracy": 0.8961038961038961,
+            "nll": 0.26570337431580426,
+            "brier": 0.14572868090483335,
+            "ece": 0.030530201085675602,
+            "tier_accuracy": {
+              "easy": 1.0,
+              "original": 0.9722222222222222,
+              "hard": 0.8018018018018018
+            }
+          },
+          "letter": {
+            "n": 231,
+            "correct": 207,
+            "accuracy": 0.8961038961038961,
+            "nll": 0.3515797677898147,
+            "brier": 0.1695199125393134,
+            "ece": 0.12640311217412123,
+            "tier_accuracy": {
+              "easy": 1.0,
+              "original": 0.9722222222222222,
+              "hard": 0.8018018018018018
+            }
+          },
+          "fixed_blend_0_5": {
+            "n": 231,
+            "correct": 208,
+            "accuracy": 0.9004329004329005,
+            "nll": 0.2636569307260041,
+            "brier": 0.14034952266153655,
+            "ece": 0.06953187802823836,
+            "tier_accuracy": {
+              "easy": 1.0,
+              "original": 0.9722222222222222,
+              "hard": 0.8108108108108109
+            }
+          },
+          "paired_vs_native": {
+            "letter": {
+              "accuracy_delta": 0.0,
+              "candidate_wins": 9,
+              "native_wins": 9,
+              "p_value": 1.0,
+              "significant_at_0_05": false
+            },
+            "fixed_blend_0_5": {
+              "accuracy_delta": 0.004329004329004405,
+              "candidate_wins": 3,
+              "native_wins": 2,
+              "p_value": 1.0,
+              "significant_at_0_05": false
+            }
+          }
+        }
+      ]
+    },
+    "transfer_v9": {
+      "suite_sha256": "3c4f0be94509a3612678bfd3a30fd99a8d0ca3c47ddfe7318075d95b2fa365e4",
+      "metric": "accuracy on clean knowable decisions",
+      "requested_records": 1264,
+      "evaluated_records": 1264,
+      "rejected_records": 0,
+      "truncated_records": 0,
+      "headline_questions": 1046,
+      "models": [
+        {
+          "model": "JevAny-Qwen3.5-4B",
+          "native": {
+            "n": 1046,
+            "correct": 828,
+            "accuracy": 0.7915869980879541,
+            "nll": 0.5877457985391399,
+            "brier": 0.2972167250996349,
+            "ece": 0.036424981202196914
+          },
+          "letter": {
+            "n": 1046,
+            "correct": 792,
+            "accuracy": 0.7571701720841301,
+            "nll": 0.6716972193190026,
+            "brier": 0.32576146845273224,
+            "ece": 0.061751545920484985
+          },
+          "fixed_blend_0_5": {
+            "n": 1046,
+            "correct": 827,
+            "accuracy": 0.7906309751434034,
+            "nll": 0.5716307883108727,
+            "brier": 0.29130966228619243,
+            "ece": 0.03757660614637802
+          },
+          "paired_vs_native": {
+            "letter": {
+              "accuracy_delta": -0.03441682600382404,
+              "candidate_wins": 51,
+              "native_wins": 87,
+              "p_value": 0.002754339804126484,
+              "significant_at_0_05": true
+            },
+            "fixed_blend_0_5": {
+              "accuracy_delta": -0.0009560229445507045,
+              "candidate_wins": 26,
+              "native_wins": 27,
+              "p_value": 1.0,
+              "significant_at_0_05": false
+            }
+          }
+        },
+        {
+          "model": "JevAny-Qwen3.8-27B",
+          "native": {
+            "n": 1046,
+            "correct": 902,
+            "accuracy": 0.8623326959847036,
+            "nll": 0.3863649187288014,
+            "brier": 0.1942561077448677,
+            "ece": 0.02528382473974791
+          },
+          "letter": {
+            "n": 1046,
+            "correct": 881,
+            "accuracy": 0.8422562141491395,
+            "nll": 0.5167269483176647,
+            "brier": 0.24446446414919487,
+            "ece": 0.11282022966565261
+          },
+          "fixed_blend_0_5": {
+            "n": 1046,
+            "correct": 909,
+            "accuracy": 0.8690248565965584,
+            "nll": 0.377675156113577,
+            "brier": 0.19052938078239018,
+            "ece": 0.036284144481691503
+          },
+          "paired_vs_native": {
+            "letter": {
+              "accuracy_delta": -0.020076481835564097,
+              "candidate_wins": 36,
+              "native_wins": 57,
+              "p_value": 0.03751423180190034,
+              "significant_at_0_05": true
+            },
+            "fixed_blend_0_5": {
+              "accuracy_delta": 0.006692160611854813,
+              "candidate_wins": 23,
+              "native_wins": 16,
+              "p_value": 0.3367836351899314,
+              "significant_at_0_05": false
+            }
+          }
+        }
+      ]
+    }
+  },
+  "latency_diagnostic": {
+    "status": "scoped diagnostic; not a saturated server throughput benchmark",
+    "hardware": "1x NVIDIA H200",
+    "dtype": "bfloat16",
+    "runtime": "local fused serving path with Flash and memory-efficient SDPA enabled",
+    "suite": "jevbench-public-v1.4.2.2",
+    "split_sha256": "b6d6eb34fdbbf46ec11be8657da5e513e3538990d7a00ca5582c55d8bd7941c6",
+    "panel_id_sha256": "3cac6d401ca18059628f0f48c8d7f974cbbea020f39f28109eaf84bd1a0f22e1",
+    "records": 231,
+    "warmup_requests": 16,
+    "repeats": 1,
+    "concurrency": 1,
+    "timing": "external end-to-end milliseconds; includes local preprocessing, tokenization, model path, and output construction; excludes loading, warmup, network transport, and report writing",
+    "logical_input_tokens": {
+      "native": {
+        "mean": 602.025974025974,
+        "median": 99,
+        "max": 3897
+      },
+      "letter": {
+        "mean": 700.8398268398269,
+        "median": 182,
+        "max": 3946
+      },
+      "fixed_blend_0_5": {
+        "mean": 1302.8658008658008,
+        "median": 281,
+        "max": 7843
+      }
+    },
+    "models": [
+      {
+        "model": "JevAny-Qwen3.5-4B",
+        "native": {
+          "median_ms": 138.4339111391455,
+          "p95_ms": 200.98442258313298,
+          "mean_ms": 133.74752986337586,
+          "peak_allocated_bytes": 10021437440,
+          "median_latency_ratio_to_native": 1.0
+        },
+        "letter": {
+          "median_ms": 131.85732485726476,
+          "p95_ms": 201.55409048311412,
+          "mean_ms": 130.8248970028642,
+          "peak_allocated_bytes": 9842842112,
+          "median_latency_ratio_to_native": 0.9524929532961737,
+          "median_speedup_vs_native": 1.0498765335107463
+        },
+        "fixed_blend_0_5": {
+          "median_ms": 250.34381286241114,
+          "p95_ms": 388.30500945914537,
+          "mean_ms": 251.30071151533943,
+          "peak_allocated_bytes": 10020296704,
+          "median_latency_ratio_to_native": 1.8083994795955776
+        }
+      },
+      {
+        "model": "JevAny-Qwen3.8-27B",
+        "native": {
+          "median_ms": 194.70059918239713,
+          "p95_ms": 477.6672748848796,
+          "mean_ms": 226.86528650644635,
+          "peak_allocated_bytes": 53929026560,
+          "median_latency_ratio_to_native": 1.0
+        },
+        "letter": {
+          "median_ms": 181.58296099863946,
+          "p95_ms": 492.5091170007363,
+          "mean_ms": 220.06513983982884,
+          "peak_allocated_bytes": 53532195328,
+          "median_latency_ratio_to_native": 0.9326266162567433,
+          "median_speedup_vs_native": 1.0722404685528613
+        },
+        "fixed_blend_0_5": {
+          "median_ms": 367.3998380545527,
+          "p95_ms": 943.4415440773591,
+          "mean_ms": 440.10652201673525,
+          "peak_allocated_bytes": 53931445248,
+          "median_latency_ratio_to_native": 1.8869990107753571
+        }
+      }
+    ]
+  },
+  "official_cygnet_reference": {
+    "benchmark": "JevBench v1.5.4",
+    "decisions": 1624,
+    "open_decisions": 904,
+    "sealed_decisions": 720,
+    "score": 73.7013,
+    "display_score": 73.70,
+    "confidence_interval_95": [
+      72.36,
+      74.46
+    ],
+    "metric": "equal-weight harmonic mean of Intelligence, Calibration, Speed, and Cost",
+    "axes": {
+      "intelligence": 71.09,
+      "calibration": 87.01,
+      "speed": 90.97,
+      "cost": 56.43
+    },
+    "rank": 1,
+    "systems": 106,
+    "statistical_result": "tie with Winnow-12B Q8",
+    "comparable_to_accuracy": false,
+    "report": "https://github.com/blockbrain-ai/cygnet-recipe/pull/4",
+    "leaderboard": "https://benchmarkheaven.com/jev-models/v1.5.4"
+  },
+  "interpretation": [
+    "No observed positive accuracy gain over native is significant at alpha=0.05.",
+    "The fixed 0.5 blend improves 27B Transfer-v9 accuracy by 0.67 points but is neutral on 4B, so the blend is model- and domain-dependent.",
+    "Letter-only readout is a Transfer-v9 counterexample: it loses 3.44 points at 4B and 2.01 points at 27B versus native.",
+    "Calibration must be fitted per model, readout, and target domain; Cygnet's fitted temperature is not transferred.",
+    "On one warmed single-concurrency H200 panel, letter-only improves median latency by 1.05x at 4B and 1.07x at 27B, but does not improve p95 latency.",
+    "The fixed blend runs two prefills and costs 1.81x and 1.89x native median latency at 4B and 27B, respectively."
+  ],
+  "provenance": {
+    "artifact_root": "runs/cygnet-letter-20261001",
+    "reports": [
+      {
+        "path": "qwen35-4b-base-exact-full-v1/report.json",
+        "sha256": "bcc04848e3b88d63a74d8e4f590411795520b9eaaa4e5ff6769e3b3c76ff7de5",
+        "rows_path": "qwen35-4b-base-exact-full-v1/rows.json",
+        "rows_sha256": "b3a7928de7b10df647528f701e0cb385828a3b6057a53d0ef55c00caff8ede42"
+      },
+      {
+        "path": "qwen35-4b-adapter-exact-full-v1/report.json",
+        "sha256": "db83c027aec03fd9bc28f288bb0323e3fb3c3bc1945bb9127313d37d06e29e10",
+        "rows_path": "qwen35-4b-adapter-exact-full-v1/rows.json",
+        "rows_sha256": "765332825593ec3bcc57234b048cdbd7b8faf78113f0e0cd3c41692a0233fcc5"
+      },
+      {
+        "path": "qwen35-4b-adapter-exact-pointer50-full-v1/report.json",
+        "sha256": "d0cf0e5337502996a7741258a143de6b80bbf4e59b8eca209d4a08cafa745d6a",
+        "rows_path": "qwen35-4b-adapter-exact-pointer50-full-v1/rows.json",
+        "rows_sha256": "911bc02c4963b8f08fc25086e497593811f5ca6f4f2a45d1e2e52e2940101328"
+      },
+      {
+        "path": "qwen35-4b-adapter-exact-pointer100-full-v1/report.json",
+        "sha256": "9fd6f3704c9be14f6a34a87d41c3bd148399e837dff34635e0908f3943d4c2b6",
+        "rows_path": "qwen35-4b-adapter-exact-pointer100-full-v1/rows.json",
+        "rows_sha256": "9df36db67c009575d05e6d0946f2f4fcd516f146ba0760559db12d345b607b6f"
+      },
+      {
+        "path": "qwen38-27b-base-exact-full-v2/report.json",
+        "sha256": "2bcd083debd1b99af00ac9d78b9d8d438e8f6ba35a0084020b984825a8a647e1",
+        "rows_path": "qwen38-27b-base-exact-full-v2/rows.json",
+        "rows_sha256": "fcfdefcd1fbb4fb076264c8c263c67aaacc7e7eb492cd51b4c61e4eb2a059cb0"
+      },
+      {
+        "path": "qwen38-27b-adapter-exact-full-v2/report.json",
+        "sha256": "f9d4b9495a60746b8e3bc1f5883f13d84637fbb14cdf874a48a9136b3822afc7",
+        "rows_path": "qwen38-27b-adapter-exact-full-v2/rows.json",
+        "rows_sha256": "b69188f878241aad9596b998d703b4c4532dc593cfe596ba6fc736b4d47935b5"
+      },
+      {
+        "path": "qwen38-27b-adapter-exact-pointer50-full-v2/report.json",
+        "sha256": "6f905d5779fd5af5c99acda05d03aca00fb55c52d7175a5daf398599329d6ebb",
+        "rows_path": "qwen38-27b-adapter-exact-pointer50-full-v2/rows.json",
+        "rows_sha256": "b2f79402cd8c9410bfd38246589a21f376b2f00b3632a87005cf34f1010f7ee8"
+      },
+      {
+        "path": "qwen38-27b-adapter-exact-pointer100-full-v1/report.json",
+        "sha256": "d0b42b68053fa633679cca2c7c07cf2e6ae8b4527416944e00d4092f833a1c5a",
+        "rows_path": "qwen38-27b-adapter-exact-pointer100-full-v1/rows.json",
+        "rows_sha256": "ad17e1f5c098714177503450f859fef88b9d848127056faaecec4bb692d65e38"
+      },
+      {
+        "path": "transfer-v9/qwen35-4b-native-v1/report.json",
+        "sha256": "0eeb5594957df789f7ece7d4c8959c134246d0119de9cf41101cf74cf3971eae",
+        "rows_path": "transfer-v9/qwen35-4b-native-v1/rows.json",
+        "rows_sha256": "7ce780a4e4e50d9edb4aa4a8f0ff0d92aea0101c2edd25b50e883a4f85da5e28"
+      },
+      {
+        "path": "transfer-v9/qwen35-4b-letter-v1/report.json",
+        "sha256": "1659f76e86cc12b2fac978a47b204a101d7e9068901c68e0bf362b8ceaa5cb95",
+        "rows_path": "transfer-v9/qwen35-4b-letter-v1/rows.json",
+        "rows_sha256": "e7eb4b99debf4ba98c84016624075c675bed731c855a37d98a07c678c0672bcb"
+      },
+      {
+        "path": "transfer-v9/qwen35-4b-blend50-v1/report.json",
+        "sha256": "d43f80f1294ef3a65af37a588c4fe5c29743f366006611e44a3b2631944163ee",
+        "rows_path": "transfer-v9/qwen35-4b-blend50-v1/rows.json",
+        "rows_sha256": "410b01e59fa62b7979f892af817a8ebe331f214982f3ba307b477db1356829a3"
+      },
+      {
+        "path": "transfer-v9/qwen38-27b-native-v1/report.json",
+        "sha256": "ccd5dd46725ca307fe0d61416a7f07b17f3772e66ba5ce4e02903a0f198a746d",
+        "rows_path": "transfer-v9/qwen38-27b-native-v1/rows.json",
+        "rows_sha256": "ddc98779c54bdcdf0760a6b1d7d9d44b70e6cee8fbf9e7e42343adc7af533981"
+      },
+      {
+        "path": "transfer-v9/qwen38-27b-letter-v1/report.json",
+        "sha256": "aabc700df164df6df462f582110150ac3b4819da5690887e41f401ff8017d6fa",
+        "rows_path": "transfer-v9/qwen38-27b-letter-v1/rows.json",
+        "rows_sha256": "3a92b08dc3b067350f34cabb1093ce36107a5360aaefbe9222beede92fdfd39f"
+      },
+      {
+        "path": "transfer-v9/qwen38-27b-blend50-v1/report.json",
+        "sha256": "3c13796402b5a91a0c6305d4e0dc6cfad8c5abeb7c1bc3577a60099dc640d60f",
+        "rows_path": "transfer-v9/qwen38-27b-blend50-v1/rows.json",
+        "rows_sha256": "eb44684c318916e00c628c37d742c4934b4b310e24feb337409f42ef91191253"
+      },
+      {
+        "path": "latency/qwen35-4b-native-v1.json",
+        "sha256": "0be85e30cd564417578e2ad4e9fe5ee1fff09ba4e4b4d3048739e81361193156"
+      },
+      {
+        "path": "latency/qwen35-4b-letter-v1.json",
+        "sha256": "da740e7ec2374e7d7a0fda74a12e40f587dcc358259139f84780ee140d5f5ff6"
+      },
+      {
+        "path": "latency/qwen35-4b-blend50-v1.json",
+        "sha256": "7c1aa6d2419f5fba7b703d3e1a576dea6fc1fc2cd765c55a2ef3429e96958c4b"
+      },
+      {
+        "path": "latency/qwen38-27b-native-v1.json",
+        "sha256": "89fdcbef9de248b487392736a45a4dcaaa55bff62f19fd0b555ffce3489cf09e"
+      },
+      {
+        "path": "latency/qwen38-27b-letter-v1.json",
+        "sha256": "da4c20e6372f837e4344bd2578cdca5cf9f4ceb354c0f6a39649a873e960edd4"
+      },
+      {
+        "path": "latency/qwen38-27b-blend50-v1.json",
+        "sha256": "ef7bda3bec2ed171b6f7adef030789916be6639089ac1b9e2044b88b8834baae"
+      }
+    ]
+  }
+}

@@ -1,0 +1,2672 @@
+{
+  "schema_version": 2,
+  "artifact": "choice-readout-v2",
+  "title": "Training-free choice-token readout evaluation",
+  "generated_by": "scripts/build_choice_readout_results.py",
+  "method": {
+    "readout": "Constrain the next token to exact one-character option IDs and renormalize their probability mass; this can change argmax decisions.",
+    "training": "No additional training for the choice-token readout.",
+    "option_ids": "A-Z followed by a-z; at most 52 options.",
+    "calibration": "Scalar temperature changes probabilities but not argmax accuracy.",
+    "ensemble": "Native + choice configurations use log-linear/geometric pooling."
+  },
+  "protocol_groups": {
+    "zero_shot": {
+      "meaning": "No Typed, JevJudge, JevBench, or Transfer-test labels tune the readout configuration.",
+      "configurations": [
+        "choice_t1",
+        "native_shipped",
+        "fixed_blend_0_5"
+      ]
+    },
+    "transfer_dev_tuned": {
+      "meaning": "Weight and additional temperature are selected only on Transfer-v9 development, then frozen for every displayed evaluation panel.",
+      "configurations": [
+        "transfer_dev_calibrated_choice",
+        "transfer_dev_tuned_blend"
+      ],
+      "accuracy_note": "Temperature-only calibrated choice has the same hard accuracy as choice_t1; only a changed blend weight can change its argmax."
+    }
+  },
+  "expected_counts": {
+    "transfer_calibration": {
+      "label": "Transfer-v9 development",
+      "role": "selection_only",
+      "records": 1264,
+      "questions": 1264,
+      "headline_n": 1046
+    },
+    "transfer_test": {
+      "label": "Transfer-v9 test",
+      "role": "held_out_evaluation",
+      "records": 1264,
+      "questions": 1264,
+      "headline_n": 1046
+    },
+    "typed_test": {
+      "label": "Typed Decisions test",
+      "role": "held_out_external_evaluation",
+      "records": 400,
+      "questions": 2000,
+      "headline_n": 2000
+    },
+    "jevbench_public": {
+      "label": "JevBench public development",
+      "role": "public_diagnostic_not_used_for_selection",
+      "records": 231,
+      "questions": 231,
+      "headline_n": 231
+    },
+    "jevjudge_text": {
+      "label": "JevJudge text",
+      "role": "held_out_external_evaluation",
+      "records": 724,
+      "questions": 724,
+      "headline_n": 724
+    }
+  },
+  "dataset_hashes": {
+    "jevbench_development_sha256": "b6d6eb34fdbbf46ec11be8657da5e513e3538990d7a00ca5582c55d8bd7941c6",
+    "jevbench_manifest_sha256": "e356ad5a2c1dd3917c126e74bdee58940391568de013502abcdcd902bde3c2a5",
+    "transfer_manifest_sha256": "3c4f0be94509a3612678bfd3a30fd99a8d0ca3c47ddfe7318075d95b2fa365e4",
+    "transfer_development_sha256": "53872ba045564315cf3c3dd8fb656e76441c6c514b1a7ff985ff0db3955710cf",
+    "transfer_test_sha256": "048abea5e12c73c3a622ce5836898c00fa43766e0bf48fb2459e77ee9873497f",
+    "typed_revision": "d0e2f0c42fef86cc15d1688d25a19f5ba7c85b18",
+    "typed_test_sha256": "4f294f218ea1da27f3efef936359389c62ea4d3973a41457732990f1d31b647c",
+    "jevjudge_test_sha256": "5c50f89e9ff1beb2107648b56f2a3cbc19c946e379519caf59afc191700e83cb",
+    "jevjudge_manifest_sha256": "ee52a15f82629742093a89910a8f72e7ca97248b197aad6ec801f984c2a15b68"
+  },
+  "code_revision": "ae891ed97147b57b41a78a4bb4960b018db3bf42",
+  "source_runs": [
+    {
+      "key": "base4",
+      "model": "Frozen-Qwen3.5-4B",
+      "family": "Qwen3.5-4B",
+      "weights": "frozen_base",
+      "native_readout": null,
+      "artifacts": {
+        "manifest": {
+          "path": "/lustre-storage/fsx/tianxinwei/JevAny/runs/choice-readout-v2-20261002-r1/base4/manifest.json",
+          "sha256": "49e57b70600869d5235a3363a3238161b753b3082f9d348cbd25e810a562418b"
+        },
+        "ensemble": {
+          "path": "/lustre-storage/fsx/tianxinwei/JevAny/runs/choice-readout-v2-20261002-r1/base4/ensemble.json",
+          "sha256": "388cf7b00de00c5c5090f27c8436981cadb1a71986f6855f77806c58840b03d2"
+        }
+      },
+      "source": {
+        "base": "Qwen/Qwen3.5-4B",
+        "checkpoint": null
+      },
+      "public_source": {
+        "repository": "Qwen/Qwen3.5-4B",
+        "url": "https://huggingface.co/Qwen/Qwen3.5-4B",
+        "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+        "revision_status": "verified",
+        "repository_evidence": "manifest.base_loading.canonical_base",
+        "revision_evidence": "manifest.base_loading.canonical_revision",
+        "evaluated_artifact_sha256": {},
+        "base_model": {
+          "repository": "Qwen/Qwen3.5-4B",
+          "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a"
+        },
+        "limitation": null
+      },
+      "checkpoint_artifacts": null,
+      "base_loading": {
+        "canonical_base": "Qwen/Qwen3.5-4B",
+        "canonical_base_is_local": false,
+        "canonical_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+        "override_used": true,
+        "override_config_sha256": "ddc63e1c717afa86c865bb5e01313d89d72bb53b97ad4a8a03ba8510c0621670"
+      },
+      "predictor": {
+        "method": "training-free exact choice-token projection",
+        "constraint_emulation": "exact decoded one-character option IDs",
+        "prompt": "Cygnet-compatible A-Z; extended with a-z above 26 options",
+        "system_prompt_sha256": "e2f0ac9f62eb446d7826b3abc3f7909287f4075175e9b58e4cd3ca72718671fe",
+        "chat_template_sha256": "a4aee8afcf2e0711942cf848899be66016f8d14a889ff9ede07bca099c28f715",
+        "prompt_format_version": 2,
+        "canonical_base": "Qwen/Qwen3.5-4B",
+        "canonical_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+        "checkpoint": null,
+        "adapter_applied": false,
+        "adapter_scale": 0.0,
+        "tied_output_embeddings": true,
+        "unused_full_output_head_released": false,
+        "letter_choice_token_rows": 52,
+        "output_softcap": null,
+        "temperature": 1.0,
+        "native_weight": 0.0,
+        "native_weight_argument": "native_weight",
+        "native_decision_mode": null,
+        "pointer_weight": 0.0,
+        "native_temperature": null,
+        "pointer_temperature": null,
+        "return_components": false,
+        "exact_kernels": true,
+        "exact_cuda_kernels_applied": true,
+        "efficient_long_context_tokens": 8192,
+        "long_context_attention": "fused SDPA (Flash/Efficient, no math fallback) at or above the recorded threshold; exact math SDPA below it",
+        "max_tokens": 65536,
+        "backbone_context_window": 262144,
+        "effective_max_tokens": 65536,
+        "dtype": "torch.bfloat16",
+        "device": "cuda"
+      },
+      "runtime": {
+        "python": "3.12.14",
+        "torch": "2.8.0+cu128",
+        "cuda": "12.8",
+        "transformers": "5.17.0",
+        "peft": "0.21.0",
+        "numpy": "2.5.3",
+        "pyarrow": "25.0.1",
+        "safetensors": "0.8.0",
+        "code_revision": "ae891ed97147b57b41a78a4bb4960b018db3bf42"
+      },
+      "dataset_hashes": {
+        "jevbench_development_sha256": "b6d6eb34fdbbf46ec11be8657da5e513e3538990d7a00ca5582c55d8bd7941c6",
+        "jevbench_manifest_sha256": "e356ad5a2c1dd3917c126e74bdee58940391568de013502abcdcd902bde3c2a5",
+        "transfer_manifest_sha256": "3c4f0be94509a3612678bfd3a30fd99a8d0ca3c47ddfe7318075d95b2fa365e4",
+        "transfer_development_sha256": "53872ba045564315cf3c3dd8fb656e76441c6c514b1a7ff985ff0db3955710cf",
+        "transfer_test_sha256": "048abea5e12c73c3a622ce5836898c00fa43766e0bf48fb2459e77ee9873497f",
+        "typed_revision": "d0e2f0c42fef86cc15d1688d25a19f5ba7c85b18",
+        "typed_test_sha256": "4f294f218ea1da27f3efef936359389c62ea4d3973a41457732990f1d31b647c",
+        "jevjudge_test_sha256": "5c50f89e9ff1beb2107648b56f2a3cbc19c946e379519caf59afc191700e83cb",
+        "jevjudge_manifest_sha256": "ee52a15f82629742093a89910a8f72e7ca97248b197aad6ec801f984c2a15b68"
+      },
+      "evaluation_protocol": {
+        "kernel_policy": "LocalPredictor-compatible exact CUDA policy",
+        "dtype": "bf16",
+        "attn": "sdpa",
+        "temperature": 1.0,
+        "blend_selection": "not performed here; components are saved for fitting on Transfer-v9 development only",
+        "efficiency_scope": "base calls execute choice only; checkpoint calls execute choice and native. Do not compare component efficiency from these end-to-end timings",
+        "long_context_attention": "exact math SDPA below the configured threshold; memory-linear fused SDPA without a math fallback at or above it",
+        "efficient_long_context_tokens": 8192,
+        "resume": {
+          "enabled": true,
+          "reused_datasets": [
+            "jevbench_public",
+            "transfer_calibration",
+            "transfer_test",
+            "typed_test"
+          ],
+          "preexisting_code_revision": "256001ca806f9d7e302bea967850db214f3d8e4e",
+          "dataset_code_revisions": {
+            "jevbench_public": "256001ca806f9d7e302bea967850db214f3d8e4e",
+            "transfer_calibration": "256001ca806f9d7e302bea967850db214f3d8e4e",
+            "transfer_test": "256001ca806f9d7e302bea967850db214f3d8e4e",
+            "typed_test": "256001ca806f9d7e302bea967850db214f3d8e4e",
+            "jevjudge_text": "ae891ed97147b57b41a78a4bb4960b018db3bf42"
+          }
+        }
+      },
+      "ensemble_protocol": {
+        "selection_split": "Transfer-v9 development clean/knowable accuracy cohort; never any reported test panel",
+        "selection_rows": 1046,
+        "weight_grid": "0.00 to 1.00 inclusive, step 0.01",
+        "pool": "log-linear/geometric",
+        "temperature_fit": "bounded scalar NLL minimization, T in [0.05, 20]",
+        "ece": "15 equal-width bins for Typed Decisions; 10 for every other dataset",
+        "selection_objective": "accuracy; calibrated NLL then distance from 0.5 break ties",
+        "transfer": "the selected weight and temperature are frozen for every held-out dataset",
+        "native_shipped": "the checkpoint's native probabilities, including its shipped inference temperature; no additional temperature is applied",
+        "fixed_blend_0_5": "equal log-linear pooling of T=1 choice probabilities and shipped native probabilities; no additional temperature is applied",
+        "transfer_dev_tuned_blend": "the Transfer-dev-selected native weight followed by the reported scalar additional temperature"
+      },
+      "selected": {
+        "choice_temperature": 1.8514751919432642,
+        "native_weight": 0.0,
+        "blend_temperature": 1.8514751919432642,
+        "selection_objective": "hard-label accuracy on the Transfer-v9 development clean/knowable cohort; calibrated NLL and distance from 0.5 break ties"
+      }
+    },
+    {
+      "key": "pointer4",
+      "model": "JevAny-Qwen3.5-4B-Pointer",
+      "family": "Qwen3.5-4B",
+      "weights": "jevany_sft",
+      "native_readout": "pointer",
+      "artifacts": {
+        "manifest": {
+          "path": "/lustre-storage/fsx/tianxinwei/JevAny/runs/choice-readout-v2-20261002-r1/pointer4/manifest.json",
+          "sha256": "11b64050dc31f834c64dbe54c975df1fb365b9eb9465a4089e7de98ba00242b1"
+        },
+        "ensemble": {
+          "path": "/lustre-storage/fsx/tianxinwei/JevAny/runs/choice-readout-v2-20261002-r1/pointer4/ensemble.json",
+          "sha256": "0e18398586de8760719ea6a3e8956f221a69e341e75d3364e22fda7df9cb6488"
+        }
+      },
+      "source": {
+        "base": null,
+        "checkpoint": "/storage/home/tianxinwei/.cache/huggingface/hub/models--SimpleJev--JevAny-Qwen3.5-4B-LoRA/snapshots/1c7aa9bab14ac347aeb917c0bcd757838a8a78ce"
+      },
+      "public_source": {
+        "repository": "SimpleJev/JevAny-Qwen3.5-4B-LoRA",
+        "url": "https://huggingface.co/SimpleJev/JevAny-Qwen3.5-4B-LoRA",
+        "revision": "1c7aa9bab14ac347aeb917c0bcd757838a8a78ce",
+        "revision_status": "verified",
+        "repository_evidence": "manifest.source.checkpoint",
+        "revision_evidence": "manifest.source.checkpoint",
+        "evaluated_artifact_sha256": {
+          "adapter_model.safetensors": {
+            "sha256": "5acbaec8d554517250bf9c626b3f4b9e2ec31fc67957f3486aa72e2c91ee907f",
+            "bytes": 64993432
+          },
+          "head.pt": {
+            "sha256": "e5ea982efd06ecaf71b493045ebccdbfdca39f6fe128de164bf636d73152cd44",
+            "bytes": 5513315
+          },
+          "adapter_config.json": {
+            "sha256": "8a138b2c091d2ba463a8107e9e19182202395188750742047f4a12e8b59e1eda",
+            "bytes": 1265
+          }
+        },
+        "base_model": {
+          "repository": "Qwen/Qwen3.5-4B",
+          "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a"
+        },
+        "limitation": null
+      },
+      "checkpoint_artifacts": {
+        "requested": "/storage/home/tianxinwei/.cache/huggingface/hub/models--SimpleJev--JevAny-Qwen3.5-4B-LoRA/snapshots/1c7aa9bab14ac347aeb917c0bcd757838a8a78ce",
+        "resolved": "/storage/home/tianxinwei/.cache/huggingface/hub/models--SimpleJev--JevAny-Qwen3.5-4B-LoRA/snapshots/1c7aa9bab14ac347aeb917c0bcd757838a8a78ce",
+        "files": {
+          "adapter_model.safetensors": {
+            "sha256": "5acbaec8d554517250bf9c626b3f4b9e2ec31fc67957f3486aa72e2c91ee907f",
+            "bytes": 64993432
+          },
+          "head.pt": {
+            "sha256": "e5ea982efd06ecaf71b493045ebccdbfdca39f6fe128de164bf636d73152cd44",
+            "bytes": 5513315
+          },
+          "adapter_config.json": {
+            "sha256": "8a138b2c091d2ba463a8107e9e19182202395188750742047f4a12e8b59e1eda",
+            "bytes": 1265
+          }
+        }
+      },
+      "base_loading": {
+        "canonical_base": "Qwen/Qwen3.5-4B",
+        "canonical_base_is_local": false,
+        "canonical_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+        "override_used": true,
+        "override_config_sha256": "ddc63e1c717afa86c865bb5e01313d89d72bb53b97ad4a8a03ba8510c0621670"
+      },
+      "predictor": {
+        "method": "training-free exact choice-token projection",
+        "constraint_emulation": "exact decoded one-character option IDs",
+        "prompt": "Cygnet-compatible A-Z; extended with a-z above 26 options",
+        "system_prompt_sha256": "e2f0ac9f62eb446d7826b3abc3f7909287f4075175e9b58e4cd3ca72718671fe",
+        "chat_template_sha256": "a4aee8afcf2e0711942cf848899be66016f8d14a889ff9ede07bca099c28f715",
+        "prompt_format_version": 2,
+        "canonical_base": "Qwen/Qwen3.5-4B",
+        "canonical_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+        "checkpoint": "/storage/home/tianxinwei/.cache/huggingface/hub/models--SimpleJev--JevAny-Qwen3.5-4B-LoRA/snapshots/1c7aa9bab14ac347aeb917c0bcd757838a8a78ce",
+        "adapter_applied": true,
+        "adapter_scale": 1.0,
+        "tied_output_embeddings": true,
+        "unused_full_output_head_released": false,
+        "letter_choice_token_rows": 52,
+        "output_softcap": null,
+        "temperature": 1.0,
+        "native_weight": 0.5,
+        "native_weight_argument": "native_weight",
+        "native_decision_mode": "pointer",
+        "pointer_weight": 0.5,
+        "native_temperature": 1.0,
+        "pointer_temperature": 1.0,
+        "return_components": true,
+        "exact_kernels": true,
+        "exact_cuda_kernels_applied": true,
+        "efficient_long_context_tokens": 8192,
+        "long_context_attention": "fused SDPA (Flash/Efficient, no math fallback) at or above the recorded threshold; exact math SDPA below it",
+        "max_tokens": 65536,
+        "backbone_context_window": 262144,
+        "effective_max_tokens": 65536,
+        "dtype": "torch.bfloat16",
+        "device": "cuda"
+      },
+      "runtime": {
+        "python": "3.12.14",
+        "torch": "2.8.0+cu128",
+        "cuda": "12.8",
+        "transformers": "5.17.0",
+        "peft": "0.21.0",
+        "numpy": "2.5.3",
+        "pyarrow": "25.0.1",
+        "safetensors": "0.8.0",
+        "code_revision": "ae891ed97147b57b41a78a4bb4960b018db3bf42"
+      },
+      "dataset_hashes": {
+        "jevbench_development_sha256": "b6d6eb34fdbbf46ec11be8657da5e513e3538990d7a00ca5582c55d8bd7941c6",
+        "jevbench_manifest_sha256": "e356ad5a2c1dd3917c126e74bdee58940391568de013502abcdcd902bde3c2a5",
+        "transfer_manifest_sha256": "3c4f0be94509a3612678bfd3a30fd99a8d0ca3c47ddfe7318075d95b2fa365e4",
+        "transfer_development_sha256": "53872ba045564315cf3c3dd8fb656e76441c6c514b1a7ff985ff0db3955710cf",
+        "transfer_test_sha256": "048abea5e12c73c3a622ce5836898c00fa43766e0bf48fb2459e77ee9873497f",
+        "typed_revision": "d0e2f0c42fef86cc15d1688d25a19f5ba7c85b18",
+        "typed_test_sha256": "4f294f218ea1da27f3efef936359389c62ea4d3973a41457732990f1d31b647c",
+        "jevjudge_test_sha256": "5c50f89e9ff1beb2107648b56f2a3cbc19c946e379519caf59afc191700e83cb",
+        "jevjudge_manifest_sha256": "ee52a15f82629742093a89910a8f72e7ca97248b197aad6ec801f984c2a15b68"
+      },
+      "evaluation_protocol": {
+        "kernel_policy": "LocalPredictor-compatible exact CUDA policy",
+        "dtype": "bf16",
+        "attn": "sdpa",
+        "temperature": 1.0,
+        "blend_selection": "not performed here; components are saved for fitting on Transfer-v9 development only",
+        "efficiency_scope": "base calls execute choice only; checkpoint calls execute choice and native. Do not compare component efficiency from these end-to-end timings",
+        "long_context_attention": "exact math SDPA below the configured threshold; memory-linear fused SDPA without a math fallback at or above it",
+        "efficient_long_context_tokens": 8192,
+        "resume": {
+          "enabled": true,
+          "reused_datasets": [
+            "jevbench_public",
+            "transfer_calibration",
+            "transfer_test",
+            "typed_test"
+          ],
+          "preexisting_code_revision": "256001ca806f9d7e302bea967850db214f3d8e4e",
+          "dataset_code_revisions": {
+            "jevbench_public": "256001ca806f9d7e302bea967850db214f3d8e4e",
+            "transfer_calibration": "256001ca806f9d7e302bea967850db214f3d8e4e",
+            "transfer_test": "256001ca806f9d7e302bea967850db214f3d8e4e",
+            "typed_test": "256001ca806f9d7e302bea967850db214f3d8e4e",
+            "jevjudge_text": "ae891ed97147b57b41a78a4bb4960b018db3bf42"
+          }
+        }
+      },
+      "ensemble_protocol": {
+        "selection_split": "Transfer-v9 development clean/knowable accuracy cohort; never any reported test panel",
+        "selection_rows": 1046,
+        "weight_grid": "0.00 to 1.00 inclusive, step 0.01",
+        "pool": "log-linear/geometric",
+        "temperature_fit": "bounded scalar NLL minimization, T in [0.05, 20]",
+        "ece": "15 equal-width bins for Typed Decisions; 10 for every other dataset",
+        "selection_objective": "accuracy; calibrated NLL then distance from 0.5 break ties",
+        "transfer": "the selected weight and temperature are frozen for every held-out dataset",
+        "native_shipped": "the checkpoint's native probabilities, including its shipped inference temperature; no additional temperature is applied",
+        "fixed_blend_0_5": "equal log-linear pooling of T=1 choice probabilities and shipped native probabilities; no additional temperature is applied",
+        "transfer_dev_tuned_blend": "the Transfer-dev-selected native weight followed by the reported scalar additional temperature"
+      },
+      "selected": {
+        "choice_temperature": 0.8505257300716687,
+        "native_weight": 0.78,
+        "blend_temperature": 1.0977784557618349,
+        "selection_objective": "hard-label accuracy on the Transfer-v9 development clean/knowable cohort; calibrated NLL and distance from 0.5 break ties"
+      }
+    },
+    {
+      "key": "direct4",
+      "model": "JevAny-Qwen3.5-4B-Direct-Token",
+      "family": "Qwen3.5-4B",
+      "weights": "jevany_sft",
+      "native_readout": "direct-token",
+      "artifacts": {
+        "manifest": {
+          "path": "/lustre-storage/fsx/tianxinwei/JevAny/runs/choice-readout-v2-20261002-r1/direct4/manifest.json",
+          "sha256": "244ede1e22b445634be5792977e19e594bfaeb2fe783f905a6ccf2a0424078e5"
+        },
+        "ensemble": {
+          "path": "/lustre-storage/fsx/tianxinwei/JevAny/runs/choice-readout-v2-20261002-r1/direct4/ensemble.json",
+          "sha256": "e3a2aee6ca34b98a0780807b6b49c86dcf261b55e5559da8fc61dd17b9f03db7"
+        }
+      },
+      "source": {
+        "base": null,
+        "checkpoint": "/lustre-storage/fsx/tianxinwei/JevAny/releases/model-family-v2-20260929/JevAny-Qwen3.5-4B-Direct-Token-LoRA"
+      },
+      "public_source": {
+        "repository": "SimpleJev/JevAny-Qwen3.5-4B-Direct-Token-LoRA",
+        "url": "https://huggingface.co/SimpleJev/JevAny-Qwen3.5-4B-Direct-Token-LoRA",
+        "revision": null,
+        "revision_status": "not_verified",
+        "repository_evidence": "results/model-family-v2.json#released_models",
+        "revision_evidence": null,
+        "evaluated_artifact_sha256": {
+          "adapter_model.safetensors": {
+            "sha256": "b768d54b9e5e20204b2db9e24c18ae6b10fa310b241d1931bac6b8882f127c53",
+            "bytes": 64993432
+          },
+          "head.pt": {
+            "sha256": "d3909cffc156d077061114627c8aa22f60c7a8f1bdcfd20c489bb3bb009fc4a6",
+            "bytes": 4699
+          },
+          "adapter_config.json": {
+            "sha256": "f84527483265b514d0a5f68d9c44e3d7952825c61d3659a858af8342e6ce9ff2",
+            "bytes": 1265
+          }
+        },
+        "base_model": {
+          "repository": "Qwen/Qwen3.5-4B",
+          "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a"
+        },
+        "limitation": "The evaluated checkpoint came from a local release. Its exact files are pinned below by SHA-256, but the run manifest and release metadata do not prove an immutable public-repository revision for those bytes."
+      },
+      "checkpoint_artifacts": {
+        "requested": "/lustre-storage/fsx/tianxinwei/JevAny/releases/model-family-v2-20260929/JevAny-Qwen3.5-4B-Direct-Token-LoRA",
+        "resolved": "/lustre-storage/fsx/tianxinwei/JevAny/releases/model-family-v2-20260929/JevAny-Qwen3.5-4B-Direct-Token-LoRA",
+        "files": {
+          "adapter_model.safetensors": {
+            "sha256": "b768d54b9e5e20204b2db9e24c18ae6b10fa310b241d1931bac6b8882f127c53",
+            "bytes": 64993432
+          },
+          "head.pt": {
+            "sha256": "d3909cffc156d077061114627c8aa22f60c7a8f1bdcfd20c489bb3bb009fc4a6",
+            "bytes": 4699
+          },
+          "adapter_config.json": {
+            "sha256": "f84527483265b514d0a5f68d9c44e3d7952825c61d3659a858af8342e6ce9ff2",
+            "bytes": 1265
+          }
+        }
+      },
+      "base_loading": {
+        "canonical_base": "Qwen/Qwen3.5-4B",
+        "canonical_base_is_local": false,
+        "canonical_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+        "override_used": true,
+        "override_config_sha256": "ddc63e1c717afa86c865bb5e01313d89d72bb53b97ad4a8a03ba8510c0621670"
+      },
+      "predictor": {
+        "method": "training-free exact choice-token projection",
+        "constraint_emulation": "exact decoded one-character option IDs",
+        "prompt": "Cygnet-compatible A-Z; extended with a-z above 26 options",
+        "system_prompt_sha256": "e2f0ac9f62eb446d7826b3abc3f7909287f4075175e9b58e4cd3ca72718671fe",
+        "chat_template_sha256": "a4aee8afcf2e0711942cf848899be66016f8d14a889ff9ede07bca099c28f715",
+        "prompt_format_version": 2,
+        "canonical_base": "Qwen/Qwen3.5-4B",
+        "canonical_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+        "checkpoint": "/lustre-storage/fsx/tianxinwei/JevAny/releases/model-family-v2-20260929/JevAny-Qwen3.5-4B-Direct-Token-LoRA",
+        "adapter_applied": true,
+        "adapter_scale": 1.0,
+        "tied_output_embeddings": true,
+        "unused_full_output_head_released": false,
+        "letter_choice_token_rows": 52,
+        "output_softcap": null,
+        "temperature": 1.0,
+        "native_weight": 0.5,
+        "native_weight_argument": "native_weight",
+        "native_decision_mode": "lm_token",
+        "pointer_weight": 0.5,
+        "native_temperature": 1.0,
+        "pointer_temperature": 1.0,
+        "return_components": true,
+        "exact_kernels": true,
+        "exact_cuda_kernels_applied": true,
+        "efficient_long_context_tokens": 8192,
+        "long_context_attention": "fused SDPA (Flash/Efficient, no math fallback) at or above the recorded threshold; exact math SDPA below it",
+        "max_tokens": 65536,
+        "backbone_context_window": 262144,
+        "effective_max_tokens": 65536,
+        "dtype": "torch.bfloat16",
+        "device": "cuda"
+      },
+      "runtime": {
+        "python": "3.12.14",
+        "torch": "2.8.0+cu128",
+        "cuda": "12.8",
+        "transformers": "5.17.0",
+        "peft": "0.21.0",
+        "numpy": "2.5.3",
+        "pyarrow": "25.0.1",
+        "safetensors": "0.8.0",
+        "code_revision": "ae891ed97147b57b41a78a4bb4960b018db3bf42"
+      },
+      "dataset_hashes": {
+        "jevbench_development_sha256": "b6d6eb34fdbbf46ec11be8657da5e513e3538990d7a00ca5582c55d8bd7941c6",
+        "jevbench_manifest_sha256": "e356ad5a2c1dd3917c126e74bdee58940391568de013502abcdcd902bde3c2a5",
+        "transfer_manifest_sha256": "3c4f0be94509a3612678bfd3a30fd99a8d0ca3c47ddfe7318075d95b2fa365e4",
+        "transfer_development_sha256": "53872ba045564315cf3c3dd8fb656e76441c6c514b1a7ff985ff0db3955710cf",
+        "transfer_test_sha256": "048abea5e12c73c3a622ce5836898c00fa43766e0bf48fb2459e77ee9873497f",
+        "typed_revision": "d0e2f0c42fef86cc15d1688d25a19f5ba7c85b18",
+        "typed_test_sha256": "4f294f218ea1da27f3efef936359389c62ea4d3973a41457732990f1d31b647c",
+        "jevjudge_test_sha256": "5c50f89e9ff1beb2107648b56f2a3cbc19c946e379519caf59afc191700e83cb",
+        "jevjudge_manifest_sha256": "ee52a15f82629742093a89910a8f72e7ca97248b197aad6ec801f984c2a15b68"
+      },
+      "evaluation_protocol": {
+        "kernel_policy": "LocalPredictor-compatible exact CUDA policy",
+        "dtype": "bf16",
+        "attn": "sdpa",
+        "temperature": 1.0,
+        "blend_selection": "not performed here; components are saved for fitting on Transfer-v9 development only",
+        "efficiency_scope": "base calls execute choice only; checkpoint calls execute choice and native. Do not compare component efficiency from these end-to-end timings",
+        "long_context_attention": "exact math SDPA below the configured threshold; memory-linear fused SDPA without a math fallback at or above it",
+        "efficient_long_context_tokens": 8192,
+        "resume": {
+          "enabled": true,
+          "reused_datasets": [
+            "jevbench_public",
+            "transfer_calibration",
+            "transfer_test",
+            "typed_test"
+          ],
+          "preexisting_code_revision": "256001ca806f9d7e302bea967850db214f3d8e4e",
+          "dataset_code_revisions": {
+            "jevbench_public": "256001ca806f9d7e302bea967850db214f3d8e4e",
+            "transfer_calibration": "256001ca806f9d7e302bea967850db214f3d8e4e",
+            "transfer_test": "256001ca806f9d7e302bea967850db214f3d8e4e",
+            "typed_test": "256001ca806f9d7e302bea967850db214f3d8e4e",
+            "jevjudge_text": "ae891ed97147b57b41a78a4bb4960b018db3bf42"
+          }
+        }
+      },
+      "ensemble_protocol": {
+        "selection_split": "Transfer-v9 development clean/knowable accuracy cohort; never any reported test panel",
+        "selection_rows": 1046,
+        "weight_grid": "0.00 to 1.00 inclusive, step 0.01",
+        "pool": "log-linear/geometric",
+        "temperature_fit": "bounded scalar NLL minimization, T in [0.05, 20]",
+        "ece": "15 equal-width bins for Typed Decisions; 10 for every other dataset",
+        "selection_objective": "accuracy; calibrated NLL then distance from 0.5 break ties",
+        "transfer": "the selected weight and temperature are frozen for every held-out dataset",
+        "native_shipped": "the checkpoint's native probabilities, including its shipped inference temperature; no additional temperature is applied",
+        "fixed_blend_0_5": "equal log-linear pooling of T=1 choice probabilities and shipped native probabilities; no additional temperature is applied",
+        "transfer_dev_tuned_blend": "the Transfer-dev-selected native weight followed by the reported scalar additional temperature"
+      },
+      "selected": {
+        "choice_temperature": 1.246278988841639,
+        "native_weight": 0.59,
+        "blend_temperature": 1.1240763000234277,
+        "selection_objective": "hard-label accuracy on the Transfer-v9 development clean/knowable cohort; calibrated NLL and distance from 0.5 break ties"
+      }
+    },
+    {
+      "key": "base27",
+      "model": "Frozen-Qwen3.8-27B",
+      "family": "Qwen3.8-27B",
+      "weights": "frozen_base",
+      "native_readout": null,
+      "artifacts": {
+        "manifest": {
+          "path": "/lustre-storage/fsx/tianxinwei/JevAny/runs/choice-readout-v2-20261002-r1/base27/manifest.json",
+          "sha256": "5f1d1c6a755bdb8f8ee5d37f011345213cbfa205256457622d08a88f88d81fd2"
+        },
+        "ensemble": {
+          "path": "/lustre-storage/fsx/tianxinwei/JevAny/runs/choice-readout-v2-20261002-r1/base27/ensemble.json",
+          "sha256": "c18a65303093f9673f22cc7a9fcbd7de89a73cd46372b04311e935f01277e6fb"
+        }
+      },
+      "source": {
+        "base": "Qwen/Qwen3.8-27B",
+        "checkpoint": null
+      },
+      "public_source": {
+        "repository": "Qwen/Qwen3.8-27B",
+        "url": "https://huggingface.co/Qwen/Qwen3.8-27B",
+        "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+        "revision_status": "verified",
+        "repository_evidence": "manifest.base_loading.canonical_base",
+        "revision_evidence": "manifest.base_loading.canonical_revision",
+        "evaluated_artifact_sha256": {},
+        "base_model": {
+          "repository": "Qwen/Qwen3.8-27B",
+          "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
+        },
+        "limitation": null
+      },
+      "checkpoint_artifacts": null,
+      "base_loading": {
+        "canonical_base": "Qwen/Qwen3.8-27B",
+        "canonical_base_is_local": false,
+        "canonical_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+        "override_used": true,
+        "override_config_sha256": "191e0af232104ed8b65258cf3fb2b842e288008baca7633c11b82a1ac7203aab"
+      },
+      "predictor": {
+        "method": "training-free exact choice-token projection",
+        "constraint_emulation": "exact decoded one-character option IDs",
+        "prompt": "Cygnet-compatible A-Z; extended with a-z above 26 options",
+        "system_prompt_sha256": "e2f0ac9f62eb446d7826b3abc3f7909287f4075175e9b58e4cd3ca72718671fe",
+        "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+        "prompt_format_version": 2,
+        "canonical_base": "Qwen/Qwen3.8-27B",
+        "canonical_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+        "checkpoint": null,
+        "adapter_applied": false,
+        "adapter_scale": 0.0,
+        "tied_output_embeddings": false,
+        "unused_full_output_head_released": false,
+        "letter_choice_token_rows": 52,
+        "output_softcap": null,
+        "temperature": 1.0,
+        "native_weight": 0.0,
+        "native_weight_argument": "native_weight",
+        "native_decision_mode": null,
+        "pointer_weight": 0.0,
+        "native_temperature": null,
+        "pointer_temperature": null,
+        "return_components": false,
+        "exact_kernels": true,
+        "exact_cuda_kernels_applied": true,
+        "efficient_long_context_tokens": 8192,
+        "long_context_attention": "fused SDPA (Flash/Efficient, no math fallback) at or above the recorded threshold; exact math SDPA below it",
+        "max_tokens": 65536,
+        "backbone_context_window": 262144,
+        "effective_max_tokens": 65536,
+        "dtype": "torch.bfloat16",
+        "device": "cuda"
+      },
+      "runtime": {
+        "python": "3.12.14",
+        "torch": "2.8.0+cu128",
+        "cuda": "12.8",
+        "transformers": "5.17.0",
+        "peft": "0.21.0",
+        "numpy": "2.5.3",
+        "pyarrow": "25.0.1",
+        "safetensors": "0.8.0",
+        "code_revision": "ae891ed97147b57b41a78a4bb4960b018db3bf42"
+      },
+      "dataset_hashes": {
+        "jevbench_development_sha256": "b6d6eb34fdbbf46ec11be8657da5e513e3538990d7a00ca5582c55d8bd7941c6",
+        "jevbench_manifest_sha256": "e356ad5a2c1dd3917c126e74bdee58940391568de013502abcdcd902bde3c2a5",
+        "transfer_manifest_sha256": "3c4f0be94509a3612678bfd3a30fd99a8d0ca3c47ddfe7318075d95b2fa365e4",
+        "transfer_development_sha256": "53872ba045564315cf3c3dd8fb656e76441c6c514b1a7ff985ff0db3955710cf",
+        "transfer_test_sha256": "048abea5e12c73c3a622ce5836898c00fa43766e0bf48fb2459e77ee9873497f",
+        "typed_revision": "d0e2f0c42fef86cc15d1688d25a19f5ba7c85b18",
+        "typed_test_sha256": "4f294f218ea1da27f3efef936359389c62ea4d3973a41457732990f1d31b647c",
+        "jevjudge_test_sha256": "5c50f89e9ff1beb2107648b56f2a3cbc19c946e379519caf59afc191700e83cb",
+        "jevjudge_manifest_sha256": "ee52a15f82629742093a89910a8f72e7ca97248b197aad6ec801f984c2a15b68"
+      },
+      "evaluation_protocol": {
+        "kernel_policy": "LocalPredictor-compatible exact CUDA policy",
+        "dtype": "bf16",
+        "attn": "sdpa",
+        "temperature": 1.0,
+        "blend_selection": "not performed here; components are saved for fitting on Transfer-v9 development only",
+        "efficiency_scope": "base calls execute choice only; checkpoint calls execute choice and native. Do not compare component efficiency from these end-to-end timings",
+        "long_context_attention": "exact math SDPA below the configured threshold; memory-linear fused SDPA without a math fallback at or above it",
+        "efficient_long_context_tokens": 8192,
+        "resume": {
+          "enabled": true,
+          "reused_datasets": [
+            "jevbench_public",
+            "transfer_calibration",
+            "transfer_test",
+            "typed_test"
+          ],
+          "preexisting_code_revision": "256001ca806f9d7e302bea967850db214f3d8e4e",
+          "dataset_code_revisions": {
+            "jevbench_public": "256001ca806f9d7e302bea967850db214f3d8e4e",
+            "transfer_calibration": "256001ca806f9d7e302bea967850db214f3d8e4e",
+            "transfer_test": "256001ca806f9d7e302bea967850db214f3d8e4e",
+            "typed_test": "256001ca806f9d7e302bea967850db214f3d8e4e",
+            "jevjudge_text": "ae891ed97147b57b41a78a4bb4960b018db3bf42"
+          }
+        }
+      },
+      "ensemble_protocol": {
+        "selection_split": "Transfer-v9 development clean/knowable accuracy cohort; never any reported test panel",
+        "selection_rows": 1046,
+        "weight_grid": "0.00 to 1.00 inclusive, step 0.01",
+        "pool": "log-linear/geometric",
+        "temperature_fit": "bounded scalar NLL minimization, T in [0.05, 20]",
+        "ece": "15 equal-width bins for Typed Decisions; 10 for every other dataset",
+        "selection_objective": "accuracy; calibrated NLL then distance from 0.5 break ties",
+        "transfer": "the selected weight and temperature are frozen for every held-out dataset",
+        "native_shipped": "the checkpoint's native probabilities, including its shipped inference temperature; no additional temperature is applied",
+        "fixed_blend_0_5": "equal log-linear pooling of T=1 choice probabilities and shipped native probabilities; no additional temperature is applied",
+        "transfer_dev_tuned_blend": "the Transfer-dev-selected native weight followed by the reported scalar additional temperature"
+      },
+      "selected": {
+        "choice_temperature": 1.718360083457113,
+        "native_weight": 0.0,
+        "blend_temperature": 1.718360083457113,
+        "selection_objective": "hard-label accuracy on the Transfer-v9 development clean/knowable cohort; calibrated NLL and distance from 0.5 break ties"
+      }
+    },
+    {
+      "key": "pointer27",
+      "model": "JevAny-Qwen3.8-27B-Pointer",
+      "family": "Qwen3.8-27B",
+      "weights": "jevany_sft",
+      "native_readout": "pointer",
+      "artifacts": {
+        "manifest": {
+          "path": "/lustre-storage/fsx/tianxinwei/JevAny/runs/choice-readout-v2-20261002-r1/pointer27/manifest.json",
+          "sha256": "c2d6dd8bb4b9f2b9e5b9c57088f673e0839af5435acb88b561559ae0a824367a"
+        },
+        "ensemble": {
+          "path": "/lustre-storage/fsx/tianxinwei/JevAny/runs/choice-readout-v2-20261002-r1/pointer27/ensemble.json",
+          "sha256": "2270c1a3309b20fbe77bf6e905e2677ba29ecc3a3c9d4251b9932ee887e64826"
+        }
+      },
+      "source": {
+        "base": null,
+        "checkpoint": "/storage/home/tianxinwei/.cache/huggingface/hub/models--SimpleJev--JevAny-Qwen3.8-27B-LoRA/snapshots/09c9e9102d5b8cc7d56558d25da1202a761b6c0d"
+      },
+      "public_source": {
+        "repository": "SimpleJev/JevAny-Qwen3.8-27B-LoRA",
+        "url": "https://huggingface.co/SimpleJev/JevAny-Qwen3.8-27B-LoRA",
+        "revision": "09c9e9102d5b8cc7d56558d25da1202a761b6c0d",
+        "revision_status": "verified",
+        "repository_evidence": "manifest.source.checkpoint",
+        "revision_evidence": "manifest.source.checkpoint",
+        "evaluated_artifact_sha256": {
+          "adapter_model.safetensors": {
+            "sha256": "f4b835f4f7be78a819067dac226feaad2fc7b9eb0b968c5e6e665ad5328e6731",
+            "bytes": 233584648
+          },
+          "head.pt": {
+            "sha256": "f78fa283f7e979ce418c5b137d24459350fecaea73e5766894532c1cd99684c7",
+            "bytes": 10756195
+          },
+          "adapter_config.json": {
+            "sha256": "31d8e262a21a45b80fd409f08d47930effd6cd9bc12156c59ad61e627f50a275",
+            "bytes": 1266
+          }
+        },
+        "base_model": {
+          "repository": "Qwen/Qwen3.8-27B",
+          "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
+        },
+        "limitation": null
+      },
+      "checkpoint_artifacts": {
+        "requested": "/storage/home/tianxinwei/.cache/huggingface/hub/models--SimpleJev--JevAny-Qwen3.8-27B-LoRA/snapshots/09c9e9102d5b8cc7d56558d25da1202a761b6c0d",
+        "resolved": "/storage/home/tianxinwei/.cache/huggingface/hub/models--SimpleJev--JevAny-Qwen3.8-27B-LoRA/snapshots/09c9e9102d5b8cc7d56558d25da1202a761b6c0d",
+        "files": {
+          "adapter_model.safetensors": {
+            "sha256": "f4b835f4f7be78a819067dac226feaad2fc7b9eb0b968c5e6e665ad5328e6731",
+            "bytes": 233584648
+          },
+          "head.pt": {
+            "sha256": "f78fa283f7e979ce418c5b137d24459350fecaea73e5766894532c1cd99684c7",
+            "bytes": 10756195
+          },
+          "adapter_config.json": {
+            "sha256": "31d8e262a21a45b80fd409f08d47930effd6cd9bc12156c59ad61e627f50a275",
+            "bytes": 1266
+          }
+        }
+      },
+      "base_loading": {
+        "canonical_base": "Qwen/Qwen3.8-27B",
+        "canonical_base_is_local": false,
+        "canonical_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+        "override_used": true,
+        "override_config_sha256": "191e0af232104ed8b65258cf3fb2b842e288008baca7633c11b82a1ac7203aab"
+      },
+      "predictor": {
+        "method": "training-free exact choice-token projection",
+        "constraint_emulation": "exact decoded one-character option IDs",
+        "prompt": "Cygnet-compatible A-Z; extended with a-z above 26 options",
+        "system_prompt_sha256": "e2f0ac9f62eb446d7826b3abc3f7909287f4075175e9b58e4cd3ca72718671fe",
+        "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+        "prompt_format_version": 2,
+        "canonical_base": "Qwen/Qwen3.8-27B",
+        "canonical_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+        "checkpoint": "/storage/home/tianxinwei/.cache/huggingface/hub/models--SimpleJev--JevAny-Qwen3.8-27B-LoRA/snapshots/09c9e9102d5b8cc7d56558d25da1202a761b6c0d",
+        "adapter_applied": true,
+        "adapter_scale": 1.0,
+        "tied_output_embeddings": false,
+        "unused_full_output_head_released": false,
+        "letter_choice_token_rows": 52,
+        "output_softcap": null,
+        "temperature": 1.0,
+        "native_weight": 0.5,
+        "native_weight_argument": "native_weight",
+        "native_decision_mode": "pointer",
+        "pointer_weight": 0.5,
+        "native_temperature": 1.0,
+        "pointer_temperature": 1.0,
+        "return_components": true,
+        "exact_kernels": true,
+        "exact_cuda_kernels_applied": true,
+        "efficient_long_context_tokens": 8192,
+        "long_context_attention": "fused SDPA (Flash/Efficient, no math fallback) at or above the recorded threshold; exact math SDPA below it",
+        "max_tokens": 65536,
+        "backbone_context_window": 262144,
+        "effective_max_tokens": 65536,
+        "dtype": "torch.bfloat16",
+        "device": "cuda"
+      },
+      "runtime": {
+        "python": "3.12.14",
+        "torch": "2.8.0+cu128",
+        "cuda": "12.8",
+        "transformers": "5.17.0",
+        "peft": "0.21.0",
+        "numpy": "2.5.3",
+        "pyarrow": "25.0.1",
+        "safetensors": "0.8.0",
+        "code_revision": "ae891ed97147b57b41a78a4bb4960b018db3bf42"
+      },
+      "dataset_hashes": {
+        "jevbench_development_sha256": "b6d6eb34fdbbf46ec11be8657da5e513e3538990d7a00ca5582c55d8bd7941c6",
+        "jevbench_manifest_sha256": "e356ad5a2c1dd3917c126e74bdee58940391568de013502abcdcd902bde3c2a5",
+        "transfer_manifest_sha256": "3c4f0be94509a3612678bfd3a30fd99a8d0ca3c47ddfe7318075d95b2fa365e4",
+        "transfer_development_sha256": "53872ba045564315cf3c3dd8fb656e76441c6c514b1a7ff985ff0db3955710cf",
+        "transfer_test_sha256": "048abea5e12c73c3a622ce5836898c00fa43766e0bf48fb2459e77ee9873497f",
+        "typed_revision": "d0e2f0c42fef86cc15d1688d25a19f5ba7c85b18",
+        "typed_test_sha256": "4f294f218ea1da27f3efef936359389c62ea4d3973a41457732990f1d31b647c",
+        "jevjudge_test_sha256": "5c50f89e9ff1beb2107648b56f2a3cbc19c946e379519caf59afc191700e83cb",
+        "jevjudge_manifest_sha256": "ee52a15f82629742093a89910a8f72e7ca97248b197aad6ec801f984c2a15b68"
+      },
+      "evaluation_protocol": {
+        "kernel_policy": "LocalPredictor-compatible exact CUDA policy",
+        "dtype": "bf16",
+        "attn": "sdpa",
+        "temperature": 1.0,
+        "blend_selection": "not performed here; components are saved for fitting on Transfer-v9 development only",
+        "efficiency_scope": "base calls execute choice only; checkpoint calls execute choice and native. Do not compare component efficiency from these end-to-end timings",
+        "long_context_attention": "exact math SDPA below the configured threshold; memory-linear fused SDPA without a math fallback at or above it",
+        "efficient_long_context_tokens": 8192,
+        "resume": {
+          "enabled": true,
+          "reused_datasets": [
+            "jevbench_public",
+            "transfer_calibration",
+            "transfer_test",
+            "typed_test"
+          ],
+          "preexisting_code_revision": "256001ca806f9d7e302bea967850db214f3d8e4e",
+          "dataset_code_revisions": {
+            "jevbench_public": "256001ca806f9d7e302bea967850db214f3d8e4e",
+            "transfer_calibration": "256001ca806f9d7e302bea967850db214f3d8e4e",
+            "transfer_test": "256001ca806f9d7e302bea967850db214f3d8e4e",
+            "typed_test": "256001ca806f9d7e302bea967850db214f3d8e4e",
+            "jevjudge_text": "ae891ed97147b57b41a78a4bb4960b018db3bf42"
+          }
+        }
+      },
+      "ensemble_protocol": {
+        "selection_split": "Transfer-v9 development clean/knowable accuracy cohort; never any reported test panel",
+        "selection_rows": 1046,
+        "weight_grid": "0.00 to 1.00 inclusive, step 0.01",
+        "pool": "log-linear/geometric",
+        "temperature_fit": "bounded scalar NLL minimization, T in [0.05, 20]",
+        "ece": "15 equal-width bins for Typed Decisions; 10 for every other dataset",
+        "selection_objective": "accuracy; calibrated NLL then distance from 0.5 break ties",
+        "transfer": "the selected weight and temperature are frozen for every held-out dataset",
+        "native_shipped": "the checkpoint's native probabilities, including its shipped inference temperature; no additional temperature is applied",
+        "fixed_blend_0_5": "equal log-linear pooling of T=1 choice probabilities and shipped native probabilities; no additional temperature is applied",
+        "transfer_dev_tuned_blend": "the Transfer-dev-selected native weight followed by the reported scalar additional temperature"
+      },
+      "selected": {
+        "choice_temperature": 0.5969253208700946,
+        "native_weight": 0.52,
+        "blend_temperature": 0.8352476617411964,
+        "selection_objective": "hard-label accuracy on the Transfer-v9 development clean/knowable cohort; calibrated NLL and distance from 0.5 break ties"
+      }
+    }
+  ],
+  "external_source": {
+    "path": "results/external-zero-shot-v1.json",
+    "sha256": "8a589a7e5d0d5ae5232fbdf30a71cdce5399cb5f5aacb1fcaf974057be48b3b9",
+    "artifact_version": 5,
+    "provenance": {
+      "typed_existing": {
+        "path": "results/external-decision-evals-20261001/typed-decisions.json",
+        "sha256": "a9fbcc06a5e957630e83f18c5dc01d41ff7b3e2289b0d816f2e1459ef814341e"
+      },
+      "typed_open_summary": {
+        "local_run_path": "runs/external-open-baselines-20261001/summary.json",
+        "sha256": "4b4f06f8f02ce6cb4a610f110450469c46b917fd9aa1d571077d0c054320eab2"
+      },
+      "jevjudge_full_context_scores": {
+        "local_run_path": "runs/jevjudge-open-baselines-20261001/scores-full-context",
+        "protocol": "native inputs, no truncation, 65,536-token shared context ceiling",
+        "main_cohort_sha256_by_file": {
+          "bongard-mini.json": "f3fa601f617ed2e70b31d98fe2c589ee8787ee47624233f3fbd8b3d02630daa9",
+          "jeff-gemma4-e2b.json": "78fd3e26bf01b5630e23656049f2a33e3a77e81a0381d6106c2ad3afce4d0491",
+          "jeff-qwen35-08b.json": "ea2dc271c6d23c11278e6fdcdf56a9f45a1938404577d98ce101ec6669f58dbd",
+          "jeff-qwen35-2b.json": "8d76f061b8cd67811d48b1eb5467e9274c1648e47cb3c835974c8b32c647a404",
+          "jevany-gemma-4b-step2771.json": "88561342bec2909101bb8e3bb90a7f9a73626a35056468fae0d27f4e0389c39a",
+          "jevany-muse-glimmer-30b-step3324.json": "8022d3ff2cb33c602bf6b3aca55cdc10840f1d0735bd523c53dacb0fb966ba00",
+          "jevany-qwen35-4b-direct-release.json": "db0b29b095e73e6fe6f0795632686a05e0057f03f7b27eae46121db6854eee02",
+          "jevany-qwen35-4b-pointer-step13850.json": "c7c70a9b2adda41a597bbdd2c354320f5caf2fe4ce09d24c3fb5731615ff5cc0",
+          "jevany-qwen38-27b-step44319.json": "fcbdda6cb097f84b8bade8b7272f588dd049d32eb0ccd1f59cb6a76850954661",
+          "opendecider-small.json": "438b89596d7fe7aa593d1d024ef6576082d074e0b488eebc1c4336ee65a28032"
+        },
+        "supplemental_sha256_by_file": {
+          "kev-27b.json": "056a42c2fef59f5ecffb40e342690ac4467b273f374cbf5d59ec9dbbe3df0cae",
+          "kev-4b.json": "c6985eef36f04b962c17bc72ca3bd6d2235bcf0619904db6dda135a649291db1",
+          "laya.json": "abde9d49d8c100b8c6c09ec6b3aaea442f0f9b2f1350e34701d1b615e1651b90"
+        },
+        "supplemental_protocol": "Mixed audit protocols; these hashes are not covered by the no-truncation main-cohort claim."
+      },
+      "jevjudge_full_jevany": {
+        "local_run_path": "runs/jevjudge-full-current-20261001",
+        "summary_sha256": "fcc3025cd29ec057d869067edc5d45f5d154b8596f3281aabc4d0c83996b6609",
+        "final_audit_sha256": "ad0055609f1a3dd87210738acb45a8fce113c2ad0fc9b507af8ddce8d644d773",
+        "official_scorer_sha256": "477b39c76dd6e6200f0919fcb56e80045ffd29b66445496d5e6e70c3d1537141",
+        "bootstrap_scorer_sha256": "8f7413d70290bd1009acd398478bb26cbc98f89ebd19af298fc0930b7a763133",
+        "protocol": "native text/image/video inputs; 65,536-token ceiling; no token, option, or media truncation; 3,220/3,220 per model"
+      },
+      "jevjudge_full_open": {
+        "local_run_path": "worktrees/JevAny/jevjudge-full-open-20261001/runs/jevjudge-full-open-20261001-v2",
+        "original_summary_sha256": "f34fc4265b6cf5847d4f1bd46a5601111cc927f57c4e6178acbf61e496477c51",
+        "corrected_final_summary_sha256": "3c348c94f0494815ae4236ffb2524e92d6cdd3d237812d21465e64e18ddc00b3",
+        "compatibility_matrix_sha256": "128cc4d00520fa0515f3f5d5172bc4d704c08ebea63ba8b60f93f225db4ac98e",
+        "note": "Published headline values use returned-probability NLL and the final source-stratified group bootstrap; the original summary retained a raw-logit NLL diagnostic."
+      },
+      "jevjudge_kev_text": {
+        "local_run_path": "worktrees/JevAny/kev-jevjudge-20261001/runs/jevjudge-kev-full-context-20261001",
+        "summary_sha256": "4e1f448503983a13a14df9fc877cd876906c09915ef8173bc676778d52e06598",
+        "protocol": "724/724 text records; 65,536-token ceiling; 4,096-token chunked-KV prefill; no input truncation"
+      },
+      "jevjudge_jev_113_openrouter": {
+        "source_commit": "2ff9d3019bd7f910486543ce76513321537a3c6f",
+        "protocol": "OpenRouter full-context rerun; 724/724 JevJudge text-only records",
+        "note": "Aggregate metrics were added directly to the public evaluation table; item-level outputs are not tracked in this artifact."
+      }
+    }
+  },
+  "repository_catalog": {
+    "path": "results/model-family-v2.json",
+    "sha256": "a49f03bd9371f1846d78a09682f000cba9f64004d8d5a222b3868f11ccb48d8c",
+    "release": "model-family-v2"
+  },
+  "datasets": {
+    "transfer_calibration": {
+      "label": "Transfer-v9 development",
+      "role": "selection_only",
+      "records": 1264,
+      "questions": 1264,
+      "headline_n": 1046,
+      "runs": [
+        {
+          "run": "base4",
+          "model": "Frozen-Qwen3.5-4B",
+          "family": "Qwen3.5-4B",
+          "weights": "frozen_base",
+          "native_readout": null,
+          "zero_shot": {
+            "choice_t1": {
+              "n": 1046,
+              "correct": 725,
+              "accuracy": 0.6931166347992351,
+              "cross_entropy_from_gold": 0.8799398258908452,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.8799398258908452,
+              "brier": 0.43925607559848767,
+              "ece": 0.12305476565507475,
+              "mean_confidence": 0.8154458555896062,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            }
+          },
+          "transfer_dev_tuned": {
+            "transfer_dev_calibrated_choice": {
+              "n": 1046,
+              "correct": 725,
+              "accuracy": 0.6931166347992351,
+              "cross_entropy_from_gold": 0.7684499162138351,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.7684499162138351,
+              "brier": 0.40380428797912027,
+              "ece": 0.0442424982205075,
+              "mean_confidence": 0.7062354250490573,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            }
+          }
+        },
+        {
+          "run": "pointer4",
+          "model": "JevAny-Qwen3.5-4B-Pointer",
+          "family": "Qwen3.5-4B",
+          "weights": "jevany_sft",
+          "native_readout": "pointer",
+          "zero_shot": {
+            "choice_t1": {
+              "n": 1046,
+              "correct": 784,
+              "accuracy": 0.7495219885277247,
+              "cross_entropy_from_gold": 0.6801893631325125,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.6801893631325125,
+              "brier": 0.3338033580246269,
+              "ece": 0.054371329145242946,
+              "mean_confidence": 0.6968489272720685,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            },
+            "native_shipped": {
+              "n": 1046,
+              "correct": 823,
+              "accuracy": 0.7868068833652008,
+              "cross_entropy_from_gold": 0.5868780830556992,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.5868780830556992,
+              "brier": 0.2965183466659115,
+              "ece": 0.03479245011625781,
+              "mean_confidence": 0.805131298589329,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            },
+            "fixed_blend_0_5": {
+              "n": 1046,
+              "correct": 822,
+              "accuracy": 0.7858508604206501,
+              "cross_entropy_from_gold": 0.5717414381657305,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.5717414381657305,
+              "brier": 0.2919156848114442,
+              "ece": 0.03811670878840213,
+              "mean_confidence": 0.7688884953818541,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            }
+          },
+          "transfer_dev_tuned": {
+            "transfer_dev_calibrated_choice": {
+              "n": 1046,
+              "correct": 784,
+              "accuracy": 0.7495219885277247,
+              "cross_entropy_from_gold": 0.675438096110365,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.675438096110365,
+              "brier": 0.3287201057208544,
+              "ece": 0.030612288328262394,
+              "mean_confidence": 0.7238557515998861,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            },
+            "transfer_dev_tuned_blend": {
+              "n": 1046,
+              "correct": 828,
+              "accuracy": 0.7915869980879541,
+              "cross_entropy_from_gold": 0.569720964551106,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.569720964551106,
+              "brier": 0.2929198506354004,
+              "ece": 0.05359065555472778,
+              "mean_confidence": 0.7774203199582407,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            }
+          }
+        },
+        {
+          "run": "direct4",
+          "model": "JevAny-Qwen3.5-4B-Direct-Token",
+          "family": "Qwen3.5-4B",
+          "weights": "jevany_sft",
+          "native_readout": "direct-token",
+          "zero_shot": {
+            "choice_t1": {
+              "n": 1046,
+              "correct": 796,
+              "accuracy": 0.7609942638623327,
+              "cross_entropy_from_gold": 0.6010867296757888,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.6010867296757888,
+              "brier": 0.3064220873561066,
+              "ece": 0.04138187687571737,
+              "mean_confidence": 0.796631394719685,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            },
+            "native_shipped": {
+              "n": 1046,
+              "correct": 818,
+              "accuracy": 0.7820267686424475,
+              "cross_entropy_from_gold": 0.5642005514977974,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.5642005514977974,
+              "brier": 0.2908559938309828,
+              "ece": 0.029163506342423436,
+              "mean_confidence": 0.8005854296720307,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            },
+            "fixed_blend_0_5": {
+              "n": 1046,
+              "correct": 821,
+              "accuracy": 0.7848948374760994,
+              "cross_entropy_from_gold": 0.5635679825981634,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.5635679825981634,
+              "brier": 0.28919182401119004,
+              "ece": 0.03032435006136549,
+              "mean_confidence": 0.79621407300774,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            }
+          },
+          "transfer_dev_tuned": {
+            "transfer_dev_calibrated_choice": {
+              "n": 1046,
+              "correct": 796,
+              "accuracy": 0.7609942638623327,
+              "cross_entropy_from_gold": 0.5914027552210456,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.5914027552210456,
+              "brier": 0.3043378646694837,
+              "ece": 0.03285794273637177,
+              "mean_confidence": 0.765631487860452,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            },
+            "transfer_dev_tuned_blend": {
+              "n": 1046,
+              "correct": 826,
+              "accuracy": 0.7896749521988528,
+              "cross_entropy_from_gold": 0.5583414368363817,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.5583414368363817,
+              "brier": 0.2874056312419155,
+              "ece": 0.027602128315946592,
+              "mean_confidence": 0.7807455671293496,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            }
+          }
+        },
+        {
+          "run": "base27",
+          "model": "Frozen-Qwen3.8-27B",
+          "family": "Qwen3.8-27B",
+          "weights": "frozen_base",
+          "native_readout": null,
+          "zero_shot": {
+            "choice_t1": {
+              "n": 1046,
+              "correct": 820,
+              "accuracy": 0.7839388145315488,
+              "cross_entropy_from_gold": 0.6672937347936473,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.6672937347936473,
+              "brier": 0.31577326969120223,
+              "ece": 0.08097099874334637,
+              "mean_confidence": 0.8596910291171252,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            }
+          },
+          "transfer_dev_tuned": {
+            "transfer_dev_calibrated_choice": {
+              "n": 1046,
+              "correct": 820,
+              "accuracy": 0.7839388145315488,
+              "cross_entropy_from_gold": 0.5895245884799086,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.5895245884799086,
+              "brier": 0.3023594256806041,
+              "ece": 0.029495602615825022,
+              "mean_confidence": 0.7806446298690051,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            }
+          }
+        },
+        {
+          "run": "pointer27",
+          "model": "JevAny-Qwen3.8-27B-Pointer",
+          "family": "Qwen3.8-27B",
+          "weights": "jevany_sft",
+          "native_readout": "pointer",
+          "zero_shot": {
+            "choice_t1": {
+              "n": 1046,
+              "correct": 885,
+              "accuracy": 0.8460803059273423,
+              "cross_entropy_from_gold": 0.5085522464835983,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.5085522464835983,
+              "brier": 0.2411187763545078,
+              "ece": 0.10827608077576636,
+              "mean_confidence": 0.7390643592114102,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            },
+            "native_shipped": {
+              "n": 1046,
+              "correct": 900,
+              "accuracy": 0.8604206500956023,
+              "cross_entropy_from_gold": 0.3878296713265552,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.3878296713265552,
+              "brier": 0.19524463105141282,
+              "ece": 0.026304156956950205,
+              "mean_confidence": 0.8776426213905197,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            },
+            "fixed_blend_0_5": {
+              "n": 1046,
+              "correct": 907,
+              "accuracy": 0.8671128107074569,
+              "cross_entropy_from_gold": 0.3773854700281526,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.3773854700281526,
+              "brier": 0.19080039228840473,
+              "ece": 0.030952348286441715,
+              "mean_confidence": 0.8386108687417092,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            }
+          },
+          "transfer_dev_tuned": {
+            "transfer_dev_calibrated_choice": {
+              "n": 1046,
+              "correct": 885,
+              "accuracy": 0.8460803059273423,
+              "cross_entropy_from_gold": 0.4457110992469971,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.4457110992469971,
+              "brier": 0.21999786383788478,
+              "ece": 0.023323136487035337,
+              "mean_confidence": 0.8447172036358691,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            },
+            "transfer_dev_tuned_blend": {
+              "n": 1046,
+              "correct": 909,
+              "accuracy": 0.8690248565965584,
+              "cross_entropy_from_gold": 0.3698933820845643,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.3698933820845643,
+              "brier": 0.18873769003914254,
+              "ece": 0.020429096141296538,
+              "mean_confidence": 0.8663359693950322,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            }
+          }
+        }
+      ]
+    },
+    "transfer_test": {
+      "label": "Transfer-v9 test",
+      "role": "held_out_evaluation",
+      "records": 1264,
+      "questions": 1264,
+      "headline_n": 1046,
+      "runs": [
+        {
+          "run": "base4",
+          "model": "Frozen-Qwen3.5-4B",
+          "family": "Qwen3.5-4B",
+          "weights": "frozen_base",
+          "native_readout": null,
+          "zero_shot": {
+            "choice_t1": {
+              "n": 1046,
+              "correct": 716,
+              "accuracy": 0.6845124282982792,
+              "cross_entropy_from_gold": 0.8349623273118204,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.8349623273118204,
+              "brier": 0.42656058074391484,
+              "ece": 0.1303798195616654,
+              "mean_confidence": 0.8139445762365763,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            }
+          },
+          "transfer_dev_tuned": {
+            "transfer_dev_calibrated_choice": {
+              "n": 1046,
+              "correct": 716,
+              "accuracy": 0.6845124282982792,
+              "cross_entropy_from_gold": 0.7410651656609946,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.7410651656609946,
+              "brier": 0.3904408201413376,
+              "ece": 0.04134673815393105,
+              "mean_confidence": 0.7051530768940606,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            }
+          }
+        },
+        {
+          "run": "pointer4",
+          "model": "JevAny-Qwen3.5-4B-Pointer",
+          "family": "Qwen3.5-4B",
+          "weights": "jevany_sft",
+          "native_readout": "pointer",
+          "zero_shot": {
+            "choice_t1": {
+              "n": 1046,
+              "correct": 770,
+              "accuracy": 0.7361376673040153,
+              "cross_entropy_from_gold": 0.6902431349522291,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.6902431349522291,
+              "brier": 0.348668135528129,
+              "ece": 0.04630103938423926,
+              "mean_confidence": 0.701833119833475,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            },
+            "native_shipped": {
+              "n": 1046,
+              "correct": 815,
+              "accuracy": 0.7791586998087954,
+              "cross_entropy_from_gold": 0.5717563825431627,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.5717563825431627,
+              "brier": 0.29765821801656817,
+              "ece": 0.04239090732927413,
+              "mean_confidence": 0.8129759944331685,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            },
+            "fixed_blend_0_5": {
+              "n": 1046,
+              "correct": 810,
+              "accuracy": 0.7743785850860421,
+              "cross_entropy_from_gold": 0.5666923610469762,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.5666923610469762,
+              "brier": 0.2939336464727867,
+              "ece": 0.04874813932892946,
+              "mean_confidence": 0.7776535459474749,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            }
+          },
+          "transfer_dev_tuned": {
+            "transfer_dev_calibrated_choice": {
+              "n": 1046,
+              "correct": 770,
+              "accuracy": 0.7361376673040153,
+              "cross_entropy_from_gold": 0.6888466560394513,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.6888466560394513,
+              "brier": 0.34649580012970715,
+              "ece": 0.03269551339782706,
+              "mean_confidence": 0.7287518287657895,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            },
+            "transfer_dev_tuned_blend": {
+              "n": 1046,
+              "correct": 816,
+              "accuracy": 0.780114722753346,
+              "cross_entropy_from_gold": 0.5578570106435864,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.5578570106435864,
+              "brier": 0.2914736076482713,
+              "ece": 0.04496393628178446,
+              "mean_confidence": 0.7852072596268804,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            }
+          }
+        },
+        {
+          "run": "direct4",
+          "model": "JevAny-Qwen3.5-4B-Direct-Token",
+          "family": "Qwen3.5-4B",
+          "weights": "jevany_sft",
+          "native_readout": "direct-token",
+          "zero_shot": {
+            "choice_t1": {
+              "n": 1046,
+              "correct": 822,
+              "accuracy": 0.7858508604206501,
+              "cross_entropy_from_gold": 0.5697635579703885,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.5697635579703885,
+              "brier": 0.29077517389394053,
+              "ece": 0.0470678026592797,
+              "mean_confidence": 0.8092660785307848,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            },
+            "native_shipped": {
+              "n": 1046,
+              "correct": 825,
+              "accuracy": 0.7887189292543021,
+              "cross_entropy_from_gold": 0.5304680016857037,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.5304680016857037,
+              "brier": 0.2727158680694733,
+              "ece": 0.040601108067036665,
+              "mean_confidence": 0.8199335179349373,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            },
+            "fixed_blend_0_5": {
+              "n": 1046,
+              "correct": 831,
+              "accuracy": 0.7944550669216062,
+              "cross_entropy_from_gold": 0.5309958800935447,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.5309958800935447,
+              "brier": 0.2725904993128285,
+              "ece": 0.038203239429849746,
+              "mean_confidence": 0.8132871591572012,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            }
+          },
+          "transfer_dev_tuned": {
+            "transfer_dev_calibrated_choice": {
+              "n": 1046,
+              "correct": 822,
+              "accuracy": 0.7858508604206501,
+              "cross_entropy_from_gold": 0.5628608839489921,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.5628608839489921,
+              "brier": 0.28883932397403955,
+              "ece": 0.030719110557561026,
+              "mean_confidence": 0.7766618482775124,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            },
+            "transfer_dev_tuned_blend": {
+              "n": 1046,
+              "correct": 835,
+              "accuracy": 0.7982791586998088,
+              "cross_entropy_from_gold": 0.5262143707831856,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.5262143707831856,
+              "brier": 0.26999002433749075,
+              "ece": 0.027780702772704318,
+              "mean_confidence": 0.7973056353797929,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            }
+          }
+        },
+        {
+          "run": "base27",
+          "model": "Frozen-Qwen3.8-27B",
+          "family": "Qwen3.8-27B",
+          "weights": "frozen_base",
+          "native_readout": null,
+          "zero_shot": {
+            "choice_t1": {
+              "n": 1046,
+              "correct": 844,
+              "accuracy": 0.8068833652007649,
+              "cross_entropy_from_gold": 0.6110678829313702,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.6110678829313702,
+              "brier": 0.279721544152333,
+              "ece": 0.06893200869919826,
+              "mean_confidence": 0.8617564454102284,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            }
+          },
+          "transfer_dev_tuned": {
+            "transfer_dev_calibrated_choice": {
+              "n": 1046,
+              "correct": 844,
+              "accuracy": 0.8068833652007649,
+              "cross_entropy_from_gold": 0.5494987252614483,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.5494987252614483,
+              "brier": 0.2709760690574176,
+              "ece": 0.027612650998887305,
+              "mean_confidence": 0.7874674967417389,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            }
+          }
+        },
+        {
+          "run": "pointer27",
+          "model": "JevAny-Qwen3.8-27B-Pointer",
+          "family": "Qwen3.8-27B",
+          "weights": "jevany_sft",
+          "native_readout": "pointer",
+          "zero_shot": {
+            "choice_t1": {
+              "n": 1046,
+              "correct": 900,
+              "accuracy": 0.8604206500956023,
+              "cross_entropy_from_gold": 0.47077064689010384,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.47077064689010384,
+              "brier": 0.2114754899927417,
+              "ece": 0.11231046843501219,
+              "mean_confidence": 0.7539620937273849,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            },
+            "native_shipped": {
+              "n": 1046,
+              "correct": 920,
+              "accuracy": 0.8795411089866156,
+              "cross_entropy_from_gold": 0.3191183572882807,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.3191183572882807,
+              "brier": 0.15983357286839844,
+              "ece": 0.02547180335097676,
+              "mean_confidence": 0.8916975436746409,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            },
+            "fixed_blend_0_5": {
+              "n": 1046,
+              "correct": 933,
+              "accuracy": 0.8919694072657743,
+              "cross_entropy_from_gold": 0.32150313724237106,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.32150313724237106,
+              "brier": 0.1550705009584002,
+              "ece": 0.043199084741469725,
+              "mean_confidence": 0.8548688707373127,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            }
+          },
+          "transfer_dev_tuned": {
+            "transfer_dev_calibrated_choice": {
+              "n": 1046,
+              "correct": 900,
+              "accuracy": 0.8604206500956023,
+              "cross_entropy_from_gold": 0.40058733865111656,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.40058733865111656,
+              "brier": 0.1880387608542386,
+              "ece": 0.02034085988544015,
+              "mean_confidence": 0.8604184603403277,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            },
+            "transfer_dev_tuned_blend": {
+              "n": 1046,
+              "correct": 932,
+              "accuracy": 0.8910133843212237,
+              "cross_entropy_from_gold": 0.3094830481103647,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.3094830481103647,
+              "brier": 0.15280535574202198,
+              "ece": 0.034827378233759226,
+              "mean_confidence": 0.8807493062406941,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 218,
+              "ece_bins": 10
+            }
+          }
+        }
+      ]
+    },
+    "typed_test": {
+      "label": "Typed Decisions test",
+      "role": "held_out_external_evaluation",
+      "records": 400,
+      "questions": 2000,
+      "headline_n": 2000,
+      "runs": [
+        {
+          "run": "base4",
+          "model": "Frozen-Qwen3.5-4B",
+          "family": "Qwen3.5-4B",
+          "weights": "frozen_base",
+          "native_readout": null,
+          "zero_shot": {
+            "choice_t1": {
+              "n": 2000,
+              "correct": 1055,
+              "accuracy": 0.5275,
+              "cross_entropy_from_gold": 1.485304034737827,
+              "gold_entropy": 0.7673585556243288,
+              "kl_from_gold": 0.7179454791134983,
+              "brier": 0.32209870787613476,
+              "ece": 0.21683605197556294,
+              "mean_confidence": 0.7434521192146655,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 15
+            }
+          },
+          "transfer_dev_tuned": {
+            "transfer_dev_calibrated_choice": {
+              "n": 2000,
+              "correct": 1055,
+              "accuracy": 0.5275,
+              "cross_entropy_from_gold": 1.160641706252667,
+              "gold_entropy": 0.7673585556243288,
+              "kl_from_gold": 0.3932831506283383,
+              "brier": 0.22234376212257462,
+              "ece": 0.0900516370077249,
+              "mean_confidence": 0.6134237235271172,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 15
+            }
+          }
+        },
+        {
+          "run": "pointer4",
+          "model": "JevAny-Qwen3.5-4B-Pointer",
+          "family": "Qwen3.5-4B",
+          "weights": "jevany_sft",
+          "native_readout": "pointer",
+          "zero_shot": {
+            "choice_t1": {
+              "n": 2000,
+              "correct": 1156,
+              "accuracy": 0.578,
+              "cross_entropy_from_gold": 1.1689837218988208,
+              "gold_entropy": 0.7673585556243288,
+              "kl_from_gold": 0.4016251662744921,
+              "brier": 0.21958081006971433,
+              "ece": 0.11804038821625913,
+              "mean_confidence": 0.6283756741526655,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 15
+            },
+            "native_shipped": {
+              "n": 2000,
+              "correct": 1270,
+              "accuracy": 0.635,
+              "cross_entropy_from_gold": 1.2461303849511813,
+              "gold_entropy": 0.7673585556243288,
+              "kl_from_gold": 0.4787718293268526,
+              "brier": 0.21769431550066473,
+              "ece": 0.11542953593789118,
+              "mean_confidence": 0.7131901462821837,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 15
+            },
+            "fixed_blend_0_5": {
+              "n": 2000,
+              "correct": 1214,
+              "accuracy": 0.607,
+              "cross_entropy_from_gold": 1.1474089185651393,
+              "gold_entropy": 0.7673585556243288,
+              "kl_from_gold": 0.3800503629408105,
+              "brier": 0.20385335585187295,
+              "ece": 0.08838893066306003,
+              "mean_confidence": 0.6710193141005254,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 15
+            }
+          },
+          "transfer_dev_tuned": {
+            "transfer_dev_calibrated_choice": {
+              "n": 2000,
+              "correct": 1156,
+              "accuracy": 0.578,
+              "cross_entropy_from_gold": 1.2283795069938794,
+              "gold_entropy": 0.7673585556243288,
+              "kl_from_gold": 0.4610209513695507,
+              "brier": 0.23872296531625706,
+              "ece": 0.13219447566436857,
+              "mean_confidence": 0.6614429063056575,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 15
+            },
+            "transfer_dev_tuned_blend": {
+              "n": 2000,
+              "correct": 1258,
+              "accuracy": 0.629,
+              "cross_entropy_from_gold": 1.1499057537598978,
+              "gold_entropy": 0.7673585556243288,
+              "kl_from_gold": 0.38254719813556903,
+              "brier": 0.19860375584665835,
+              "ece": 0.09685551065650508,
+              "mean_confidence": 0.6767929224204166,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 15
+            }
+          }
+        },
+        {
+          "run": "direct4",
+          "model": "JevAny-Qwen3.5-4B-Direct-Token",
+          "family": "Qwen3.5-4B",
+          "weights": "jevany_sft",
+          "native_readout": "direct-token",
+          "zero_shot": {
+            "choice_t1": {
+              "n": 2000,
+              "correct": 1296,
+              "accuracy": 0.648,
+              "cross_entropy_from_gold": 1.157150279237127,
+              "gold_entropy": 0.7673585556243288,
+              "kl_from_gold": 0.38979172361279835,
+              "brier": 0.18515075572006146,
+              "ece": 0.07029919279872957,
+              "mean_confidence": 0.6765339723262027,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 15
+            },
+            "native_shipped": {
+              "n": 2000,
+              "correct": 1344,
+              "accuracy": 0.672,
+              "cross_entropy_from_gold": 1.2022614330547874,
+              "gold_entropy": 0.7673585556243288,
+              "kl_from_gold": 0.43490287743045863,
+              "brier": 0.17877494146152656,
+              "ece": 0.08278732481632818,
+              "mean_confidence": 0.7379338187164135,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 15
+            },
+            "fixed_blend_0_5": {
+              "n": 2000,
+              "correct": 1335,
+              "accuracy": 0.6675,
+              "cross_entropy_from_gold": 1.1350838501828007,
+              "gold_entropy": 0.7673585556243288,
+              "kl_from_gold": 0.3677252945584719,
+              "brier": 0.1702376402804755,
+              "ece": 0.06198979447604478,
+              "mean_confidence": 0.7066262108749651,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 15
+            }
+          },
+          "transfer_dev_tuned": {
+            "transfer_dev_calibrated_choice": {
+              "n": 2000,
+              "correct": 1296,
+              "accuracy": 0.648,
+              "cross_entropy_from_gold": 1.083382488931363,
+              "gold_entropy": 0.7673585556243288,
+              "kl_from_gold": 0.31602393330703427,
+              "brier": 0.16593211527952617,
+              "ece": 0.07601165366691312,
+              "mean_confidence": 0.6328419411033379,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 15
+            },
+            "transfer_dev_tuned_blend": {
+              "n": 2000,
+              "correct": 1353,
+              "accuracy": 0.6765,
+              "cross_entropy_from_gold": 1.0910947225952166,
+              "gold_entropy": 0.7673585556243288,
+              "kl_from_gold": 0.3237361669708878,
+              "brier": 0.15773140989073764,
+              "ece": 0.06194953110709811,
+              "mean_confidence": 0.6893724371900853,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 15
+            }
+          }
+        },
+        {
+          "run": "base27",
+          "model": "Frozen-Qwen3.8-27B",
+          "family": "Qwen3.8-27B",
+          "weights": "frozen_base",
+          "native_readout": null,
+          "zero_shot": {
+            "choice_t1": {
+              "n": 2000,
+              "correct": 1365,
+              "accuracy": 0.6825,
+              "cross_entropy_from_gold": 1.4486833046492098,
+              "gold_entropy": 0.7673585556243288,
+              "kl_from_gold": 0.681324749024881,
+              "brier": 0.23332950942149694,
+              "ece": 0.12575488372079707,
+              "mean_confidence": 0.8052338907255023,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 15
+            }
+          },
+          "transfer_dev_tuned": {
+            "transfer_dev_calibrated_choice": {
+              "n": 2000,
+              "correct": 1365,
+              "accuracy": 0.6825,
+              "cross_entropy_from_gold": 1.0976128315315092,
+              "gold_entropy": 0.7673585556243288,
+              "kl_from_gold": 0.3302542759071805,
+              "brier": 0.16553442637117138,
+              "ece": 0.07868470788264477,
+              "mean_confidence": 0.7000954995537738,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 15
+            }
+          }
+        },
+        {
+          "run": "pointer27",
+          "model": "JevAny-Qwen3.8-27B-Pointer",
+          "family": "Qwen3.8-27B",
+          "weights": "jevany_sft",
+          "native_readout": "pointer",
+          "zero_shot": {
+            "choice_t1": {
+              "n": 2000,
+              "correct": 1452,
+              "accuracy": 0.726,
+              "cross_entropy_from_gold": 0.9201029180583041,
+              "gold_entropy": 0.7673585556243288,
+              "kl_from_gold": 0.15274436243397538,
+              "brier": 0.0785204257840767,
+              "ece": 0.10839391090387629,
+              "mean_confidence": 0.6176060890961234,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 15
+            },
+            "native_shipped": {
+              "n": 2000,
+              "correct": 1456,
+              "accuracy": 0.728,
+              "cross_entropy_from_gold": 1.0602046256660616,
+              "gold_entropy": 0.7673585556243288,
+              "kl_from_gold": 0.2928460700417328,
+              "brier": 0.13141516555965035,
+              "ece": 0.05304485014212312,
+              "mean_confidence": 0.7527105045858369,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 15
+            },
+            "fixed_blend_0_5": {
+              "n": 2000,
+              "correct": 1464,
+              "accuracy": 0.732,
+              "cross_entropy_from_gold": 0.9466132871046253,
+              "gold_entropy": 0.7673585556243288,
+              "kl_from_gold": 0.17925473148029658,
+              "brier": 0.09467929687142354,
+              "ece": 0.034120016906592165,
+              "mean_confidence": 0.6998051537601903,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 15
+            }
+          },
+          "transfer_dev_tuned": {
+            "transfer_dev_calibrated_choice": {
+              "n": 2000,
+              "correct": 1452,
+              "accuracy": 0.726,
+              "cross_entropy_from_gold": 1.0152256258087546,
+              "gold_entropy": 0.7673585556243288,
+              "kl_from_gold": 0.2478670701844259,
+              "brier": 0.11614111181065959,
+              "ece": 0.020460563111670046,
+              "mean_confidence": 0.7331494836433007,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 15
+            },
+            "transfer_dev_tuned_blend": {
+              "n": 2000,
+              "correct": 1466,
+              "accuracy": 0.733,
+              "cross_entropy_from_gold": 1.004976949424594,
+              "gold_entropy": 0.7673585556243288,
+              "kl_from_gold": 0.23761839380026517,
+              "brier": 0.11476036996840079,
+              "ece": 0.02738445525330449,
+              "mean_confidence": 0.740111940631487,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 15
+            }
+          }
+        }
+      ],
+      "external_baselines": [
+        {
+          "model": "meraGPT Decider 1",
+          "kind": "published_only",
+          "status": "dataset-card result; not locally rerun",
+          "accuracy": 0.768
+        },
+        {
+          "model": "Jev 1.13 (OpenRouter)",
+          "canonical_model": "TypeSafe Jev 1.13.0",
+          "kind": "external_api",
+          "result_source": "published_only",
+          "status": "dataset-card result; not locally rerun",
+          "accuracy": 0.727
+        }
+      ]
+    },
+    "jevbench_public": {
+      "label": "JevBench public development",
+      "role": "public_diagnostic_not_used_for_selection",
+      "records": 231,
+      "questions": 231,
+      "headline_n": 231,
+      "runs": [
+        {
+          "run": "base4",
+          "model": "Frozen-Qwen3.5-4B",
+          "family": "Qwen3.5-4B",
+          "weights": "frozen_base",
+          "native_readout": null,
+          "zero_shot": {
+            "choice_t1": {
+              "n": 231,
+              "correct": 184,
+              "accuracy": 0.7965367965367965,
+              "cross_entropy_from_gold": 0.46503985941725867,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.46503985941725867,
+              "brier": 0.26023857002415907,
+              "ece": 0.042706500279636225,
+              "mean_confidence": 0.8277960488256922,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            }
+          },
+          "transfer_dev_tuned": {
+            "transfer_dev_calibrated_choice": {
+              "n": 231,
+              "correct": 184,
+              "accuracy": 0.7965367965367965,
+              "cross_entropy_from_gold": 0.5034935201937853,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.5034935201937853,
+              "brier": 0.2731813432864743,
+              "ece": 0.08846006305082621,
+              "mean_confidence": 0.7245256388535549,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            }
+          }
+        },
+        {
+          "run": "pointer4",
+          "model": "JevAny-Qwen3.5-4B-Pointer",
+          "family": "Qwen3.5-4B",
+          "weights": "jevany_sft",
+          "native_readout": "pointer",
+          "zero_shot": {
+            "choice_t1": {
+              "n": 231,
+              "correct": 188,
+              "accuracy": 0.8138528138528138,
+              "cross_entropy_from_gold": 0.47901846432733636,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.47901846432733636,
+              "brier": 0.2561308970527479,
+              "ece": 0.056124141655517386,
+              "mean_confidence": 0.7692551472534949,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            },
+            "native_shipped": {
+              "n": 231,
+              "correct": 185,
+              "accuracy": 0.8008658008658008,
+              "cross_entropy_from_gold": 0.4554565575008672,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.4554565575008672,
+              "brier": 0.2585838755503942,
+              "ece": 0.03718147002370739,
+              "mean_confidence": 0.8308520442419092,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            },
+            "fixed_blend_0_5": {
+              "n": 231,
+              "correct": 188,
+              "accuracy": 0.8138528138528138,
+              "cross_entropy_from_gold": 0.4142501461307885,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.4142501461307885,
+              "brier": 0.23413224994049325,
+              "ece": 0.02272572239740828,
+              "mean_confidence": 0.807826264488957,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            }
+          },
+          "transfer_dev_tuned": {
+            "transfer_dev_calibrated_choice": {
+              "n": 231,
+              "correct": 188,
+              "accuracy": 0.8138528138528138,
+              "cross_entropy_from_gold": 0.46979954158584164,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.46979954158584164,
+              "brier": 0.2515032873679713,
+              "ece": 0.03081010600115095,
+              "mean_confidence": 0.7956829590845715,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            },
+            "transfer_dev_tuned_blend": {
+              "n": 231,
+              "correct": 187,
+              "accuracy": 0.8095238095238095,
+              "cross_entropy_from_gold": 0.4300189742220573,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.4300189742220573,
+              "brier": 0.24497083465715366,
+              "ece": 0.03200768487813679,
+              "mean_confidence": 0.8105343163775357,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            }
+          }
+        },
+        {
+          "run": "direct4",
+          "model": "JevAny-Qwen3.5-4B-Direct-Token",
+          "family": "Qwen3.5-4B",
+          "weights": "jevany_sft",
+          "native_readout": "direct-token",
+          "zero_shot": {
+            "choice_t1": {
+              "n": 231,
+              "correct": 188,
+              "accuracy": 0.8138528138528138,
+              "cross_entropy_from_gold": 0.4119059642596153,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.4119059642596153,
+              "brier": 0.23630630313186377,
+              "ece": 0.06493498624236703,
+              "mean_confidence": 0.8264788235127298,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            },
+            "native_shipped": {
+              "n": 231,
+              "correct": 187,
+              "accuracy": 0.8095238095238095,
+              "cross_entropy_from_gold": 0.43291971264790263,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.43291971264790263,
+              "brier": 0.25567839211017723,
+              "ece": 0.05126707211644283,
+              "mean_confidence": 0.8459940130356174,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            },
+            "fixed_blend_0_5": {
+              "n": 231,
+              "correct": 187,
+              "accuracy": 0.8095238095238095,
+              "cross_entropy_from_gold": 0.4013583529376732,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.4013583529376732,
+              "brier": 0.23610741709317634,
+              "ece": 0.04227451187274651,
+              "mean_confidence": 0.8360951760741018,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            }
+          },
+          "transfer_dev_tuned": {
+            "transfer_dev_calibrated_choice": {
+              "n": 231,
+              "correct": 188,
+              "accuracy": 0.8138528138528138,
+              "cross_entropy_from_gold": 0.419037743510702,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.419037743510702,
+              "brier": 0.2361960585013741,
+              "ece": 0.04983130926953957,
+              "mean_confidence": 0.7972245036382399,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            },
+            "transfer_dev_tuned_blend": {
+              "n": 231,
+              "correct": 187,
+              "accuracy": 0.8095238095238095,
+              "cross_entropy_from_gold": 0.40445010913159385,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.40445010913159385,
+              "brier": 0.23725278784385523,
+              "ece": 0.04395161391787564,
+              "mean_confidence": 0.8242603879406017,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            }
+          }
+        },
+        {
+          "run": "base27",
+          "model": "Frozen-Qwen3.8-27B",
+          "family": "Qwen3.8-27B",
+          "weights": "frozen_base",
+          "native_readout": null,
+          "zero_shot": {
+            "choice_t1": {
+              "n": 231,
+              "correct": 203,
+              "accuracy": 0.8787878787878788,
+              "cross_entropy_from_gold": 0.2864628223866121,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.2864628223866121,
+              "brier": 0.1604073338283613,
+              "ece": 0.022674652746122903,
+              "mean_confidence": 0.8936596611320321,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            }
+          },
+          "transfer_dev_tuned": {
+            "transfer_dev_calibrated_choice": {
+              "n": 231,
+              "correct": 203,
+              "accuracy": 0.8787878787878788,
+              "cross_entropy_from_gold": 0.32118852252593943,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.32118852252593943,
+              "brier": 0.16739722641469756,
+              "ece": 0.09116510874430303,
+              "mean_confidence": 0.821229989485614,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            }
+          }
+        },
+        {
+          "run": "pointer27",
+          "model": "JevAny-Qwen3.8-27B-Pointer",
+          "family": "Qwen3.8-27B",
+          "weights": "jevany_sft",
+          "native_readout": "pointer",
+          "zero_shot": {
+            "choice_t1": {
+              "n": 231,
+              "correct": 207,
+              "accuracy": 0.8961038961038961,
+              "cross_entropy_from_gold": 0.34460785579024505,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.34460785579024505,
+              "brier": 0.16729832168502917,
+              "ece": 0.12307461523799648,
+              "mean_confidence": 0.7818628405160418,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            },
+            "native_shipped": {
+              "n": 231,
+              "correct": 208,
+              "accuracy": 0.9004329004329005,
+              "cross_entropy_from_gold": 0.2650469579600223,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.2650469579600223,
+              "brier": 0.14556199524820898,
+              "ece": 0.02122154456035358,
+              "mean_confidence": 0.884113426683873,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            },
+            "fixed_blend_0_5": {
+              "n": 231,
+              "correct": 208,
+              "accuracy": 0.9004329004329005,
+              "cross_entropy_from_gold": 0.26310190901965735,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.26310190901965735,
+              "brier": 0.1406077982333171,
+              "ece": 0.05751149881179743,
+              "mean_confidence": 0.8560666856708948,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            }
+          },
+          "transfer_dev_tuned": {
+            "transfer_dev_calibrated_choice": {
+              "n": 231,
+              "correct": 207,
+              "accuracy": 0.8961038961038961,
+              "cross_entropy_from_gold": 0.26532298607460764,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.26532298607460764,
+              "brier": 0.14331108028016937,
+              "ece": 0.042115349045515435,
+              "mean_confidence": 0.8714557776895534,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            },
+            "transfer_dev_tuned_blend": {
+              "n": 231,
+              "correct": 208,
+              "accuracy": 0.9004329004329005,
+              "cross_entropy_from_gold": 0.24856632495280404,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.24856632495280404,
+              "brier": 0.13696196671048083,
+              "ece": 0.05151408138171153,
+              "mean_confidence": 0.8781699403131888,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            }
+          }
+        }
+      ]
+    },
+    "jevjudge_text": {
+      "label": "JevJudge text",
+      "role": "held_out_external_evaluation",
+      "records": 724,
+      "questions": 724,
+      "headline_n": 724,
+      "runs": [
+        {
+          "run": "base4",
+          "model": "Frozen-Qwen3.5-4B",
+          "family": "Qwen3.5-4B",
+          "weights": "frozen_base",
+          "native_readout": null,
+          "zero_shot": {
+            "choice_t1": {
+              "n": 724,
+              "correct": 425,
+              "accuracy": 0.5870165745856354,
+              "cross_entropy_from_gold": 0.9990413838295111,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.9990413838295111,
+              "brier": 0.5424665612791818,
+              "ece": 0.124790188004864,
+              "mean_confidence": 0.7118067625904997,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            }
+          },
+          "transfer_dev_tuned": {
+            "transfer_dev_calibrated_choice": {
+              "n": 724,
+              "correct": 425,
+              "accuracy": 0.5870165745856354,
+              "cross_entropy_from_gold": 0.9193370649594155,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.9193370649594155,
+              "brier": 0.5121791926918943,
+              "ece": 0.030915955188617703,
+              "mean_confidence": 0.5929232826389871,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            }
+          }
+        },
+        {
+          "run": "pointer4",
+          "model": "JevAny-Qwen3.5-4B-Pointer",
+          "family": "Qwen3.5-4B",
+          "weights": "jevany_sft",
+          "native_readout": "pointer",
+          "zero_shot": {
+            "choice_t1": {
+              "n": 724,
+              "correct": 381,
+              "accuracy": 0.5262430939226519,
+              "cross_entropy_from_gold": 1.027944601965405,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 1.027944601965405,
+              "brier": 0.5701372991529206,
+              "ece": 0.05964150883024191,
+              "mean_confidence": 0.5692400844020692,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            },
+            "native_shipped": {
+              "n": 724,
+              "correct": 420,
+              "accuracy": 0.580110497237569,
+              "cross_entropy_from_gold": 0.9966502097264682,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.9966502097264682,
+              "brier": 0.5538821469971053,
+              "ece": 0.07444449081079427,
+              "mean_confidence": 0.621924240558197,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            },
+            "fixed_blend_0_5": {
+              "n": 724,
+              "correct": 428,
+              "accuracy": 0.5911602209944752,
+              "cross_entropy_from_gold": 0.9621095236741931,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.9621095236741931,
+              "brier": 0.5413174973396784,
+              "ece": 0.06904408118946087,
+              "mean_confidence": 0.5874577811451718,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            }
+          },
+          "transfer_dev_tuned": {
+            "transfer_dev_calibrated_choice": {
+              "n": 724,
+              "correct": 381,
+              "accuracy": 0.5262430939226519,
+              "cross_entropy_from_gold": 1.048869475648102,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 1.048869475648102,
+              "brier": 0.5765749498377344,
+              "ece": 0.0728368732066297,
+              "mean_confidence": 0.5930575646329146,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            },
+            "transfer_dev_tuned_blend": {
+              "n": 724,
+              "correct": 431,
+              "accuracy": 0.5953038674033149,
+              "cross_entropy_from_gold": 0.9665595951901557,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.9665595951901557,
+              "brier": 0.5427219958129672,
+              "ece": 0.0883382849075786,
+              "mean_confidence": 0.5909347225687963,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            }
+          }
+        },
+        {
+          "run": "direct4",
+          "model": "JevAny-Qwen3.5-4B-Direct-Token",
+          "family": "Qwen3.5-4B",
+          "weights": "jevany_sft",
+          "native_readout": "direct-token",
+          "zero_shot": {
+            "choice_t1": {
+              "n": 724,
+              "correct": 417,
+              "accuracy": 0.5759668508287292,
+              "cross_entropy_from_gold": 0.9595839832215673,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.9595839832215673,
+              "brier": 0.5411152452677374,
+              "ece": 0.10266762314870827,
+              "mean_confidence": 0.6575552343312288,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            },
+            "native_shipped": {
+              "n": 724,
+              "correct": 423,
+              "accuracy": 0.5842541436464088,
+              "cross_entropy_from_gold": 0.9150453634780736,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.9150453634780736,
+              "brier": 0.5160204686928853,
+              "ece": 0.09170853327092285,
+              "mean_confidence": 0.6676634582809498,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            },
+            "fixed_blend_0_5": {
+              "n": 724,
+              "correct": 427,
+              "accuracy": 0.5897790055248618,
+              "cross_entropy_from_gold": 0.9182029376845215,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.9182029376845215,
+              "brier": 0.5196712705778425,
+              "ece": 0.07987836608665412,
+              "mean_confidence": 0.6592116906583616,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            }
+          },
+          "transfer_dev_tuned": {
+            "transfer_dev_calibrated_choice": {
+              "n": 724,
+              "correct": 417,
+              "accuracy": 0.5759668508287292,
+              "cross_entropy_from_gold": 0.9368946832422624,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.9368946832422624,
+              "brier": 0.5297156601921297,
+              "ece": 0.06832163591814601,
+              "mean_confidence": 0.6163866223639445,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            },
+            "transfer_dev_tuned_blend": {
+              "n": 724,
+              "correct": 429,
+              "accuracy": 0.5925414364640884,
+              "cross_entropy_from_gold": 0.905162432888216,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.905162432888216,
+              "brier": 0.5125121544257433,
+              "ece": 0.06810038720073028,
+              "mean_confidence": 0.6374560089027138,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            }
+          }
+        },
+        {
+          "run": "base27",
+          "model": "Frozen-Qwen3.8-27B",
+          "family": "Qwen3.8-27B",
+          "weights": "frozen_base",
+          "native_readout": null,
+          "zero_shot": {
+            "choice_t1": {
+              "n": 724,
+              "correct": 447,
+              "accuracy": 0.6174033149171271,
+              "cross_entropy_from_gold": 1.0435471379379775,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 1.0435471379379775,
+              "brier": 0.5477779993257101,
+              "ece": 0.18642668688209224,
+              "mean_confidence": 0.7965262996294791,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            }
+          },
+          "transfer_dev_tuned": {
+            "transfer_dev_calibrated_choice": {
+              "n": 724,
+              "correct": 447,
+              "accuracy": 0.6174033149171271,
+              "cross_entropy_from_gold": 0.8776519496796663,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.8776519496796663,
+              "brier": 0.4981210685244041,
+              "ece": 0.08864165712545208,
+              "mean_confidence": 0.6911587312881367,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            }
+          }
+        },
+        {
+          "run": "pointer27",
+          "model": "JevAny-Qwen3.8-27B-Pointer",
+          "family": "Qwen3.8-27B",
+          "weights": "jevany_sft",
+          "native_readout": "pointer",
+          "zero_shot": {
+            "choice_t1": {
+              "n": 724,
+              "correct": 419,
+              "accuracy": 0.5787292817679558,
+              "cross_entropy_from_gold": 0.9221648550274847,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.9221648550274847,
+              "brier": 0.5384293459629866,
+              "ece": 0.12300846658221797,
+              "mean_confidence": 0.654141167166119,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            },
+            "native_shipped": {
+              "n": 724,
+              "correct": 481,
+              "accuracy": 0.664364640883978,
+              "cross_entropy_from_gold": 0.8240838957036632,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.8240838957036632,
+              "brier": 0.4761621807919303,
+              "ece": 0.10150582984409334,
+              "mean_confidence": 0.7093057903641973,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            },
+            "fixed_blend_0_5": {
+              "n": 724,
+              "correct": 465,
+              "accuracy": 0.6422651933701657,
+              "cross_entropy_from_gold": 0.8340868983096242,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.8340868983096242,
+              "brier": 0.48649946917918646,
+              "ece": 0.09293531151742315,
+              "mean_confidence": 0.6762654332459023,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            }
+          },
+          "transfer_dev_tuned": {
+            "transfer_dev_calibrated_choice": {
+              "n": 724,
+              "correct": 419,
+              "accuracy": 0.5787292817679558,
+              "cross_entropy_from_gold": 1.0389937594613554,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 1.0389937594613554,
+              "brier": 0.5859846798375742,
+              "ece": 0.18095024427280532,
+              "mean_confidence": 0.7592297383784663,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            },
+            "transfer_dev_tuned_blend": {
+              "n": 724,
+              "correct": 466,
+              "accuracy": 0.643646408839779,
+              "cross_entropy_from_gold": 0.8472248615476166,
+              "gold_entropy": 0.0,
+              "kl_from_gold": 0.8472248615476166,
+              "brier": 0.49231968730390446,
+              "ece": 0.10423989831022704,
+              "mean_confidence": 0.7135438249208921,
+              "cohort": "clean and knowable",
+              "excluded_non_headline_rows": 0,
+              "ece_bins": 10
+            }
+          }
+        }
+      ],
+      "external_baselines": [
+        {
+          "model": "Jev 1.13 (OpenRouter)",
+          "canonical_model": "TypeSafe Jev 1.13.0",
+          "kind": "external_api",
+          "result_source": "api_rerun",
+          "status": "OpenRouter full-context rerun",
+          "accuracy": 0.6505524861878453,
+          "nll": 0.836,
+          "brier": 0.461,
+          "ece": 0.076,
+          "answered": 724,
+          "requested": 724
+        },
+        {
+          "model": "Kev-27B",
+          "kind": "open_kev",
+          "status": "local full-context 4,096-token chunked-KV rerun",
+          "accuracy": 0.6422651933701657,
+          "nll": 0.8774529517226382,
+          "brier": 0.48251125757984015,
+          "ece": 0.07166661519467314,
+          "answered": 724,
+          "requested": 724,
+          "repository": "jaredpalmer/kev-27b",
+          "revision": "01b81998019be550f0ae858727df49bac9511195"
+        }
+      ]
+    },
+    "jevjudge_full": {
+      "label": "JevJudge full",
+      "records": 3220,
+      "status": "unsupported",
+      "accuracy": null,
+      "reason": "Training-free choice-token readout is text-only; image/video records are not stripped or relabeled as a full-suite result.",
+      "native_checkpoint_results": "results/external-zero-shot-v1.json#jevjudge_full"
+    }
+  },
+  "legacy_results": {
+    "status": "retained unchanged",
+    "artifact": "results/letter-readout-v1.json"
+  }
+}

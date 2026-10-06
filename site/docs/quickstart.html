@@ -19,7 +19,10 @@
 <li><a href="#13-jevany-deployment">🚀 1.3 JevAny Deployment</a></li>
 </ul>
 </li>
-<li><a href="#2-pretrained-models">🤗 2. Pretrained Models</a></li>
+<li><a href="#2-pretrained-models">🤗 2. Pretrained Models</a><ul>
+<li><a href="#training-free-choice-token-readout">Training-free choice-token readout</a></li>
+</ul>
+</li>
 <li><a href="#3-benchmark-results">📊 3. Benchmark Results</a><ul>
 <li><a href="#31-inference-efficiency">⏱️ 3.1 Inference efficiency</a></li>
 </ul>
@@ -50,11 +53,11 @@ options, then directly returns a choice and its probabilities.</p>
 
 <h2 id="results-and-demos">🎮 Results and Demos <a name="results-and-demos"></a><a name="demos"></a></h2>
 <p><a href="../index.html#benchmarks">Explore interactive benchmark results</a></p>
-<p><a href="#evaluation">Full benchmark results and evaluation details</a>.</p>
+<p><a href="../index.html#benchmarks">Interactive benchmark results</a>.</p>
 <p>The following 30 examples are archived replays from an earlier compatible
 JevAny checkpoint. The current default release is
 <a href="https://huggingface.co/SimpleJev/JevAny-Qwen3.8-27B-LoRA">JevAny-Qwen3.8-27B</a>.
-<a href="CASES.html">Explore the cases</a>, or <a href="#run-locally">run a model locally</a> to
+<a href="../index.html#case-library">Explore the cases</a>, or <a href="#run-locally">run a model locally</a> to
 try your own inputs and see its choices and probabilities.</p>
 <p><a href="../index.html#case-library">Explore all 30 application replays →</a></p>
 <h3 id="jev-inside-llm-agent-loops">⚡ Jev inside LLM agent loops</h3>
@@ -64,31 +67,17 @@ animations compare LLM only (left) with LLM + Jev (right) at equal reward.
 Steps are illustrated; accelerated playback preserves each pair's measured
 completion-time ratio. Click an animation to enlarge it.</p>
 <p><strong>Golden rules</strong></p>
-<p><strong>Delegate the selection bottleneck, not the task.</strong> Jev is useful in the
-narrow gap where the LLM already knows the valid alternatives, but repeated
-frontier selection is costly or measurably unreliable.</p>
-<p>Jev has two valid jobs: <strong>remove frontier work</strong>, or <strong>correct a measured local
-ranking weakness</strong>. If it does neither, it is overhead.</p>
+<p><strong>Delegate the selection bottleneck, not the task.</strong> Jev should either replace
+repeated LLM reasoning or correct a measured local ranking error; otherwise it
+is overhead.</p>
 <ul>
-<li><strong>Judge the phase, not the benchmark.</strong> WebShop and Terminal-Bench both mix
-  open-ended reasoning with bounded choices. Delegate only the bounded phase;
-  trivial choices are cheaper to execute directly, while missing strategies
-  stay with the LLM.</li>
-<li><strong>The menu is the capability ceiling.</strong> Give Jev 2–4 currently valid
-  counterfactual branches that include the correct action and lead to different
-  outcomes. Jev can rank expressed options; it cannot invent a missing plan.</li>
-<li><strong>For efficiency, replace reasoning; do not append a judge.</strong> One LLM plan
-  should fund several Jev choices. In the GPT-5.6-sol + 27B FrozenLake cell,
-  LLM calls fell 64.4%; WebArena, where delegation did not remove frontier
-  work, added 5.6% calls and 28.2% tokens. Quality-only use should first show a
-  ranking gain in paired or D1 shadow evaluation.</li>
-<li><strong>Stay inside the feedback horizon.</strong> Continue only while each action is
-  reversible and its semantic effect is immediately observable. Return to the
-  LLM on novelty, stale candidates, delayed feedback, or recovery.</li>
-<li><strong>Promote autonomy with evidence.</strong> Move from D0 LLM-only → D1 shadow → D2
-  one-step → D3 routine-default → D4 bounded subgoal. Keep only non-dominated
-  points: equal or higher verifier reward at lower cost, or higher reward with
-  the added cost explicitly reported. Delegation coverage itself is not a win.</li>
+<li>Give Jev <strong>2–4 valid branches</strong> with distinct, observable outcomes and the
+  correct action included.</li>
+<li>Reuse one LLM plan across reversible choices; return control on novelty,
+  stale candidates, delayed feedback, recovery, or completion.</li>
+<li>Scale autonomy only with paired reward/cost evidence: D0 LLM-only → D1 shadow
+  → D2 one-step → D3 routine default → D4 bounded subgoal. Coverage is not
+  success.</li>
 </ul>
 <div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
   <tr>
@@ -170,6 +159,7 @@ where Jev helps and when to return control to the LLM.</p>
 <li><a href="#training">🛠️ 1.2 JevAny Training</a></li>
 <li><a href="#deployment">🚀 1.3 JevAny Deployment</a></li>
 <li><a href="#pretrained-models">🤗 2. Pretrained Models</a></li>
+<li><a href="#choice-readout">Training-free choice-token readout</a></li>
 <li><a href="#evaluation">📊 3. Benchmark Results</a></li>
 <li><a href="#efficiency">⏱️ 3.1 Inference efficiency</a></li>
 <li><a href="#examples--test-environments">🕹️ 4. Examples &amp; Test Environments</a></li>
@@ -337,8 +327,39 @@ weights, plus runtime memory. See the
 4,096 options within the context limit; direct-token supports up to 255.
 See <a href="TRAINING.html#pointer-and-direct-token-readouts">readout choices</a> for
 training and accuracy tradeoffs.</p>
+<h3 id="training-free-choice-token-readout">Training-free choice-token readout <a name="choice-readout"></a><a name="letter-readout"></a></h3>
+<p>Choice-token is a training-free readout for up to 52 options: label them with
+the one-token IDs <code>A–Z, a–z</code>, score the answer-position logits, and renormalize.
+It works on a frozen base or with a Pointer/Direct-Token checkpoint; unlike
+temperature calibration, it can change the selected answer.</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany eval --run SimpleJev/JevAny-Qwen3.5-4B-Direct-Token-LoRA \
+  --suite /path/to/suite --out runs/choice --device cuda --readout choice
+</code></pre>
+<p><a href="CHOICE_READOUT.html">Method, commands and full results</a> ·
+<a href="../files/results/choice-readout-v2.json">Machine-readable results</a></p>
+<p><a href="CHOICE_READOUT.html#results"><img loading="lazy" alt="Training-free choice-token, checkpoint-native, Transfer-dev-tuned blend, and external baseline accuracy on Typed Decisions and JevJudge text" src="../files/docs/choice-readout-results.svg" /></a></p>
+<ul>
+<li><strong>Best 4B blend:</strong> Direct-Token reaches <strong>79.83%</strong> Transfer, <strong>67.65%</strong> Typed,
+  and <strong>59.25%</strong> JevJudge text—+0.96, +0.45, and +0.83 points over native.</li>
+<li><strong>Best 27B blend:</strong> Pointer reaches <strong>89.10%</strong> Transfer and <strong>73.30%</strong> Typed,
+  but falls from <strong>66.44% to 64.36%</strong> on JevJudge text.</li>
+<li><strong>Training still matters:</strong> on Typed, the frozen 4B path scores <strong>52.75%</strong>;
+  Direct-Token raises it to <strong>64.80%</strong>.</li>
+</ul>
+<p>Tune one blend weight on development data, freeze it before evaluation, and
+blend only when native and choice errors are complementary. Temperature changes
+confidence, not argmax.</p>
+<blockquote>
+<p><strong>Metric note:</strong> Cygnet's <strong>73.70</strong> is a v1.5.4 composite over 1,624 open and
+sealed items—not accuracy. Its comparable public-development accuracy is
+<strong>203/231 (87.9%)</strong>.</p>
+</blockquote>
+<p><strong>Key takeaway:</strong> Choice-token helps when extracting the decision—not reasoning
+ability—is the bottleneck; keep a blend only when it improves target-like
+held-out data.</p>
 <h2 id="3-benchmark-results">📊 3. Benchmark Results <a name="evaluation"></a></h2>
-<p>JevAny-Qwen3.8-27B leads both benchmarks and has the lowest NLL and Brier.
+<p>The release table below uses each checkpoint's native readout.
+JevAny-Qwen3.8-27B leads both benchmarks and has the lowest NLL and Brier.
 Among 4B releases, direct-token leads on JevBench; pointer leads on Transfer.</p>
 <p><a href="../index.html#benchmarks">Explore interactive benchmark results</a></p>
 <div align="center">
@@ -361,35 +382,27 @@ NLL, Brier and ECE are measured on Transfer.
 </div>
 
 <p><a href="EVALUATION.html#model-family-v2">Full results and protocols</a> ·
-<a href="../files/results/model-family-v2.json">Machine-readable results</a> ·
+<a href="../assets/data/model-family-v2.json">Machine-readable results</a> ·
 <a href="../files/reports/JevAny_Tech_Report.pdf">Method and ablation report</a></p>
-<p>The external comparison uses the complete Typed Decisions test split, the full
-3,220-record JevJudge multimodal suite, and its 724-record text slice. The same
-13 models stay in the same order; <code>—</code> means unsupported native input or no
-matching result.</p>
-<p><a href="../files/docs/external-zero-shot.svg"><img loading="lazy" alt="Accuracy on Typed Decisions, full JevJudge, and the JevJudge text-only subset for the same thirteen-model cohort" src="../files/docs/external-zero-shot.svg" /></a></p>
+<p>The same 13-model cohort is compared by accuracy on Typed Decisions, JevJudge
+full (3,220 multimodal records), and its 724-record text subset. <code>—</code> means
+unsupported input or no matching result.</p>
+<p><a href="EXTERNAL_EVALUATION.html"><img loading="lazy" alt="Accuracy on Typed Decisions, full JevJudge, and the JevJudge text-only subset for the same thirteen-model cohort" src="../files/docs/external-zero-shot.svg" /></a></p>
 <ul>
-<li><strong>JevAny-Qwen3.8-27B:</strong> 72.8% Typed accuracy, <strong>62.3%</strong> JevJudge full accuracy, and 66.4% JevJudge text-only accuracy.</li>
-<li>All five JevAny releases completed 3,220/3,220 native text, image, and video records. Their full-suite accuracy ranges from 51.5% to 62.3%; the strongest complete open baseline scores 48.2%.</li>
-<li>On the JevJudge text-only subset, Qwen3.8-27B scores 66.4% and Kev-27B scores 64.2%. Kev has no native image/video path, so its full result is <code>—</code>.</li>
-<li><strong>Jev 1.13 (OpenRouter):</strong> 72.7% Typed accuracy (published) and 65.1% JevJudge text-only accuracy; its full result is <code>—</code> because the endpoint is text-only. Published Decider 1 (76.8%) and Liquid d1 (74.2%) remain higher on Typed Decisions.</li>
+<li><strong>JevAny-Qwen3.8-27B:</strong> 72.8% Typed, <strong>62.3%</strong> JevJudge full, and 66.4% text;
+  the best other model with a full result is Jeff-Qwen3.5-2B at 48.2%.</li>
+<li><strong>Other baselines:</strong> Jev 1.13 scores 72.7% Typed and 65.1% text; Kev-27B
+  scores 64.2% text. Published Decider 1 and Liquid d1 lead Typed at 76.8% and
+  74.2%, but have no comparable full-suite result.</li>
 </ul>
-<p>All three panels use accuracy. JevJudge full covers all 3,220 multimodal records;
-text-only is its 724-record text subset. The benchmark's official <code>skill_role</code>
-metric remains in the detailed evaluation notes.</p>
 <p><a href="EXTERNAL_EVALUATION.html">Full external tables and reproducibility notes</a> ·
 <a href="../files/results/external-zero-shot-v1.json">Machine-readable chart results</a></p>
 <h3 id="31-inference-efficiency">⏱️ 3.1 Inference efficiency <a name="efficiency"></a></h3>
-<p>On one H200, CUDA Graphs cut Qwen3.8-27B median latency from <strong>113.54 to
-30.53 ms (3.72×)</strong> on 231 JevBench questions; fused SDPA plus CUDA Graphs cut
-Muse-Glimmer-30B from <strong>100.71 to 43.25 ms (2.33×)</strong> on a balanced 44-request
-Transfer panel.
-Accuracy stayed at 207/231 and 38/44, with no argmax changes. The table uses
-the H200 headline measurements for 27B and 30B, while retaining the original
-apples-to-apples A100-40GB comparison for the 4B models. Latency is comparable
-within each row; the fixed evaluation panels are listed explicitly. In the
-plot, diamonds show the 27B/30B H200 arrows and circles show the A100 cohort;
-the H200 points are not mixed into the A100 frontier.</p>
+<p>On H200, CUDA acceleration cuts Qwen3.8-27B median latency from <strong>113.54 to
+30.53 ms (3.72×)</strong> and Muse-Glimmer-30B from <strong>100.71 to 43.25 ms (2.33×)</strong>,
+with identical decisions (207/231 and 38/44). Each speedup is a within-row
+comparison; H200 and A100 rows use different fixed panels, so absolute latency
+is not compared across hardware.</p>
 <p><a href="EFFICIENCY.html"><img loading="lazy" alt="Accuracy vs median latency before and after acceleration for JevAny and other decision models" src="../files/docs/efficiency-latency.png" /></a></p>
 <div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
 <thead>
@@ -437,7 +450,7 @@ the H200 points are not mixed into the A100 frontier.</p>
 <td style="text-align: right;">100.71 ms</td>
 <td style="text-align: right;"><strong>43.25 ms</strong></td>
 <td style="text-align: right;"><strong>2.33×</strong></td>
-<td style="text-align: right;">38/44 → 38/44</td>
+<td style="text-align: right;">86.36% → 86.36%</td>
 <td style="text-align: left;">Transfer sample, 44</td>
 </tr>
 <tr>
@@ -446,15 +459,15 @@ the H200 points are not mixed into the A100 frontier.</p>
 <td style="text-align: right;">113.54 ms</td>
 <td style="text-align: right;"><strong>30.53 ms</strong></td>
 <td style="text-align: right;"><strong>3.72×</strong></td>
-<td style="text-align: right;">207/231 → 207/231</td>
+<td style="text-align: right;">89.61% → 89.61%</td>
 <td style="text-align: left;">JevBench public, 231</td>
 </tr>
 </tbody>
 </table></div>
 <p>Median model-call latency, serial batch size 1. See the full report for the
 apples-to-apples A100 comparison and panel limitations.</p>
-<p><a href="EFFICIENCY.html"><img loading="lazy" alt="Animation: Default, kernels with fused SDPA, and CUDA graphs race on one A100 clock slowed twenty times for JevAny-4B, 4B-DT and Gemma-4B; CUDA graphs finish at 25–32 ms, 3.3–4.1× sooner than Default" src="../files/docs/efficiency-ablation.gif" /></a></p>
-<p align="center"><sub>4B releases on one A100-40GB, Transfer-v9. Each bar fills at 1/20 of real time and stops at that stage's median latency.</sub></p>
+<p><a href="EFFICIENCY.html"><img loading="lazy" alt="Animation: normalized latency ladders for the 4B releases on A100 and the 27B and 30B releases on H200, with exact median latency and speed-up labels" src="../files/docs/efficiency-ablation.gif" /></a></p>
+<p align="center"><sub>4B on A100 and 27–30B on H200. Each row is normalized to its own baseline; compare stages only within that row.</sub></p>
 
 <p><a href="EFFICIENCY.html">Full tables, setup and other models</a> ·
 <a href="DEPLOYMENT.html#optional-cuda-acceleration">How to enable</a> ·
@@ -495,15 +508,15 @@ requirements and environment APIs, or <a href="INTEGRATIONS.html">integrations</
 combine JevAny decisions with an LLM planner.</p>
 <h2 id="5-supported-model-families">🧩 5. Supported Model Families <a name="supported-model-families"></a></h2>
 <p><a href="TRAINING.html#backbone-support">Model IDs, supported inputs and setup requirements</a>.</p>
-<p><a href="TRAINING.html#backbone-support"><img loading="lazy" alt="26 supported models across Qwen, Gemma, Muse, Mistral, GLM, Nemotron and Llama" src="../files/docs/supported-model-families.svg" /></a></p>
+<p><a href="../index.html#supported-models"><img loading="lazy" alt="26 supported models across Qwen, Gemma, Muse, Mistral, GLM, Nemotron and Llama" src="../files/docs/supported-model-families.svg" /></a></p>
 <h2 id="6-documentation-and-contributing">📚 6. Documentation and Contributing <a name="documentation-and-contributing"></a></h2>
-<p><a href="TRAINING.html">Training</a> · <a href="DEPLOYMENT.html">Deployment</a> · <a href="API.html">API</a> · <a href="DATA.html">Data</a> · <a href="EVALUATION.html">Evaluation</a> · <a href="experiments-AGENT_HARNESS_FRONTIER_PROTOCOL.html">Agent harness protocol</a> · <a href="contributing.html">Contributing</a></p>
+<p><a href="../index.html#documentation">Documentation hub</a> · <a href="TRAINING.html">Training</a> · <a href="DEPLOYMENT.html">Deployment</a> · <a href="API.html">API</a> · <a href="DATA.html">Data</a> · <a href="EVALUATION.html">Evaluation</a> · <a href="experiments-AGENT_HARNESS_FRONTIER_PROTOCOL.html">Agent harness protocol</a> · <a href="contributing.html">Contributing</a></p>
 <p>The <a href="../files/reports/JevAny_Tech_Report.pdf">technical report</a> describes model design,
 multimodal support, the agent-harness study and appendix, negative results, and
 open questions.</p>
 <p>Code and starter data are Apache-2.0. Some components are adapted from
 <a href="https://github.com/jaredpalmer/kev">Kev</a>; see <a href="../files/NOTICE">NOTICE</a> and
-<a href="ACKNOWLEDGEMENTS.html">ACKNOWLEDGEMENTS.md</a>. Base models and upstream datasets retain their own terms.</p>
+<a href="ACKNOWLEDGEMENTS.html">acknowledgements</a>. Base models and upstream datasets retain their own terms.</p>
 <h3 id="contributing">🤝 Contributing <a name="contributing"></a></h3>
 <p>We're building open infrastructure for System 1 decision models, and we'd
 love your help. Small improvements are welcome. Here are a few ways to get
