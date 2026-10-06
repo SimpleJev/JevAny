@@ -79,6 +79,29 @@ def _response_body(error: urllib.error.HTTPError, limit: int = ERROR_BODY_LIMIT)
             pass
 
 
+def _validate_endpoint(base_url: str, timeout: float) -> str:
+    parsed = urlparse(base_url)
+    if parsed.scheme not in ("http", "https") or not parsed.hostname:
+        raise ValueError("decision endpoint must use HTTP or HTTPS and have a hostname")
+    if parsed.scheme == "http" and parsed.hostname not in ("127.0.0.1", "localhost", "::1"):
+        raise ValueError("non-loopback decision endpoints must use HTTPS")
+    if not math.isfinite(timeout) or timeout <= 0:
+        raise ValueError("timeout must be finite and positive")
+    if parsed.query or parsed.fragment or parsed.username or parsed.password:
+        raise ValueError("base_url must not contain credentials, a query or a fragment")
+    return base_url.rstrip("/")
+
+
+def _open_json(http_request: urllib.request.Request, timeout: float) -> Any:
+    try:
+        with urllib.request.urlopen(http_request, timeout=timeout) as response:
+            return json.loads(response.read())
+    except urllib.error.HTTPError as error:
+        raise DecisionHTTPError(error, _response_body(error)) from error
+    except json.JSONDecodeError as error:
+        raise ValueError(f"{http_request.full_url} did not return JSON: {error}") from error
+
+
 class DecisionClient:
     """Common convenience methods for local and HTTP inference."""
 
@@ -114,16 +137,7 @@ class JevClient(DecisionClient):
         api_key: str | None = "local", timeout: float = 120,
         model: str = "jevany-latest",
     ) -> None:
-        parsed = urlparse(base_url)
-        if parsed.scheme not in ("http", "https") or not parsed.hostname:
-            raise ValueError("decision endpoint must use HTTP or HTTPS and have a hostname")
-        if parsed.scheme == "http" and parsed.hostname not in ("127.0.0.1", "localhost", "::1"):
-            raise ValueError("non-loopback decision endpoints must use HTTPS")
-        if not math.isfinite(timeout) or timeout <= 0:
-            raise ValueError("timeout must be finite and positive")
-        if parsed.query or parsed.fragment or parsed.username or parsed.password:
-            raise ValueError("base_url must not contain credentials, a query or a fragment")
-        self.base_url = base_url.rstrip("/")
+        self.base_url = _validate_endpoint(base_url, timeout)
         self.url = self.base_url + "/v1/systemone"
         self.api_key, self.timeout, self.model_id = api_key, timeout, model
 
@@ -134,13 +148,7 @@ class JevClient(DecisionClient):
         return headers
 
     def _open(self, http_request: urllib.request.Request) -> Any:
-        try:
-            with urllib.request.urlopen(http_request, timeout=self.timeout) as response:
-                return json.loads(response.read())
-        except urllib.error.HTTPError as error:
-            raise DecisionHTTPError(error, _response_body(error)) from error
-        except json.JSONDecodeError as error:
-            raise ValueError(f"{http_request.full_url} did not return JSON: {error}") from error
+        return _open_json(http_request, self.timeout)
 
     def models(self) -> list[dict[str, Any]]:
         """GET /v1/models: what this deployment serves, with its capabilities and limits.

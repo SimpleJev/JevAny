@@ -184,7 +184,7 @@ def main(argv=None, prog=None):
         prog=prog, formatter_class=argparse.RawDescriptionHelpFormatter, epilog=EXAMPLES,
         description="Score a checkpoint or a running endpoint on a frozen suite or your own labelled JSONL.")
     ap.add_argument("--run", help="checkpoint dir or Hub id (local scoring)")
-    ap.add_argument("--remote", help="base URL of a System One-compatible endpoint to score instead of a local checkpoint")
+    ap.add_argument("--remote", help="System One endpoint using the JevClient contract; non-loopback URLs require HTTPS")
     ap.add_argument("--remote-model", default="jevany-latest")
     add_readout_arguments(ap)
     ap.add_argument("--suite", help="frozen suite directory (scores its development partition)")

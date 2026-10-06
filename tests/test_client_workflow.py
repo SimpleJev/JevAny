@@ -199,3 +199,18 @@ def test_models_round_trip_rejects_payloads_that_are_not_a_model_list(monkeypatc
         seen["payload"] = payload
         with pytest.raises(ValueError, match="models"):
             client.models()
+
+
+@pytest.mark.parametrize("choice", [["a"], {"name": "a"}, None, 0, "missing"])
+def test_malformed_choice_responses_raise_a_catchable_value_error(monkeypatch, choice):
+    payload = {"answers": {"route": {
+        "type": "choice", "choice": choice, "confidence": 0.5,
+        "probabilities": {"a": 0.75, "b": 0.25},
+    }}}
+    monkeypatch.setattr(
+        urllib.request, "urlopen",
+        lambda request, timeout: io.BytesIO(json.dumps(payload).encode()),
+    )
+    client = JevClient()
+    with pytest.raises(ValueError, match="unknown choice.*route"):
+        client.system_one("state", {"route": {"type": "choice", "criteria": {"a": None, "b": None}}})

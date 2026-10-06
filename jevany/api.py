@@ -107,7 +107,7 @@ def validate_response(request: SystemOneRequest | dict, response: dict) -> dict:
         probability(answer.get("confidence"), f"confidence for {question_id!r}")
         if question.type == "choice":
             choice = answer.get("choice")
-            if choice not in question.criteria:
+            if not isinstance(choice, str) or choice not in question.criteria:
                 raise ValueError(f"unknown choice for {question_id!r}")
             if values[keys.index(choice)] < max(values):
                 raise ValueError(f"choice for {question_id!r} is not an argmax")
