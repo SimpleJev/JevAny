@@ -147,9 +147,17 @@ class PolicyTests(unittest.TestCase):
         self.assertFalse(r.documentation_only([f]))
 
     def test_docs_paths_and_pages_applicability(self):
-        self.assertEqual(r.applicable_workflows([file("jevany/readout.py")]), ["ci.yml"])
+        self.assertEqual(r.applicable_workflows([file("tests/test_readout_integration.py")]), ["ci.yml"])
         self.assertEqual(r.applicable_workflows([file()]), ["ci.yml", "pages.yml"])
         self.assertIn("pages.yml", r.applicable_workflows([dict(file("notes.md"), previous_filename="docs/a.md")]))
+
+    def test_published_source_changes_require_a_pages_rebuild(self):
+        published = ROOT.parents[1] / "site/files"
+        sources = [path.relative_to(published).as_posix() for path in published.rglob("*") if path.is_file()]
+        sources += ["NOTICE", "ACKNOWLEDGEMENTS.md", "CITATION.cff"]
+        for source in sources:
+            with self.subTest(source=source):
+                self.assertIn("pages.yml", r.applicable_workflows([file(source)]))
 
     def test_all_substantive_severities_route_to_human(self):
         for severity in ["low", "medium", "high", "critical"]:
@@ -216,8 +224,8 @@ class EvidenceTests(unittest.TestCase):
         gh.runs.append(dict(run(2), conclusion="failure"))
         self.assertEqual(r.ci_evidence(gh, pr(), [file()])[0]["state"], "failed")
 
-    def test_pages_not_expected_for_code_only(self):
-        self.assertEqual(len(r.ci_evidence(FakeGitHub(), pr(), [file("jevany/model.py")])), 1)
+    def test_pages_not_expected_for_test_only_changes(self):
+        self.assertEqual(len(r.ci_evidence(FakeGitHub(), pr(), [file("tests/test_model_support.py")])), 1)
 
     def test_complete_patch_and_added_file(self):
         self.assertTrue(r.patch_complete(file()))

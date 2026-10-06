@@ -1,7 +1,7 @@
 {
   "version": 2,
   "documentation": ["README*.md", "CONTRIBUTING.md", "docs/**/*.md", "docs/*.md", "model_cards/**/*.md", "model_cards/*.md"],
-  "pages_paths": ["site/**", "docs/**", "results/**", "reports/**", "README*.md", "CONTRIBUTING.md", "LICENSE", "examples/**", "recipes/**", ".github/workflows/pages.yml"],
+  "pages_paths": ["site/**", "docs/**", "results/**", "reports/**", "README*.md", "CONTRIBUTING.md", "LICENSE", "NOTICE", "ACKNOWLEDGEMENTS.md", "CITATION.cff", "jevany/**", "scripts/**", "infra/**", "examples/**", "recipes/**", ".github/workflows/pages.yml"],
   "ci": {"ci.yml": ["test", "test (minimum ML versions)", "report appendix"], "pages.yml": ["check"]},
   "context_files": ["README.md", "docs/DATA.md", "docs/CHOICE_READOUT.md", "jevany/readout.py"],
   "max_files": 80,
