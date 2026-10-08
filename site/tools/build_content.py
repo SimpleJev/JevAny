@@ -20,7 +20,7 @@ from localization import build_chinese_homepage, translate
 
 SITE = Path(__file__).resolve().parents[1]
 ROOT = SITE.parent
-PUBLIC_URL = "https://simplejev.github.io/JevAny/"
+PUBLIC_URL = "https://simplejev.org/JevAny/"
 RESULTS = json.loads((ROOT / "results/model-family-v2.json").read_text())
 CATALOG = json.loads((ROOT / "docs/supported-models.json").read_text())
 LOGOS = json.loads((SITE / "assets/model-logos/sources.json").read_text())["families"]

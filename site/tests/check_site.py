@@ -11,7 +11,7 @@ import markdown
 
 
 SITE = Path(__file__).resolve().parents[1]
-PUBLIC_URL = "https://simplejev.github.io/JevAny/"
+PUBLIC_URL = "https://simplejev.org/JevAny/"
 
 
 class Page(HTMLParser):
