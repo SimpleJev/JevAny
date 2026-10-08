@@ -2,7 +2,6 @@
 import io
 import json
 import urllib.error
-import urllib.request
 
 import pytest
 
@@ -50,7 +49,7 @@ def test_remote_evaluation_preserves_predictions_and_omits_labels_and_empty_cred
         assert timeout == 12
         return io.BytesIO(json.dumps(RESPONSE).encode())
 
-    monkeypatch.setattr(urllib.request, "urlopen", urlopen)
+    monkeypatch.setattr("jevany.client._urlopen", urlopen)
     predictor = RemotePredictor("http://127.0.0.1:8008/", model="requested", api_key=None, timeout=12)
     result = predictor(RECORD)
     assert result["probabilities"]["route"] == {"a": 0.8, "b": 0.2}
@@ -70,7 +69,7 @@ def test_permanent_http_errors_surface_once_with_the_server_explanation(monkeypa
             io.BytesIO(b'{"detail":"unknown model requested"}'),
         )
 
-    monkeypatch.setattr(urllib.request, "urlopen", urlopen)
+    monkeypatch.setattr("jevany.client._urlopen", urlopen)
     monkeypatch.setattr("jevany.predictors.time.sleep", lambda _: pytest.fail("permanent errors must not retry"))
     with pytest.raises(DecisionHTTPError, match="unknown model requested") as caught:
         RemotePredictor("https://decision.example.com", api_key="private")(RECORD)
@@ -96,7 +95,7 @@ def test_transient_failures_retry_without_sleeping_after_the_last_attempt(monkey
             io.BytesIO(b'{"detail":"try later"}'),
         )
 
-    monkeypatch.setattr(urllib.request, "urlopen", urlopen)
+    monkeypatch.setattr("jevany.client._urlopen", urlopen)
     monkeypatch.setattr("jevany.predictors.time.sleep", sleeps.append)
     predictor = RemotePredictor("http://localhost:8008")
     if recover:
@@ -115,7 +114,7 @@ def test_bad_responses_are_not_retried(monkeypatch, body):
         attempts.append(request)
         return io.BytesIO(body)
 
-    monkeypatch.setattr(urllib.request, "urlopen", urlopen)
+    monkeypatch.setattr("jevany.client._urlopen", urlopen)
     monkeypatch.setattr("jevany.predictors.time.sleep", lambda _: pytest.fail("bad responses must not retry"))
     with pytest.raises(ValueError):
         RemotePredictor("http://localhost:8008")(RECORD)

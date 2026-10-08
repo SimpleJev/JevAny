@@ -92,9 +92,45 @@ def _validate_endpoint(base_url: str, timeout: float) -> str:
     return base_url.rstrip("/")
 
 
+class _SameOriginRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        try:
+            source, target = urlparse(req.full_url), urlparse(newurl)
+            origins = [
+                (url.scheme, url.hostname,
+                 url.port if url.port is not None else {"http": 80, "https": 443}.get(url.scheme))
+                for url in (source, target)
+            ]
+            allowed = target.username is None and target.password is None and origins[0] == origins[1]
+        except ValueError:
+            allowed = False
+        if not allowed:
+            raise urllib.error.HTTPError(
+                req.full_url, code,
+                "redirect must stay on the configured origin; set base_url to the final endpoint",
+                headers, fp,
+            )
+        if req.get_method() == "POST":
+            if code not in (307, 308):
+                raise urllib.error.HTTPError(
+                    req.full_url, code,
+                    "redirect would discard the POST body; set base_url to the final endpoint",
+                    headers, fp,
+                )
+            return urllib.request.Request(
+                newurl.replace(" ", "%20"), data=req.data, headers=req.headers,
+                origin_req_host=req.origin_req_host, unverifiable=True, method="POST",
+            )
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+def _urlopen(request: urllib.request.Request, timeout: float):
+    return urllib.request.build_opener(_SameOriginRedirect()).open(request, timeout=timeout)
+
+
 def _open_json(http_request: urllib.request.Request, timeout: float) -> Any:
     try:
-        with urllib.request.urlopen(http_request, timeout=timeout) as response:
+        with _urlopen(http_request, timeout=timeout) as response:
             return json.loads(response.read())
     except urllib.error.HTTPError as error:
         raise DecisionHTTPError(error, _response_body(error)) from error

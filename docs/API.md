@@ -77,6 +77,12 @@ Both `JevModel` and `JevClient` provide `models()`, returning a list of model
 descriptions. Local inference returns its single loaded model; HTTP inference
 queries the deployment and includes its server-specific policy.
 
+HTTP clients follow redirects only within the configured origin (scheme, host
+and port); credentials are never forwarded to another origin. POST requests
+follow only 307/308 redirects, preserving their body and method. For other
+redirects, configure the final endpoint as `base_url`. This policy also applies
+to the OpenAI-compatible text planner.
+
 ## Compatibility with Jev
 
 The reference is TypeSafe's [HTTP API](https://docs.typesafe.ai/api) and

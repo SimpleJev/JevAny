@@ -98,6 +98,11 @@ See <a href="DEPLOYMENT.html#inference-settings">DEPLOYMENT.md</a> for configura
 <p>Both <code>JevModel</code> and <code>JevClient</code> provide <code>models()</code>, returning a list of model
 descriptions. Local inference returns its single loaded model; HTTP inference
 queries the deployment and includes its server-specific policy.</p>
+<p>HTTP clients follow redirects only within the configured origin (scheme, host
+and port); credentials are never forwarded to another origin. POST requests
+follow only 307/308 redirects, preserving their body and method. For other
+redirects, configure the final endpoint as <code>base_url</code>. This policy also applies
+to the OpenAI-compatible text planner.</p>
 <h2 id="compatibility-with-jev">Compatibility with Jev</h2>
 <p>The reference is TypeSafe's <a href="https://docs.typesafe.ai/api">HTTP API</a> and
 <a href="https://docs.typesafe.ai/sdk/python/usage">Python SDK</a>, checked on September 26,

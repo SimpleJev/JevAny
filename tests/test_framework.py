@@ -59,7 +59,6 @@ def test_bad_labels_fail_at_the_data_boundary(tmp_path, question):
 
 def test_client_wire_payload_and_validation(monkeypatch):
     import io
-    import urllib.request
 
     calls = []
 
@@ -73,7 +72,7 @@ def test_client_wire_payload_and_validation(monkeypatch):
             "usage": {"input_tokens": 5, "output_tokens": 10},
         }).encode())
 
-    monkeypatch.setattr(urllib.request, "urlopen", urlopen)
+    monkeypatch.setattr("jevany.client._urlopen", urlopen)
     client = JevClient(model="test-model")
     result = client.system_one(
         "state", {"team": Choice(criteria={"a": None, "b": None}), "urgent": Noul(),

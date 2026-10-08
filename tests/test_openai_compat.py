@@ -5,7 +5,6 @@ import subprocess
 import sys
 import threading
 import urllib.error
-import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
@@ -32,7 +31,7 @@ def test_generator_maps_planning_parameters_without_mutating_them(monkeypatch):
         }
         return io.BytesIO(json.dumps(completion()).encode())
 
-    monkeypatch.setattr(urllib.request, "urlopen", urlopen)
+    monkeypatch.setattr("jevany.client._urlopen", urlopen)
     planner = ChatCompletionsGenerator(
         "planner", base_url="https://planner.example.com/prefix/v1/", api_key="test-only", timeout=17,
     )
@@ -59,7 +58,7 @@ def test_generator_rejects_invalid_configuration(kwargs):
     ("compile", {"temperature": float("nan")}),
 ])
 def test_invalid_generation_does_not_make_a_request(monkeypatch, prompt, params):
-    monkeypatch.setattr(urllib.request, "urlopen", lambda *_a, **_k: pytest.fail("invalid request sent"))
+    monkeypatch.setattr("jevany.client._urlopen", lambda *_a, **_k: pytest.fail("invalid request sent"))
     with pytest.raises(ValueError):
         ChatCompletionsGenerator("planner").generate(prompt, params)
 
@@ -71,7 +70,7 @@ def test_invalid_generation_does_not_make_a_request(monkeypatch, prompt, params)
     completion(""), completion("   "),
 ])
 def test_generator_rejects_missing_or_non_text_completions(monkeypatch, payload):
-    monkeypatch.setattr(urllib.request, "urlopen", lambda *_a, **_k: io.BytesIO(json.dumps(payload).encode()))
+    monkeypatch.setattr("jevany.client._urlopen", lambda *_a, **_k: io.BytesIO(json.dumps(payload).encode()))
     with pytest.raises(ValueError, match="chat completion"):
         ChatCompletionsGenerator("planner").generate("compile")
 
@@ -85,7 +84,7 @@ def test_generator_preserves_server_errors_without_retrying(monkeypatch):
             request.full_url, 422, "Rejected", {}, io.BytesIO(b'{"error":{"message":"model unavailable"}}'),
         )
 
-    monkeypatch.setattr(urllib.request, "urlopen", urlopen)
+    monkeypatch.setattr("jevany.client._urlopen", urlopen)
     with pytest.raises(DecisionHTTPError, match="model unavailable"):
         ChatCompletionsGenerator("planner").generate("compile")
     assert len(attempts) == 1
@@ -96,7 +95,7 @@ def test_harness_explains_truncated_planner_json(monkeypatch):
 
     payload = completion('{"questions":{"q":{"type":"n')
     payload["choices"][0]["finish_reason"] = "length"
-    monkeypatch.setattr(urllib.request, "urlopen", lambda *_a, **_k: io.BytesIO(json.dumps(payload).encode()))
+    monkeypatch.setattr("jevany.client._urlopen", lambda *_a, **_k: io.BytesIO(json.dumps(payload).encode()))
     with pytest.raises(ValueError, match="planner.*length"):
         JevHarness(ChatCompletionsGenerator("planner"), None).compile("compile a task", {})
 
@@ -158,7 +157,6 @@ def test_public_planner_does_not_import_cloud_or_model_dependencies():
     script = """
 import io
 import sys
-import urllib.request
 
 class NoOptionalImports:
     def find_spec(self, name, path=None, target=None):
@@ -169,7 +167,8 @@ class NoOptionalImports:
 sys.meta_path.insert(0, NoOptionalImports())
 from jevany.openai_compat import ChatCompletionsGenerator
 from jevany.harness import JevHarness
-urllib.request.urlopen = lambda *a, **k: io.BytesIO(
+import jevany.client
+jevany.client._urlopen = lambda *a, **k: io.BytesIO(
     b'{"choices":[{"message":{"content":"compiled"},"finish_reason":"stop"}]}')
 assert ChatCompletionsGenerator("fixture").generate("compile")["text"] == "compiled"
 print("base-install-ok")

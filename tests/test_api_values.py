@@ -43,7 +43,7 @@ def test_finite_json_evidence_survives_the_wire_without_changing_model_input():
 
 def test_client_rejects_nonfinite_evidence_before_sending(monkeypatch):
     monkeypatch.setattr(
-        "urllib.request.urlopen",
+        "jevany.client._urlopen",
         lambda *_args, **_kwargs: pytest.fail("invalid evidence was sent"),
     )
     with pytest.raises(ValueError, match="finite"):
