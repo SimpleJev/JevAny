@@ -80,6 +80,11 @@ rejections in coverage counts and `rejected.json`. Frozen suites and unmarked
 HTTP 422 errors still fail evaluation. Compatible servers must send this header
 to distinguish overlong requests from other validation failures.
 
+If every record is rejected, the evaluation report still contains coverage and
+rejection counts; its objective and latency statistics are `null`. Empty clean
+and calibrated populations are represented by `{"n": 0}`, without accuracy
+values.
+
 Both `JevModel` and `JevClient` provide `models()`, returning a list of model
 descriptions. Local inference returns its single loaded model; HTTP inference
 queries the deployment and includes its server-specific policy.

@@ -106,13 +106,15 @@ def summarize(rows, temperature=1.0, heldout_sources=()):
             diffs.append(float(np.max(np.abs(np.array(aligned) - original["p"]))))
             flips.append(int(np.argmax(aligned) != np.argmax(original["p"])))
     knowable = [r for r in clean if r["source"] != "unknowable"]     # unknowable records are scored on confidence, never on accuracy
-    return {"objective": -float(np.mean([v["nll"] for k, v in tasks.items() if not k.startswith("unknowable_") or k.startswith("unknowable_control")])),
+    losses = [v["nll"] for k, v in tasks.items()
+              if not k.startswith("unknowable_") or k.startswith("unknowable_control")]
+    return {"objective": -float(np.mean(losses)) if losses else None,
             "paired_flip": paired_flip(clean), "unknowable": unknowable_report(clean),
-            "clean": metrics(knowable), "tasks": tasks, "variants": variants,
+            "clean": metrics(knowable) if knowable else {"n": 0}, "tasks": tasks, "variants": variants,
             "heldout_tasks": grouped_metrics([r for r in clean if r["source"] in heldout_sources], "task") if any(r["source"] in heldout_sources for r in clean) else {},
             "permutation": {"n": len(diffs), "mean_max_delta": float(np.mean(diffs)) if diffs else None,
                             "flip_rate": float(np.mean(flips)) if flips else None},
-            "temperature": temperature, "calibrated_clean": metrics(knowable, temperature),
+            "temperature": temperature, "calibrated_clean": metrics(knowable, temperature) if knowable else {"n": 0},
             "metric_policy": {"version": 3, "selective_ties": "whole_confidence_groups",
                               "coverage_at_error": "in-sample maximum over confidence thresholds; not a deployed error guarantee",
                               "aurc": "right-step integral over whole confidence groups",
@@ -160,9 +162,12 @@ def evaluate_records(records, predictor, directory, temperature=1.0, heldout_sou
     write_json(directory / "rows.json", rows)
     if rejected: write_json(directory / "rejected.json", rejected)
     report = summarize(rows, temperature, heldout_sources)
-    report.update(coverage=coverage, latency_ms={"median": float(np.median(latencies)), "p95": float(np.quantile(latencies, .95))},
+    report.update(coverage=coverage, latency_ms={
+                      "median": float(np.median(latencies)) if latencies else None,
+                      "p95": float(np.quantile(latencies, .95)) if latencies else None},
                   calibration={"inference_temperature": getattr(predictor, "temperature", None),
-                               "additional_temperature": temperature, "logits_recorded": all("logits" in r for r in rows)})
+                               "additional_temperature": temperature,
+                               "logits_recorded": bool(rows) and all("logits" in r for r in rows)})
     write_json(directory / "report.json", report)
     return report, rows
 
