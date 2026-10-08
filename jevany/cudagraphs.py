@@ -5,15 +5,19 @@ forward is launch-bound: a 4B hybrid backbone issues thousands of small kernels 
 Python between them. ``RowGraphs`` captures one graph per padded length bucket, all sharing one memory pool, and
 replays the smallest bucket that fits each row.
 
-Single-question requests (one row) replay a graph; other requests, rows longer than the largest bucket, and
-gradient-enabled calls run the eager path. Rows are right-padded with the pad token and run without an attention
-mask. Every layer used by row-mode backbones is causal (full or sliding-window attention, gated delta rule, short
-convolution), so tokens placed after the last real token cannot change a real token's hidden state. Pad positions
-continue the row's positions, keeping position ids increasing.
+Single-question requests (one row) replay a graph; other requests, rows longer than the largest bucket, rows whose
+positions do not rise by one, and gradient-enabled calls run the eager path. Rows are right-padded with the pad token
+and run without an attention mask. Every layer used by row-mode backbones is causal (full or sliding-window
+attention, gated delta rule, short convolution), so tokens placed after the last real token cannot change a real
+token's hidden state. Pad positions continue the row's positions, keeping position ids increasing.
+
+Capture makes the attention-mask decisions of eager inference (``_eager_mask_decisions``), so SDPA keeps its
+``is_causal`` path (FlashAttention) inside the graphs instead of reading a materialised causal mask.
 
 Results are not bit-identical to the eager path: padded shapes select different kernels. Replays reuse static
 buffers, so calls must not overlap; ``DecisionRuntime`` already serializes inference under its lock.
 """
+import contextlib
 import time
 
 import torch
@@ -21,6 +25,50 @@ import torch
 # Padded lengths; bucket spacing bounds the padding overhead at 25-50% of the row.
 LENGTHS = (128, 192, 256, 320, 384, 448, 512, 640, 768, 896, 1024, 1280, 1536, 1792, 2048, 2560, 3072, 4096,
            5120, 6144, 8192, 10240, 12288, 16384)
+
+
+@contextlib.contextmanager
+def _eager_mask_decisions():
+    """Let transformers decide attention masks during capture as it does for an eager, unpadded single row.
+
+    transformers counts CUDA stream capture as tracing. It then cannot run its data-dependent check that the position
+    ids describe one sequence, so it keeps a packed-sequence mask; before transformers 5.18 it also declines SDPA's
+    ``is_causal`` shortcut for a missing padding mask. Either way the causal mask is materialised, which rules out
+    FlashAttention. A captured row has no padding mask and consecutive positions (``RowGraphs._bucket`` sends other
+    rows to the eager path), which is exactly when eager inference skips the mask. Only calls made while the current
+    stream is capturing change; the original functions are restored on exit.
+    """
+    from transformers import masking_utils
+
+    find_packed = getattr(masking_utils, "find_packed_sequence_indices", None)
+    ignore_causal = getattr(masking_utils, "_ignore_causal_mask_sdpa", None)
+
+    def single_sequence(*args, **kwargs):
+        return None if torch.cuda.is_current_stream_capturing() else find_packed(*args, **kwargs)
+
+    def causal_shortcut(padding_mask, *args, **kwargs):
+        if padding_mask is not None or not torch.cuda.is_current_stream_capturing():
+            return ignore_causal(padding_mask, *args, **kwargs)
+        is_tracing = masking_utils.is_tracing
+        masking_utils.is_tracing = lambda *_, **__: False   # without a padding mask nothing data-dependent is read
+        try:
+            return ignore_causal(padding_mask, *args, **kwargs)
+        finally:
+            masking_utils.is_tracing = is_tracing
+
+    replacements = {}
+    if find_packed is not None:
+        replacements["find_packed_sequence_indices"] = single_sequence
+    if ignore_causal is not None and hasattr(masking_utils, "is_tracing"):
+        replacements["_ignore_causal_mask_sdpa"] = causal_shortcut
+    originals = {name: getattr(masking_utils, name) for name in replacements}
+    for name, replacement in replacements.items():
+        setattr(masking_utils, name, replacement)
+    try:
+        yield
+    finally:
+        for name, original in originals.items():
+            setattr(masking_utils, name, original)
 
 
 class RowGraphs:
@@ -64,7 +112,7 @@ class RowGraphs:
                     self._forward(ids, pos)
             current.wait_stream(side)
             graph = torch.cuda.CUDAGraph()
-            with torch.cuda.graph(graph, pool=pool):
+            with _eager_mask_decisions(), torch.cuda.graph(graph, pool=pool):
                 out = self._forward(ids, pos)
             self.graphs[n] = (graph, ids, pos, out)
         torch.cuda.synchronize(self.device)
@@ -73,6 +121,8 @@ class RowGraphs:
 
     def _bucket(self, ids, pos):
         length = len(ids)
+        if pos != list(range(pos[0], pos[0] + length)):
+            return None   # eager inference would mask a position jump as a packed-sequence boundary
         for n in self.lengths:
             if n >= length:
                 # Absolute position tables (GPT-2) must also cover the padded tail.

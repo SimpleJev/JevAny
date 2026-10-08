@@ -1,9 +1,11 @@
 """CUDA-graph replay for row-mode inference: option plumbing everywhere, parity with the eager path on CUDA."""
+from types import SimpleNamespace
+
 import pytest
 import torch
 
 from jevany.checkpoint import LoadOptions
-from jevany.cudagraphs import RowGraphs
+from jevany.cudagraphs import RowGraphs, _eager_mask_decisions
 from jevany.model import DecisionModel, load_tokenizer
 from test_backbones import RECORD, make_base
 
@@ -61,6 +63,34 @@ def test_remote_decide_rejects_cuda_graphs(tmp_path, capsys):
     assert "require --checkpoint" in capsys.readouterr().err
 
 
+def test_capture_mask_decisions_follow_eager_inference(monkeypatch):
+    """transformers counts stream capture as tracing and would materialise the causal mask, ruling out FlashAttention."""
+    from transformers import LlamaConfig
+    from transformers.masking_utils import create_causal_mask
+    config = LlamaConfig(hidden_size=8, intermediate_size=16, num_hidden_layers=1, num_attention_heads=2,
+                         num_key_value_heads=2, vocab_size=16)
+    config._attn_implementation = "sdpa"
+    embeddings = torch.zeros(1, 6, 8)
+
+    def mask(positions):
+        return create_causal_mask(config=config, inputs_embeds=embeddings, attention_mask=None,
+                                  past_key_values=None, position_ids=positions)
+
+    consecutive, jump = torch.arange(6)[None], torch.tensor([[0, 1, 2, 4, 5, 6]])
+    assert mask(consecutive) is None and mask(jump) is not None   # eager: SDPA is_causal unless packed
+    monkeypatch.setattr(torch.cuda, "is_current_stream_capturing", lambda: True)
+    assert mask(consecutive) is not None                           # capture counts as tracing
+    with _eager_mask_decisions():
+        assert mask(consecutive) is None
+    assert mask(consecutive) is not None                           # transformers is restored
+
+
+def test_rows_with_position_jumps_run_eagerly():
+    graphs = SimpleNamespace(lengths=(8, 16), window=None)
+    assert RowGraphs._bucket(graphs, [5] * 6, list(range(3, 9))) == 8
+    assert RowGraphs._bucket(graphs, [5] * 6, [0, 1, 2, 4, 5, 6]) is None
+
+
 ONE_QUESTION = {**RECORD, "questions": RECORD["questions"][:1]}
 
 
@@ -85,6 +115,23 @@ def test_graph_replay_matches_eager(tmp_path, family, dtype, decision_mode):
         for left, right in zip(expected, model.probs(encoded)):
             torch.testing.assert_close(left, right, atol=tolerance, rtol=0)
     assert (model.cuda_graphs.stats["graph_calls"], model.cuda_graphs.stats["eager_calls"]) == (2, 0)
+
+
+@cuda
+def test_capture_keeps_sdpa_causal_path(tmp_path, monkeypatch):
+    base = tmp_path / "base"
+    make_base(base, "qwen35", legacy=True)
+    model = DecisionModel(base, load_tokenizer(base), "cuda", lora=2, head_dim=8, dtype=torch.bfloat16).eval()
+    captured, sdpa = [], torch.nn.functional.scaled_dot_product_attention
+
+    def spy(*args, **kwargs):
+        if torch.cuda.is_current_stream_capturing():
+            captured.append((kwargs.get("attn_mask") is None, kwargs.get("is_causal", False)))
+        return sdpa(*args, **kwargs)
+
+    monkeypatch.setattr(torch.nn.functional, "scaled_dot_product_attention", spy)
+    RowGraphs(model, lengths=(16, 32)).capture()
+    assert captured and all(mask_free and causal for mask_free, causal in captured)
 
 
 @cuda

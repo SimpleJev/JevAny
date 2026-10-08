@@ -356,6 +356,17 @@ because their PEFT embedding adapter allocates tensors during each forward.
 eagerly under `acceleration.cuda_graphs`. Direct graphs cannot be combined with
 `JEVANY_COMPILE`.
 
+Transformers counts CUDA stream capture as tracing. Left alone, it materialises
+the causal mask inside every captured graph, so SDPA runs its memory-efficient
+kernel there instead of the FlashAttention kernel that eager inference uses.
+During capture JevAny therefore makes the eager mask decisions for an unpadded
+single row; rows whose positions do not rise by one run eagerly. On an
+A100-40GB with BF16 merged JevAny-Qwen3.5-4B, this made captured public-JevBench
+requests of 513 to 2,048 tokens 3–5% faster and left shorter ones unchanged.
+With a 4,096-token limit, requests of 2,049 to 4,096 tokens became 6–10% faster
+in graphs, but they were still no faster than eager inference, so the default
+limit stays at 2,048 tokens.
+
 Padded shapes select different kernels, so probabilities are close to, not
 identical with, the eager path. On an A100-40GB with FLA and causal-conv1d
 installed and SDPA, over every request of the development suites, median
