@@ -80,6 +80,9 @@ def run_episode(env: DiscreteEnvironment, decide: DecisionFunction, goal: str, *
         if action_key not in actions:
             raise ValueError(f"decision backend returned unknown action {action_key!r}")
         action = raw_actions[int(action_key)]
+        # Gym-style discrete actions can be NumPy scalars; saved traces need Python values.
+        if not isinstance(action, (str, int, float, bool, type(None))) and hasattr(action, "item"):
+            action = action.item()
         next_observation, reward, done, info = env.step(action)
         step = AgentStep(index, observation, action, actions[action_key], float(answer["confidence"]),
                          float(reward), bool(done), dict(info))
