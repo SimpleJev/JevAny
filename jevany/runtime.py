@@ -13,7 +13,7 @@ from .checkpoint import Checkpoint, LoadOptions
 from .client import DecisionClient
 from .device import default_device, sync
 from .inference import InferenceOptions
-from .model import DecisionModel
+from .model import ContextLengthError, DecisionModel
 from .readout import resolve_readout_options
 
 DEFAULT_CHECKPOINT = "SimpleJev/JevAny-Qwen3.8-27B-LoRA"
@@ -106,9 +106,11 @@ class DecisionRuntime:
                 self.tok, record, max_state=limits["state_tokens"], max_branch=limits["branch_tokens"], strict=True,
             )
             if len(encoding["ids"]) > limits["packed_tokens"]:
-                raise ValueError(f"request exceeds {limits['packed_tokens']} packed tokens: {len(encoding['ids'])}")
+                raise ContextLengthError(
+                    f"request exceeds {limits['packed_tokens']} packed tokens: {len(encoding['ids'])}")
             if capabilities.context_window is not None and max(encoding["pos"]) >= capabilities.context_window:
-                raise ValueError(f"request exceeds backbone context window of {capabilities.context_window} tokens")
+                raise ContextLengthError(
+                    f"request exceeds backbone context window of {capabilities.context_window} tokens")
             state_tokens = encoding["seg"].count(0)
             key = (tuple(encoding["ids"][:state_tokens]), bool(encoding.get("option_isolation")))
             cache, hit = self.prefix_cache, False

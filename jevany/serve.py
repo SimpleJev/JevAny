@@ -20,6 +20,7 @@ from fastapi.responses import JSONResponse
 from .api import SystemOneRequest, with_date_facts
 from .checkpoint import LoadOptions, add_placement_arguments, load_options_from_args
 from .inference import InferenceOptions, add_inference_arguments, inference_options_from_args
+from .model import ContextLengthError
 from .readout import (
     ChoiceReadoutOptions,
     LetterReadoutOptions,
@@ -128,6 +129,10 @@ def systemone(req: SystemOneRequest, request: Request):
     runtime = server(request)
     try:
         return runtime.answer(prepare(req))
+    except ContextLengthError as error:
+        raise HTTPException(422, str(error), headers={
+            "X-JevAny-Error-Code": "context_length_exceeded",
+        }) from error
     except ValueError as error:
         raise HTTPException(422, str(error)) from error
 

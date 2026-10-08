@@ -73,6 +73,13 @@ support/statistics. The HTTP description also includes the server's media-file
 policy. Requests exceeding those limits return HTTP 422 without truncation.
 See [DEPLOYMENT.md](DEPLOYMENT.md#inference-settings) for configuration.
 
+Context-length rejections also include the response header
+`X-JevAny-Error-Code: context_length_exceeded`, keeping the existing `detail`
+explanation. Remote evaluation with custom `--data` inputs records these
+rejections in coverage counts and `rejected.json`. Frozen suites and unmarked
+HTTP 422 errors still fail evaluation. Compatible servers must send this header
+to distinguish overlong requests from other validation failures.
+
 Both `JevModel` and `JevClient` provide `models()`, returning a list of model
 descriptions. Local inference returns its single loaded model; HTTP inference
 queries the deployment and includes its server-specific policy.

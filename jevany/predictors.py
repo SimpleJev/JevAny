@@ -13,10 +13,10 @@ import torch
 
 from jevany.api import question_keys
 from jevany.checkpoint import Checkpoint, LoadOptions
-from jevany.client import JevClient
+from jevany.client import DecisionHTTPError, JevClient
 from jevany.data import api_request, materialize
 from jevany.device import sync
-from jevany.model import MAX_PACKED
+from jevany.model import MAX_PACKED, ContextLengthError
 from jevany.suite import digest
 
 
@@ -50,7 +50,6 @@ class ModelPredictor:
         enc = self.model.encode(self.tok, materialize(record), max_state=self.max_packed,
                                 max_branch=self.max_packed, strict=True)
         if len(enc["ids"]) > self.max_packed:
-            from .model import ContextLengthError
             raise ContextLengthError(f"packed request exceeds frozen {self.max_packed}-token limit")
         sync(self.device)
         start = time.perf_counter()
@@ -111,6 +110,9 @@ class RemotePredictor:
                 latency = 1000 * (time.perf_counter() - start)
                 break
             except (urllib.error.URLError, TimeoutError, ConnectionError) as error:
+                if (isinstance(error, DecisionHTTPError) and error.code == 422
+                        and (error.headers or {}).get("X-JevAny-Error-Code") == "context_length_exceeded"):
+                    raise ContextLengthError(error.detail or str(error)) from error
                 if isinstance(error, urllib.error.HTTPError) and not (error.code == 429 or 500 <= error.code < 600):
                     raise
                 if attempt + 1 == self.retries:
