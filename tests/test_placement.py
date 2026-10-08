@@ -98,7 +98,8 @@ def test_adapter_without_placement_is_rejected(tmp_path, monkeypatch):
         DecisionModel(base, load_tokenizer(base), "cuda", lora=2, head_dim=8, device_map="auto")
 
 
-@pytest.mark.skipif(torch.cuda.device_count() < 2, reason="needs two CUDA devices")
+@pytest.mark.skipif(not torch.cuda.is_available() or torch.cuda.device_count() < 2,
+                    reason="needs two usable CUDA devices")
 def test_disk_offloaded_adapter_is_rejected(tmp_path):
     base = tmp_path / "base"
     make_base(base, "qwen35", legacy=True)
@@ -110,7 +111,8 @@ def test_disk_offloaded_adapter_is_rejected(tmp_path):
                       max_memory_gib=0.6 * size / 2**30)
 
 
-@pytest.mark.skipif(torch.cuda.device_count() < 2, reason="needs two CUDA devices")
+@pytest.mark.skipif(not torch.cuda.is_available() or torch.cuda.device_count() < 2,
+                    reason="needs two usable CUDA devices")
 @pytest.mark.parametrize("family,decision_mode", [("qwen35", "pointer"), ("llama", "pointer"),
                                                   ("gpt2", "lm_token")])
 def test_sharded_forward_matches_single_device(tmp_path, family, decision_mode):
@@ -138,3 +140,33 @@ def test_sharded_forward_matches_single_device(tmp_path, family, decision_mode):
     encoded = single.encode(tokenizer, RECORD)
     for left, right in zip(single.probs(encoded), sharded.probs(encoded)):
         torch.testing.assert_close(left, right, atol=1e-6, rtol=1e-5)
+
+
+@pytest.mark.skipif(not torch.cuda.is_available() or torch.cuda.device_count() < 2,
+                    reason="needs two usable CUDA devices")
+def test_sharded_readout_transfers_only_selected_vectors(tmp_path, monkeypatch):
+    from test_readout_selection import ConvertedShapes
+
+    base = tmp_path / "base"
+    make_base(base, "llama", legacy=True)
+    tokenizer = load_tokenizer(base)
+    reference = DecisionModel(base, tokenizer, "cpu", lora=2, head_dim=8)
+    size = sum(p.numel() * p.element_size() for p in reference.lm.parameters())
+    model = DecisionModel(base, tokenizer, "cuda:0", lora=2, head_dim=8,
+                          device_map="sequential", max_memory_gib=0.9 * size / 2**30).eval()
+    readout = model._question_readout
+    calls = []
+
+    def observe(hidden, decide, options):
+        assert hidden.device == torch.device("cuda:1")
+        assert model.head.q.weight.device == torch.device("cuda:0")
+        with ConvertedShapes() as converted:
+            logits = readout(hidden, decide, options)
+        assert tuple(hidden.shape) not in converted.shapes
+        assert (len(options) + 1, hidden.shape[1]) in converted.shapes
+        calls.append(True)
+        return logits
+
+    monkeypatch.setattr(model, "_question_readout", observe)
+    model.probs(model.encode(tokenizer, RECORD))
+    assert len(calls) == len(RECORD["questions"])
