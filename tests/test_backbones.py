@@ -7,9 +7,9 @@ from tokenizers import Tokenizer
 from tokenizers.models import WordLevel
 from tokenizers.pre_tokenizers import Whitespace
 from transformers import (
-    AutoModelForCausalLM, Gemma4TextConfig, Glm4MoeLiteConfig, GPT2Config,
-    LlamaConfig, MistralConfig, NemotronHConfig, Qwen3_5MoeTextConfig,
-    PreTrainedTokenizerFast, Qwen3_5TextConfig,
+    AutoModelForCausalLM, Gemma4TextConfig, Glm4MoeConfig, Glm4MoeLiteConfig, GPT2Config,
+    LlamaConfig, Llama4TextConfig, MistralConfig, NemotronHConfig, Qwen3_5MoeTextConfig,
+    PreTrainedTokenizerFast, Qwen3_5TextConfig, Qwen3NextConfig,
 )
 
 from jevany.backbones import DECISION_TOKENS, LEGACY_TOKENS, decision_tokens, prepare_tokenizer
@@ -77,6 +77,20 @@ def make_base(path, family, *, legacy=False):
         ),
         "gpt2": lambda: GPT2Config(vocab_size=len(tokenizer), n_embd=32, n_layer=2, n_head=4,
                                    n_positions=512, pad_token_id=1, eos_token_id=2, bos_token_id=2),
+        # MoE layers with dense or shared-expert nn.Linear MLPs that PEFT would remap.
+        "qwen3_next": lambda: Qwen3NextConfig(
+            **common, head_dim=8, layer_types=["linear_attention", "full_attention"],
+            linear_num_key_heads=2, linear_num_value_heads=2, linear_key_head_dim=8, linear_value_head_dim=8,
+            num_experts=4, num_experts_per_tok=2, moe_intermediate_size=16, shared_expert_intermediate_size=32,
+        ),
+        "glm4_moe": lambda: Glm4MoeConfig(
+            **{**common, "num_key_value_heads": 4}, head_dim=8, moe_intermediate_size=16,
+            n_routed_experts=4, num_experts_per_tok=2, n_shared_experts=1, first_k_dense_replace=1,
+            n_group=1, topk_group=1,
+        ),
+        "llama4": lambda: Llama4TextConfig(
+            **common, head_dim=8, intermediate_size_mlp=64, num_local_experts=4, num_experts_per_tok=1,
+        ),
     }
     model = AutoModelForCausalLM.from_config(configurations[family]())
     model.save_pretrained(path)
@@ -209,6 +223,38 @@ def test_moe_lora_projection_coverage(tmp_path, family, preset, attn):
             DecisionModel(base, tokenizer, "cpu", lora=2, lora_targets="qv")
     with pytest.raises(ValueError, match="does not support packed"):
         DecisionModel(base, tokenizer, "cpu", lora=2, branch_mode="packed")
+
+
+@pytest.mark.parametrize("family", ["qwen3_next", "glm4_moe", "llama4"])
+def test_moe_linear_layers_peft_would_remap_stay_frozen(tmp_path, family):
+    torch.manual_seed(17)
+    base = tmp_path / "base"
+    make_base(base, family)
+    tokenizer = load_tokenizer(base)
+    model = DecisionModel(base, tokenizer, "cpu", lora=2, head_dim=8)
+    model.lm.config.use_cache = False
+    config = model.lm.peft_config["default"]
+    assert not config.target_parameters
+    leaves = {name.rsplit(".", 1)[-1] for name in config.target_modules}
+    assert {"q_proj", "o_proj"} <= leaves
+    assert "router" not in leaves
+    remapped = {"gate_proj", "up_proj", "down_proj"}
+    if family == "llama4":
+        assert remapped <= leaves
+    else:
+        assert not leaves & remapped
+    encoded = model.encode(tokenizer, RECORD)
+    loss = sum(value.sum() for value in model(encoded))
+    loss.backward()
+    for name, parameter in model.named_parameters():
+        if "lora_B" in name:
+            assert parameter.grad is not None and parameter.grad.abs().sum() > 0, name
+    model.eval()
+    changed = {**RECORD, "questions": [RECORD["questions"][0], {"instr": "choose", "options": ["b", "a"], "label": 0}]}
+    torch.testing.assert_close(model.probs(encoded)[0], model.probs(model.encode(tokenizer, changed))[0])
+    with pytest.raises(ValueError, match="incompatible.*LoRA"):
+        DecisionModel(base, tokenizer, "cpu", lora=2,
+                      lora_target_modules="q_proj,router" if family == "llama4" else "q_proj,down_proj")
 
 
 def test_legacy_tokens_and_checkpoint_stay_compatible(tmp_path):

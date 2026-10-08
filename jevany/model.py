@@ -346,7 +346,10 @@ class DecisionModel(nn.Module):
             extra = {"trainable_token_indices": {embedding_name: [
                 tokenizer.convert_tokens_to_ids(t) for t in decision_tokens(tokenizer)
             ]}} if self.special_embeddings else {}
-            targets = self.adapter.lora_modules(self.lm, lora_targets, lora_target_modules)
+            targets = self.adapter.lora_modules(
+                self.lm, lora_targets, lora_target_modules,
+                **({"lora_dropout": lora_dropout}
+                   if "lora_dropout" in inspect.signature(self.adapter.lora_modules).parameters else {}))
             cfg = LoraConfig(task_type="FEATURE_EXTRACTION", r=lora, lora_alpha=2 * lora,
                              lora_dropout=lora_dropout, target_modules=targets, **extra)
             self.set_language_model(get_peft_model(self.lm, cfg))
