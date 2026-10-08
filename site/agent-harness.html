@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#070b14">
+  <meta name="description" content="Three recorded agent comparisons: see who acts, how many LLM calls are used, and the token and time savings.">
+  <title>Agent harness demos — JevAny</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="agent-harness.css">
+  <script src="agent-harness.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="page-header wrap">
+    <a class="brand" href="index.html"><img src="assets/favicon.svg" width="28" height="28" alt="">JevAny</a>
+    <nav aria-label="Main navigation">
+      <a href="#overview">Overview</a>
+      <a href="#cases">Individual demos</a>
+      <a href="#evidence">Evidence</a>
+    </nav>
+  </header>
+  <main id="main" class="wrap">
+    <section class="intro">
+      <p class="eyebrow">JEVANY / AGENT HARNESS</p>
+      <h1>The same task.<br>Fewer LLM calls.</h1>
+      <p class="lead">Watch the LLM and Jev take turns. Compare recorded calls, token use, completion time, and the task outcome.</p>
+      <div class="role-key" aria-label="Controller colors">
+        <span><i class="llm"></i>LLM</span>
+        <span><i class="jev"></i>Jev</span>
+        <span><i class="result"></i>Task result</span>
+      </div>
+    </section>
+
+    <section id="overview" class="overview" aria-labelledby="overview-title">
+      <div class="section-heading">
+        <div><p class="eyebrow">THE OVERVIEW</p><h2 id="overview-title">Three tasks. One replay.</h2></div>
+        <a href="assets/media/docs/jev-agent-harness.mp4" download>Download overview video</a>
+      </div>
+      <figure>
+        <video id="overview-video" class="harness-video" controls muted loop playsinline preload="metadata"
+               width="1080" height="700" poster="assets/media/docs/jev-agent-harness.webp"
+               aria-label="Nine-second overview of WebShop, FrozenLake, and SQLite: LLM only compared with LLM plus Jev">
+          <source src="assets/media/docs/jev-agent-harness.webm" type="video/webm">
+          <source src="assets/media/docs/jev-agent-harness.mp4" type="video/mp4">
+          <a href="assets/media/docs/jev-agent-harness.mp4">Watch the overview video.</a>
+        </video>
+        <figcaption>WebShop → FrozenLake → SQLite. Three seconds per case, using the same replays shown below.</figcaption>
+      </figure>
+    </section>
+
+    <section id="cases" class="cases" aria-labelledby="cases-title">
+      <div class="section-heading">
+        <div><p class="eyebrow">THE INDIVIDUAL DEMOS</p><h2 id="cases-title">See where Jev takes over.</h2></div>
+      </div>
+
+      <article id="webshop" class="case">
+        <video class="harness-video" controls muted loop playsinline preload="none"
+               width="1080" height="700" poster="assets/media/docs/jev-decision-webshop-v2.webp"
+               aria-label="WebShop paired replay with LLM and Jev robots, recorded call totals, token savings, and time savings">
+          <source src="assets/media/docs/jev-decision-webshop-v2.webm" type="video/webm">
+          <source src="assets/media/docs/jev-decision-webshop-v2.mp4" type="video/mp4">
+          <a href="assets/media/docs/jev-decision-webshop-v2.mp4">Watch the WebShop video.</a>
+        </video>
+        <div class="case-copy">
+          <p class="eyebrow">01 / WEBSHOP</p>
+          <h3>Bound the choices.</h3>
+          <p>The LLM provides two menus. Jev selects the requested color and size; the LLM completes the purchase.</p>
+          <p class="scope">D4 supplement · seed 3107 · one recorded pair</p>
+          <a href="assets/media/docs/jev-decision-webshop-v2.mp4" download>Download video</a>
+        </div>
+      </article>
+
+      <article id="frozen-lake" class="case">
+        <video class="harness-video" controls muted loop playsinline preload="none"
+               width="1080" height="700" poster="assets/media/docs/jev-decision-frozen-lake-v2.webp"
+               aria-label="FrozenLake paired replay: one retained LLM plan and four Jev choices, with recorded savings">
+          <source src="assets/media/docs/jev-decision-frozen-lake-v2.webm" type="video/webm">
+          <source src="assets/media/docs/jev-decision-frozen-lake-v2.mp4" type="video/mp4">
+          <a href="assets/media/docs/jev-decision-frozen-lake-v2.mp4">Watch the FrozenLake video.</a>
+        </video>
+        <div class="case-copy">
+          <p class="eyebrow">02 / FROZENLAKE</p>
+          <h3>Keep the plan.</h3>
+          <p>One LLM objective stays in place. Jev chooses a direction from each new state, making four local moves to reach the goal.</p>
+          <p class="scope">Seed 3000 · one recorded pair</p>
+          <a href="assets/media/docs/jev-decision-frozen-lake-v2.mp4" download>Download video</a>
+        </div>
+      </article>
+
+      <article id="sqlite" class="case">
+        <video class="harness-video" controls muted loop playsinline preload="none"
+               width="1080" height="700" poster="assets/media/docs/jev-decision-terminal-v2.webp"
+               aria-label="SQLite recovery paired replay: Jev selects raw-page inspection, the LLM recovers ten rows, and the verifier checks the result">
+          <source src="assets/media/docs/jev-decision-terminal-v2.webm" type="video/webm">
+          <source src="assets/media/docs/jev-decision-terminal-v2.mp4" type="video/mp4">
+          <a href="assets/media/docs/jev-decision-terminal-v2.mp4">Watch the SQLite recovery video.</a>
+        </video>
+        <div class="case-copy">
+          <p class="eyebrow">03 / SQLITE RECOVERY</p>
+          <h3>Choose the evidence.</h3>
+          <p>The LLM proposes three inspections. Jev selects raw-page inspection; the LLM recovers ten rows, and an independent verifier checks the output.</p>
+          <p class="scope">Terminal-Bench 2 · sqlite-db-truncate · one recorded pair</p>
+          <a href="assets/media/docs/jev-decision-terminal-v2.mp4" download>Download video</a>
+        </div>
+      </article>
+    </section>
+
+    <section id="evidence" class="evidence" aria-labelledby="evidence-title">
+      <p class="eyebrow">READ THE RESULTS IN CONTEXT</p>
+      <h2 id="evidence-title">One replay shows one recorded pair.</h2>
+      <p>Calls, tokens, total time, and rewards come from the recorded runs. Savings use the LLM-only baseline. Playback preserves each pair’s measured completion-time ratio; individual step durations are illustrated.</p>
+      <p>Broader results vary by task. The report includes the original D2 matrix, the separate D4 WebShop supplement, fallbacks, and uncertainty.</p>
+      <div class="evidence-links">
+        <a href="docs/reports-JevAny_Tech_Report_Agent_Harness_Appendix.html">Full paired results</a>
+        <a href="docs/experiments-AGENT_HARNESS_FRONTIER_PROTOCOL.html">Delegation protocol</a>
+        <a href="files/docs/demos/jev-agent-harness-traces.json">Recorded traces</a>
+      </div>
+    </section>
+  </main>
+  <footer class="page-footer wrap"><span>JevAny / Agent harness</span><a href="index.html">Back to JevAny</a></footer>
+</body>
+</html>

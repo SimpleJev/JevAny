@@ -96,6 +96,9 @@
   </tr>
 </table>
 
+三个案例也可在[九秒总览](https://simplejev.github.io/JevAny/assets/media/docs/jev-agent-harness.mp4)中连续观看，或打开
+[Agent harness 演示页](https://simplejev.github.io/JevAny/agent-harness.html)查看单独回放。
+
 下表展示更多配对评测结果，收益随任务而变化。[完整结果](https://simplejev.github.io/JevAny/docs/reports-JevAny_Tech_Report_Agent_Harness_Appendix.html)、
 [委托协议](https://simplejev.github.io/JevAny/docs/experiments-AGENT_HARNESS_FRONTIER_PROTOCOL.html)和
 [技术报告](https://simplejev.github.io/JevAny/files/reports/JevAny_Tech_Report.pdf)说明了 Jev 适合处理哪些选择，以及何时交回 LLM。

@@ -10,6 +10,7 @@ window.jevanyMessages = {
   "Main navigation": "主导航",
   "Demos": "演示",
   "Benchmarks": "评测",
+  "Agent harness": "Agent 协作演示",
   "Models": "模型",
   "Docs": "文档",
   "Language": "语言",
