@@ -11,9 +11,22 @@ import math
 import re
 from datetime import datetime
 from typing import Annotated, Any, Literal, Union
-from pydantic import BaseModel, Field, model_validator
+from pydantic import AfterValidator, BaseModel, Field, model_validator
 
-JSONContent = Union[str, dict, list, int, float, bool, None]
+
+def _finite_json(value: Any) -> Any:
+    if isinstance(value, float) and not math.isfinite(value):
+        raise ValueError("JSON numbers must be finite")
+    if isinstance(value, dict):
+        for item in value.values():
+            _finite_json(item)
+    elif isinstance(value, list):
+        for item in value:
+            _finite_json(item)
+    return value
+
+
+JSONContent = Annotated[Union[str, dict, list, int, float, bool, None], AfterValidator(_finite_json)]
 # The HTTP shape is shared by both readouts. Pointer checkpoints are bounded by
 # the configured context window rather than by a fixed verbalizer vocabulary;
 # LM-token checkpoints enforce their tighter 255-option limit while encoding.

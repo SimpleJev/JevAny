@@ -8,11 +8,13 @@ Use ``--readout choice`` for the training-free choice-token deployment path.
 TypeSafe-compatible: POST /v1/systemone and GET /v1/models (no auth). JEVANY_PREFIX_CACHE /
 JEVANY_PREFIX_MIN_TOKENS size the state-prefix cache; JEVANY_DATE_FACTS=1 enables deterministic date preprocessing.
 """
-import argparse, os
+import argparse, math, os
 from contextlib import asynccontextmanager
 from dataclasses import fields, replace
 from pathlib import Path
 from fastapi import APIRouter, FastAPI, HTTPException, Request
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from .api import SystemOneRequest, with_date_facts
@@ -206,6 +208,15 @@ def create_app(
                 local.clear_cache()
 
     application = FastAPI(title="JevAny", lifespan=lifespan)
+
+    @application.exception_handler(RequestValidationError)
+    async def invalid_request(_request: Request, error: RequestValidationError):
+        # Invalid input can contain NaN/Infinity, which JSONResponse cannot encode.
+        detail = jsonable_encoder(error.errors(), custom_encoder={
+            float: lambda value: value if math.isfinite(value) else str(value),
+        })
+        return JSONResponse(status_code=422, content={"detail": detail})
+
     application.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
     application.include_router(routes)
     return application

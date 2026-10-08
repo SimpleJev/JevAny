@@ -57,6 +57,10 @@ constructors fill it in. Instructions may be omitted; explicit instructions
 usually make the intended decision clearer. A request contains 1–64 questions.
 Each question is isolated from siblings during inference.
 
+Numbers in state, instructions and criteria must be finite, including inside
+nested objects and arrays. Numeric `NaN` and infinity are rejected before
+inference or HTTP serialization; use `null` for missing evidence.
+
 The default model selector is `jevany-latest`, an alias for the one loaded
 checkpoint. Its reported model ID is also accepted. Unknown selectors raise
 `ValueError` locally and return HTTP 422. Responses always identify the loaded
