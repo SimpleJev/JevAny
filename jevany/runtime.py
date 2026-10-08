@@ -214,6 +214,8 @@ class JevModel(DecisionClient):
             options = replace(options, attn="sdpa")
         if readout == "choice" and options.cuda_graphs:
             raise ValueError("CUDA graph capture is available only for native readout")
+        if readout == "choice" and options.fused_kernels:
+            raise ValueError("fused kernels are available only for native readout")
         if readout == "choice" and options.temperature is not None:
             raise ValueError("JEVANY_TEMPERATURE applies to the native head; use choice_temperature")
         predictor = None

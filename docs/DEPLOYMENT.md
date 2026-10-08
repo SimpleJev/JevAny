@@ -265,6 +265,7 @@ exact checkpoint path unless their report says otherwise.
 | `JEVANY_COMPILE` | `0`, `default`, `reduce-overhead`, `max-autotune`, `max-autotune-no-cudagraphs` | `0` when direct graphs are enabled | `0` | Optional `torch.compile`; it cannot be combined with direct CUDA Graphs |
 | `JEVANY_CUDA_GRAPHS` / `--cuda-graphs` | `0`, `1` | `1` for single-question serving | `1` for single-question serving | Replays whole-backbone CUDA graphs on one GPU |
 | `JEVANY_CUDA_GRAPH_MAX_TOKENS` / `--cuda-graph-max-tokens` | positive integer | `2048` | `2048` | Longer rows stay on eager inference instead of being padded into a slower graph |
+| `JEVANY_FUSED_KERNELS` / `--fused-kernels` | `0`, `1` | `1` with merged BF16 LoRA and direct graphs | `0` until measured | Fused Qwen3.5 kernels: one-kernel norms, merged projections and transposed weights |
 
 Qwen3.5 and Qwen3.8 mix full-attention layers with Gated DeltaNet layers.
 `JEVANY_ATTN` controls only the full-attention layers. Install
@@ -374,10 +375,35 @@ changes, while 27B stayed at 207 with no argmax changes. Maximum probability
 changes were 0.0160 and 0.0146 respectively. These serving measurements do not
 replace the exact benchmark scores reported by the model cards.
 
+`--fused-kernels` (`JEVANY_FUSED_KERNELS=1`, `LoadOptions(fused_kernels=True)`)
+rewrites a merged Qwen3.5-architecture backbone (the Qwen3.5 and Qwen3.8 bases)
+for batch-1 inference; see `jevany/fused_kernels.py`. Each RMSNorm runs as one
+FLA kernel; the MLP gate and up projections, the four Gated DeltaNet input
+projections and the attention query, key and value projections each run as one
+GEMM; FLA's chunked kernel applies the DeltaNet gate and beta sigmoid itself;
+and decoder weights are stored transposed so that cuBLAS reads both GEMM
+operands in their natural layout. The original modules keep views of the fused
+weights, so memory does not grow. The option needs the LoRA merged into the
+backbone (`JEVANY_MERGE_BF16=1` for BF16 checkpoints; direct-token checkpoints
+stay unmerged), one CUDA device and `flash-linear-attention`. It cannot be
+combined with `JEVANY_COMPILE`, a device map or choice readout, and
+`describe()` reports what was fused under `acceleration.fused_kernels`.
+
+On an A100-40GB with BF16 merged JevAny-Qwen3.5-4B, SDPA, FLA, causal-conv1d
+and direct graphs, fused kernels changed public-JevBench forward latency (231
+requests × 3, `scripts/benchmark_latency.py --serving-kernels`) from 16.43 to
+11.25 ms at the median, from 41.79 to 34.10 ms on average and from 130.14 to
+112.30 ms at p90. Requests above the graph limit run eagerly and became 12%
+faster as well. On the Transfer-v9 development suite with the same serving
+settings, clean accuracy moved from 78.68% to 78.78% and NLL from 0.587 to
+0.588; 5 of 1,264 argmax decisions changed and the largest probability change
+was 0.044. The option has not been measured on 27B.
+
 `scripts/benchmark_latency.py` accepts `--cuda-graphs`,
-`--cuda-graph-max-tokens`, `--max-packed` and `--serving-kernels`. The last
-option keeps the fused SDPA kernels used by `jevany serve` instead of selecting
-the math kernel used for fp32-exact evaluation.
+`--cuda-graph-max-tokens`, `--fused-kernels`, `--max-packed` and
+`--serving-kernels`. The last option keeps the fused SDPA kernels used by
+`jevany serve` instead of selecting the math kernel used for fp32-exact
+evaluation.
 
 For a latency-oriented 27B deployment, keep compilation off and cap direct
 graphs at 2,048 tokens:

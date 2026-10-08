@@ -60,6 +60,8 @@ def decide_main(argv: list[str]) -> None:
     parser.add_argument("--cuda-graphs", action="store_true", help="capture CUDA graphs for the local checkpoint")
     parser.add_argument("--cuda-graph-max-tokens", type=int,
                         help="largest captured row; longer rows run eagerly (default 2048)")
+    parser.add_argument("--fused-kernels", action="store_true",
+                        help="fused Qwen3.5 inference kernels for the local checkpoint (JEVANY_FUSED_KERNELS=1)")
     add_inference_arguments(parser)
     args = parser.parse_args(argv)
     try:
@@ -79,6 +81,8 @@ def decide_main(argv: list[str]) -> None:
         ):
             parser.error("CUDA graph and native inference-limit flags cannot be used with --readout choice; "
                          "use --choice-max-tokens")
+        if choice_options is not None and args.fused_kernels:
+            parser.error("--fused-kernels applies only to native readout")
         options = load_options_from_args(args)
         if args.cuda_graphs or args.cuda_graph_max_tokens is not None:
             options = options or LoadOptions.from_env()
@@ -86,6 +90,8 @@ def decide_main(argv: list[str]) -> None:
                               cuda_graph_max_tokens=(args.cuda_graph_max_tokens
                                                      if args.cuda_graph_max_tokens is not None
                                                      else options.cuda_graph_max_tokens))
+        if args.fused_kernels:
+            options = replace(options or LoadOptions.from_env(), fused_kernels=True)
         settings = ({
             "readout": "choice",
             "choice_temperature": choice_options.temperature,
@@ -101,10 +107,10 @@ def decide_main(argv: list[str]) -> None:
     else:
         if (args.device or args.dtype or args.model_name is not None or args.readout != "native"
                 or args.device_map is not None or args.max_memory_gib is not None or args.cuda_graphs
-                or args.cuda_graph_max_tokens is not None
+                or args.cuda_graph_max_tokens is not None or args.fused_kernels
                 or any(getattr(args, item.name) is not None for item in fields(InferenceOptions))):
-            parser.error("device, dtype, placement, model-name, readout, cuda-graphs and inference limit options "
-                         "require --checkpoint")
+            parser.error("device, dtype, placement, model-name, readout, cuda-graphs, fused-kernels and inference "
+                         "limit options require --checkpoint")
         from .client import JevClient
         client = JevClient(args.base_url)
     print(json.dumps(client(request), indent=2, ensure_ascii=False))

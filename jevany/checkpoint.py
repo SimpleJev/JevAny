@@ -151,6 +151,11 @@ class LoadOptions:
     cuda_graph_max_tokens
                  largest captured row. Longer rows use eager inference. The conservative default avoids padding
                  regressions on long requests; raise it only after measuring the target model and workload.
+    fused_kernels
+                 fused Qwen3.5 inference kernels (jevany.fused_kernels): one-kernel RMSNorms, merged projections, the
+                 Gated DeltaNet gate inside FLA's kernel and transposed weight storage. Needs the LoRA merged, one
+                 CUDA device and flash-linear-attention; the gain comes inside CUDA graphs. Probabilities are close
+                 to, not identical with, the unfused path.
     """
     dtype: torch.dtype | None = None
     merge: bool = True
@@ -164,6 +169,7 @@ class LoadOptions:
     max_memory_gib: float | None = None
     cuda_graphs: bool = False
     cuda_graph_max_tokens: int = 2048
+    fused_kernels: bool = False
 
     def __post_init__(self):
         if self.compile_mode not in (None, *COMPILE_MODES):
@@ -181,6 +187,10 @@ class LoadOptions:
             raise ValueError("cuda_graphs require the whole model on one GPU; disable device_map")
         if type(self.cuda_graph_max_tokens) is not int or self.cuda_graph_max_tokens < 1:
             raise ValueError("cuda_graph_max_tokens must be a positive integer")
+        if self.fused_kernels and self.compile_mode:
+            raise ValueError("fused_kernels and compile_mode cannot be combined")
+        if self.fused_kernels and self.device_map is not None:
+            raise ValueError("fused_kernels require the whole model on one GPU; disable device_map")
 
     @classmethod
     def from_env(cls, env=os.environ):
@@ -195,7 +205,8 @@ class LoadOptions:
                    device_map=env.get("JEVANY_DEVICE_MAP") or None,
                    max_memory_gib=float(env["JEVANY_MAX_MEMORY_GIB"]) if env.get("JEVANY_MAX_MEMORY_GIB") else None,
                    cuda_graphs=env.get("JEVANY_CUDA_GRAPHS", "0") == "1",
-                   cuda_graph_max_tokens=int(env.get("JEVANY_CUDA_GRAPH_MAX_TOKENS", "2048")))
+                   cuda_graph_max_tokens=int(env.get("JEVANY_CUDA_GRAPH_MAX_TOKENS", "2048")),
+                   fused_kernels=env.get("JEVANY_FUSED_KERNELS", "0") == "1")
 
 
 def load_options_from_args(args, env=os.environ):
@@ -248,6 +259,14 @@ class Checkpoint:
         # Keep that association intact instead of merging the wrapper away.
         merge = (merge and meta.decision_mode != "lm_token"
                  and not adapter_config.get("trainable_token_indices"))
+        if opts.fused_kernels:
+            if not str(device).startswith("cuda"):
+                raise ValueError("fused_kernels run on CUDA only")
+            if not merge:
+                raise ValueError("fused_kernels need the LoRA merged into the backbone (JEVANY_MERGE_BF16=1 for BF16 "
+                                 "checkpoints); direct-token checkpoints and trainable token embeddings stay unmerged")
+            from .fused_kernels import load_kernels
+            load_kernels()   # fail before loading weights when flash-linear-attention is missing
         saved_args = meta.extra.get("args", {})
         lora_targets = saved_args.get("lora_targets", "all")
         explicit_targets = saved_args.get("lora_target_modules", "")
@@ -285,7 +304,11 @@ class Checkpoint:
             "compile_mode": opts.compile_mode,
             "lora_merged": bool(merge),
             "approximate_bf16_merge": bool(merge and meta.weights_dtype == "bf16"),
+            "fused_kernels": None,
         }
+        if opts.fused_kernels:
+            from .fused_kernels import fuse_qwen3_5
+            m.inference_acceleration["fused_kernels"] = fuse_qwen3_5(m.lm)
         if opts.compile_mode:
             m.lm.compile(mode=opts.compile_mode, fullgraph=False, dynamic=True)
         graphs = None
