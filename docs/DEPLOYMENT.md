@@ -237,6 +237,19 @@ Python and HTTP use `InferenceOptions`. Both `jevany serve` and local
 | `max_packed_tokens` | `--max-packed-tokens` | `JEVANY_MAX_PACKED_TOKENS` | 8192 |
 | `prefix_cache_size` | `--prefix-cache-size` | `JEVANY_PREFIX_CACHE` | 4 |
 | `prefix_min_tokens` | `--prefix-min-tokens` | `JEVANY_PREFIX_MIN_TOKENS` | 384 |
+| `max_batch_size` | `--max-batch-size` | `JEVANY_MAX_BATCH_SIZE` | 1 |
+
+With `max_batch_size` above 1, concurrent text requests that arrive while a
+forward pass is running share the next one. An idle server still scores each
+request alone, so batching adds no waiting time. A batch never allocates more
+padded tokens than `max_packed_tokens`, the budget one maximal request already
+needs. Media requests and requests served from the prefix cache run alone. FP32
+batches match unbatched scores within floating-point tolerance; BF16/FP16 GPU
+kernels round differently by batch shape, so keep the default of 1 when
+reproducing published metrics. On one H200 with 32 concurrent requests to a
+Qwen3.5-0.8B checkpoint, batching raised throughput 2.3x in FP32 (largest
+probability change 1.5e-5, no decision changed) and 4.6x in BF16, where 2 of 32
+requests changed at least one decision. `GET /v1/models` reports batch counts.
 
 A branch includes its shared state. State and branch limits are capped at the
 backbone's context window; the packed limit covers the complete request, including
