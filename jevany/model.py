@@ -483,16 +483,6 @@ class DecisionModel(nn.Module):
     def _question_readout(self, h, decide, options):
         query = h[decide]
         if self.decision_mode == "lm_token":
-<<<<<<< HEAD
-            logits = F.linear(query.to(self.lm_head.weight.device, self.lm_head.weight.dtype), self.lm_head.weight).float()
-            if self.training:
-                return logits
-            candidates = torch.tensor(self.verbalizer_ids[:len(options)], device=logits.device)
-            logits = logits.index_select(0, candidates)
-            return logits if self.temperature == 1.0 else logits / self.temperature
-        # The pointer head stays FP32; only its selected vectors need upcasting.
-        return self.head(query.float(), h[torch.tensor(options, device=self.device)].float())
-=======
             weight = self.lm_head.weight
             if not self.training:
                 # Inference normalizes over candidates only. Selecting rows
@@ -500,8 +490,8 @@ class DecisionModel(nn.Module):
                 weight = weight.index_select(0, self._verbalizer_index[:len(options)])
             logits = F.linear(query.to(weight.device, weight.dtype), weight).float()
             return logits if self.training or self.temperature == 1.0 else logits / self.temperature
-        return self.head(query, h[torch.tensor(options, device=self.device)])
->>>>>>> origin/main
+        # The pointer head stays FP32; only its selected vectors need upcasting.
+        return self.head(query.float(), h[torch.tensor(options, device=self.device)].float())
 
     def _readout(self, h, enc):
         return [self._question_readout(h, d, oi)
