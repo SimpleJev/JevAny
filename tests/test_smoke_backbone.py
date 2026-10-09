@@ -27,15 +27,15 @@ def test_mixed_fixture_evaluates_media_and_text_rows(tmp_path):
             assert original.get("media") == reversed_row.get("media")
 
 
-@pytest.mark.parametrize("family", ["llama", "gemma4_unified"])
-def test_sft_rlcr_and_serving_smoke(tmp_path, family):
+@pytest.mark.parametrize("family,legacy", [("llama", False), ("llama", True), ("gemma4_unified", False)])
+def test_sft_rlcr_and_serving_smoke(tmp_path, family, legacy):
     previous = torch.get_num_threads()
     torch.set_num_threads(1)
     try:
         torch.manual_seed(17)
         base = tmp_path / "base"
         if family == "llama":
-            make_base(base, family)
+            make_base(base, family, legacy=legacy)
         else:
             make_vision_base(base, family)
         args = ["--base", str(base), "--device", "cpu", "--lr", "0.001", "--head-lr", "0.001"]
@@ -51,6 +51,10 @@ def test_sft_rlcr_and_serving_smoke(tmp_path, family):
             assert report["passed"]
             assert report["objective"] == stage
             assert report["training_dtype"] == "fp32"
+            assert report["weights_dtype"] == "fp32"
+            assert report["decision_mode"] == "pointer"
+            if legacy:
+                assert report["token_schema"] == "explicit"
             assert report["lora_updated"]
             assert report["serving"]["passed"]
             assert report["serving"]["invalid_requests_rejected"]
@@ -58,7 +62,38 @@ def test_sft_rlcr_and_serving_smoke(tmp_path, family):
         torch.set_num_threads(previous)
 
 
-@pytest.mark.parametrize("extra", [["--steps", "0"], ["--rlcr"], ["--device", "cpu", "--dtype", "bf16"]])
+def test_direct_token_train_reload_and_serving_smoke(tmp_path):
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    previous = torch.get_num_threads()
+    torch.set_num_threads(1)
+    try:
+        torch.manual_seed(17)
+        base = tmp_path / "base"
+        make_base(base, "llama")
+        tokenizer = AutoTokenizer.from_pretrained(base)
+        # The public direct-token contract needs 255 single-token verbalizers.
+        tokenizer.add_tokens([chr(index) for index in range(33, 512) if chr(index).isprintable()])
+        model = AutoModelForCausalLM.from_pretrained(base)
+        model.resize_token_embeddings(len(tokenizer), mean_resizing=False)
+        model.save_pretrained(base)
+        tokenizer.save_pretrained(base)
+        main(["--base", str(base), "--device", "cpu", "--decision-mode", "lm_token",
+              "--weights-dtype", "fp32", "--steps", "12", "--lr", "0.001",
+              "--out", str(tmp_path / "direct")])
+        report = json.loads((tmp_path / "direct/smoke.json").read_text())
+        assert report["passed"]
+        assert report["decision_mode"] == "lm_token"
+        assert report["head_learning_rate"] == 0
+        assert report["serving"]["python_http_answers_equal"]
+    finally:
+        torch.set_num_threads(previous)
+
+
+@pytest.mark.parametrize("extra", [
+    ["--steps", "0"], ["--rlcr"], ["--device", "cpu", "--dtype", "bf16"],
+    ["--decision-mode", "lm_token", "--head-lr", "0.001"],
+])
 def test_invalid_smoke_arguments(tmp_path, extra):
     with pytest.raises(SystemExit):
         main(["--base", "unused", "--out", str(tmp_path), *extra])

@@ -471,14 +471,14 @@ class DecisionModel(nn.Module):
         return ids, pos, att
 
     def hidden_batch(self, encs):
-        """[B, L_max, d] hidden states for a right-padded batch of encoded records under the packed block-causal mask."""
+        """[B, L_max, d] packed hidden states in the backbone's native dtype."""
         ids, pos, _ = self._pad_rows([(e["ids"], e["pos"]) for e in encs])
         isolate = any(e.get("option_isolation") for e in encs)
         if isolate and not all(e.get("option_isolation") for e in encs):
             raise ValueError("cannot mix option-isolated and plain encodings in one batch")
         lm_dtype = next(self.lm.parameters()).dtype
         mask = branch_mask_batch([e["seg"] for e in encs], self.device, dtype=lm_dtype, opts=[e["opt"] for e in encs] if isolate else None, length=ids.shape[1])
-        return self.lm(input_ids=ids, position_ids=pos, attention_mask=mask).last_hidden_state.float()   # head stays fp32
+        return self.adapter.forward(self.lm, input_ids=ids, position_ids=pos, attention_mask=mask).last_hidden_state
 
     def _question_readout(self, h, decide, options):
         query = h[decide]
@@ -490,7 +490,8 @@ class DecisionModel(nn.Module):
                 weight = weight.index_select(0, self._verbalizer_index[:len(options)])
             logits = F.linear(query.to(weight.device, weight.dtype), weight).float()
             return logits if self.training or self.temperature == 1.0 else logits / self.temperature
-        return self.head(query, h[torch.tensor(options, device=self.device)])
+        # The pointer head stays FP32; only its selected vectors need upcasting.
+        return self.head(query.float(), h[torch.tensor(options, device=self.device)].float())
 
     def _readout(self, h, enc):
         return [self._question_readout(h, d, oi)
@@ -511,7 +512,7 @@ class DecisionModel(nn.Module):
             for r in brs:
                 rows.append((S + r["ids"], Sp + r["pos"])); readouts.append((b, len(S) + r["decide"], [len(S) + o for o in r["opts"]]))
         ids, pos, att = self._pad_rows(rows)
-        h = self.lm(input_ids=ids, position_ids=pos, attention_mask=att).last_hidden_state.float()
+        h = self.adapter.forward(self.lm, input_ids=ids, position_ids=pos, attention_mask=att).last_hidden_state
         out = [[] for _ in encs]
         for i, (b, d, oi) in enumerate(readouts):
             out[b].append(self._question_readout(h[i], d, oi))
@@ -527,7 +528,7 @@ class DecisionModel(nn.Module):
         kwargs = media_to(enc["mm"], self.device)
         ids = torch.tensor([enc["ids"]], device=self.device)
         kwargs.setdefault("attention_mask", torch.ones_like(ids))
-        hidden = self.adapter.forward_media(self.lm, self.mm, {"input_ids": ids, **kwargs})[0].float()
+        hidden = self.adapter.forward_media(self.lm, self.mm, {"input_ids": ids, **kwargs})[0]
         return self._readout(hidden, enc)
 
     def forward_batch(self, encs):
@@ -553,7 +554,8 @@ class DecisionModel(nn.Module):
         cache = copy.deepcopy(cache); cache.reorder_cache(torch.zeros(Q, dtype=torch.long, device=self.device))
         ids, pos, att = self._pad_rows([(r["ids"], r["pos"]) for r in rows])
         att = torch.cat([torch.ones((Q, len(S)), dtype=torch.long, device=self.device), att], 1)   # the cached state tokens are all real
-        h = self.lm(input_ids=ids, position_ids=pos, attention_mask=att, past_key_values=cache, use_cache=True).last_hidden_state.float()
+        h = self.adapter.forward(self.lm, input_ids=ids, position_ids=pos, attention_mask=att,
+                                 past_key_values=cache, use_cache=True).last_hidden_state
         return [F.softmax(self._question_readout(h[i], r["decide"], r["opts"]), -1).cpu()
                 for i, r in enumerate(rows)]
 
@@ -570,8 +572,9 @@ class DecisionModel(nn.Module):
         Ls = enc["seg"].count(0)
         ids = torch.tensor([enc["ids"][:Ls]], device=self.device); pos = torch.tensor([enc["pos"][:Ls]], device=self.device)
         # the cache must know the layer types (hybrid backbones keep recurrent + conv states per DeltaNet layer)
-        out = self.lm(input_ids=ids, position_ids=pos, past_key_values=self.adapter.new_cache(self.lm), use_cache=True)
-        return Ls, out.past_key_values, out.last_hidden_state[0].float()
+        out = self.adapter.forward(self.lm, input_ids=ids, position_ids=pos,
+                                   past_key_values=self.adapter.new_cache(self.lm), use_cache=True)
+        return Ls, out.past_key_values, out.last_hidden_state[0]
 
     @torch.no_grad()
     def probs_and_prefix(self, enc):
@@ -587,8 +590,9 @@ class DecisionModel(nn.Module):
         ids = torch.tensor([enc["ids"]], device=self.device); pos = torch.tensor([enc["pos"]], device=self.device)
         dt = next(self.lm.parameters()).dtype
         mask = branch_mask_batch([enc["seg"]], self.device, dtype=dt, opts=[enc["opt"]] if enc.get("option_isolation") else None)
-        out = self.lm(input_ids=ids, position_ids=pos, attention_mask=mask, past_key_values=self.adapter.new_cache(self.lm), use_cache=True)
-        h = out.last_hidden_state[0].float()
+        out = self.adapter.forward(self.lm, input_ids=ids, position_ids=pos, attention_mask=mask,
+                                   past_key_values=self.adapter.new_cache(self.lm), use_cache=True)
+        h = out.last_hidden_state[0]
         out.past_key_values.crop(-(len(enc["ids"]) - Ls))     # keep the state only (negative = drop that many trailing tokens; positive form deprecated in transformers 5)
         return [F.softmax(z, -1).cpu() for z in self._readout(h, enc)], (Ls, out.past_key_values, h[:Ls].clone())
 
@@ -605,8 +609,9 @@ class DecisionModel(nn.Module):
         dt = next(self.lm.parameters()).dtype
         mask = branch_mask_batch([enc["seg"]], self.device, dtype=dt, opts=[enc["opt"]] if enc.get("option_isolation") else None)[:, :, Ls:, :]
         try:
-            out = self.lm(input_ids=ids, position_ids=pos, past_key_values=cache, attention_mask=mask, use_cache=True)
-            h = torch.cat([h_state, out.last_hidden_state[0].float()], 0)
+            out = self.adapter.forward(self.lm, input_ids=ids, position_ids=pos,
+                                       past_key_values=cache, attention_mask=mask, use_cache=True)
+            h = torch.cat([h_state, out.last_hidden_state[0]], 0)
         finally:
             cache.crop(-(len(enc["ids"]) - Ls))
         return [F.softmax(z, -1).cpu() for z in self._readout(h, enc)]

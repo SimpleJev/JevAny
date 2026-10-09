@@ -287,13 +287,23 @@ class BackboneAdapter:
         """Create a cache supporting deepcopy/reorder and, for packed mode, crop."""
         return DynamicCache(config=model.config)
 
+    def forward(self, model, **inputs):
+        """Return native hidden states and, only when requested, a reusable cache.
+
+        Override here to adapt a family's forward signature or output layout.
+        Ordinary decision scoring does not need a generation cache; prefix
+        methods explicitly request one with use_cache=True.
+        """
+        inputs.setdefault("use_cache", False)
+        return model(**inputs)
+
     def encode_media(self, processor, record, **kwargs) -> dict:
         raise ValueError("this backbone adapter does not support media")
 
     def forward_media(self, language_model, multimodal_model, inputs: dict) -> torch.Tensor:
         """Return token hidden states, retaining each processor's model inputs."""
         model = multimodal_model if multimodal_model is not None else language_model
-        return model(**inputs).last_hidden_state
+        return self.forward(model, **inputs).last_hidden_state
 
 
 def _video_inputs(processor, paths: list[str], *, num_frames: int) -> dict:
