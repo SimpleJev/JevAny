@@ -27,6 +27,9 @@ Training data adds a label and optionally a soft target to each question.
 | `noul` | Optional `true` / `false` descriptions | `type`, `noul` (probability of true) |
 | `score` | Ordered level descriptions | `type`, `score`, `legend`, `probabilities`, `confidence` |
 
+`noul` criteria may describe either or both of `false` and `true`. Other keys
+are rejected so a misspelled description cannot silently disappear.
+
 Responses contain `model`, `answers` keyed by the same question IDs, and `usage`
 with `input_tokens` and `output_tokens`. JevAny also reports `latency_ms`.
 `output_tokens` counts the serialized answer; the model does not decode text.
@@ -54,6 +57,10 @@ constructors fill it in. Instructions may be omitted; explicit instructions
 usually make the intended decision clearer. A request contains 1–64 questions.
 Each question is isolated from siblings during inference.
 
+Numbers in state, instructions and criteria must be finite, including inside
+nested objects and arrays. Numeric `NaN` and infinity are rejected before
+inference or HTTP serialization; use `null` for missing evidence.
+
 The default model selector is `jevany-latest`, an alias for the one loaded
 checkpoint. Its reported model ID is also accepted. Unknown selectors raise
 `ValueError` locally and return HTTP 422. Responses always identify the loaded
@@ -65,6 +72,28 @@ branch layout, context window, media types, active token limits and prefix-cache
 support/statistics. The HTTP description also includes the server's media-file
 policy. Requests exceeding those limits return HTTP 422 without truncation.
 See [DEPLOYMENT.md](DEPLOYMENT.md#inference-settings) for configuration.
+
+Context-length rejections also include the response header
+`X-JevAny-Error-Code: context_length_exceeded`, keeping the existing `detail`
+explanation. Remote evaluation with custom `--data` inputs records these
+rejections in coverage counts and `rejected.json`. Frozen suites and unmarked
+HTTP 422 errors still fail evaluation. Compatible servers must send this header
+to distinguish overlong requests from other validation failures.
+
+If every record is rejected, the evaluation report still contains coverage and
+rejection counts; its objective and latency statistics are `null`. Empty clean
+and calibrated populations are represented by `{"n": 0}`, without accuracy
+values.
+
+Both `JevModel` and `JevClient` provide `models()`, returning a list of model
+descriptions. Local inference returns its single loaded model; HTTP inference
+queries the deployment and includes its server-specific policy.
+
+HTTP clients follow redirects only within the configured origin (scheme, host
+and port); credentials are never forwarded to another origin. POST requests
+follow only 307/308 redirects, preserving their body and method. For other
+redirects, configure the final endpoint as `base_url`. This policy also applies
+to the OpenAI-compatible text planner.
 
 ## Compatibility with Jev
 

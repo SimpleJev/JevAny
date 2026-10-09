@@ -98,6 +98,9 @@ def test_text_causal_lm_direct_token_preserves_vocabulary_head(tmp_path):
     tokenizer = load_tokenizer(base)
     model = DecisionModel(base, tokenizer, "cpu", lora=2, decision_mode="lm_token",
                           verbalizers=["yes", "no"])
+    assert model._verbalizer_index.device == model.lm_head.weight.device
+    assert model._verbalizer_index.tolist() == model.verbalizer_ids
+    assert "_verbalizer_index" not in model.state_dict()
     encoded = model.encode(tokenizer, RECORD)
     model.train()
     logits = model(encoded)

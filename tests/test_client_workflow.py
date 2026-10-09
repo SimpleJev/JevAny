@@ -4,7 +4,6 @@ import json
 import subprocess
 import sys
 import urllib.error
-import urllib.request
 
 import pytest
 
@@ -111,7 +110,7 @@ def failing_client(status, body, content_type="application/json", api_key="secre
 ])
 def test_http_errors_show_the_server_reason_and_stay_inspectable(monkeypatch, body, expected):
     client, urlopen = failing_client(422, body)
-    monkeypatch.setattr(urllib.request, "urlopen", urlopen)
+    monkeypatch.setattr("jevany.client._urlopen", urlopen)
     with pytest.raises(urllib.error.HTTPError) as caught:
         client.system_one("state", {"team": {"type": "choice", "criteria": {"a": None, "b": None}}})
     error = caught.value
@@ -148,7 +147,7 @@ def test_error_bodies_are_read_with_a_bound_and_release_the_response(monkeypatch
     def urlopen(request, timeout):
         raise urllib.error.HTTPError(request.full_url, 502, "Bad Gateway", {}, body)
 
-    monkeypatch.setattr(urllib.request, "urlopen", urlopen)
+    monkeypatch.setattr("jevany.client._urlopen", urlopen)
     client = JevClient("http://127.0.0.1:8008")
     with pytest.raises(urllib.error.HTTPError) as caught:
         client.system_one("state", {"done": {"type": "noul"}})
@@ -167,7 +166,7 @@ def test_successful_responses_are_not_truncated_to_the_error_limit(monkeypatch):
         "probabilities": {name: 1 / len(names) for name in names}}}}
     body = json.dumps(payload).encode()
     assert len(body) > ERROR_BODY_LIMIT
-    monkeypatch.setattr(urllib.request, "urlopen", lambda request, timeout: io.BytesIO(body))
+    monkeypatch.setattr("jevany.client._urlopen", lambda request, timeout: io.BytesIO(body))
     client = JevClient("http://127.0.0.1:8008", model="sft")
     result = client.system_one(
         "state", {"team": {"type": "choice", "criteria": {name: None for name in names}}})
@@ -191,7 +190,7 @@ def test_models_round_trip_rejects_payloads_that_are_not_a_model_list(monkeypatc
         seen["url"], seen["method"] = request.full_url, request.get_method()
         return io.BytesIO(json.dumps(seen["payload"]).encode())
 
-    monkeypatch.setattr(urllib.request, "urlopen", urlopen)
+    monkeypatch.setattr("jevany.client._urlopen", urlopen)
     seen["payload"] = {"models": served}
     assert client.models() == served
     assert seen["url"] == "http://127.0.0.1:8008/v1/models" and seen["method"] == "GET"
@@ -199,3 +198,18 @@ def test_models_round_trip_rejects_payloads_that_are_not_a_model_list(monkeypatc
         seen["payload"] = payload
         with pytest.raises(ValueError, match="models"):
             client.models()
+
+
+@pytest.mark.parametrize("choice", [["a"], {"name": "a"}, None, 0, "missing"])
+def test_malformed_choice_responses_raise_a_catchable_value_error(monkeypatch, choice):
+    payload = {"answers": {"route": {
+        "type": "choice", "choice": choice, "confidence": 0.5,
+        "probabilities": {"a": 0.75, "b": 0.25},
+    }}}
+    monkeypatch.setattr(
+        "jevany.client._urlopen",
+        lambda request, timeout: io.BytesIO(json.dumps(payload).encode()),
+    )
+    client = JevClient()
+    with pytest.raises(ValueError, match="unknown choice.*route"):
+        client.system_one("state", {"route": {"type": "choice", "criteria": {"a": None, "b": None}}})

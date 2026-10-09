@@ -26,6 +26,7 @@ from jevany.device import default_device
 from jevany.metrics import EPSILON, grouped_metrics, metrics, unknowable_report
 from jevany.model import ContextLengthError
 from jevany.predictors import LocalPredictor, RemotePredictor
+from jevany.readout import add_readout_arguments, choice_options_from_args, normalize_readout
 from jevany.suite import ENCODING, digest, load_split, read_manifest, record_digest, write_json
 
 
@@ -105,19 +106,21 @@ def summarize(rows, temperature=1.0, heldout_sources=()):
             diffs.append(float(np.max(np.abs(np.array(aligned) - original["p"]))))
             flips.append(int(np.argmax(aligned) != np.argmax(original["p"])))
     knowable = [r for r in clean if r["source"] != "unknowable"]     # unknowable records are scored on confidence, never on accuracy
-    return {"objective": -float(np.mean([v["nll"] for k, v in tasks.items() if not k.startswith("unknowable_") or k.startswith("unknowable_control")])),
+    losses = [v["nll"] for k, v in tasks.items()
+              if not k.startswith("unknowable_") or k.startswith("unknowable_control")]
+    return {"objective": -float(np.mean(losses)) if losses else None,
             "paired_flip": paired_flip(clean), "unknowable": unknowable_report(clean),
-            "clean": metrics(knowable), "tasks": tasks, "variants": variants,
+            "clean": metrics(knowable) if knowable else {"n": 0}, "tasks": tasks, "variants": variants,
             "heldout_tasks": grouped_metrics([r for r in clean if r["source"] in heldout_sources], "task") if any(r["source"] in heldout_sources for r in clean) else {},
             "permutation": {"n": len(diffs), "mean_max_delta": float(np.mean(diffs)) if diffs else None,
                             "flip_rate": float(np.mean(flips)) if flips else None},
-            "temperature": temperature, "calibrated_clean": metrics(knowable, temperature),
-            "metric_policy": {"version": 2, "selective_ties": "whole_confidence_groups",
+            "temperature": temperature, "calibrated_clean": metrics(knowable, temperature) if knowable else {"n": 0},
+            "metric_policy": {"version": 3, "selective_ties": "whole_confidence_groups",
                               "coverage_at_error": "in-sample maximum over confidence thresholds; not a deployed error guarantee",
                               "aurc": "right-step integral over whole confidence groups",
                               "confident_error_rate": "high-confidence errors divided by all questions",
                               "error_rate_at_0_9": "errors divided by questions accepted at p_max >= 0.9",
-                              "nll": "exact from logits when recorded; otherwise from floored probabilities",
+                              "nll": "returned probabilities at T=1; logits when applying an additional temperature",
                               "nll_floor": EPSILON, "renormalize_returned_probabilities": True,
                               "raw_sums_outside_1e_5": sum(abs(r["raw_probability_sum"] - 1) > 1e-5 for r in rows),
                               "returned_zeros": sum(r["zero_count"] for r in rows)}}
@@ -159,9 +162,12 @@ def evaluate_records(records, predictor, directory, temperature=1.0, heldout_sou
     write_json(directory / "rows.json", rows)
     if rejected: write_json(directory / "rejected.json", rejected)
     report = summarize(rows, temperature, heldout_sources)
-    report.update(coverage=coverage, latency_ms={"median": float(np.median(latencies)), "p95": float(np.quantile(latencies, .95))},
+    report.update(coverage=coverage, latency_ms={
+                      "median": float(np.median(latencies)) if latencies else None,
+                      "p95": float(np.quantile(latencies, .95)) if latencies else None},
                   calibration={"inference_temperature": getattr(predictor, "temperature", None),
-                               "additional_temperature": temperature, "logits_recorded": all("logits" in r for r in rows)})
+                               "additional_temperature": temperature,
+                               "logits_recorded": bool(rows) and all("logits" in r for r in rows)})
     write_json(directory / "report.json", report)
     return report, rows
 
@@ -169,6 +175,7 @@ def evaluate_records(records, predictor, directory, temperature=1.0, heldout_sou
 EXAMPLES = """examples:
   jevany eval --run runs/my-jev --data data/starter/development.jsonl --out runs/my-jev/eval
   jevany eval --run SimpleJev/JevAny-Qwen3.5-4B-LoRA --suite data/eval-suite --out runs/eval
+  jevany eval --run SimpleJev/JevAny-Qwen3.5-4B-LoRA --readout choice --suite data/eval-suite --out runs/choice
   jevany eval --remote http://127.0.0.1:8008 --data my-labelled.jsonl --out runs/remote-eval
 
 --data scores your own labelled JSONL (jevany.data.load_records); --suite scores a
@@ -182,8 +189,9 @@ def main(argv=None, prog=None):
         prog=prog, formatter_class=argparse.RawDescriptionHelpFormatter, epilog=EXAMPLES,
         description="Score a checkpoint or a running endpoint on a frozen suite or your own labelled JSONL.")
     ap.add_argument("--run", help="checkpoint dir or Hub id (local scoring)")
-    ap.add_argument("--remote", help="base URL of a System One-compatible endpoint to score instead of a local checkpoint")
+    ap.add_argument("--remote", help="System One endpoint using the JevClient contract; non-loopback URLs require HTTPS")
     ap.add_argument("--remote-model", default="jevany-latest")
+    add_readout_arguments(ap)
     ap.add_argument("--suite", help="frozen suite directory (scores its development partition)")
     ap.add_argument("--data", help="your own labelled requests, one JSON object per line (jevany.data.load_records); an alternative to --suite")
     ap.add_argument("--out", required=True)
@@ -191,22 +199,58 @@ def main(argv=None, prog=None):
     ap.add_argument("--allow-test", action="store_true")
     ap.add_argument("--date_facts", action="store_true", help="apply jevany.api.with_date_facts to every state before scoring (the opt-in serving preprocessor); reported in report.json")
     a = ap.parse_args(argv)
+    try:
+        choice_options = choice_options_from_args(a)
+    except ValueError as error:
+        ap.error(str(error))
     if bool(a.run) == bool(a.remote): ap.error("give exactly one of --run or --remote")
+    if a.remote and choice_options is not None:
+        ap.error("--readout choice is a local model setting; configure it on the remote server")
     if bool(a.suite) == bool(a.data): ap.error("give exactly one of --suite or --data")
     if a.data:
         records, heldout, split, source_hash = load_records(a.data), [], "custom", digest(Path(a.data))
     else:
         split = "test" if a.allow_test else "development"
         records = load_split(a.suite, split, allow_test=a.allow_test)
-        heldout = read_manifest(a.suite)["holdout_sources"]; source_hash = digest(Path(a.suite) / "manifest.json")
+        heldout = read_manifest(a.suite).get("holdout_sources", []); source_hash = digest(Path(a.suite) / "manifest.json")
     if a.date_facts:
         records = [{**r, "state": with_date_facts(r["state"])} for r in records]
-    predictor = RemotePredictor(a.remote, a.remote_model, os.environ.get("JEVANY_REMOTE_API_KEY", "local")) if a.remote else LocalPredictor(a.run, a.device, LoadOptions.from_env())
+    if a.remote:
+        predictor = RemotePredictor(a.remote, a.remote_model, os.environ.get("JEVANY_REMOTE_API_KEY", "local"))
+    elif choice_options is not None:
+        from jevany.letter_predictor import LetterReadoutPredictor
+        predictor = LetterReadoutPredictor(
+            checkpoint=a.run,
+            device=a.device,
+            options=LoadOptions.from_env(),
+            temperature=choice_options.temperature,
+            native_weight=choice_options.native_weight,
+            max_tokens=choice_options.max_tokens,
+        )
+    else:
+        predictor = LocalPredictor(a.run, a.device, LoadOptions.from_env())
     report, _ = evaluate_records(records, predictor, a.out, heldout_sources=tuple(heldout), skip_overlong=bool(a.data))
+    native_temperature = (getattr(predictor.native_model, "temperature", None)
+                          if choice_options is not None and predictor.native_weight else None)
+    calibration_applied = (None if a.remote else predictor.temperature != 1.0
+                           or native_temperature not in (None, 1.0))
     report.update(suite_sha256=source_hash, data=a.data, date_facts=a.date_facts, run=a.run or a.remote, split=split,
-                  calibration_applied=predictor.temperature != 1.0 if not a.remote else None,
+                  calibration_applied=calibration_applied,
                   base_loading=getattr(predictor, "base_loading", None),
                   remote={"base_url": a.remote, "requested_model": a.remote_model, "served_model": predictor.served_model} if a.remote else None)
+    if not a.remote:
+        report["readout"] = normalize_readout(a.readout)
+    if choice_options is not None:
+        choice_readout = dict(predictor.provenance)
+        if native_temperature is not None:
+            choice_readout["native_temperature"] = native_temperature
+            choice_readout["pointer_temperature"] = native_temperature
+            report["calibration"]["native_temperature"] = native_temperature
+            report["calibration"]["pointer_temperature"] = native_temperature
+        report["choice_readout"] = choice_readout
+        # Kept as an output alias for consumers of reports written before the
+        # public readout name changed to ``choice``.
+        report["letter_readout"] = dict(choice_readout)
     write_json(Path(a.out) / "report.json", report)
     print(json.dumps({"objective": report["objective"], "clean": report["clean"], "coverage": report["coverage"]}, indent=2))
 

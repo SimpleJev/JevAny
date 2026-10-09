@@ -72,3 +72,12 @@ def test_cli_preserves_existing_report(tmp_path):
     with pytest.raises(SystemExit):
         latency.main(["--run", "unused", "--suite", "unused", "--out", str(report)])
     assert report.read_text() == "existing measurements"
+
+
+def test_cli_rejects_invalid_letter_options_before_loading(tmp_path, monkeypatch):
+    monkeypatch.setattr(latency, "load_split", lambda *_: pytest.fail("loaded suite"))
+    with pytest.raises(SystemExit):
+        latency.main([
+            "--run", "unused", "--suite", "unused", "--out", str(tmp_path / "result.json"),
+            "--readout", "letter", "--letter-pointer-weight", "1.1",
+        ])

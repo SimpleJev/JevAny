@@ -16,6 +16,7 @@
 <li><a href="#training-compute">Training compute</a></li>
 </ul>
 </li>
+<li><a href="#training-free-choice-token-readout">Training-free choice-token readout</a></li>
 <li><a href="#earlier-releases-and-evaluations">Earlier releases and evaluations</a><ul>
 <li><a href="#native-image-and-video-decisions">Native image and video decisions</a></li>
 <li><a href="#jev-agent">Jev-Agent</a></li>
@@ -26,7 +27,7 @@
 </div>
 </details></aside>
 <main id="content" class="doc-content"><p class="eyebrow">JEVANY / DOCUMENTATION</p><h1>Evaluation</h1><h2 id="model-family-v2">Model family v2</h2>
-<p>This section contains the full results for the five current LoRA SFT releases.
+<p>This section contains checkpoint-native results for the five current LoRA SFT releases.
 Transfer also informed model development and serves as a diagnostic comparison.</p>
 <p><strong>Transfer</strong> is the cross-domain evaluation built from
 <a href="https://github.com/jaredpalmer/kev/blob/main/kev/transfer_v9.py">Kev's frozen <code>transfer-v9</code> suite</a>
@@ -35,6 +36,11 @@ Its item-level mean spans Emotion, PAWS, QNLI, TweetEval,
 MMLU, MMLU-Pro, SciQ, and four robustness slices. <strong>JevBench</strong> is accuracy across
 all 231 public development items. NLL, Brier,
 and ECE in the main table are Transfer metrics; every run covers every item.</p>
+<p>Every JevBench value in this document is public-development accuracy
+(<code>correct / 231</code>). It is not the official JevBench v1.5.4 composite, which
+combines Intelligence, Calibration, Speed and Cost over 1,624 open and sealed
+decisions. See the <a href="CHOICE_READOUT.html#benchmark-units">choice-token readout guide</a> for
+the side-by-side definitions.</p>
 <div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
 <thead>
 <tr>
@@ -459,7 +465,7 @@ a complete local Transfer API run and JevBench's published per-tier accuracy.</p
 <li><strong>Loss:</strong> cross-entropy, pure InfoNCE, and mixed objectives; CE gave the best
   Transfer accuracy in the loss sweep, while small contrastive terms mainly
   improved calibration. The released checkpoints use CE.</li>
-<li><strong>Readout family:</strong> at 4B, direct-token improves JevBench (80.95% vs 80.09%),
+<li><strong>Trained checkpoint-native readout family:</strong> at 4B, direct-token improves JevBench (80.95% vs 80.09%),
   while pointer is slightly stronger on Transfer (78.68% vs 78.20%).</li>
 </ul>
 <h3 id="reproducibility">Reproducibility</h3>
@@ -535,6 +541,76 @@ world size; ablations, evaluation, and training after a selected checkpoint are
 excluded. Gemma uses run/checkpoint timestamps because its earlier checkpoint
 format did not store cumulative elapsed seconds; the other figures come from
 checkpoint or terminal trainer telemetry.</p>
+<h2 id="training-free-choice-token-readout">Training-free choice-token readout</h2>
+<p>Choice-token readout constrains the next token to one of 52 exact option IDs
+and renormalizes their mass. It needs no additional training and can change the
+selected answer. Scalar temperature fitting is separate: it changes confidence,
+not accuracy. A native + choice stack can change both.</p>
+<p>The stack weight and additional temperature below are selected only on 1,046
+clean/knowable Transfer-v9 development decisions and then frozen. Transfer test,
+Typed Decisions, and JevJudge text are held out. JevBench is a public diagnostic.
+All values are accuracy percentages.</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Weights</th>
+<th>Readout</th>
+<th style="text-align: right;">JevBench public</th>
+<th style="text-align: right;">Transfer test</th>
+<th style="text-align: right;">Typed test</th>
+<th style="text-align: right;">JevJudge text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Frozen Qwen3.5-4B</td>
+<td>Choice T=1</td>
+<td style="text-align: right;">79.65%</td>
+<td style="text-align: right;">68.45%</td>
+<td style="text-align: right;">52.75%</td>
+<td style="text-align: right;">58.70%</td>
+</tr>
+<tr>
+<td>JevAny 4B Pointer</td>
+<td>Native / Choice / Tuned</td>
+<td style="text-align: right;">80.09 / 81.39 / 80.95</td>
+<td style="text-align: right;">77.92 / 73.61 / <strong>78.01</strong></td>
+<td style="text-align: right;"><strong>63.50</strong> / 57.80 / 62.90</td>
+<td style="text-align: right;">58.01 / 52.62 / <strong>59.53</strong></td>
+</tr>
+<tr>
+<td>JevAny 4B Direct-Token</td>
+<td>Native / Choice / Tuned</td>
+<td style="text-align: right;">80.95 / <strong>81.39</strong> / 80.95</td>
+<td style="text-align: right;">78.87 / 78.59 / <strong>79.83</strong></td>
+<td style="text-align: right;">67.20 / 64.80 / <strong>67.65</strong></td>
+<td style="text-align: right;">58.43 / 57.60 / <strong>59.25</strong></td>
+</tr>
+<tr>
+<td>Frozen Qwen3.8-27B</td>
+<td>Choice T=1</td>
+<td style="text-align: right;">87.88%</td>
+<td style="text-align: right;">80.69%</td>
+<td style="text-align: right;">68.25%</td>
+<td style="text-align: right;">61.74%</td>
+</tr>
+<tr>
+<td>JevAny 27B Pointer</td>
+<td>Native / Choice / Tuned</td>
+<td style="text-align: right;"><strong>90.04</strong> / 89.61 / <strong>90.04</strong></td>
+<td style="text-align: right;">87.95 / 86.04 / <strong>89.10</strong></td>
+<td style="text-align: right;">72.80 / 72.60 / <strong>73.30</strong></td>
+<td style="text-align: right;"><strong>66.44</strong> / 57.87 / 64.36</td>
+</tr>
+</tbody>
+</table></div>
+<p>The 4B Direct-Token stack improves over its native readout on all three held-out
+panels. The 27B stack improves Transfer and Typed, ties JevBench, and hurts
+JevJudge text. Retain a stack only when paired development errors are
+complementary and the target distribution validates it.</p>
+<p><a href="CHOICE_READOUT.html">Full method, fixed 50/50 controls and protocol</a> ·
+<a href="../files/results/choice-readout-v2.json">Machine-readable results</a> ·
+<a href="../files/reports/JevAny_Tech_Report.pdf">Merged 23-page technical report</a></p>
 <h2 id="earlier-releases-and-evaluations">Earlier releases and evaluations</h2>
 <p>The <a href="EXTERNAL_EVALUATION.html">JevBench and Kev comparison</a> evaluates both released
 JevAny checkpoints and all 14 distinct released Kev checkpoints across 67 public

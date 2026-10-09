@@ -14,6 +14,8 @@ Open http://127.0.0.1:4173. For browser checks:
 ```bash
 python3 -m pip install -r site/tests/requirements.txt
 python3 -m playwright install chromium
+python3 site/tests/content_checks.py
+python3 site/tools/build_content.py
 python3 site/tests/check_site.py
 python3 site/tests/browser_checks.py
 ```
@@ -35,6 +37,24 @@ existing Markdown guides. It updates the marked sections of `index.html`,
 `assets/data`, `docs`, and `files`. Edit the source guides rather than generated
 pages. GitHub Actions rebuilds and checks the site before publishing changes to
 `main`, uploading only the public site files.
+
+README navigation links point to the published website. Keep guide content in
+the source Markdown; the builder converts public URLs back to relative site
+links and includes their source documents and downloads in each build.
+The link checker verifies README destinations and section anchors against the
+generated pages, so local previews do not need the live website.
+
+The header switches between English (`index.html`) and Simplified Chinese
+(`zh.html`), preserving the current section. The root URL uses the saved choice,
+then the browser language; explicit page URLs always take precedence. Both pages
+remain readable and linked without JavaScript. Docs opens the corresponding
+quickstart, with English-only reference guides identified on the Chinese page.
+
+Edit English homepage copy in `index.html` and Chinese translations in
+`locales/zh-CN.json`, then run the content builder. It generates `zh.html` and
+`assets/i18n/zh-CN.js` from the same catalog, including interactive messages.
+Missing homepage translations stop the build. Keep code, model identifiers and
+benchmark values unchanged; mark display-only identifiers with `translate="no"`.
 
 Thirty replay videos and the six scenes in the background come from
 `docs/demos/cases`. The scenes are joined without gutters and blurred together,

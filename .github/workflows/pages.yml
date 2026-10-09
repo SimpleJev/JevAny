@@ -1,4 +1,6 @@
 name: Deploy homepage
+run-name: >-
+  ${{ github.event_name == 'pull_request' && format('PR #{0} | base {1} | head {2}', github.event.pull_request.number, github.event.pull_request.base.sha, github.event.pull_request.head.sha) || format('{0} {1}', github.event_name, github.sha) }}
 
 on:
   push:
@@ -11,6 +13,12 @@ on:
       - 'README*.md'
       - 'CONTRIBUTING.md'
       - 'LICENSE'
+      - 'NOTICE'
+      - 'ACKNOWLEDGEMENTS.md'
+      - 'CITATION.cff'
+      - 'jevany/**'
+      - 'scripts/**'
+      - 'infra/**'
       - 'examples/**'
       - 'recipes/**'
       - '.github/workflows/pages.yml'
@@ -23,6 +31,12 @@ on:
       - 'README*.md'
       - 'CONTRIBUTING.md'
       - 'LICENSE'
+      - 'NOTICE'
+      - 'ACKNOWLEDGEMENTS.md'
+      - 'CITATION.cff'
+      - 'jevany/**'
+      - 'scripts/**'
+      - 'infra/**'
       - 'examples/**'
       - 'recipes/**'
       - '.github/workflows/pages.yml'
@@ -44,6 +58,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install -r site/tools/requirements.txt
+      - run: python site/tests/content_checks.py
       - run: python site/tools/build_content.py
       - run: python site/tests/check_site.py
       - run: python -m pip install -r site/tests/requirements.txt
@@ -52,7 +67,7 @@ jobs:
       - name: Stage public files
         run: |
           mkdir -p _site
-          cp site/index.html site/styles.css site/app.js site/robots.txt site/sitemap.xml _site/
+          cp site/index.html site/zh.html site/styles.css site/app.js site/language.js site/robots.txt site/sitemap.xml _site/
           cp -r site/assets site/docs site/files _site/
       - uses: actions/upload-pages-artifact@v4
         if: github.event_name != 'pull_request'

@@ -1,5 +1,7 @@
+import json
 from types import SimpleNamespace
 
+import numpy as np
 import pytest
 
 from jevany.agent import action_request, run_episode
@@ -35,7 +37,8 @@ def test_bedrock_generator_uses_converse_without_reasoning():
     assert result["stop_reason"] == "end_turn"
 
 
-def test_agent_runs_discrete_environment():
+@pytest.mark.parametrize("history_limit", [0, 1, 8])
+def test_agent_runs_discrete_environment(history_limit):
     class Environment:
         ACTION_LOOKUP = {1: "left", 2: "right"}
 
@@ -57,10 +60,42 @@ def test_agent_runs_discrete_environment():
         requests.append(request)
         return response("action", "1", ["0", "1"])
 
-    episode = run_episode(Environment(), decide, "reach position 2", seed=7)
+    episode = run_episode(Environment(), decide, "reach position 2", seed=7, history_limit=history_limit)
     assert episode.success and episode.reward == 1
     assert [step.action_name for step in episode.steps] == ["right", "right"]
-    assert requests[1]["state"]["recent_actions"][0]["action"] == "right"
+    if history_limit:
+        assert requests[1]["state"]["recent_actions"][0]["action"] == "right"
+    else:
+        assert all(request["state"]["recent_actions"] == [] for request in requests)
+
+
+def test_agent_rejects_a_negative_history_limit_before_resetting():
+    with pytest.raises(ValueError, match="history_limit"):
+        run_episode(None, None, "goal", history_limit=-1)
+
+
+@pytest.mark.parametrize("scalar", [int, np.int32, np.int64])
+def test_agent_actions_remain_json_serializable_at_the_environment_boundary(scalar):
+    class Environment:
+        ACTION_LOOKUP = {0: "wait", 1: "finish"}
+
+        def reset(self, seed=None):
+            return "ready"
+
+        def get_all_actions(self):
+            return [scalar(0), scalar(1)]
+
+        def step(self, action):
+            self.received = action
+            return "finished", 1, True, {"success": True}
+
+    env = Environment()
+    episode = run_episode(env, lambda _: response("action", "1", ["0", "1"]), "finish")
+    saved = json.loads(json.dumps(episode.as_dict(), allow_nan=False))
+    assert saved["steps"][0]["action"] == 1
+    assert saved["steps"][0]["action_name"] == "finish"
+    assert type(env.received) is int
+    assert episode.success and episode.reward == 1
 
 
 def test_action_request_uses_explicit_options():

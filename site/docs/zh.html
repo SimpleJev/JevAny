@@ -2,11 +2,11 @@
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a1114">
 <title>开始使用 JevAny — JevAny</title><link rel="stylesheet" href="../styles.css"><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"></head>
-<body class="docs-page"><a class="skip-link" href="#content">Skip to content</a>
-<header class="site-header wrap"><a class="brand" href="../index.html"><img src="../assets/favicon.svg" width="30" height="30" alt=""><span>JevAny<span class="brand-period">.</span></span></a>
-<nav aria-label="Main navigation"><a href="../index.html#benchmarks">Benchmarks</a><a href="../index.html#models">Models</a><a href="../index.html#get-started">Get started</a></nav></header>
-<div class="docs-layout wrap"><aside class="docs-sidebar"><a class="text-link" href="../index.html">← Project homepage</a><nav aria-label="Documentation"><a href="quickstart.html">Quickstart</a><a href="TRAINING.html">Training</a><a href="DATA.html">Data</a><a href="DEPLOYMENT.html">Deployment</a><a href="API.html">API reference</a><a href="examples.html">Examples</a><a href="CASES.html">Cases</a><a href="EVALUATION.html">Evaluation</a><a href="ALGORITHM.html">Method</a><a href="INTEGRATIONS.html">Integrations</a><a href="zh.html" aria-current="page">中文文档</a></nav>
-<details class="doc-toc"><summary>On this page</summary><div class="toc">
+<body class="docs-page"><a class="skip-link" href="#content">跳到正文</a>
+<header class="site-header wrap"><a class="brand" href="../zh.html"><img src="../assets/favicon.svg" width="30" height="30" alt=""><span>JevAny<span class="brand-period">.</span></span></a>
+<nav aria-label="主导航"><a href="../zh.html#benchmarks">评测</a><a href="../zh.html#models">模型</a><a href="../zh.html#get-started">快速开始</a></nav><div class="language-switch" role="group" aria-label="语言"><a href="quickstart.html" lang="en" hreflang="en" title="English">EN</a><a href="zh.html" lang="zh-CN" hreflang="zh-CN" title="中文" aria-current="page">中文</a></div></header>
+<div class="docs-layout wrap"><aside class="docs-sidebar"><a class="text-link" href="../zh.html">← 项目主页</a><nav aria-label="文档"><a href="quickstart.html">快速上手（英文）</a><a href="TRAINING.html">训练（英文）</a><a href="DATA.html">数据（英文）</a><a href="DEPLOYMENT.html">部署（英文）</a><a href="API.html">API 参考（英文）</a><a href="examples.html">示例（英文）</a><a href="CASES.html">案例（英文）</a><a href="EVALUATION.html">评测（英文）</a><a href="ALGORITHM.html">方法（英文）</a><a href="INTEGRATIONS.html">集成（英文）</a><a href="zh.html" aria-current="page">中文文档</a></nav>
+<details class="doc-toc"><summary>本页目录</summary><div class="toc">
 <ul>
 <li><a href="#_1">🎮 结果与演示</a><ul>
 <li><a href="#jev-llm-agent">⚡ Jev 加入 LLM Agent 循环</a></li>
@@ -19,8 +19,14 @@
 <li><a href="#13-jevany">🚀 1.3 JevAny 部署</a></li>
 </ul>
 </li>
-<li><a href="#2">🤗 2. 预训练模型</a></li>
-<li><a href="#3">📊 3. 基准测试结果</a></li>
+<li><a href="#2">🤗 2. 预训练模型</a><ul>
+<li><a href="#choice-token">免训练 choice-token 读出</a></li>
+</ul>
+</li>
+<li><a href="#3">📊 3. 基准测试结果</a><ul>
+<li><a href="#31">⏱️ 3.1 推理效率</a></li>
+</ul>
+</li>
 <li><a href="#4">🕹️ 4. 示例与测试环境</a><ul>
 <li><a href="#41">🤖 4.1 机械臂插孔</a></li>
 <li><a href="#42-doom-3d">🔫 4.2 Doom 走廊 · 3D</a></li>
@@ -29,11 +35,14 @@
 </ul>
 </li>
 <li><a href="#5">🧩 5. 支持的模型系列</a></li>
-<li><a href="#6">📚 6. 文档与贡献</a></li>
+<li><a href="#6">📚 6. 文档与贡献</a><ul>
+<li><a href="#_3">🤝 参与贡献</a></li>
+</ul>
+</li>
 </ul>
 </div>
 </details></aside>
-<main id="content" class="doc-content"><p class="eyebrow">JEVANY / DOCUMENTATION</p><h1>开始使用 JevAny</h1><p><strong>JevAny 是面向 System 1 决策模型训练与部署的开源 infra</strong>，涵盖数据准备、模型适配和评测。
+<main id="content" class="doc-content"><p class="eyebrow">JEVANY / 文档</p><h1>开始使用 JevAny</h1><p><strong>JevAny 是面向 System 1 决策模型训练与部署的开源 infra</strong>，涵盖数据准备、模型适配和评测。
 你可以直接使用已发布模型，也可以用自己的数据训练，用于工单分流、工具选择和机器人动作决策。
 统一 API 接收状态、问题和候选选项，直接返回选择结果与各选项概率。</p>
 <p align="center">
@@ -41,32 +50,67 @@
 </p>
 
 <h2 id="_1">🎮 结果与演示 <a name="结果与演示"></a><a name="演示"></a></h2>
-<p><a href="../index.html#benchmarks">Explore interactive benchmark results</a></p>
-<p><a href="#评测">完整基准测试结果与评测说明</a>。</p>
+<p><a href="../zh.html#benchmarks">查看交互式评测结果</a></p>
+<p><a href="../zh.html#benchmarks">交互式基准评测结果</a>。</p>
 <p>以下 30 个案例是由早期兼容 checkpoint 录制的历史回放，展示了 JevAny 在机器人、浏览器、软件、实验室和出行任务中的动作选择；
 当前默认发布模型为
-<a href="https://huggingface.co/SimpleJev/JevAny-Qwen3.8-27B-LoRA">JevAny-Qwen3.8-27B</a>。<a href="CASES.html">查看全部案例</a>，
+<a href="https://huggingface.co/SimpleJev/JevAny-Qwen3.8-27B-LoRA">JevAny-Qwen3.8-27B</a>。<a href="../zh.html#case-library">查看全部案例</a>，
 或<a href="#本地体验">在本地运行模型</a>，输入自己的任务，查看模型的选择和各选项概率。</p>
-<p><a href="../index.html#case-library">Explore all 30 application replays →</a></p>
+<p><a href="../zh.html#case-library">查看全部 30 个应用回放 →</a></p>
 <h3 id="jev-llm-agent">⚡ Jev 加入 LLM Agent 循环</h3>
-<p><strong>关键结论</strong></p>
+<p>候选动作由环境提供或由 LLM 生成；Jev 做局部选择，规划、失败恢复和最终完成仍由 LLM 负责。
+下方动图对比左侧纯 LLM 与右侧 LLM + Jev，两侧 reward 相同；步骤为示意，
+加速播放保留各组记录的实测耗时比例，点击可放大查看。</p>
+<p><strong>快速判断原则</strong></p>
+<p><strong>委托“选择瓶颈”，而不是委托整个任务。</strong> Jev 要么替代重复的 LLM 推理，
+要么修正已经测出的局部排序错误；两者都做不到时，它就只是额外开销。</p>
 <ul>
-<li><strong>任务层级：</strong>T0 受控环境 → T4 开放终端；任务难度与委托程度分开判断。</li>
-<li><strong>委托层级：</strong>D0 仅 LLM → D4 有边界子目标；只有局部选择容易验证时才提高委托程度。</li>
-<li><strong>适合 Jev：</strong>LLM 能生成 2–4 个有效、有明确差别、可回退且能立即看到反馈的选项。</li>
-<li><strong>保留给 LLM：</strong>规划、开放搜索、精确修改、失败恢复、高风险动作和最终完成。</li>
-<li><strong>成功标准：</strong>reward 不降，同时减少 LLM calls、tokens 或时间；否则立即交回 LLM。</li>
+<li>给 Jev <strong>2–4 个有效分支</strong>，各分支结果不同且可观察，并包含正确动作。</li>
+<li>让一次 LLM 计划在多个可回退的选择间复用；遇到新状态、候选失效、
+  延迟反馈、失败恢复或任务完成时交回控制权。</li>
+<li>只凭配对的 reward/成本证据提升自治层级：D0 纯 LLM → D1 shadow →
+  D2 单步 → D3 常规决策默认委托 → D4 有界子任务。覆盖率不等于成功。</li>
 </ul>
-<p><strong>1 · WebShop——从 LLM 生成的颜色和尺寸候选中选择精确选项</strong></p>
-<p><video class="doc-video" controls playsinline preload="none" aria-label="LLM 分别生成三个颜色和三个尺寸候选，Jev 选中精确选项，LLM 完成购买" poster="../assets/media/docs/jev-decision-webshop-v2.webp"><source src="../assets/media/docs/jev-decision-webshop-v2.webm" type="video/webm"><source src="../assets/media/docs/jev-decision-webshop-v2.mp4" type="video/mp4">Your browser does not support video.</video></p>
-<p>Reward <code>1→1</code> · LLM calls <code>9→4</code> · tokens <code>38,852→14,256</code> · 时间 <code>18.54s→7.83s</code></p>
-<p><strong>2 · FrozenLake——每一步都比较四个方向</strong></p>
-<p><video class="doc-video" controls playsinline preload="none" aria-label="Jev 比较四个方向、执行选中的移动、到达目标并减少 LLM 调用" poster="../assets/media/docs/jev-decision-frozen-lake-v2.webp"><source src="../assets/media/docs/jev-decision-frozen-lake-v2.webm" type="video/webm"><source src="../assets/media/docs/jev-decision-frozen-lake-v2.mp4" type="video/mp4">Your browser does not support video.</video></p>
-<p>Reward <code>1→1</code> · LLM calls <code>4→1</code> · tokens <code>2,338→663</code></p>
-<p><strong>3 · Terminal-Bench · <code>sqlite-db-truncate</code>——从三个真实命令中选择一个</strong></p>
-<p><video class="doc-video" controls playsinline preload="none" aria-label="Jev 比较三个真实 Terminal-Bench 命令，选择原始页面检查，LLM 恢复十行数据" poster="../assets/media/docs/jev-decision-terminal-v2.webp"><source src="../assets/media/docs/jev-decision-terminal-v2.webm" type="video/webm"><source src="../assets/media/docs/jev-decision-terminal-v2.mp4" type="video/mp4">Your browser does not support video.</video></p>
-<p>Reward <code>1→1</code> · LLM calls <code>15→8</code> · 时间 <code>187.9s→144.7s</code></p>
-<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<div class="table-scroll" tabindex="0" role="region" aria-label="文档表格"><table>
+  <tr>
+    <td width="64%" valign="middle">
+      <video class="doc-video" controls playsinline preload="none" aria-label="WebShop：左侧纯 LLM 与右侧 LLM + Jev 并排执行，分别在 18.54 秒和 7.83 秒完成购买" poster="../assets/media/docs/jev-decision-webshop-v2.webp"><source src="../assets/media/docs/jev-decision-webshop-v2.webm" type="video/webm"><source src="../assets/media/docs/jev-decision-webshop-v2.mp4" type="video/mp4">你的浏览器不支持视频播放。</video>
+    </td>
+    <td width="36%" valign="middle">
+      <p><strong>1. <a href="../files/docs/demos/jev-agent-harness-traces.json">WebShop</a></strong><br>
+      Jev 从 LLM 生成的候选中选中所需颜色和尺寸，LLM 随后完成购买。
+      动作从 9 步降至 5 步，LLM 调用从 9 次降至 4 次，tokens 从 38,852
+      降至 14,256，用时从 18.54 秒降至 7.83 秒。</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="64%" valign="middle">
+      <video class="doc-video" controls playsinline preload="none" aria-label="FrozenLake：左侧 LLM 逐步决策，右侧 LLM 规划后由 Jev 比较四个方向，分别在 19.7 秒和 16.7 秒到达同一目标" poster="../assets/media/docs/jev-decision-frozen-lake-v2.webp"><source src="../assets/media/docs/jev-decision-frozen-lake-v2.webm" type="video/webm"><source src="../assets/media/docs/jev-decision-frozen-lake-v2.mp4" type="video/mp4">你的浏览器不支持视频播放。</video>
+    </td>
+    <td width="36%" valign="middle">
+      <p><strong>2. <a href="../files/docs/demos/jev-agent-harness-traces.json">FrozenLake</a></strong><br>
+      LLM 规划一次路线，Jev 在每个新状态下从四个方向中选择下一步。
+      两侧均用 4 步到达目标；LLM 决策调用从 4 次降至 1 次，tokens 从
+      2,338 降至 663，用时从 19.7 秒降至 16.7 秒。</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="64%" valign="middle">
+      <video class="doc-video" controls playsinline preload="none" aria-label="SQLite 恢复：左侧纯 LLM 与右侧 LLM + Jev 都恢复十行数据，分别在 187.9 秒和 144.7 秒完成" poster="../assets/media/docs/jev-decision-terminal-v2.webp"><source src="../assets/media/docs/jev-decision-terminal-v2.webm" type="video/webm"><source src="../assets/media/docs/jev-decision-terminal-v2.mp4" type="video/mp4">你的浏览器不支持视频播放。</video>
+    </td>
+    <td width="36%" valign="middle">
+      <p><strong>3. <a href="reports-JevAny_Tech_Report_Agent_Harness_Appendix.html#h1-sqlite-recovery-a-meaningful-three-way-decision">Terminal-Bench</a></strong><br>
+      在 <code>sqlite-db-truncate</code> 任务中，Jev 从三个命令中选择原始页面检查，
+      LLM 随后恢复并验证十行数据。工具命令从 13 步降至 7 步，LLM 调用从
+      15 次降至 8 次，tokens 从 202,050 降至 121,293，用时从 187.9 秒降至 144.7 秒。</p>
+    </td>
+  </tr>
+</table></div>
+
+<p>下表展示更多配对评测结果，收益随任务而变化。<a href="reports-JevAny_Tech_Report_Agent_Harness_Appendix.html">完整结果</a>、
+<a href="experiments-AGENT_HARNESS_FRONTIER_PROTOCOL.html">委托协议</a>和
+<a href="../files/reports/JevAny_Tech_Report.pdf">技术报告</a>说明了 Jev 适合处理哪些选择，以及何时交回 LLM。</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="文档表格"><table>
 <thead>
 <tr>
 <th>任务</th>
@@ -76,30 +120,27 @@
 </thead>
 <tbody>
 <tr>
-<td>GPT-5.6-sol · FrozenLake · 10 pairs</td>
+<td>FrozenLake（GPT-5.6-sol，10 组配对）</td>
 <td style="text-align: right;">100% → 100%</td>
-<td style="text-align: right;">LLM calls −64.4% · tokens −63.1% · 时间 −37.6%</td>
+<td style="text-align: right;">LLM 调用 −64.4%，tokens −63.1%，用时 −37.6%</td>
 </tr>
 <tr>
-<td>WebShop · LLM 生成候选 · 3 pairs</td>
+<td>WebShop（LLM 生成候选，3 组配对）</td>
 <td style="text-align: right;">67% → 100%</td>
-<td style="text-align: right;">LLM calls −21.4% · tokens −14.3% · 时间 −15.0%</td>
+<td style="text-align: right;">LLM 调用 −21.4%，tokens −14.3%，用时 −15.0%</td>
 </tr>
 <tr>
-<td>WebArena · 6 pairs</td>
+<td>WebArena（6 组配对）</td>
 <td style="text-align: right;">50% → 50%</td>
-<td style="text-align: right;">LLM calls +5.6% · tokens +28.2% · 时间 −0.4%</td>
+<td style="text-align: right;">LLM 调用 +5.6%，tokens +28.2%，用时 −0.4%</td>
 </tr>
 <tr>
-<td>Terminal-Bench · 6 pairs</td>
+<td>Terminal-Bench（6 组配对）</td>
 <td style="text-align: right;">1/6 → 3/6</td>
-<td style="text-align: right;">LLM calls −9.0%</td>
+<td style="text-align: right;">LLM 调用 −9.0%</td>
 </tr>
 </tbody>
 </table></div>
-<p><a href="reports-JevAny_Tech_Report_Agent_Harness_Appendix.html">完整结果</a> ·
-<a href="experiments-AGENT_HARNESS_FRONTIER_PROTOCOL.html">任务与委托分级</a> ·
-<a href="../files/reports/JevAny_Tech_Report_with_Agent_Harness.pdf">合并版技术报告</a></p>
 <h2 id="_2">📑 目录</h2>
 <ul>
 <li><a href="#结果与演示">🎮 结果与演示</a></li>
@@ -108,14 +149,17 @@
 <li><a href="#训练">🛠️ 1.2 JevAny 训练</a></li>
 <li><a href="#部署">🚀 1.3 JevAny 部署</a></li>
 <li><a href="#预训练模型">🤗 2. 预训练模型</a></li>
+<li><a href="#choice-readout">免训练 choice-token 读出</a></li>
 <li><a href="#评测">📊 3. 基准测试结果</a></li>
+<li><a href="#推理效率">⏱️ 3.1 推理效率</a></li>
 <li><a href="#示例与测试环境">🕹️ 4. 示例与测试环境</a></li>
 <li><a href="#支持的模型系列">🧩 5. 支持的模型系列</a></li>
 <li><a href="#文档与贡献">📚 6. 文档与贡献</a></li>
+<li><a href="#contributing">🤝 参与贡献</a></li>
 </ul>
 <h2 id="1">⚡ 1. 快速上手 <a name="快速上手"></a></h2>
 <p>使用 Python 3.12 或更新版本，克隆仓库并安装轻量客户端：</p>
-<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">git clone https://github.com/SimpleJev/JevAny.git
+<pre tabindex="0" role="region" aria-label="代码示例"><code class="language-bash">git clone https://github.com/SimpleJev/JevAny.git
 cd JevAny
 python3.12 -m venv .venv
 source .venv/bin/activate
@@ -125,7 +169,7 @@ python -m pip install -e .
 先在本地体验，再用自己的数据<a href="#训练">训练模型</a>，或通过 <a href="#部署">API 接入应用</a>。</p>
 <h3 id="11">💻 1.1 本地体验 <a name="本地体验"></a></h3>
 <p>选择适合自己电脑的模型：</p>
-<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<div class="table-scroll" tabindex="0" role="region" aria-label="文档表格"><table>
 <thead>
 <tr>
 <th>模型</th>
@@ -153,7 +197,7 @@ python -m pip install -e .
 </table></div>
 <p>准备和加载步骤见<a href="PLAYGROUND.html">本地模型指南</a>。已发布模型首次使用时下载，
 之后复用本地缓存。保持模型服务运行，在同一仓库目录打开第二个终端：</p>
-<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">source .venv/bin/activate
+<pre tabindex="0" role="region" aria-label="代码示例"><code class="language-bash">source .venv/bin/activate
 jevany demo --base-url http://127.0.0.1:8008 --text-only
 </code></pre>
 <p>打开 <code>http://127.0.0.1:8090</code>，点击 <strong>Test and connect</strong>，在
@@ -165,26 +209,26 @@ jevany demo --base-url http://127.0.0.1:8008 --text-only
 为每个问题增加标签。
 先用随包提供的合成客服工单开始训练，再换成自己的标注数据。入门配置在 CUDA 上
 以 BF16 训练 Qwen3.5-0.8B，结果写入 <code>runs/my-jev</code>：</p>
-<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m pip install -e '.[train]'
+<pre tabindex="0" role="region" aria-label="代码示例"><code class="language-bash">python -m pip install -e '.[train]'
 jevany data init --out data/starter
 jevany data validate data/starter/train.jsonl
 jevany train --config recipes/sft.toml --dry-run
 jevany train --config recipes/sft.toml
 </code></pre>
 <p>训练完成后，用随包提供的工单请求试用模型：</p>
-<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany decide examples/request.json --checkpoint runs/my-jev
+<pre tabindex="0" role="region" aria-label="代码示例"><code class="language-bash">jevany decide examples/request.json --checkpoint runs/my-jev
 </code></pre>
 <p>通过 <code>--data</code> 指定自己的 <a href="DATA.html">JSONL 数据</a>，或用
 <a href="../files/recipes/finetune.toml"><code>recipes/finetune.toml</code></a> 微调已发布的 27B 模型。
 CPU 配置、多模态数据和标准 <code>torchrun</code> 启动方式见<a href="TRAINING.html">训练指南</a>。
 训练图片/视频模型或微调已发布的 27B 模型时，安装 <code>.[train,multimodal]</code>。</p>
 <p>完成 SFT 后，可用实验性的 <a href="ALGORITHM.html#rlcr">RLCR</a> 继续训练，其奖励兼顾正确率与概率校准：</p>
-<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany train --config recipes/rlcr.toml
+<pre tabindex="0" role="region" aria-label="代码示例"><code class="language-bash">jevany train --config recipes/rlcr.toml
 </code></pre>
 <h3 id="13-jevany">🚀 1.3 JevAny 部署 <a name="部署"></a></h3>
 <p>安装推理依赖，在 CUDA GPU 上启动已发布的 Qwen 4B 模型。
 显存要求见<a href="DEPLOYMENT.html#checkpoints-and-hardware">硬件与加载说明</a>。</p>
-<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m pip install -e '.[serve,multimodal]'
+<pre tabindex="0" role="region" aria-label="代码示例"><code class="language-bash">python -m pip install -e '.[serve,multimodal]'
 jevany serve --checkpoint SimpleJev/JevAny-Qwen3.5-4B-LoRA \
   --device cuda --dtype bf16 --port 8008
 </code></pre>
@@ -193,7 +237,7 @@ jevany serve --checkpoint SimpleJev/JevAny-Qwen3.5-4B-LoRA \
 <a href="DEPLOYMENT.html#optional-cuda-acceleration">推理加速指南</a>。</p>
 <p>部署自己的训练结果时，将 checkpoint ID 替换为 <code>runs/my-jev</code>。
 保持服务运行，在使用相同虚拟环境的 Python 会话中，发送工单和候选处理部门：</p>
-<pre tabindex="0" role="region" aria-label="Code example"><code class="language-python">from jevany import Choice, JevClient
+<pre tabindex="0" role="region" aria-label="代码示例"><code class="language-python">from jevany import Choice, JevClient
 
 jev = JevClient(&quot;http://127.0.0.1:8008&quot;)
 result = jev.system_one(
@@ -217,7 +261,7 @@ print(&quot;Probabilities:&quot;, answer[&quot;probabilities&quot;])
 图片和视频输入见<a href="DEPLOYMENT.html#native-media-and-limits">媒体配置</a>。</p>
 <h2 id="2">🤗 2. 预训练模型 <a name="预训练模型"></a></h2>
 <p>第一次在本地运行，可以先按<a href="#本地体验">本地体验</a>中的硬件要求选择模型。</p>
-<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<div class="table-scroll" tabindex="0" role="region" aria-label="文档表格"><table>
 <thead>
 <tr>
 <th>模型</th>
@@ -261,10 +305,38 @@ print(&quot;Probabilities:&quot;, answer[&quot;probabilities&quot;])
 <p>Pointer 和 direct-token 模型使用相同 API。Pointer 在上下文允许的范围内支持最多
 4,096 个选项，direct-token 最多支持 255 个。
 训练与准确率的取舍见<a href="TRAINING.html#pointer-and-direct-token-readouts">输出方式说明</a>。</p>
+<h3 id="choice-token">免训练 choice-token 读出 <a name="choice-readout"></a><a name="letter-readout"></a></h3>
+<p>Choice-token 是一种无需额外训练的读出方式，最多支持 52 个选项：用单 token 的
+<code>A–Z, a–z</code> 给选项编号，在回答位置读取这些 ID 的 logits 并重新归一化。
+它既可用于冻结的基座模型，也可叠加在 Pointer / Direct-Token checkpoint 上；
+与温度校准不同，它可能改变最终选出的答案。</p>
+<pre tabindex="0" role="region" aria-label="代码示例"><code class="language-bash">jevany eval --run SimpleJev/JevAny-Qwen3.5-4B-Direct-Token-LoRA \
+  --suite /path/to/suite --out runs/choice --device cuda --readout choice
+</code></pre>
+<p><a href="CHOICE_READOUT.html">方法、命令与完整结果</a> ·
+<a href="../files/results/choice-readout-v2.json">机器可读结果</a></p>
+<p><a href="CHOICE_READOUT.html#results"><img loading="lazy" alt="免训练 choice-token、checkpoint 原生读出、Transfer-dev 调参混合以及外部基线在 Typed Decisions 和 JevJudge 文本子集上的准确率" src="../files/docs/choice-readout-results.svg" /></a></p>
+<ul>
+<li><strong>最佳 4B 混合：</strong>Direct-Token 达到 Transfer <strong>79.83%</strong>、Typed <strong>67.65%</strong>、
+  JevJudge 文本 <strong>59.25%</strong>，比原生读出分别高 0.96、0.45 和 0.83 个点。</li>
+<li><strong>最佳 27B 混合：</strong>Pointer 达到 Transfer <strong>89.10%</strong>、Typed <strong>73.30%</strong>，
+  但 JevJudge 文本从 <strong>66.44% 降到 64.36%</strong>。</li>
+<li><strong>训练仍然重要：</strong>冻结的 4B 基座在 Typed 上只有 <strong>52.75%</strong>，
+  Direct-Token 将其提升到 <strong>64.80%</strong>。</li>
+</ul>
+<p>在开发集上只调一个混合权重，评测前冻结；仅当原生读出与 choice 读出的错误
+互补时才使用混合。温度只改变置信度，不改变 argmax。</p>
+<blockquote>
+<p><strong>指标说明：</strong>Cygnet 的 <strong>73.70</strong> 是 v1.5.4 在 1,624 条公开与封闭题目上的
+综合分，不是准确率；其可比的公开开发集准确率为 <strong>203/231（87.9%）</strong>。</p>
+</blockquote>
+<p><strong>核心结论：</strong>当瓶颈在于“把决策提取出来”而非推理能力时，choice-token 有帮助；
+只有在目标分布的留出数据上确有提升时才保留混合。</p>
 <h2 id="3">📊 3. 基准测试结果 <a name="评测"></a></h2>
-<p>JevAny-Qwen3.8-27B 在两项评测中准确率最高，NLL 和 Brier 也最低。
+<p>下表使用各 checkpoint 的原生读出方式。
+JevAny-Qwen3.8-27B 在两项评测中准确率最高，NLL 和 Brier 也最低。
 4B 版本中，direct-token 的 JevBench 准确率最高，Pointer 的 Transfer 准确率最高。</p>
-<p><a href="../index.html#benchmarks">Explore interactive benchmark results</a></p>
+<p><a href="../zh.html#benchmarks">查看交互式评测结果</a></p>
 <div align="center">
 
 | 模型 | Transfer ↑ | JevBench ↑ | NLL ↓ | Brier ↓ | ECE ↓ |
@@ -285,28 +357,116 @@ NLL、Brier 和 ECE 均在 Transfer 上计算。
 </div>
 
 <p><a href="EVALUATION.html#model-family-v2">完整结果与评测协议</a> ·
-<a href="../files/results/model-family-v2.json">机器可读结果</a> ·
+<a href="../assets/data/model-family-v2.json">机器可读结果</a> ·
 <a href="../files/reports/JevAny_Tech_Report.pdf">方法与消融实验报告</a></p>
+<p>同一组 13 个模型按准确率在 Typed Decisions、JevJudge 全集（3,220 条多模态记录）
+及其 724 条文本子集上进行比较。<code>—</code> 表示不支持该输入或没有对应结果。</p>
+<p><a href="EXTERNAL_EVALUATION.html"><img loading="lazy" alt="同一组十三个模型在 Typed Decisions、JevJudge 全集和 JevJudge 纯文本子集上的准确率" src="../files/docs/external-zero-shot.svg" /></a></p>
+<ul>
+<li><strong>JevAny-Qwen3.8-27B：</strong>Typed 72.8%，JevJudge 全集 <strong>62.3%</strong>，文本子集 66.4%；
+  其他有全集结果的模型中最强的是 Jeff-Qwen3.5-2B，为 48.2%。</li>
+<li><strong>其他基线：</strong>Jev 1.13 的 Typed 为 72.7%，文本子集为 65.1%；Kev-27B
+  文本子集为 64.2%。公开的 Decider 1 和 Liquid d1 在 Typed 上领先，
+  分别为 76.8% 和 74.2%，但没有可比的全集结果。</li>
+</ul>
+<p><a href="EXTERNAL_EVALUATION.html">完整外部结果</a> ·
+<a href="../files/results/external-zero-shot-v1.json">机器可读图表数据</a></p>
+<h3 id="31">⏱️ 3.1 推理效率 <a name="推理效率"></a></h3>
+<p>在单张 H200 上，CUDA Graph 将 Qwen3.8-27B 的中位延迟从
+<strong>113.54 ms 降至 30.53 ms（3.72×）</strong>；融合 SDPA 加 CUDA Graph 将
+Muse-Glimmer-30B 从 <strong>100.71 ms 降至 43.25 ms（2.33×）</strong>。
+两次测量均未改变 argmax。下表对 27B 与 30B 使用 H200 headline 实测，
+对 4B 保留同硬件 A100-40GB 对照。每个加速比只在同一行内比较；H200
+与 A100 使用不同固定面板，不能横向比较绝对延迟。</p>
+<p><a href="EFFICIENCY.html"><img loading="lazy" alt="加速前后 JevAny 与其他决策模型的准确率-延迟对比" src="../files/docs/efficiency-latency.png" /></a></p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="文档表格"><table>
+<thead>
+<tr>
+<th style="text-align: left;">模型</th>
+<th style="text-align: center;">硬件</th>
+<th style="text-align: right;">加速前</th>
+<th style="text-align: right;">加速后</th>
+<th style="text-align: right;">加速比</th>
+<th style="text-align: right;">准确率检查</th>
+<th style="text-align: left;">固定面板</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">JevAny-Qwen3.5-4B</td>
+<td style="text-align: center;">A100</td>
+<td style="text-align: right;">104.6 ms</td>
+<td style="text-align: right;"><strong>25.3 ms</strong></td>
+<td style="text-align: right;"><strong>4.1×</strong></td>
+<td style="text-align: right;">78.68% → 78.87%</td>
+<td style="text-align: left;">Transfer，1,046</td>
+</tr>
+<tr>
+<td style="text-align: left;">JevAny-Qwen3.5-4B-Direct-Token</td>
+<td style="text-align: center;">A100</td>
+<td style="text-align: right;">106.4 ms</td>
+<td style="text-align: right;"><strong>25.9 ms</strong></td>
+<td style="text-align: right;"><strong>4.1×</strong></td>
+<td style="text-align: right;">78.11% → 78.39%</td>
+<td style="text-align: left;">Transfer，1,046</td>
+</tr>
+<tr>
+<td style="text-align: left;">JevAny-Gemma-4B</td>
+<td style="text-align: center;">A100</td>
+<td style="text-align: right;">106.3 ms</td>
+<td style="text-align: right;"><strong>31.9 ms</strong></td>
+<td style="text-align: right;"><strong>3.3×</strong></td>
+<td style="text-align: right;">70.84% → 70.84%</td>
+<td style="text-align: left;">Transfer，1,046</td>
+</tr>
+<tr>
+<td style="text-align: left;">JevAny-Muse-Glimmer-30B</td>
+<td style="text-align: center;">H200</td>
+<td style="text-align: right;">100.71 ms</td>
+<td style="text-align: right;"><strong>43.25 ms</strong></td>
+<td style="text-align: right;"><strong>2.33×</strong></td>
+<td style="text-align: right;">86.36% → 86.36%</td>
+<td style="text-align: left;">Transfer 样本，44</td>
+</tr>
+<tr>
+<td style="text-align: left;">JevAny-Qwen3.8-27B</td>
+<td style="text-align: center;">H200</td>
+<td style="text-align: right;">113.54 ms</td>
+<td style="text-align: right;"><strong>30.53 ms</strong></td>
+<td style="text-align: right;"><strong>3.72×</strong></td>
+<td style="text-align: right;">89.61% → 89.61%</td>
+<td style="text-align: left;">JevBench public，231</td>
+</tr>
+</tbody>
+</table></div>
+<p>中位模型调用延迟，串行 batch size 1。完整报告保留同硬件 A100 对照与面板限制。</p>
+<p><a href="EFFICIENCY.html"><img loading="lazy" alt="动图：A100 上的 4B 版本与 H200 上的 27B、30B 版本使用逐行归一化延迟阶梯，并标出真实中位延迟和加速倍数" src="../files/docs/efficiency-ablation.gif" /></a></p>
+<p align="center"><sub>A100 上的 4B 与 H200 上的 27–30B。每行按各自 baseline 归一化，只在行内比较优化阶段。</sub></p>
+
+<p><a href="EFFICIENCY.html">完整表格、实验设置与其他模型</a> ·
+<a href="DEPLOYMENT.html#optional-cuda-acceleration">开启方法</a> ·
+<a href="../files/results/efficiency-h200-best-v1.json">H200 机器可读结果</a> ·
+<a href="../files/results/efficiency-a100-v1.json">A100 机器可读结果</a></p>
 <h2 id="4">🕹️ 4. 示例与测试环境 <a name="示例与测试环境"></a></h2>
 <p>交互演示包含以下三个环境。动图保留历史模型的动作和选项概率；当前
 <a href="https://huggingface.co/SimpleJev/JevAny-Qwen3.8-27B-LoRA">JevAny-Qwen3.8-27B</a>
 可按 playground 指南中的命令运行。</p>
 <h3 id="41">🤖 4.1 <a href="examples.html#robot-peg-insertion">机械臂插孔</a> <a name="机械臂插孔"></a></h3>
 <p>控制 Franka 夹爪抓取、对准并插入工件，由 PyBullet 接触物理验证结果。</p>
-<p><video class="doc-video" controls playsinline preload="none" aria-label="机械臂浏览器回放：Franka 插孔动作、模型原始选项概率和物理成功检查" poster="../assets/media/docs/playground-arm.webp"><source src="../assets/media/docs/playground-arm.webm" type="video/webm"><source src="../assets/media/docs/playground-arm.mp4" type="video/mp4">Your browser does not support video.</video></p>
+<p><video class="doc-video" controls playsinline preload="none" aria-label="机械臂浏览器回放：Franka 插孔动作、模型原始选项概率和物理成功检查" poster="../assets/media/docs/playground-arm.webp"><source src="../assets/media/docs/playground-arm.webm" type="video/webm"><source src="../assets/media/docs/playground-arm.mp4" type="video/mp4">你的浏览器不支持视频播放。</video></p>
 <h3 id="42-doom-3d">🔫 4.2 <a href="examples.html#doom-corridor-3d">Doom 走廊 · 3D</a> <a name="doom-走廊-3d"></a></h3>
 <p>击败最后一个房间中左右两侧的敌人，再向前移动。使用 ViZDoom 和随包提供的 Freedoom 资源。</p>
-<p><video class="doc-video" controls playsinline preload="none" aria-label="Doom checkpoint 回放：击杀左右两名敌人后继续前进" poster="../assets/media/docs/playground-doom.webp"><source src="../assets/media/docs/playground-doom.webm" type="video/webm"><source src="../assets/media/docs/playground-doom.mp4" type="video/mp4">Your browser does not support video.</video></p>
+<p><video class="doc-video" controls playsinline preload="none" aria-label="Doom checkpoint 回放：击杀左右两名敌人后继续前进" poster="../assets/media/docs/playground-doom.webp"><source src="../assets/media/docs/playground-doom.webm" type="video/webm"><source src="../assets/media/docs/playground-doom.mp4" type="video/mp4">你的浏览器不支持视频播放。</video></p>
 <h3 id="43-crafter-2d">⛏️ 4.3 <a href="examples.html#crafter-survival-2d">Crafter 生存建造 · 2D</a> <a name="crafter-生存建造-2d"></a></h3>
 <p>采集木材、制作工具、开采石头，同时管理生命值和物资。</p>
-<p><video class="doc-video" controls playsinline preload="none" aria-label="Crafter 浏览器回放：资源采集、制作工具和四项目标的完成进度" poster="../assets/media/docs/playground-crafter.webp"><source src="../assets/media/docs/playground-crafter.webm" type="video/webm"><source src="../assets/media/docs/playground-crafter.mp4" type="video/mp4">Your browser does not support video.</video></p>
+<p><video class="doc-video" controls playsinline preload="none" aria-label="Crafter 浏览器回放：资源采集、制作工具和四项目标的完成进度" poster="../assets/media/docs/playground-crafter.webp"><source src="../assets/media/docs/playground-crafter.webm" type="video/webm"><source src="../assets/media/docs/playground-crafter.mp4" type="video/mp4">你的浏览器不支持视频播放。</video></p>
 <h3 id="44">🎮 4.4 打开交互演示 <a name="打开交互演示"></a></h3>
 <p>按<a href="#本地体验">本地体验</a>启动模型后，打开交互演示：</p>
-<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany demo --base-url http://127.0.0.1:8008 --text-only
+<pre tabindex="0" role="region" aria-label="代码示例"><code class="language-bash">jevany demo --base-url http://127.0.0.1:8008 --text-only
 </code></pre>
 <p>打开 <code>http://127.0.0.1:8090</code>，点击 <strong>Test and connect</strong>，尝试自己的决策任务。
 要让模型操作游戏，安装可选引擎并重新启动演示：</p>
-<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m pip install -e '.[demo]'
+<pre tabindex="0" role="region" aria-label="代码示例"><code class="language-bash">python -m pip install -e '.[demo]'
 jevany demo --base-url http://127.0.0.1:8008 --text-only
 </code></pre>
 <p>在浏览器中选择 <strong>Run model</strong>，再点击 <strong>One decision</strong> 单步运行，或
@@ -317,13 +477,26 @@ jevany demo --base-url http://127.0.0.1:8008 --text-only
 JevAny 决策可参考<a href="INTEGRATIONS.html">集成文档</a>。</p>
 <h2 id="5">🧩 5. 支持的模型系列 <a name="支持的模型系列"></a></h2>
 <p><a href="TRAINING.html#backbone-support">模型 ID、支持的输入与运行要求</a>。</p>
-<p><a href="TRAINING.html#backbone-support"><img loading="lazy" alt="支持的 26 个模型，涵盖 Qwen、Gemma、Muse、Mistral、GLM、Nemotron 和 Llama" src="../files/docs/supported-model-families.svg" /></a></p>
+<p><a href="../zh.html#supported-models"><img loading="lazy" alt="支持的 26 个模型，涵盖 Qwen、Gemma、Muse、Mistral、GLM、Nemotron 和 Llama" src="../files/docs/supported-model-families.svg" /></a></p>
 <h2 id="6">📚 6. 文档与贡献 <a name="文档与贡献"></a></h2>
-<p><a href="TRAINING.html">训练</a> · <a href="DEPLOYMENT.html">部署</a> · <a href="API.html">API</a> · <a href="DATA.html">数据</a> · <a href="EVALUATION.html">评测</a> · <a href="experiments-AGENT_HARNESS_FRONTIER_PROTOCOL.html">Agent harness 协议</a> · <a href="contributing.html">贡献指南</a></p>
-<p>欢迎贡献模型适配、评测或应用示例，开发步骤见<a href="contributing.html">贡献指南</a>。
-<a href="../files/reports/JevAny_Tech_Report_with_Agent_Harness.pdf">合并版技术报告</a>介绍了模型设计、多模态路径、
-agent-harness 实验、负面结果与开放问题；<a href="../files/reports/JevAny_Tech_Report.pdf">原始发布报告</a>保持不变。</p>
+<p><a href="../zh.html#documentation">文档总览</a> · <a href="TRAINING.html">训练</a> · <a href="DEPLOYMENT.html">部署</a> · <a href="API.html">API</a> · <a href="DATA.html">数据</a> · <a href="EVALUATION.html">评测</a> · <a href="experiments-AGENT_HARNESS_FRONTIER_PROTOCOL.html">Agent harness 协议</a> · <a href="contributing.html">贡献指南</a></p>
+<p><a href="../files/reports/JevAny_Tech_Report.pdf">技术报告</a>介绍了模型设计、多模态路径、
+agent-harness 实验与附录、负面结果和开放问题。</p>
 <p>代码和入门数据采用 Apache-2.0。部分组件改编自 <a href="https://github.com/jaredpalmer/kev">Kev</a>，
-归属说明见 <a href="../files/NOTICE">NOTICE</a> 和 <a href="ACKNOWLEDGEMENTS.html">ACKNOWLEDGEMENTS.md</a>。
-基座模型与上游数据集保留各自条款。</p></main></div>
-<footer class="site-footer wrap"><a href="../index.html">← Back to JevAny</a><a href="license.html">Apache-2.0 code</a></footer></body></html>
+归属说明见 <a href="../files/NOTICE">NOTICE</a> 和 <a href="ACKNOWLEDGEMENTS.html">致谢与归属</a>。
+基座模型与上游数据集保留各自条款。</p>
+<h3 id="_3">🤝 参与贡献 <a name="contributing"></a></h3>
+<p>我们正在建设面向 System 1 决策模型的开源基础设施，欢迎你一起参与。
+从你熟悉的地方开始，小改进也很有帮助：</p>
+<ul>
+<li><strong>文档与翻译：</strong>说明一个安装步骤、补充排错经验，或翻译一篇指南。</li>
+<li><strong>问题修复与测试：</strong>提供问题复现、修复 bug，或补上回归测试。</li>
+<li><strong>应用与集成：</strong>展示如何用 JevAny 选择工具、分流工单，或在游戏和机器人环境中选择动作。</li>
+<li><strong>模型、训练与推理：</strong>适配一个模型、改进训练配置，或提交有可复现测量结果的推理加速方案。</li>
+<li><strong>数据与评测：</strong>贡献公开数据转换工具、补充评测用例，或记录模型做出错误决策的场景。</li>
+</ul>
+<p>提交 PR 后，CI 检查和自动 AI code review 会提供反馈，维护者负责审核与合并。
+小修复可以直接提交 PR，较大的改动建议先开 issue 讨论方案。</p>
+<p>开发步骤见<a href="contributing.html">贡献指南</a>，
+也可以从<a href="https://github.com/SimpleJev/JevAny/issues">现有 issues</a> 中找一个感兴趣的问题开始。</p></main></div>
+<footer class="site-footer wrap"><a href="../zh.html">← 返回 JevAny</a><a href="license.html">代码许可：Apache-2.0</a></footer></body></html>

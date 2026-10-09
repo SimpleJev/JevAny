@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a1114">
-<title>JevAny Technical Report — Agent-Harness Appendix — JevAny</title><link rel="stylesheet" href="../styles.css"><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"></head>
+<title>JevAny Technical Report — Evaluation Appendices — JevAny</title><link rel="stylesheet" href="../styles.css"><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"></head>
 <body class="docs-page"><a class="skip-link" href="#content">Skip to content</a>
 <header class="site-header wrap"><a class="brand" href="../index.html"><img src="../assets/favicon.svg" width="30" height="30" alt=""><span>JevAny<span class="brand-period">.</span></span></a>
 <nav aria-label="Main navigation"><a href="../index.html#benchmarks">Benchmarks</a><a href="../index.html#models">Models</a><a href="../index.html#get-started">Get started</a></nav></header>
@@ -37,14 +37,15 @@
 <li><a href="#i-failure-analysis-and-protocol-evolution">I. Failure analysis and protocol evolution</a></li>
 <li><a href="#j-claims-limitations-and-next-experiments">J. Claims, limitations, and next experiments</a></li>
 <li><a href="#k-reproducibility-pointers">K. Reproducibility pointers</a></li>
+<li><a href="#l-external-decision-suite-evaluation">L. External decision-suite evaluation</a></li>
 </ul>
 </div>
 </details></aside>
-<main id="content" class="doc-content"><p class="eyebrow">JEVANY / DOCUMENTATION</p><h1>JevAny Technical Report — Agent-Harness Appendix</h1><p><strong>Evidence snapshot:</strong> 30 September 2026
+<main id="content" class="doc-content"><p class="eyebrow">JEVANY / DOCUMENTATION</p><h1>JevAny Technical Report — Evaluation Appendices</h1><p><strong>Evidence snapshot:</strong> 30 September 2026
 <strong>Appendix revision:</strong> 1 October 2026
-<strong>Scope:</strong> bounded Jev decision-making inside LLM agents</p>
-<p>This appendix extends the released nine-page <em>JevAny Technical Report</em>. The
-original PDF is preserved unchanged. It studies a specific systems question:
+<strong>Scope:</strong> bounded Jev decision-making inside LLM agents and external decision-suite evaluation</p>
+<p>These appendices extend the released nine-page <em>JevAny Technical Report</em>. The
+original pages are preserved unchanged. The agent-harness study asks a specific systems question:
 can an LLM retain task reasoning and completion ownership while delegating
 bounded, basic decisions to Jev?</p>
 <h2 id="a-executive-conclusion">A. Executive conclusion</h2>
@@ -789,5 +790,107 @@ study.</p>
 </ul>
 <p>Raw sources, failed runs, development versions, exact model IDs, hashes, and
 selected-command traces are retained. Estimated dollar values use recorded
-frontier API pricing and exclude Jev GPU rental and energy.</p></main></div>
+frontier API pricing and exclude Jev GPU rental and energy.</p>
+<h2 id="l-external-decision-suite-evaluation">L. External decision-suite evaluation</h2>
+<p>The public comparison adds the complete 2,000-decision Typed Decisions test
+split and JevJudge-Public v0.3. JevJudge contains 3,220 native decision
+requests: 724 text, 2,214 image and 282 video records across 22 families and
+five judge roles. A full-suite score requires 3,220/3,220 valid predictions;
+models without a native required modality receive no score.</p>
+<p>JevJudge's official <code>skill_role</code> first chance-corrects each family, averages
+family skill inside each role, and then equally averages the five roles. Plain
+accuracy instead weights every item equally and does not remove chance. The
+uniform baseline illustrates the distinction: 40.0% plain accuracy but −0.77%
+<code>skill_role</code>.</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Model</th>
+<th style="text-align: right;">Typed accuracy</th>
+<th style="text-align: right;">JevJudge full accuracy</th>
+<th style="text-align: right;">Official <code>skill_role</code> (95% CI)</th>
+<th style="text-align: right;">Full coverage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>JevAny-Qwen3.8-27B</td>
+<td style="text-align: right;">72.80%</td>
+<td style="text-align: right;"><strong>62.27%</strong></td>
+<td style="text-align: right;">35.55% [32.84, 38.18]</td>
+<td style="text-align: right;">3,220/3,220</td>
+</tr>
+<tr>
+<td>Jev 1.13 (OpenRouter)</td>
+<td style="text-align: right;">72.70%</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">Text-only endpoint</td>
+</tr>
+<tr>
+<td>JevAny-Muse-Glimmer-30B</td>
+<td style="text-align: right;">69.95%</td>
+<td style="text-align: right;">58.70%</td>
+<td style="text-align: right;">29.65% [26.71, 32.31]</td>
+<td style="text-align: right;">3,220/3,220</td>
+</tr>
+<tr>
+<td>JevAny-Qwen3.5-4B-Direct-Token</td>
+<td style="text-align: right;">67.20%</td>
+<td style="text-align: right;">54.94%</td>
+<td style="text-align: right;">23.85% [20.96, 26.70]</td>
+<td style="text-align: right;">3,220/3,220</td>
+</tr>
+<tr>
+<td>JevAny-Qwen3.5-4B</td>
+<td style="text-align: right;">63.50%</td>
+<td style="text-align: right;">54.75%</td>
+<td style="text-align: right;">23.23% [20.49, 25.84]</td>
+<td style="text-align: right;">3,220/3,220</td>
+</tr>
+<tr>
+<td>JevAny-Gemma-4B</td>
+<td style="text-align: right;">66.25%</td>
+<td style="text-align: right;">51.49%</td>
+<td style="text-align: right;">17.92% [15.25, 20.37]</td>
+<td style="text-align: right;">3,220/3,220</td>
+</tr>
+<tr>
+<td>Jeff-Qwen3.5-2B</td>
+<td style="text-align: right;">55.45%</td>
+<td style="text-align: right;">48.23%</td>
+<td style="text-align: right;">13.57% [10.80, 15.99]</td>
+<td style="text-align: right;">3,220/3,220</td>
+</tr>
+<tr>
+<td>Jeff-Qwen3.5-0.8B</td>
+<td style="text-align: right;">49.15%</td>
+<td style="text-align: right;">47.95%</td>
+<td style="text-align: right;">11.23% [8.65, 13.44]</td>
+<td style="text-align: right;">3,220/3,220</td>
+</tr>
+</tbody>
+</table></div>
+<p>Jev 1.13's 72.70% Typed result is published on the pinned dataset card; the
+separate OpenRouter rerun scores 65.06% on the 724-record JevJudge text-only
+subset. The endpoint is text-only, so no full-suite score is reported.</p>
+<p>All five JevAny releases exceed the two open external checkpoints that can run
+the complete native multimodal suite. OpenDecider-small and Jeff-Gemma4 are
+text-only; Bongard-mini has no video path; Kev's pinned runtime does not consume
+image or video media. These systems show <code>—</code> in the full-suite comparison
+rather than a media-stripped score.</p>
+<p>The separate 724-record text-only accuracy view places JevAny-Qwen3.8-27B at
+66.44%, Jev 1.13 at 65.06%, Kev-27B at 64.23%, Muse-Glimmer-30B at 62.57%,
+and the remaining scored systems at 42.82%–58.56%. Kev uses a full-context
+4,096-token chunked-KV
+protocol with no token truncation. Its old 38.54% 27B row is invalid: the
+malformed path encoded only 7–63 effective tokens and omitted the state and
+instructions.</p>
+<p>All reported full-suite intervals use 1,000 source-stratified <code>group_id</code>
+bootstrap replicates with seed <code>20261001</code>. NLL is computed from the returned
+probability assigned to the gold label. The frozen dataset revision is
+<code>4d576ded443e159c18d46558d233c80fdf353849</code>; the test SHA-256 is
+<code>5c50f89e…e83cb</code>. Aggregate values, exact model revisions, raw-run hashes and
+media compatibility evidence are recorded in
+<code>results/external-zero-shot-v1.json</code> and <code>docs/EXTERNAL_EVALUATION.md</code>.</p></main></div>
 <footer class="site-footer wrap"><a href="../index.html">← Back to JevAny</a><a href="license.html">Apache-2.0 code</a></footer></body></html>

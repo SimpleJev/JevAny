@@ -11,9 +11,22 @@ import math
 import re
 from datetime import datetime
 from typing import Annotated, Any, Literal, Union
-from pydantic import BaseModel, Field, model_validator
+from pydantic import AfterValidator, BaseModel, Field, model_validator
 
-JSONContent = Union[str, dict, list, int, float, bool, None]
+
+def _finite_json(value: Any) -> Any:
+    if isinstance(value, float) and not math.isfinite(value):
+        raise ValueError("JSON numbers must be finite")
+    if isinstance(value, dict):
+        for item in value.values():
+            _finite_json(item)
+    elif isinstance(value, list):
+        for item in value:
+            _finite_json(item)
+    return value
+
+
+JSONContent = Annotated[Union[str, dict, list, int, float, bool, None], AfterValidator(_finite_json)]
 # The HTTP shape is shared by both readouts. Pointer checkpoints are bounded by
 # the configured context window rather than by a fixed verbalizer vocabulary;
 # LM-token checkpoints enforce their tighter 255-option limit while encoding.
@@ -25,6 +38,13 @@ class Noul(BaseModel):
     type: Literal["noul"] = "noul"
     instructions: JSONContent = None
     criteria: dict[str, JSONContent] | None = None
+
+    @model_validator(mode="after")
+    def _check(self):
+        unknown = set(self.criteria or {}) - {"false", "true"}
+        if unknown:
+            raise ValueError(f"noul criteria only accepts false and true; unknown keys: {sorted(unknown)}")
+        return self
 
 
 class Choice(BaseModel):
@@ -107,7 +127,7 @@ def validate_response(request: SystemOneRequest | dict, response: dict) -> dict:
         probability(answer.get("confidence"), f"confidence for {question_id!r}")
         if question.type == "choice":
             choice = answer.get("choice")
-            if choice not in question.criteria:
+            if not isinstance(choice, str) or choice not in question.criteria:
                 raise ValueError(f"unknown choice for {question_id!r}")
             if values[keys.index(choice)] < max(values):
                 raise ValueError(f"choice for {question_id!r} is not an argmax")

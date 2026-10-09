@@ -38,6 +38,21 @@ def test_admission_preserves_rejection_reason_and_does_not_hide_encoding_errors(
         training_requests(args, None, None, BrokenEncoder())
 
 
+@pytest.mark.parametrize("restriction", ["eval_only_sources", "holdout_sources"])
+def test_custom_training_data_respects_suite_source_restrictions(tmp_path, restriction):
+    from jevany.data import load_records
+
+    data = init_starter(tmp_path / "data") / "train.jsonl"
+    records = load_records(data)
+    source = records[0]["_meta"]["source"]
+    args = SimpleNamespace(data=str(data), replay=0, max_state=384, max_branch=192, max_packed=2048)
+    encoder = SimpleNamespace(encode=lambda *args, **kwargs: {"ids": [1]})
+    admitted, _ = training_requests(args, None, {}, encoder, inputs={"data": records})
+    assert len(admitted) == len(records)
+    with pytest.raises(ValueError, match=f"eval-only sources.*{source}"):
+        training_requests(args, None, {restriction: [source]}, encoder, inputs={"data": records})
+
+
 @pytest.mark.parametrize("dry_run", [False, True])
 @pytest.mark.parametrize("bad_input", ["base", "evaluation"])
 def test_preflight_rejects_bad_local_inputs_without_creating_run(tmp_path, monkeypatch, dry_run, bad_input):

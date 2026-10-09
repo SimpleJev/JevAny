@@ -21,7 +21,7 @@
   --mint: #a8f0c8;
   --line: rgba(210, 239, 229, .14);
   --surface: #0a1114;
-  font-family: "DM Sans", sans-serif;
+  font-family: "DM Sans", "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
   font-synthesis: none;
 }
 * { box-sizing: border-box; }
@@ -60,6 +60,14 @@ svg, img { display: block; }
 .header-links { display: flex; align-items: center; gap: 10px; }
 .header-link { display: flex; gap: 11px; align-items: center; font-size: 13px; padding: 0 16px; height: 44px; border: 1px solid var(--line); border-radius: 5px; white-space: nowrap; }
 .header-link svg { width: 17px; height: 17px; }
+.language-switch { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 5px; padding: 3px; }
+.language-switch a { display: grid; place-items: center; min-width: 38px; min-height: 36px; font-size: 12px; border-radius: 3px; color: var(--muted); }
+.language-switch a[aria-current] { color: var(--mint); background: #a8f0c81a; }
+.header-link.docs-link { background: var(--mint); color: #10241c; border-color: var(--mint); font-weight: 600; }
+.header-link.docs-link:hover { background: #c8fadb; color: #10241c; }
+.hero h1:lang(zh-CN) { font-family: inherit; font-size: clamp(40px, 6.5vw, 88px); line-height: 1.25; letter-spacing: -.025em; font-weight: 600; }
+.hero-description:lang(zh-CN) { max-width: 560px; text-wrap: balance; }
+h2:lang(zh-CN), h3:lang(zh-CN) { letter-spacing: 0; }
 .hero { text-align: center; padding-top: 76px; }
 .hero h1 { font-family: "IBM Plex Sans Condensed", sans-serif; margin-top: 0; font-size: clamp(80px, 8.5vw, 120px); line-height: 1.02; letter-spacing: -.035em; font-weight: 500; }
 .hero-accent { color: #c7f0dc; white-space: nowrap; }
@@ -138,7 +146,7 @@ pre code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace
 .terminal-tabs button[aria-selected="true"] { color: var(--mint); border-bottom-color: var(--mint); }
 .model-picker { padding: 20px 24px 0; align-items: center; gap: 14px; }
 .model-picker:not([hidden]) { display: flex; }
-.model-picker label { font-size: 12px; color: #adbfaf; }
+.model-picker label { font-size: 12px; color: #adbfaf; white-space: nowrap; }
 .model-picker select { min-width: 0; width: 100%; min-height: 44px; padding: 10px; font: inherit; font-size: 12px; color: var(--ink); background: #14221d; border: 1px solid var(--line); border-radius: 4px; }
 .model-picker select:focus-visible { outline: 2px solid var(--mint); outline-offset: 3px; }
 .terminal-label { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 20px 24px 10px; color: #adbfaf; font-size: 12px; }
@@ -294,10 +302,12 @@ img[src$="/zai.svg"] { filter: invert(.85); }
 .chart-heading { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 12px; margin: 30px 0 22px; }
 .chart-heading h3 { font-size: 17px; }
 .chart-heading p { color: #a8bbb0; font-size: 12px; }
-.chart-axis { display: flex; justify-content: space-between; margin: 0 77px 8px 236px; color: #93a59c; font-size: 12px; }
+.chart-axis { display: flex; justify-content: space-between; margin: 0 77px 8px 276px; color: #93a59c; font-size: 12px; }
 .benchmark-chart { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
-.benchmark-row { display: grid; grid-template-columns: 220px minmax(0, 1fr) 61px; align-items: center; gap: 16px; min-height: 55px; }
-.benchmark-model { display: block; font-size: 13px; color: #e1ece5; line-height: 1.5; }
+.benchmark-row { display: grid; grid-template-columns: 260px minmax(0, 1fr) 61px; align-items: center; gap: 16px; min-height: 55px; }
+.benchmark-model { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 13px; color: #e1ece5; line-height: 1.5; }
+.benchmark-model img { width: 24px; height: 24px; flex: 0 0 24px; object-fit: contain; }
+.benchmark-model > span { min-width: 0; overflow-wrap: anywhere; }
 .benchmark-track { height: 22px; background: repeating-linear-gradient(90deg, #b6dac508 0, #b6dac508 1px, transparent 1px, transparent 25%); border-right: 1px solid #b6dac512; }
 .benchmark-track i { display: block; height: 100%; background: linear-gradient(90deg, #619e80, var(--mint)); border-radius: 0 3px 3px 0; transition: width .4s ease; }
 .benchmark-row.baseline .benchmark-track i { background: #70867d; }
@@ -362,12 +372,22 @@ caption { padding: 16px 18px; text-align: left; color: #adbcaf; font-size: 12px;
 .family-details td { white-space: nowrap; }
 .family-details th code { overflow-wrap: anywhere; font-size: 12px; }
 .docs-section { padding-block: 0 76px; }
+.documentation-note { color: var(--muted); font-size: 13px; line-height: 1.8; margin: -8px 0 24px; }
 .doc-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 .doc-cards a { padding: 24px; border: 1px solid var(--line); border-radius: 6px; background: #0b1717; }
 .doc-cards a:hover { border-color: #a8f0c870; }
 .doc-cards h3 { display: flex; gap: 16px; justify-content: space-between; font-size: 18px; margin: 0 0 12px; line-height: 1.5; }
 .doc-cards h3 span { color: var(--mint); }
 .doc-cards p { font-size: 14px; line-height: 1.9; color: var(--muted); }
+.doc-cards p:lang(zh-CN) { text-wrap: pretty; }
+
+.contribute-section { display: grid; grid-template-columns: 1fr 1.2fr; gap: 70px; padding-block: 64px 76px; border-top: 1px solid var(--line); }
+.contribute-section h2 { font-size: 38px; }
+.contribute-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 24px; margin-top: 28px; }
+.contribute-review { color: var(--muted); font-size: 13px; line-height: 1.9; margin-top: 24px; max-width: 420px; }
+.contribute-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 24px; }
+.contribute-list h3 { font-size: 16px; margin-bottom: 6px; }
+.contribute-list p { color: var(--muted); font-size: 14px; line-height: 1.8; }
 
 .docs-page { background: #0a1315; }
 .docs-layout { display: grid; grid-template-columns: 205px minmax(0, 1fr); gap: 65px; padding-block: 45px 80px; }
@@ -401,11 +421,14 @@ caption { padding: 16px 18px; text-align: left; color: #adbcaf; font-size: 12px;
 @media (max-width: 1100px) {
   .checkpoint-card { padding: 20px; }
   .checkpoint-card h3 { font-size: 17px; }
-  .benchmark-row { grid-template-columns: 195px minmax(0, 1fr) 60px; }
-  .chart-axis { margin-left: 211px; }
+  .benchmark-row { grid-template-columns: 230px minmax(0, 1fr) 60px; }
+  .chart-axis { margin-left: 246px; }
   .docs-layout { gap: 35px; grid-template-columns: 175px minmax(0, 1fr); }
 }
 @media (max-width: 800px) {
+  .site-header { height: auto; min-height: 104px; flex-wrap: wrap; padding-block: 16px 10px; gap: 12px; }
+  .site-header nav { order: 3; width: 100%; justify-content: space-between; }
+  .site-header nav a { padding-block: 8px; }
   .site-header nav { gap: 17px; font-size: 12px; }
   .model-ribbon { padding-block: 16px; }
   .model-group { gap: 32px; padding-right: 32px; }
@@ -417,6 +440,7 @@ caption { padding: 16px 18px; text-align: left; color: #adbcaf; font-size: 12px;
   .checkpoint-card:first-child { grid-column: 1 / -1; }
   .checkpoint-card p { min-height: 44px; }
   .doc-cards, .case-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .contribute-section { grid-template-columns: 1fr; gap: 38px; }
   .docs-layout { grid-template-columns: 1fr; padding-top: 22px; }
   .docs-sidebar { position: static; max-height: none; }
   .docs-sidebar > nav { display: flex; overflow-x: auto; padding-block: 12px; gap: 4px; }
@@ -427,6 +451,12 @@ caption { padding: 16px 18px; text-align: left; color: #adbcaf; font-size: 12px;
   .site-header { height: auto; min-height: 96px; flex-wrap: wrap; padding-block: 15px 12px; gap: 16px; }
   .site-header nav { order: 3; width: 100%; justify-content: space-between; font-size: 12px; gap: 12px; margin: 0; }
   .site-header nav a { padding-block: 8px; }
+  .header-links { gap: 6px; margin-left: auto; }
+  .header-links .social-link { display: none; }
+  .header-link.docs-link { padding-inline: 12px; }
+  .docs-link svg { display: none; }
+  .language-switch a { min-width: 36px; min-height: 36px; }
+  .footer-top nav { flex-wrap: wrap; gap: 12px 20px; }
   .model-ribbon { padding-block: 14px; }
   .model-group { gap: 28px; padding-right: 28px; }
   .model-group a { font-size: 13px; }
@@ -444,11 +474,12 @@ caption { padding: 16px 18px; text-align: left; color: #adbcaf; font-size: 12px;
   .chart-heading { margin-block: 23px 18px; gap: 6px; }
   .chart-heading h3 { font-size: 15px; }
   .chart-heading p { font-size: 12px; line-height: 1.7; }
-  .benchmark-row { grid-template-columns: 112px minmax(0, 1fr) 48px; gap: 8px; min-height: 58px; }
-  .benchmark-model { font-size: 12px; overflow-wrap: anywhere; }
+  .benchmark-row { grid-template-columns: minmax(0, 1fr) 48px; gap: 6px 8px; min-height: 0; padding-block: 10px; }
+  .benchmark-model { font-size: 12px; }
+  .benchmark-row .benchmark-model { grid-column: 1 / -1; }
   .benchmark-value { font-size: 12px; }
   .benchmark-track { height: 17px; }
-  .chart-axis { margin-left: 120px; margin-right: 56px; font-size: 12px; }
+  .chart-axis { margin-left: 0; margin-right: 56px; font-size: 12px; }
   .disclosure summary { font-size: 12px; padding: 15px; }
   .benchmark-note { font-size: 12px; }
   .benchmark-links { gap: 3px 18px; font-size: 12px; }
@@ -463,6 +494,8 @@ caption { padding: 16px 18px; text-align: left; color: #adbcaf; font-size: 12px;
   .family-details summary small { font-size: 12px; }
   .family-details td, .family-details th { padding: 12px; }
   .docs-section { padding-bottom: 48px; }
+  .contribute-section { padding-block: 40px 48px; }
+  .contribute-section h2 { font-size: 30px; }
   .doc-cards a { padding: 22px; }
   .doc-cards h3 { margin-top: 14px; }
   .doc-content { font-size: 13px; }

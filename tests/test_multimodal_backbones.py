@@ -213,8 +213,13 @@ def test_current_vision_base_text_training(tmp_path, family, attn):
                for name, value in model.named_parameters())
 
 
-@pytest.mark.parametrize("family", ["qwen35", "qwen35_moe", "gemma4", "gemma4_per_layer", "gemma4_unified", "muse", "glm"])
-def test_native_video(tmp_path, monkeypatch, family):
+@pytest.mark.parametrize(("family", "frame_counts"), [
+    *(pytest.param(family, (8,), id=family) for family in [
+        "qwen35", "qwen35_moe", "gemma4", "gemma4_per_layer", "gemma4_unified", "muse", "glm"]),
+    *(pytest.param(family, (8, 12), id=f"{family}-two-videos-image") for family in [
+        "gemma4", "gemma4_per_layer", "gemma4_unified"]),
+])
+def test_native_video(tmp_path, monkeypatch, family, frame_counts):
     import av
     import transformers.video_processing_utils as video_utils
 
@@ -222,21 +227,31 @@ def test_native_video(tmp_path, monkeypatch, family):
     monkeypatch.setattr(video_utils, "is_torchvision_video_decoding_available", lambda: False)
     base = tmp_path / "base"
     make_vision_base(base, family)
-    video = tmp_path / "sample.mp4"
-    with av.open(str(video), "w") as output:
-        stream = output.add_stream("libx264", rate=4)
-        stream.width = stream.height = 28
-        stream.pix_fmt = "yuv420p"
-        for _ in range(8):
-            for packet in stream.encode(av.VideoFrame.from_image(Image.new("RGB", (28, 28), "red"))):
+    media = []
+    for index, frame_count in enumerate(frame_counts):
+        video = tmp_path / f"sample-{index}.mp4"
+        with av.open(str(video), "w") as output:
+            stream = output.add_stream("libx264", rate=4)
+            stream.width = stream.height = 28
+            stream.pix_fmt = "yuv420p"
+            color = ("red", "blue")[index]
+            for _ in range(frame_count):
+                for packet in stream.encode(av.VideoFrame.from_image(Image.new("RGB", (28, 28), color))):
+                    output.mux(packet)
+            for packet in stream.encode():
                 output.mux(packet)
-        for packet in stream.encode():
-            output.mux(packet)
+        media.append({"type": "video", "uri": str(video)})
+    if len(frame_counts) > 1:
+        image = tmp_path / "sample.png"
+        Image.new("RGB", (28, 28), "green").save(image)
+        media.insert(1, {"type": "image", "uri": str(image)})
     processor = load_preprocessor(base, multimodal=True)
     model = DecisionModel(base, processor, "cpu", lora=2, head_dim=8, multimodal=True)
-    encoded = model.encode(processor, record(None, media=[{"type": "video", "uri": str(video)}]))
+    encoded = model.encode(processor, record(None, media=media))
     assert "pixel_values_videos" in encoded["mm"]
     assert "video_metadata" not in encoded["mm"]
+    if family.startswith("gemma4") and "num_frames_per_video" in processor.video_processor.model_input_names:
+        assert encoded["mm"]["num_frames_per_video"].tolist() == [min(frames, 4) for frames in frame_counts]
     loss = model(encoded)[0].sum()
     loss.backward()
     assert torch.isfinite(loss)
@@ -251,7 +266,7 @@ def test_native_video(tmp_path, monkeypatch, family):
                                branch_mode=model.branch_mode))
     restored_processor, restored = Checkpoint(checkpoint).load("cpu")
     actual = restored.probs(restored.encode(
-        restored_processor, record(None, media=[{"type": "video", "uri": str(video)}])))
+        restored_processor, record(None, media=media)))
     torch.testing.assert_close(expected[0], actual[0])
 
 

@@ -4,19 +4,19 @@
 
 LocalPredictor scores a checkpoint in-process. RemotePredictor scores any compatible `/v1/systemone` endpoint.
 """
-import json
 import math
 import time
-import urllib.request
+import urllib.error
 from pathlib import Path
 
 import torch
 
 from jevany.api import question_keys
 from jevany.checkpoint import Checkpoint, LoadOptions
+from jevany.client import DecisionHTTPError, JevClient
 from jevany.data import api_request, materialize
 from jevany.device import sync
-from jevany.model import MAX_PACKED
+from jevany.model import MAX_PACKED, ContextLengthError
 from jevany.suite import digest
 
 
@@ -50,7 +50,6 @@ class ModelPredictor:
         enc = self.model.encode(self.tok, materialize(record), max_state=self.max_packed,
                                 max_branch=self.max_packed, strict=True)
         if len(enc["ids"]) > self.max_packed:
-            from .model import ContextLengthError
             raise ContextLengthError(f"packed request exceeds frozen {self.max_packed}-token limit")
         sync(self.device)
         start = time.perf_counter()
@@ -83,30 +82,42 @@ class LocalPredictor(ModelPredictor):
 
 
 class RemotePredictor:
-    """Score any TypeSafe System One-compatible endpoint (POST <base_url>/v1/systemone) on frozen records. Probabilities are
-    taken from the response as returned (renormalised by validate_distribution like every other predictor). Records the
-    server-reported model id so the manifest can pin what was scored."""
+    """Score frozen records through JevClient's System One request/response contract.
 
-    def __init__(self, base_url, model="jevany-latest", api_key="local", timeout=120, retries=3):
-        self.base_url, self.model, self.api_key, self.timeout, self.retries = base_url.rstrip("/"), model, api_key, timeout, retries
+    Requests include the client's optional fields, and responses are validated
+    before scoring. Probabilities are renormalised by the benchmark like every
+    other predictor. The server-reported model id records what was scored.
+    """
+
+    def __init__(
+        self, base_url: str, model: str = "jevany-latest", api_key: str | None = "local",
+        timeout: float = 120, retries: int = 3,
+    ) -> None:
+        """Use at most `retries` attempts, retrying only connection errors, timeouts, 429 and 5xx."""
+        if isinstance(retries, bool) or not isinstance(retries, int) or retries < 1:
+            raise ValueError("retries must be a positive integer")
+        self.client = JevClient(base_url, model=model, api_key=api_key, timeout=timeout)
+        self.base_url, self.model = self.client.base_url, model
+        self.api_key, self.timeout, self.retries = api_key, timeout, retries
         self.served_model = None
 
-    def __call__(self, record):
-        payload = json.dumps({**api_request(record), "model": self.model}).encode()
-        req = urllib.request.Request(f"{self.base_url}/v1/systemone", data=payload, method="POST",
-                                    headers={"content-type": "application/json", "authorization": f"Bearer {self.api_key}"})
-        last = None
+    def __call__(self, record: dict) -> dict:
+        request = {**api_request(record), "model": self.model}
         for attempt in range(self.retries):
             try:
                 start = time.perf_counter()
-                with urllib.request.urlopen(req, timeout=self.timeout) as resp:
-                    body = json.loads(resp.read())
+                body = self.client(request)
                 latency = 1000 * (time.perf_counter() - start)
                 break
-            except Exception as error:   # 5xx / timeouts: retry with backoff; anything persistent surfaces as a rejected record
-                last = error; time.sleep(2 ** attempt)
-        else:
-            raise RuntimeError(f"remote endpoint failed after {self.retries} attempts: {last}")
+            except (urllib.error.URLError, TimeoutError, ConnectionError) as error:
+                if (isinstance(error, DecisionHTTPError) and error.code == 422
+                        and (error.headers or {}).get("X-JevAny-Error-Code") == "context_length_exceeded"):
+                    raise ContextLengthError(error.detail or str(error)) from error
+                if isinstance(error, urllib.error.HTTPError) and not (error.code == 429 or 500 <= error.code < 600):
+                    raise
+                if attempt + 1 == self.retries:
+                    raise
+                time.sleep(2 ** attempt)
         self.served_model = body.get("model", self.served_model)
         probs = {}
         for qid, q in record["questions"].items():

@@ -186,11 +186,12 @@ Recorded game imagery and upstream notices are described in
 <a href="../files/jevany/demos/recordings/LICENSES.txt"><code>recordings/LICENSES.txt</code></a>.</p>
 <h2 id="command-line-application-examples">Command-line application examples</h2>
 <p>Run from the repository root after <a href="DEPLOYMENT.html">starting a server</a>.
-These examples adapt three scenarios from the existing
-<a href="CASES.html">showcase</a> into small, text-only applications.</p>
+These examples show tool selection, classification and action loops in small,
+text-only applications. More scenarios are in the <a href="CASES.html">showcase</a>.</p>
 <pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m examples.inbox
 python -m examples.sql_repair
 python -m examples.service_recovery
+python -m examples.tool_routing
 </code></pre>
 <div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
 <thead>
@@ -216,10 +217,23 @@ python -m examples.service_recovery
 <td>A bounded agent selects, prepares, canaries and promotes a replica</td>
 <td>Local simulator, at most 12 decisions</td>
 </tr>
+<tr>
+<td><a href="../files/examples/tool_routing.py">Tool routing</a></td>
+<td>Selects a support tool when its probability reaches a configurable threshold</td>
+<td>Prints a tool name or a deferred decision; the caller owns execution</td>
+</tr>
 </tbody>
 </table></div>
 <p>The SQL and recovery programs execute and report the model's choices, and exit
 with status 1 if their checks fail. Results can vary between runs.</p>
+<p>The tool-routing example accepts your own message:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m examples.tool_routing &quot;How long do I have to return my purchase?&quot; \
+  --min-probability 0.8
+</code></pre>
+<p>When the selected tool's probability is below the threshold, the result has
+<code>"tool": null</code> and <code>"deferred": true</code>. Choose a threshold using your own held-out
+data. Routing uses the selected option's probability; the API's separate
+<code>confidence</code> field is adjusted for the number of options.</p>
 <p>Use your own server or load a checkpoint directly, with the same application code:</p>
 <pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m examples.sql_repair --base-url http://127.0.0.1:8008
 python -m examples.sql_repair --checkpoint runs/my-jev --device cuda
@@ -236,6 +250,15 @@ The <a href="../files/examples/service_recovery.py">recovery example</a> shows t
 <pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany decide examples/request.json
 jevany decide examples/request.json --checkpoint runs/my-jev
 </code></pre>
+<p>The <a href="../files/examples/harness.py">local planner harness</a> compiles a task with a text
+Chat Completions server, then passes its typed questions to JevAny:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m examples.harness --planner-model my-planner \
+  --task &quot;Choose a support team.&quot; --evidence '{&quot;ticket&quot;:&quot;My package is late.&quot;}'
+</code></pre>
+<p>This uses a planner at <code>http://127.0.0.1:8000/v1</code> and a JevAny server at
+<code>http://127.0.0.1:8008</code>; both addresses are configurable. It also accepts
+<code>--checkpoint</code> for local decisions. See <a href="INTEGRATIONS.html">INTEGRATIONS.md</a>
+for the planner contract and optional authentication.</p>
 <p>The Bedrock <a href="../files/examples/bedrock_harness.py">harness</a> and
 <a href="../files/examples/bedrock_symbolic.py">symbolic tree</a> examples use an LLM planner to construct
 bounded decisions. See

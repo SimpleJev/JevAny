@@ -8,6 +8,24 @@ from jevany.data import load_records, validate_dataset
 from jevany.datasets import init_starter
 
 
+@pytest.mark.parametrize("criteria", [None, {}, {"false": "No"}, {"true": "Yes"},
+                                     {"false": "No", "true": "Yes"}])
+def test_noul_preserves_optional_binary_descriptions(criteria):
+    request = SystemOneRequest(state="state", questions={"q": Noul(criteria=criteria)})
+    record, _ = to_record(request)
+    descriptions = criteria or {}
+    assert record["questions"][0]["options"] == [
+        "no: No" if "false" in descriptions else "no",
+        "yes: Yes" if "true" in descriptions else "yes",
+    ]
+
+
+@pytest.mark.parametrize("criteria", [{"ture": "Yes"}, {"maybe": "Maybe", "false": "No"}])
+def test_noul_rejects_descriptions_that_would_be_silently_dropped(criteria):
+    with pytest.raises(ValueError, match="criteria.*false.*true"):
+        Noul(criteria=criteria)
+
+
 def test_starter_is_valid_and_keeps_development_separate(tmp_path):
     root = init_starter(tmp_path / "starter")
     assert validate_dataset(root / "train.jsonl")["questions"] == 72
@@ -41,7 +59,6 @@ def test_bad_labels_fail_at_the_data_boundary(tmp_path, question):
 
 def test_client_wire_payload_and_validation(monkeypatch):
     import io
-    import urllib.request
 
     calls = []
 
@@ -55,7 +72,7 @@ def test_client_wire_payload_and_validation(monkeypatch):
             "usage": {"input_tokens": 5, "output_tokens": 10},
         }).encode())
 
-    monkeypatch.setattr(urllib.request, "urlopen", urlopen)
+    monkeypatch.setattr("jevany.client._urlopen", urlopen)
     client = JevClient(model="test-model")
     result = client.system_one(
         "state", {"team": Choice(criteria={"a": None, "b": None}), "urgent": Noul(),

@@ -104,6 +104,27 @@ def test_optional_delegation_reduces_frontier_calls_and_records_rationale():
     assert len(client.requests[0]["toolConfig"]["tools"]) == 2
 
 
+@pytest.mark.parametrize("history_limit", [0, 1])
+def test_delegation_respects_the_requested_history_limit(history_limit):
+    requests = []
+
+    def decide(request):
+        requests.append(deepcopy(request))
+        return decision()
+
+    agent = BedrockJevAgent(
+        None, "unused", decide, history_limit=history_limit,
+    )
+    episode = agent.run(Environment(), "reach position 2", mode="jev_only")
+    assert episode.success and len(requests) == 2
+    assert len(requests[1]["state"]["recent_actions"]) == history_limit
+
+
+def test_delegation_rejects_a_negative_history_limit():
+    with pytest.raises(ValueError, match="history_limit"):
+        BedrockJevAgent(None, "unused", lambda request: decision(), history_limit=-1)
+
+
 def test_low_confidence_returns_control_to_frontier_agent():
     client = Client([
         ("delegate_to_jev", {"steps": 2, "subgoal": "Move right."}, "Try the cheap policy."),

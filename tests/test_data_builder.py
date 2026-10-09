@@ -1,4 +1,6 @@
 from scripts.build_v2_data import (
+    answer_key,
+    choice_parts,
     content_hash,
     eval_split,
     helpsteer_record,
@@ -48,6 +50,64 @@ def test_choice_converter_accepts_options_and_letter_answer():
     row = {"question": "Pick one", "options": "['zero', 'one']", "answer": "B"}
     converted = text_choice_record(row, "hard", 1, "train")
     assert converted["questions"]["answer"]["label"] == "1"
+
+
+def test_choice_converter_rejects_missing_and_out_of_range_answers():
+    import pytest
+
+    for answer in (-1, "-1", 2, "C", None):
+        with pytest.raises(ValueError, match="answer"):
+            text_choice_record(
+                {"question": "Pick one", "options": ["north", "south"], "answer": answer},
+                "public", 1, "evaluation",
+            )
+
+
+def test_choice_converter_preserves_explicit_option_keys():
+    # A key that looks like an index is still a key, including a negative one.
+    assert answer_key("-1", ["-1", "2"], ["north", "south"]) == "-1"
+    assert answer_key("2", ["1", "2"], ["north", "south"]) == "2"
+    assert answer_key("south", ["left", "right"], ["north", "south"]) == "right"
+    assert choice_parts({"choices": {"text": ["north", "south"]}}) == (
+        ["0", "1"], ["north", "south"],
+    )
+
+
+def test_choice_converter_rejects_malformed_options_without_losing_choices():
+    import pytest
+
+    for choices in (
+        {"text": ["north", "south"], "label": ["A"]},
+        {"text": ["north", "south"], "label": ["A", "B", "C"]},
+        {"text": ["north", "south"], "label": ["A", "A"]},
+        {"text": ["north", "south"], "label": [1, "1"]},
+        {"text": ["north", "south"], "label": []},
+        {"text": ["north", "south"], "label": "AB"},
+        {"text": "north"},
+        {},
+        [],
+        None,
+        "not a list",
+    ):
+        with pytest.raises(ValueError, match="choices|option"):
+            choice_parts({"choices": choices})
+
+
+def test_choice_converter_errors_identify_the_source_row(tmp_path, monkeypatch):
+    import pytest
+    from jevany.datasets import build_sft
+
+    row = {"question": "Pick one", "options": ["north", "south"], "answer": -1}
+    with pytest.raises(ValueError, match="arc/17:.*answer"):
+        text_choice_record(row, "arc", 17, "train")
+    monkeypatch.setattr(build_sft, "save_image", lambda *_: True)
+    with pytest.raises(ValueError, match="mmmu/item:.*answer"):
+        build_sft.mmmu_record(
+            {**row, "id": "item", "question_type": "multiple-choice", "image_1": object()},
+            "evaluation", tmp_path,
+        )
+    with pytest.raises(ValueError, match="ai2d/17:.*answer"):
+        build_sft.ai2d_record(row, 17, "evaluation", tmp_path)
 
 
 def test_eval_split_never_separates_groups():

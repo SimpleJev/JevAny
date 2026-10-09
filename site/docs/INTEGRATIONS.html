@@ -1,16 +1,67 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a1114">
-<title>Harness and symbolic control — JevAny</title><link rel="stylesheet" href="../styles.css"><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"></head>
+<title>Integrations — JevAny</title><link rel="stylesheet" href="../styles.css"><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"></head>
 <body class="docs-page"><a class="skip-link" href="#content">Skip to content</a>
 <header class="site-header wrap"><a class="brand" href="../index.html"><img src="../assets/favicon.svg" width="30" height="30" alt=""><span>JevAny<span class="brand-period">.</span></span></a>
 <nav aria-label="Main navigation"><a href="../index.html#benchmarks">Benchmarks</a><a href="../index.html#models">Models</a><a href="../index.html#get-started">Get started</a></nav></header>
 <div class="docs-layout wrap"><aside class="docs-sidebar"><a class="text-link" href="../index.html">← Project homepage</a><nav aria-label="Documentation"><a href="quickstart.html">Quickstart</a><a href="TRAINING.html">Training</a><a href="DATA.html">Data</a><a href="DEPLOYMENT.html">Deployment</a><a href="API.html">API reference</a><a href="examples.html">Examples</a><a href="CASES.html">Cases</a><a href="EVALUATION.html">Evaluation</a><a href="ALGORITHM.html">Method</a><a href="INTEGRATIONS.html" aria-current="page">Integrations</a><a href="zh.html">中文文档</a></nav>
 <details class="doc-toc"><summary>On this page</summary><div class="toc">
-<ul></ul>
+<ul>
+<li><a href="#choose-a-tool">Choose a tool</a></li>
+<li><a href="#compile-questions-and-decision-trees">Compile questions and decision trees</a><ul>
+<li><a href="#local-chat-completions-planner">Local Chat Completions planner</a></li>
+<li><a href="#bedrock-planner">Bedrock planner</a></li>
+</ul>
+</li>
+</ul>
 </div>
 </details></aside>
-<main id="content" class="doc-content"><p class="eyebrow">JEVANY / DOCUMENTATION</p><h1>Harness and symbolic control</h1><p>Jev-Harness uses an external LLM to compile tasks into typed questions. The planner sees an evidence schema by default. The caller retains control of the state, which passes unchanged to JevAny for the bounded decision.</p>
+<main id="content" class="doc-content"><p class="eyebrow">JEVANY / DOCUMENTATION</p><h1>Integrations</h1><h2 id="choose-a-tool">Choose a tool</h2>
+<p>The <a href="../files/examples/tool_routing.py">tool-routing example</a> maps a support request
+to one of four tools, using the same Python client for local and HTTP inference.
+With a <a href="DEPLOYMENT.html">JevAny server running</a>:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m examples.tool_routing &quot;Where is order A-104?&quot; --min-probability 0.8
+</code></pre>
+<p>Use <code>--checkpoint runs/my-jev --device cpu</code> to load a local model instead.
+The result includes the selected option's probability and the full decision.
+It returns a tool name only when that probability reaches the threshold;
+otherwise, <code>"tool": null</code> and <code>"deferred": true</code> let your application ask for
+more information or hand the case to another decision process.</p>
+<p>The example prints a routing decision. Your application supplies the tool
+arguments and executes the tool. Set the threshold on held-out data from your
+own task; <code>0.8</code> is an example setting. Use the probability distribution for this
+threshold, since the API's choice <code>confidence</code> adjusts for chance agreement.</p>
+<h2 id="compile-questions-and-decision-trees">Compile questions and decision trees</h2>
+<p>Jev-Harness uses an external LLM to compile tasks into typed questions. The planner sees an evidence schema by default. The caller retains control of the state, which passes unchanged to JevAny for the bounded decision.</p>
+<p>Planner output must be a JSON object. Markdown fences are accepted when their
+body contains only JSON; place explanations outside the fence.</p>
+<h3 id="local-chat-completions-planner">Local Chat Completions planner</h3>
+<p><a href="../files/jevany/openai_compat.py"><code>ChatCompletionsGenerator</code></a> connects to a
+non-streaming text Chat Completions endpoint. It needs only the base JevAny
+installation. With a planner serving <code>my-planner</code> at <code>http://127.0.0.1:8000/v1</code>
+and a JevAny server at <code>http://127.0.0.1:8008</code>:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m examples.harness --planner-model my-planner \
+  --task &quot;Choose an execution mode and decide whether rollback is required.&quot; \
+  --evidence '{&quot;environment&quot;:&quot;staging&quot;,&quot;tests&quot;:&quot;passed&quot;,&quot;snapshot&quot;:&quot;available&quot;}'
+</code></pre>
+<p>Use <code>--planner-url</code> to change the planner's API prefix, and <code>--base-url</code> or
+<code>--checkpoint</code> to choose the JevAny backend. The planner must serve the model
+name you pass. Local unauthenticated servers need no key; authenticated
+planners use the optional <code>JEVANY_PLANNER_API_KEY</code> environment variable.
+Non-loopback endpoints require HTTPS.</p>
+<p>The adapter supports <code>max_output_tokens</code>, <code>temperature</code>, <code>top_p</code>, and
+<code>stop_sequences</code>; the served model must support the parameters you use.
+It maps the token limit to <code>max_completion_tokens</code> and stop sequences to <code>stop</code>.
+Responses return <code>text</code>, provider <code>usage</code>, and <code>stop_reason</code>.
+HTTP errors include the server's explanation; requests are not retried
+automatically.</p>
+<p>Your own planner can implement <code>generate(prompt, params=None)</code> with the same
+result fields and be passed to <code>JevHarness</code>. The
+<a href="../files/examples/harness.py">command-line example</a> keeps evidence values with
+JevAny unless <code>--planner-sees-evidence</code> is enabled. This default is not a
+prompt-injection security boundary.</p>
+<h3 id="bedrock-planner">Bedrock planner</h3>
 <p>With the JevAny server running, install the Bedrock adapter:</p>
 <pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m pip install -e '.[bedrock]'
 </code></pre>

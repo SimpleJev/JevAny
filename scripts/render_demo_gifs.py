@@ -17,11 +17,15 @@ from urllib.request import urlopen
 from PIL import Image
 
 CASES = ("arm", "doom", "crafter")
-SIZE = (1120, 900)
+# The browser layout remains unchanged; a 2x browser capture is downsampled to
+# this 1.5x canvas so small probabilities and feedback text remain legible in
+# GitHub's README renderer.
+SIZE = (1680, 1350)
+DEVICE_SCALE_FACTOR = 2
 FRAME_MS = 40
 SPEED = 1.5
 PLAYBACK_RATE = {"arm": 4.0, "doom": 1.0, "crafter": 0.5}
-FORMAT = "JevAny Playground v1; 1120x900"
+FORMAT = "JevAny Playground v2; 1680x1350; 2x browser capture"
 
 
 def timeline(replay):
@@ -120,15 +124,24 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-url", default="http://127.0.0.1:8090")
     parser.add_argument("--out", type=Path, default=Path("docs/demos"))
+    parser.add_argument("--chromium-executable", type=Path,
+                        help="use an existing Chromium binary instead of Playwright's bundled browser")
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
     errors = []
     with TemporaryDirectory(prefix=".playground-", dir=args.out) as directory:
         staging = Path(directory)
         with sync_playwright() as playwright:
-            browser = playwright.chromium.launch(headless=True, args=["--disable-dev-shm-usage"])
+            browser = playwright.chromium.launch(
+                headless=True,
+                executable_path=str(args.chromium_executable) if args.chromium_executable else None,
+                args=["--disable-dev-shm-usage"],
+            )
             try:
-                page = browser.new_page(viewport={"width": 1440, "height": 1000}, device_scale_factor=1)
+                page = browser.new_page(
+                    viewport={"width": 1440, "height": 1000},
+                    device_scale_factor=DEVICE_SCALE_FACTOR,
+                )
                 page.on("pageerror", lambda error: errors.append(str(error)))
                 page.goto(args.base_url, wait_until="networkidle")
                 results = []
@@ -142,7 +155,8 @@ def main():
         assert not errors, errors
         assert all(item["clip"] == results[0]["clip"] for item in results)
         (staging / "playground-format.json").write_text(
-            json.dumps({"format": FORMAT, "cases": results}, indent=2) + "\n")
+            json.dumps({"format": FORMAT, "device_scale_factor": DEVICE_SCALE_FACTOR,
+                        "cases": results}, indent=2) + "\n")
         for path in staging.iterdir():
             path.replace(args.out / path.name)
 

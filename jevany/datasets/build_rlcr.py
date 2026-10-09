@@ -6,7 +6,10 @@ import random
 from collections import Counter
 from pathlib import Path
 
-from jevany.suite import digest, load_split, read_jsonl, semantic_hash, write_json, write_jsonl
+from jevany.suite import (
+    digest, load_split, read_jsonl, read_manifest, semantic_hash, validate_training,
+    write_json, write_jsonl,
+)
 
 
 REASONING_SOURCES = {
@@ -134,11 +137,17 @@ def main(argv=None):
     root = Path(args.out)
     if root.exists():
         raise FileExistsError(f"refusing to overwrite {root}")
-    root.mkdir(parents=True)
 
     pools = {name: [] for name in QUOTAS}
     excluded = {semantic_hash(row) for path in args.exclude for row in read_jsonl(path)}
-    candidates = load_split(args.suite, "train") + reasoning_rows(quotas, args.seed)
+    parent_manifest = read_manifest(args.suite)
+    parent_records = load_split(args.suite, "train")
+    validate_training(parent_records, parent_manifest)
+    candidates = parent_records + reasoning_rows(quotas, args.seed)
+    validate_training(candidates, {
+        **parent_manifest,
+        "trainable_sources": sorted({row["_meta"]["source"] for row in parent_records} | set(REASONING_SOURCES)),
+    })
     seen = set(excluded)
     for record in candidates:
         fingerprint = semantic_hash(record)
@@ -155,6 +164,7 @@ def main(argv=None):
         selected.extend(rows[:quotas[name]])
     random.Random(args.seed).shuffle(selected)
 
+    root.mkdir(parents=True)
     path = root / "train.jsonl"
     write_jsonl(path, selected)
     write_json(root / "manifest.json", {
@@ -171,8 +181,8 @@ def main(argv=None):
             for name, (repo, revision, license_name) in REASONING_SOURCES.items()
         },
         "trainable_sources": sorted({row["_meta"]["source"] for row in selected}),
-        "eval_only_sources": [],
-        "holdout_sources": [],
+        "eval_only_sources": parent_manifest.get("eval_only_sources", []),
+        "holdout_sources": parent_manifest.get("holdout_sources", []),
         "parent_suite": {"path": str(Path(args.suite).resolve()),
                          "manifest_sha256": digest(Path(args.suite) / "manifest.json")},
         "excluded_files": {str(Path(path).resolve()): digest(path) for path in args.exclude},

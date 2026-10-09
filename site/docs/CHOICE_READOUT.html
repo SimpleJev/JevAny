@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a1114">
+<title>Training-free choice-token readout — JevAny</title><link rel="stylesheet" href="../styles.css"><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"></head>
+<body class="docs-page"><a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header wrap"><a class="brand" href="../index.html"><img src="../assets/favicon.svg" width="30" height="30" alt=""><span>JevAny<span class="brand-period">.</span></span></a>
+<nav aria-label="Main navigation"><a href="../index.html#benchmarks">Benchmarks</a><a href="../index.html#models">Models</a><a href="../index.html#get-started">Get started</a></nav></header>
+<div class="docs-layout wrap"><aside class="docs-sidebar"><a class="text-link" href="../index.html">← Project homepage</a><nav aria-label="Documentation"><a href="quickstart.html">Quickstart</a><a href="TRAINING.html">Training</a><a href="DATA.html">Data</a><a href="DEPLOYMENT.html">Deployment</a><a href="API.html">API reference</a><a href="examples.html">Examples</a><a href="CASES.html">Cases</a><a href="EVALUATION.html">Evaluation</a><a href="ALGORITHM.html">Method</a><a href="INTEGRATIONS.html">Integrations</a><a href="zh.html">中文文档</a></nav>
+<details class="doc-toc"><summary>On this page</summary><div class="toc">
+<ul>
+<li><a href="#use-it">Use it</a></li>
+<li><a href="#limits">Limits</a></li>
+<li><a href="#evaluation-protocol">Evaluation protocol</a><ul>
+<li><a href="#evaluated-model-sources">Evaluated model sources</a></li>
+</ul>
+</li>
+<li><a href="#results">Results</a><ul>
+<li><a href="#external-comparison">External comparison</a></li>
+<li><a href="#practical-principles">Practical principles</a></li>
+</ul>
+</li>
+<li><a href="#benchmark-units">Benchmark units</a></li>
+<li><a href="#historical-v1">Historical v1</a></li>
+<li><a href="#attribution">Attribution</a></li>
+</ul>
+</div>
+</details></aside>
+<main id="content" class="doc-content"><p class="eyebrow">JEVANY / DOCUMENTATION</p><h1>Training-free choice-token readout</h1><p>Choice-token readout turns an ordinary causal language model into a decision
+readout without adding or training a head:</p>
+<ol>
+<li>Preserve the candidate order and assign the exact one-character IDs
+   <code>A–Z, a–z</code>.</li>
+<li>Ask for one case-sensitive option ID with thinking disabled.</li>
+<li>At the answer position, sum the mass of every vocabulary token that decodes
+   exactly to each available ID.</li>
+<li>Renormalize over the available IDs and map the distribution back to the
+   original option keys.</li>
+</ol>
+<p>This operation can change the ranking and the selected answer. It is therefore
+not temperature calibration. A scalar temperature changes probability values
+but cannot change argmax accuracy. A native + choice stack is a third operation:
+it pools two distributions and can change the answer.</p>
+<p>The same readout works on a frozen base model or after loading a JevAny Pointer
+or Direct-Token adapter. No additional readout training is performed.</p>
+<h2 id="use-it">Use it</h2>
+<p>The checkpoint-native readout remains the default. Select choice-token readout
+with <code>--readout choice</code>:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany eval \
+  --run SimpleJev/JevAny-Qwen3.5-4B-Direct-Token-LoRA \
+  --suite /path/to/jevbench-public-v1.4.2.2 \
+  --out runs/choice-readout/qwen35-4b-direct \
+  --device cuda --readout choice --choice-temperature 1.0
+
+jevany decide request.json \
+  --checkpoint SimpleJev/JevAny-Qwen3.5-4B-LoRA \
+  --device cuda --dtype bf16 --readout choice
+
+jevany serve \
+  --checkpoint SimpleJev/JevAny-Qwen3.5-4B-LoRA \
+  --device cuda --dtype bf16 --readout choice
+</code></pre>
+<p>Use <code>--choice-native-weight</code> to pool the choice and checkpoint-native
+distributions. This executes both paths. <code>--choice-max-tokens</code> controls the
+choice prompt limit. The former <code>letter</code> selector and <code>--letter-*</code> flags remain
+hidden compatibility aliases.</p>
+<p>The matrix evaluator also accepts a frozen base directly:</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">python -m scripts.evaluate_choice_readout_matrix \
+  --base Qwen/Qwen3.5-4B \
+  --revision 851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a \
+  --base-load-path /path/to/Qwen3.5-4B \
+  --model-name Frozen-Qwen3.5-4B \
+  --out runs/choice-readout/base4 \
+  --jevbench /path/to/jevbench-public-v1.4.2.2 \
+  --transfer /path/to/transfer-v9 \
+  --typed /path/to/typed-decisions \
+  --jevjudge /path/to/jevjudge-public
+</code></pre>
+<h2 id="limits">Limits</h2>
+<ul>
+<li>Text input only; JevJudge full multimodal is unsupported and is never
+  converted into a text-only score.</li>
+<li>1–52 options per question.</li>
+<li>Exact one-token aliases must exist in the tokenizer for every used ID.</li>
+<li>Choice-only runs use one chat-formatted prefill per question. A stack also
+  executes the checkpoint-native prefill.</li>
+<li>Matrix runs use exact math SDPA below 8,192 tokens and memory-linear fused
+  SDPA for longer prompts. All 724 JevJudge text records complete; no record is
+  truncated or rejected.</li>
+</ul>
+<h2 id="evaluation-protocol">Evaluation protocol</h2>
+<p>The v2 matrix uses the same prompt and data for five runs:</p>
+<ul>
+<li>frozen Qwen3.5-4B;</li>
+<li>JevAny Qwen3.5-4B Pointer;</li>
+<li>JevAny Qwen3.5-4B Direct-Token;</li>
+<li>frozen Qwen3.8-27B;</li>
+<li>JevAny Qwen3.8-27B Pointer.</li>
+</ul>
+<p>Zero-shot rows use T=1 and no evaluation-label tuning. For tuned rows, each
+model selects one native weight on the 1,046 clean/knowable Transfer-v9
+development decisions; fitted NLL and distance from 0.5 break accuracy ties.
+One additional temperature is then fitted on the same development rows. The
+weight and temperature are frozen before Transfer test, Typed Decisions,
+JevJudge text, and the JevBench public diagnostic are scored.</p>
+<p>The native parity gates reproduce the released README results before any
+held-out panel runs:</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Checkpoint</th>
+<th style="text-align: right;">Transfer development</th>
+<th style="text-align: right;">JevBench public</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>JevAny 4B Pointer</td>
+<td style="text-align: right;">823/1,046 · 78.68%</td>
+<td style="text-align: right;">185/231 · 80.09%</td>
+</tr>
+<tr>
+<td>JevAny 4B Direct-Token</td>
+<td style="text-align: right;">818/1,046 · 78.20%</td>
+<td style="text-align: right;">187/231 · 80.95%</td>
+</tr>
+<tr>
+<td>JevAny 27B Pointer</td>
+<td style="text-align: right;">900/1,046 · 86.04%</td>
+<td style="text-align: right;">208/231 · 90.04%</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="evaluated-model-sources">Evaluated model sources</h3>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Run</th>
+<th>Canonical public repository</th>
+<th>Evaluated revision</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Frozen Qwen3.5-4B</td>
+<td><code>Qwen/Qwen3.5-4B</code></td>
+<td><code>851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a</code></td>
+</tr>
+<tr>
+<td>JevAny 4B Pointer</td>
+<td><code>SimpleJev/JevAny-Qwen3.5-4B-LoRA</code></td>
+<td><code>1c7aa9bab14ac347aeb917c0bcd757838a8a78ce</code></td>
+</tr>
+<tr>
+<td>JevAny 4B Direct-Token</td>
+<td><code>SimpleJev/JevAny-Qwen3.5-4B-Direct-Token-LoRA</code></td>
+<td>Not verified for the evaluated local release</td>
+</tr>
+<tr>
+<td>Frozen Qwen3.8-27B</td>
+<td><code>Qwen/Qwen3.8-27B</code></td>
+<td><code>1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0</code></td>
+</tr>
+<tr>
+<td>JevAny 27B Pointer</td>
+<td><code>SimpleJev/JevAny-Qwen3.8-27B-LoRA</code></td>
+<td><code>09c9e9102d5b8cc7d56558d25da1202a761b6c0d</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>The Direct-Token run is still byte-identifiable: its evaluated adapter is
+<code>b768d54b9e5e20204b2db9e24c18ae6b10fa310b241d1931bac6b8882f127c53</code>
+and its native head is
+<code>d3909cffc156d077061114627c8aa22f60c7a8f1bdcfd20c489bb3bb009fc4a6</code>
+(SHA-256). The evaluation manifest and release metadata do not prove which
+immutable public-repository commit contains those exact files, so the result
+artifact records its public revision as <code>null</code> rather than guessing.</p>
+<h2 id="results">Results</h2>
+<p><img loading="lazy" alt="Training-free choice-token, checkpoint-native, Transfer-dev-tuned blend, and external baseline accuracy on Typed Decisions and JevJudge text" src="../files/docs/choice-readout-results.svg" /></p>
+<p>All values below are accuracy. JevBench is its 231-item public development
+diagnostic. Transfer test contains 1,046 clean/knowable held-out decisions.
+Typed covers 2,000 decisions in 400 test cases. JevJudge text covers all 724
+text records; it is not the 3,220-record multimodal suite.</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Weights</th>
+<th>Readout</th>
+<th style="text-align: right;">JevBench public</th>
+<th style="text-align: right;">Transfer test</th>
+<th style="text-align: right;">Typed test</th>
+<th style="text-align: right;">JevJudge text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Frozen Qwen3.5-4B</td>
+<td>Choice T=1</td>
+<td style="text-align: right;">79.65%</td>
+<td style="text-align: right;">68.45%</td>
+<td style="text-align: right;">52.75%</td>
+<td style="text-align: right;">58.70%</td>
+</tr>
+<tr>
+<td>JevAny 4B Pointer</td>
+<td>Native shipped</td>
+<td style="text-align: right;">80.09%</td>
+<td style="text-align: right;">77.92%</td>
+<td style="text-align: right;"><strong>63.50%</strong></td>
+<td style="text-align: right;">58.01%</td>
+</tr>
+<tr>
+<td></td>
+<td>Choice T=1</td>
+<td style="text-align: right;"><strong>81.39%</strong></td>
+<td style="text-align: right;">73.61%</td>
+<td style="text-align: right;">57.80%</td>
+<td style="text-align: right;">52.62%</td>
+</tr>
+<tr>
+<td></td>
+<td>Tuned stack · w=.78</td>
+<td style="text-align: right;">80.95%</td>
+<td style="text-align: right;"><strong>78.01%</strong></td>
+<td style="text-align: right;">62.90%</td>
+<td style="text-align: right;"><strong>59.53%</strong></td>
+</tr>
+<tr>
+<td>JevAny 4B Direct-Token</td>
+<td>Native shipped</td>
+<td style="text-align: right;">80.95%</td>
+<td style="text-align: right;">78.87%</td>
+<td style="text-align: right;">67.20%</td>
+<td style="text-align: right;">58.43%</td>
+</tr>
+<tr>
+<td></td>
+<td>Choice T=1</td>
+<td style="text-align: right;"><strong>81.39%</strong></td>
+<td style="text-align: right;">78.59%</td>
+<td style="text-align: right;">64.80%</td>
+<td style="text-align: right;">57.60%</td>
+</tr>
+<tr>
+<td></td>
+<td>Tuned stack · w=.59</td>
+<td style="text-align: right;">80.95%</td>
+<td style="text-align: right;"><strong>79.83%</strong></td>
+<td style="text-align: right;"><strong>67.65%</strong></td>
+<td style="text-align: right;"><strong>59.25%</strong></td>
+</tr>
+<tr>
+<td>Frozen Qwen3.8-27B</td>
+<td>Choice T=1</td>
+<td style="text-align: right;">87.88%</td>
+<td style="text-align: right;">80.69%</td>
+<td style="text-align: right;">68.25%</td>
+<td style="text-align: right;">61.74%</td>
+</tr>
+<tr>
+<td>JevAny 27B Pointer</td>
+<td>Native shipped</td>
+<td style="text-align: right;"><strong>90.04%</strong></td>
+<td style="text-align: right;">87.95%</td>
+<td style="text-align: right;">72.80%</td>
+<td style="text-align: right;"><strong>66.44%</strong></td>
+</tr>
+<tr>
+<td></td>
+<td>Choice T=1</td>
+<td style="text-align: right;">89.61%</td>
+<td style="text-align: right;">86.04%</td>
+<td style="text-align: right;">72.60%</td>
+<td style="text-align: right;">57.87%</td>
+</tr>
+<tr>
+<td></td>
+<td>Tuned stack · w=.52</td>
+<td style="text-align: right;"><strong>90.04%</strong></td>
+<td style="text-align: right;"><strong>89.10%</strong></td>
+<td style="text-align: right;"><strong>73.30%</strong></td>
+<td style="text-align: right;">64.36%</td>
+</tr>
+</tbody>
+</table></div>
+<p>The fixed, untuned 50/50 stacks remain a separate zero-shot reference:</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Checkpoint</th>
+<th style="text-align: right;">JevBench public</th>
+<th style="text-align: right;">Transfer test</th>
+<th style="text-align: right;">Typed test</th>
+<th style="text-align: right;">JevJudge text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>JevAny 4B Pointer</td>
+<td style="text-align: right;">81.39%</td>
+<td style="text-align: right;">77.44%</td>
+<td style="text-align: right;">60.70%</td>
+<td style="text-align: right;">59.12%</td>
+</tr>
+<tr>
+<td>JevAny 4B Direct-Token</td>
+<td style="text-align: right;">80.95%</td>
+<td style="text-align: right;">79.45%</td>
+<td style="text-align: right;">66.75%</td>
+<td style="text-align: right;">58.98%</td>
+</tr>
+<tr>
+<td>JevAny 27B Pointer</td>
+<td style="text-align: right;">90.04%</td>
+<td style="text-align: right;"><strong>89.20%</strong></td>
+<td style="text-align: right;">73.20%</td>
+<td style="text-align: right;">64.23%</td>
+</tr>
+</tbody>
+</table></div>
+<p>The selected parameters differ by checkpoint:</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Checkpoint</th>
+<th style="text-align: right;">Native weight</th>
+<th style="text-align: right;">Additional temperature</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>JevAny 4B Pointer</td>
+<td style="text-align: right;">.78</td>
+<td style="text-align: right;">1.10</td>
+</tr>
+<tr>
+<td>JevAny 4B Direct-Token</td>
+<td style="text-align: right;">.59</td>
+<td style="text-align: right;">1.12</td>
+</tr>
+<tr>
+<td>JevAny 27B Pointer</td>
+<td style="text-align: right;">.52</td>
+<td style="text-align: right;">.84</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="external-comparison">External comparison</h3>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th>Model/readout</th>
+<th style="text-align: right;">Typed test</th>
+<th style="text-align: right;">JevJudge text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>meraGPT Decider 1 · published</td>
+<td style="text-align: right;"><strong>76.80%</strong></td>
+<td style="text-align: right;">—</td>
+</tr>
+<tr>
+<td>JevAny 27B Pointer · native</td>
+<td style="text-align: right;">72.80%</td>
+<td style="text-align: right;"><strong>66.44%</strong></td>
+</tr>
+<tr>
+<td>JevAny 27B Pointer · tuned stack</td>
+<td style="text-align: right;"><strong>73.30%</strong></td>
+<td style="text-align: right;">64.36%</td>
+</tr>
+<tr>
+<td>TypeSafe Jev 1.13</td>
+<td style="text-align: right;">72.70%</td>
+<td style="text-align: right;">65.06%</td>
+</tr>
+<tr>
+<td>Kev-27B</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">64.23%</td>
+</tr>
+</tbody>
+</table></div>
+<p>The 27B stack beats its native readout by 12 held-out Transfer decisions and
+10 Typed decisions, while losing 15 JevJudge text decisions. Direct-Token 4B's
+stack improves over native on all three held-out panels. Pointer 4B improves on
+Transfer and JevJudge but loses on Typed. No single blend is universally best.</p>
+<h3 id="practical-principles">Practical principles</h3>
+<ul>
+<li><strong>Selection bottleneck:</strong> use choice-token readout when the model can reason
+  over the candidates but the native extraction path is the bottleneck.</li>
+<li><strong>Complementary errors:</strong> keep a stack only when paired development results
+  show that each readout rescues errors made by the other. Select one weight on
+  development data and freeze it.</li>
+<li><strong>Capability limit:</strong> a different readout cannot supply knowledge, perception,
+  planning, or instruction-following ability missing from the underlying model.</li>
+<li><strong>Calibration limit:</strong> temperature can improve NLL, Brier, or ECE, but it
+  cannot change the selected option or accuracy.</li>
+<li><strong>Domain shift:</strong> target-domain validation wins over a global rule. The same
+  27B stack helps Transfer and Typed, ties JevBench, and hurts JevJudge text.</li>
+</ul>
+<p>Complete metrics, hashes, runtime versions, selected weights, and the unsupported
+full-JevJudge marker are in
+<a href="../files/results/choice-readout-v2.json"><code>results/choice-readout-v2.json</code></a>. The
+deterministic builder is
+<a href="../files/scripts/build_choice_readout_results.py"><code>scripts/build_choice_readout_results.py</code></a>.</p>
+<h2 id="benchmark-units">Benchmark units</h2>
+<p>Cygnet's official <code>73.70</code> on JevBench v1.5.4 is a four-axis composite over
+1,624 open and sealed decisions, not accuracy. Its separate public-development
+result is 203/231 (87.9% accuracy). Every JevBench value on this page is
+accuracy over the same 231 public-development items and cannot be compared
+numerically with the composite.</p>
+<h2 id="historical-v1">Historical v1</h2>
+<p>The original prompt-v1 experiment and one-panel latency diagnostic remain
+unchanged in <a href="../files/results/letter-readout-v1.json"><code>results/letter-readout-v1.json</code></a>
+and <a href="../files/docs/letter-readout-results.svg"><code>letter-readout-results.svg</code></a>. Those runs used a
+different prompt and runtime, and their matched native reruns did not reproduce
+the canonical README rows. They are retained for audit and are not mixed into
+the v2 tables.</p>
+<h2 id="attribution">Attribution</h2>
+<p>The Cygnet-compatible prompt and exact option-ID aggregation semantics are
+adapted from <code>blockbrain-ai/cygnet-recipe</code> commit <code>3cf591c</code>, Copyright 2026
+Nood Co and contributors, under MIT. Cygnet credits the one-token option-ID
+readout to <a href="https://github.com/igorls/ninfer">NInfer</a>, released under Apache-2.0.
+JevAny does not incorporate NInfer source code. See <a href="../files/NOTICE"><code>NOTICE</code></a>.</p></main></div>
+<footer class="site-footer wrap"><a href="../index.html">← Back to JevAny</a><a href="license.html">Apache-2.0 code</a></footer></body></html>

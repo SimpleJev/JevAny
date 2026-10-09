@@ -2,6 +2,8 @@
 from dataclasses import dataclass
 from typing import Callable
 
+from pydantic import BaseModel
+
 from .api import Choice, SystemOneRequest, validate_response
 
 
@@ -19,18 +21,28 @@ class DecisionTrace:
     next: str
 
 
+class _NodeSpec(BaseModel):
+    question: Choice
+    branches: dict[str, str]
+
+
+class _TreeSpec(BaseModel):
+    root: str
+    nodes: dict[str, _NodeSpec]
+    outcomes: dict[str, object]
+
+
 class JevTree:
     def __init__(self, root: str, nodes: dict[str, DecisionNode], outcomes: dict[str, object]):
         self.root, self.nodes, self.outcomes = root, nodes, outcomes
         self._validate()
 
     @classmethod
-    def from_dict(cls, value: dict):
-        nodes = {}
-        for name, node in value["nodes"].items():
-            question = Choice.model_validate({"type": "choice", **node["question"]})
-            nodes[name] = DecisionNode(question, dict(node["branches"]))
-        return cls(value["root"], nodes, dict(value["outcomes"]))
+    def from_dict(cls, value: dict) -> "JevTree":
+        """Validate planner JSON before checking branch coverage and acyclicity."""
+        spec = _TreeSpec.model_validate(value)
+        nodes = {name: DecisionNode(node.question, node.branches) for name, node in spec.nodes.items()}
+        return cls(spec.root, nodes, spec.outcomes)
 
     def _validate(self):
         if self.root not in self.nodes:

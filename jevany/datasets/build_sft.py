@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Build the diverse text, agent, image, and video mixture used for the next JevAny run."""
 import argparse
-import ast
 import hashlib
 import json
 import random
@@ -14,6 +13,7 @@ from pathlib import Path
 from datasets import load_dataset
 
 from jevany.data import materialize
+from jevany.datasets.convert import answer_key, choice_parts, metadata, record, text_choice_record
 from jevany.model import MAX_BRANCH, MAX_PACKED, MAX_STATE, encode, load_tokenizer
 from jevany.suite import digest, read_jsonl, semantic_hash as content_hash, write_json, write_jsonl
 
@@ -58,21 +58,6 @@ def sample(rows, count, seed):
     indices = list(range(len(rows)))
     random.Random(seed).shuffle(indices)
     return [rows[index] for index in indices[: min(count, len(indices))]]
-
-
-def metadata(source, identifier, split, state, questions, **extra):
-    identifier = str(identifier)
-    return {"source": source, "variant": "clean", "id": f"{source}/{identifier}",
-            "group_id": f"{source}/{identifier}", "row": identifier, "split": split,
-            "text_sha256": content_hash({"state": state, "questions": questions}), **extra}
-
-
-def record(source, identifier, split, state, questions, media=None, **extra):
-    result = {"state": state, "questions": questions}
-    if media:
-        result["media"] = media
-    result["_meta"] = metadata(source, identifier, split, state, questions, **extra)
-    return result
 
 
 def helpsteer_record(row, index, split):
@@ -146,45 +131,6 @@ def hermes_records(row, split, config="single"):
     return output
 
 
-def choice_parts(row):
-    choices = row.get("choices", row.get("options"))
-    if isinstance(choices, str):
-        choices = ast.literal_eval(choices)
-    if isinstance(choices, dict):
-        texts, keys = choices["text"], choices.get("label") or [str(index) for index in range(len(choices["text"]))]
-    else:
-        texts, keys = choices, [str(index) for index in range(len(choices))]
-    return [str(value) for value in keys], [str(value) for value in texts]
-
-
-def answer_key(answer, keys, choices):
-    answer = str(answer)
-    if answer in keys:
-        return answer
-    if answer in choices:
-        return keys[choices.index(answer)]
-    if len(answer) == 1 and answer.upper() in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
-        index = ord(answer.upper()) - ord("A")
-        if index < len(keys):
-            return keys[index]
-    index = int(answer)
-    return keys[index]
-
-
-def text_choice_record(row, source, identifier, split):
-    keys, choices = choice_parts(row)
-    state = {key: row[key] for key in ("hint", "fact1", "fact2", "combinedfact") if row.get(key)}
-    if not state:
-        state = "Choose the best supported answer."
-    question = row.get("question")
-    if isinstance(question, dict):
-        question = question.get("stem", str(question))
-    questions = {"answer": {"type": "choice", "instructions": question, "criteria": dict(zip(keys, choices)),
-                            "label": answer_key(row.get("answerKey", row.get("answer")), keys, choices),
-                            "src": f"{source}_choice"}}
-    return record(source, identifier, split, state, questions)
-
-
 def save_image(image, path):
     if image is None:
         return False
@@ -229,9 +175,13 @@ def mmmu_record(row, split, root):
         images.append({"type": "image", "uri": str(path.relative_to(root))})
     if not images:
         return None
-    keys, choices = choice_parts(row)
+    try:
+        keys, choices = choice_parts(row)
+        label = answer_key(row.get("answer"), keys, choices)
+    except ValueError as error:
+        raise ValueError(f"mmmu/{row['id']}: {error}") from error
     questions = {"answer": {"type": "choice", "instructions": row["question"], "criteria": dict(zip(keys, choices)),
-                            "label": answer_key(row["answer"], keys, choices), "src": "mmmu_vision"}}
+                            "label": label, "src": "mmmu_vision"}}
     return record("mmmu", row["id"], split, {"subject": row.get("subfield", "")}, questions, media=images)
 
 
@@ -239,9 +189,13 @@ def ai2d_record(row, index, split, root):
     path = root / "media" / "ai2d" / f"{index}.jpg"
     if not save_image(row.get("image"), path):
         return None
-    keys, choices = choice_parts(row)
+    try:
+        keys, choices = choice_parts(row)
+        label = answer_key(row.get("answer"), keys, choices)
+    except ValueError as error:
+        raise ValueError(f"ai2d/{index}: {error}") from error
     questions = {"answer": {"type": "choice", "instructions": row["question"], "criteria": dict(zip(keys, choices)),
-                            "label": answer_key(row["answer"], keys, choices), "src": "ai2d_diagram"}}
+                            "label": label, "src": "ai2d_diagram"}}
     return record("ai2d", index, split, "Use the diagram to answer the question.", questions,
                   media=[{"type": "image", "uri": str(path.relative_to(root))}])
 

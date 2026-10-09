@@ -418,6 +418,21 @@ class Gemma4VisionAdapter(VisionAdapter):
     name = "gemma4_vision"
     media_types = frozenset({"image", "video"})
 
+    def forward_media(self, language_model, multimodal_model, inputs: dict) -> torch.Tensor:
+        if "num_frames_per_video" in inputs:
+            # Transformers 5.19 omits frame counts in forward's video encoder call.
+            inputs = dict(inputs)
+            features = {"video": multimodal_model.get_video_features(
+                inputs.pop("pixel_values_videos"), inputs.pop("video_position_ids", None),
+                num_frames_per_video=inputs.pop("num_frames_per_video"), return_dict=True,
+            )}
+            if inputs.get("pixel_values") is not None:
+                features["image"] = multimodal_model.get_image_features(
+                    inputs.pop("pixel_values"), inputs.pop("image_position_ids", None), return_dict=True,
+                )
+            inputs["mm_encoder_outputs"] = features
+        return super().forward_media(language_model, multimodal_model, inputs)
+
     def process_media(self, processor, media: list[dict], text: str):
         prefix, images, videos = [], [], []
         for item in media:
@@ -498,7 +513,11 @@ def get_backbone_adapter(name: str = "auto", *, multimodal: bool = False,
     module, separator, attribute = name.partition(":")
     if not separator or not module or not attribute:
         raise ValueError(f"backbone_adapter must be auto, {', '.join(builtins)}, or module:Class")
-    adapter_class = getattr(importlib.import_module(module), attribute)
+    try:
+        adapter_class = getattr(importlib.import_module(module), attribute)
+    except (ImportError, AttributeError) as error:
+        raise ValueError(f"cannot load backbone_adapter {name!r}: {error}; "
+                         "check the module:Class name and install the adapter's dependencies") from error
     if not isinstance(adapter_class, type) or not issubclass(adapter_class, BackboneAdapter):
         raise ValueError(f"{name} must subclass jevany.backbones.BackboneAdapter")
     return adapter_class()

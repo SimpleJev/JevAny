@@ -48,7 +48,15 @@ def probabilities_at_temperature(row, temperature=1.0):
 
 
 def nll_at_temperature(row, temperature=1.0):
-    """Exact from logits when recorded; otherwise from the floored probabilities."""
+    """Score returned probabilities at T=1; use logits only for an added temperature."""
+    _check_temperature(temperature)
+    if temperature == 1:
+        return -math.log(max(float(np.asarray(row["p"], dtype=float)[row["label"]]), EPSILON))
+    return _logit_nll_at_temperature(row, temperature)
+
+
+def _logit_nll_at_temperature(row, temperature):
+    """NLL from recorded logits (or p-derived logits) at every candidate T, including T=1."""
     if "logits" in row:
         z = _tempered_logits(row, temperature)
         return float(np.log(np.exp(z).sum()) - z[row["label"]])
@@ -204,7 +212,11 @@ def fit_temperature(rows, aggregation="macro"):
         for row in clean:
             counts[row["task"]] += 1
         weights = np.asarray([1.0 / counts[row["task"]] for row in clean])
-    losses = [np.average([nll_at_temperature(r, float(t)) for r in clean], weights=weights) for t in candidates]
+    # Temperature fitting is defined on the raw-logit path for every grid
+    # point. In particular, T=1 must not switch to a possibly rounded or
+    # externally calibrated returned-p vector while its neighbours use logits.
+    losses = [np.average([_logit_nll_at_temperature(r, float(t)) for r in clean], weights=weights)
+              for t in candidates]
     return float(candidates[int(np.argmin(losses))])
 
 

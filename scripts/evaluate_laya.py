@@ -74,7 +74,7 @@ def main():
 
     if args.suite:
         records = load_split(args.suite, "development")
-        heldout = tuple(read_manifest(args.suite)["holdout_sources"])
+        heldout = tuple(read_manifest(args.suite).get("holdout_sources", []))
         source_hash = digest(Path(args.suite) / "manifest.json")
         protocol = "transfer-v9/development"
     else:

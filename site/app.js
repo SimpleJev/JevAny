@@ -42,7 +42,7 @@ const recipes = {
       "jevany train --config recipes/sft.toml --dry-run",
       "jevany train --config recipes/sft.toml",
     ],
-    note: "Python 3.12+ · macOS / Linux shell · This recipe uses Qwen3.5-0.8B on a CUDA GPU with BF16.",
+    note: translate("Python 3.12+ · macOS / Linux shell · This recipe uses Qwen3.5-0.8B on a CUDA GPU with BF16."),
   },
   serve: {
     commands: [
@@ -51,7 +51,7 @@ const recipes = {
       "  --checkpoint SimpleJev/JevAny-Qwen3.5-4B-LoRA \\",
       "  --device cuda --dtype bf16 --port 8008",
     ],
-    note: "Python 3.12+ · macOS / Linux shell · CUDA GPU required. Base weights need about 8 GB in BF16, plus runtime memory.",
+    note: translate("Python 3.12+ · macOS / Linux shell · CUDA GPU required. Base weights need about 8 GB in BF16, plus runtime memory."),
   },
 };
 
@@ -68,7 +68,7 @@ function localRecipe() {
         "OMP_NUM_THREADS=4 jevany serve --checkpoint runs/cpu-jev \\",
         "  --device cpu --dtype fp32 --port 8008",
       ],
-      note: "CPU · 16 GB RAM recommended. Downloads the Qwen 0.8B base and trains a small adapter on the bundled tickets before starting the model.",
+      note: translate("CPU · 16 GB RAM recommended. Downloads the Qwen 0.8B base and trains a small adapter on the bundled tickets before starting the model."),
     };
   }
   return {
@@ -78,7 +78,7 @@ function localRecipe() {
       `  --checkpoint ${model.value} \\`,
       "  --device cuda --dtype bf16 --port 8008",
     ],
-    note: `CUDA · BF16 base weights need about ${model.selectedOptions[0].dataset.memory} GB, plus runtime memory. Downloads the checkpoint and base on first use; later runs use the local cache.`,
+    note: translate("CUDA · BF16 base weights need about {memory} GB, plus runtime memory. Downloads the checkpoint and base on first use; later runs use the local cache.", { memory: model.selectedOptions[0].dataset.memory }),
   };
 }
 
@@ -142,7 +142,7 @@ function resumeReplay() {
 
 function syncMotion() {
   motionButton.setAttribute("aria-pressed", String(!motionEnabled));
-  motionButton.querySelector(".motion-label").textContent = motionEnabled ? "Pause animation" : "Resume animation";
+  motionButton.querySelector(".motion-label").textContent = translate(motionEnabled ? "Pause animation" : "Resume animation");
   motionButton.querySelector(".motion-icon").textContent = motionEnabled ? "Ⅱ" : "▷";
   document.documentElement.classList.toggle("motion-paused", !canAnimate());
   syncBackground();
@@ -223,8 +223,8 @@ function selectCase(name) {
   replay.pause();
   replay.poster = `assets/media/${name}.webp`;
   replay.src = `assets/media/${name}.${videoExtension}`;
-  replay.setAttribute("aria-label", `Archived JevAny replay: ${details.title}`);
-  document.querySelector("#replay-description").textContent = details.description;
+  replay.setAttribute("aria-label", translate("Archived JevAny replay: {title}", { title: translate(details.title) }));
+  document.querySelector("#replay-description").textContent = translate(details.description);
   document.querySelector("#replay-number").textContent = `${String(caseOrder.indexOf(name) + 1).padStart(2, "0")} / ${caseOrder.length}`;
   manuallyPausedReplay = false;
   if (canAnimate()) play(replay);
@@ -321,11 +321,11 @@ metricButtons.forEach(button => button.addEventListener("click", () => {
     chart.append(row);
   });
   metricButtons.forEach(tab => tab.setAttribute("aria-pressed", String(tab === button)));
-  document.querySelector("#chart-title").textContent = title;
-  document.querySelector("#chart-description").textContent = `${description} · ${accuracy ? "Higher" : "Lower"} is better`;
+  document.querySelector("#chart-title").textContent = translate(title);
+  document.querySelector("#chart-description").textContent = `${translate(description)} · ${translate(accuracy ? "Higher is better" : "Lower is better")}`;
   document.querySelector(".chart-axis > span:first-child").textContent = accuracy ? "0%" : "0";
   document.querySelector("#chart-axis-end").textContent = accuracy ? "100%" : maximum.toFixed(1);
-  document.querySelector("#metric-status").textContent = `${title}. Sorted ${accuracy ? "highest" : "lowest"} first.`;
+  document.querySelector("#metric-status").textContent = translate(accuracy ? "{title}. Sorted highest first." : "{title}. Sorted lowest first.", { title: translate(title) });
 }));
 document.querySelector(".metric-buttons").hidden = false;
 
@@ -343,7 +343,7 @@ function selectRecipe(tab) {
   document.querySelector("#recipe-note").textContent = recipe.note;
   document.querySelector("#local-model-control").hidden = !local;
   document.querySelector("#demo-launch").hidden = !local;
-  document.querySelector("#command-label").textContent = local ? "1. Start the model" : "Shell commands";
+  document.querySelector("#command-label").textContent = translate(local ? "1. Start the model" : "Shell commands");
 }
 document.querySelector("#local-model").addEventListener("change", () => selectRecipe(tabs[0]));
 document.querySelectorAll("[data-local-model]").forEach(link => link.addEventListener("click", () => {
@@ -374,16 +374,16 @@ document.querySelectorAll("[data-copy-code]").forEach(copyButton => {
     const status = document.querySelector("#copy-status");
     try {
       await navigator.clipboard.writeText(code.textContent);
-      copyLabel.textContent = "Copied";
-      status.textContent = "Commands copied to clipboard.";
-      setTimeout(() => { copyLabel.textContent = "Copy commands"; }, 2500);
+      copyLabel.textContent = translate("Copied");
+      status.textContent = translate("Commands copied to clipboard.");
+      setTimeout(() => { copyLabel.textContent = translate("Copy commands"); }, 2500);
     } catch {
       const selection = window.getSelection();
       const range = document.createRange();
       range.selectNodeContents(code);
       selection.removeAllRanges();
       selection.addRange(range);
-      status.textContent = "Clipboard unavailable. Commands selected; press Control+C or Command+C to copy.";
+      status.textContent = translate("Clipboard unavailable. Commands selected; press Control+C or Command+C to copy.");
     }
   });
 });

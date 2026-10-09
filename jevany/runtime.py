@@ -13,7 +13,8 @@ from .checkpoint import Checkpoint, LoadOptions
 from .client import DecisionClient
 from .device import default_device, sync
 from .inference import InferenceOptions
-from .model import DecisionModel
+from .model import ContextLengthError, DecisionModel
+from .readout import resolve_readout_options
 
 DEFAULT_CHECKPOINT = "SimpleJev/JevAny-Qwen3.8-27B-LoRA"
 
@@ -62,6 +63,7 @@ class DecisionRuntime:
                 "devices": getattr(self.model, "devices", [self.device]),
                 "temperature": self.model.temperature,
                 "decision_mode": self.checkpoint.meta.decision_mode,
+                "readout": "native",
                 "backbone_adapter": self.model.backbone_adapter,
                 "branch_mode": self.model.branch_mode,
                 "acceleration": {
@@ -72,7 +74,8 @@ class DecisionRuntime:
                     "linear_attention_kernels": (linear_attention_kernels()
                                                  if getattr(self.model, "hybrid", False) else None),
                 },
-                "capabilities": asdict(capabilities), "limits": self.limits,
+                "capabilities": {**asdict(capabilities), "media_types": list(capabilities.media_types)},
+                "limits": self.limits,
                 "prefix_cache": {
                     "enabled": self.inference_options.prefix_cache_size > 0 and capabilities.prefix_cache,
                     "size": self.inference_options.prefix_cache_size,
@@ -103,9 +106,11 @@ class DecisionRuntime:
                 self.tok, record, max_state=limits["state_tokens"], max_branch=limits["branch_tokens"], strict=True,
             )
             if len(encoding["ids"]) > limits["packed_tokens"]:
-                raise ValueError(f"request exceeds {limits['packed_tokens']} packed tokens: {len(encoding['ids'])}")
+                raise ContextLengthError(
+                    f"request exceeds {limits['packed_tokens']} packed tokens: {len(encoding['ids'])}")
             if capabilities.context_window is not None and max(encoding["pos"]) >= capabilities.context_window:
-                raise ValueError(f"request exceeds backbone context window of {capabilities.context_window} tokens")
+                raise ContextLengthError(
+                    f"request exceeds backbone context window of {capabilities.context_window} tokens")
             state_tokens = encoding["seg"].count(0)
             key = (tuple(encoding["ids"][:state_tokens]), bool(encoding.get("option_isolation")))
             cache, hit = self.prefix_cache, False
@@ -164,21 +169,42 @@ class JevModel(DecisionClient):
         device: str | None = None, dtype: str | None = None,
         model_name: str | None = None, options: LoadOptions | None = None,
         inference_options: InferenceOptions | None = None,
+        readout: str = "native", choice_temperature: float | None = None,
+        choice_native_weight: float | None = None, choice_max_tokens: int | None = None,
+        letter_temperature: float | None = None,
+        letter_pointer_weight: float | None = None, letter_max_tokens: int | None = None,
     ) -> "JevModel":
         """Load a local run or Hugging Face adapter ID (optionally ``owner/repo@revision``).
 
         The full backbone must fit on the selected device unless ``options.device_map``
         (or JEVANY_DEVICE_MAP) splits it over the visible GPUs. ``dtype`` accepts
         fp32, fp16 or bf16; omission uses the checkpoint/environment settings.
-        Files used by native media requests are trusted local paths.
+        ``readout='choice'`` replaces the checkpoint head with a training-free
+        choice-token projection; its temperature, native blend, and prompt
+        limit are deployment settings, not checkpoint metadata. ``letter`` and
+        ``letter_*`` remain accepted legacy aliases. Files used by native media
+        requests are trusted local paths.
         """
         import torch
+
+        readout, choice_options = resolve_readout_options(
+            readout,
+            choice_temperature=choice_temperature,
+            choice_native_weight=choice_native_weight,
+            choice_max_tokens=choice_max_tokens,
+            letter_temperature=letter_temperature,
+            letter_pointer_weight=letter_pointer_weight,
+            letter_max_tokens=letter_max_tokens,
+        )
+        if readout == "choice" and inference_options is not None:
+            raise ValueError("inference_options apply only to native readout; use choice_max_tokens")
 
         device = default_device() if device is None else device
         if device not in ("cpu", "mps", "cuda"):
             raise ValueError("device must be cpu, mps or cuda")
         options = options or LoadOptions.from_env()
-        inference_options = inference_options or InferenceOptions.from_env()
+        if readout == "native":
+            inference_options = inference_options or InferenceOptions.from_env()
         if model_name is not None and (not isinstance(model_name, str) or not model_name.strip()):
             raise ValueError("model_name must be a nonempty string")
         if dtype is not None:
@@ -188,7 +214,25 @@ class JevModel(DecisionClient):
             options = replace(options, dtype=dtypes[dtype])
         if device == "mps" and options.attn is None:
             options = replace(options, attn="sdpa")
-        loaded = Checkpoint(checkpoint)
+        if readout == "choice" and options.cuda_graphs:
+            raise ValueError("CUDA graph capture is available only for native readout")
+        if readout == "choice" and options.temperature is not None:
+            raise ValueError("JEVANY_TEMPERATURE applies to the native head; use choice_temperature")
+        predictor = None
+        if readout == "choice":
+            from .letter_predictor import LetterReadoutPredictor
+
+            predictor = LetterReadoutPredictor(
+                checkpoint=checkpoint,
+                device=device,
+                options=options,
+                temperature=choice_options.temperature,
+                native_weight=choice_options.native_weight,
+                max_tokens=choice_options.max_tokens,
+            )
+            loaded = predictor.checkpoint
+        else:
+            loaded = Checkpoint(checkpoint)
         if model_name is None:
             source = loaded.requested.partition("@")[0]
             if source == DEFAULT_CHECKPOINT:
@@ -197,12 +241,19 @@ class JevModel(DecisionClient):
                 model_name = "jevany-27b"
             else:
                 model_name = Path(source).name or Path(loaded.path).resolve().name
+        if predictor is not None:
+            from .letter_runtime import LetterDecisionRuntime
+            return cls(LetterDecisionRuntime(predictor, model_name))
         tokenizer, model = loaded.load(device, options)
         return cls(DecisionRuntime(loaded, tokenizer, model, device, model_name, inference_options))
 
     def describe(self) -> dict[str, Any]:
         """Return identity, backbone capabilities, effective limits and cache statistics."""
         return self.runtime.describe()
+
+    def models(self) -> list[dict[str, Any]]:
+        """List this local model using the same discovery method as JevClient."""
+        return [self.describe()]
 
     def clear_cache(self) -> None:
         """Release this model's cached state prefixes."""

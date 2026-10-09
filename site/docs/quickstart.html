@@ -4,7 +4,7 @@
 <title>Get started with JevAny — JevAny</title><link rel="stylesheet" href="../styles.css"><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"></head>
 <body class="docs-page"><a class="skip-link" href="#content">Skip to content</a>
 <header class="site-header wrap"><a class="brand" href="../index.html"><img src="../assets/favicon.svg" width="30" height="30" alt=""><span>JevAny<span class="brand-period">.</span></span></a>
-<nav aria-label="Main navigation"><a href="../index.html#benchmarks">Benchmarks</a><a href="../index.html#models">Models</a><a href="../index.html#get-started">Get started</a></nav></header>
+<nav aria-label="Main navigation"><a href="../index.html#benchmarks">Benchmarks</a><a href="../index.html#models">Models</a><a href="../index.html#get-started">Get started</a></nav><div class="language-switch" role="group" aria-label="Language"><a href="quickstart.html" lang="en" hreflang="en" title="English" aria-current="page">EN</a><a href="zh.html" lang="zh-CN" hreflang="zh-CN" title="中文">中文</a></div></header>
 <div class="docs-layout wrap"><aside class="docs-sidebar"><a class="text-link" href="../index.html">← Project homepage</a><nav aria-label="Documentation"><a href="quickstart.html" aria-current="page">Quickstart</a><a href="TRAINING.html">Training</a><a href="DATA.html">Data</a><a href="DEPLOYMENT.html">Deployment</a><a href="API.html">API reference</a><a href="examples.html">Examples</a><a href="CASES.html">Cases</a><a href="EVALUATION.html">Evaluation</a><a href="ALGORITHM.html">Method</a><a href="INTEGRATIONS.html">Integrations</a><a href="zh.html">中文文档</a></nav>
 <details class="doc-toc"><summary>On this page</summary><div class="toc">
 <ul>
@@ -19,8 +19,14 @@
 <li><a href="#13-jevany-deployment">🚀 1.3 JevAny Deployment</a></li>
 </ul>
 </li>
-<li><a href="#2-pretrained-models">🤗 2. Pretrained Models</a></li>
-<li><a href="#3-benchmark-results">📊 3. Benchmark Results</a></li>
+<li><a href="#2-pretrained-models">🤗 2. Pretrained Models</a><ul>
+<li><a href="#training-free-choice-token-readout">Training-free choice-token readout</a></li>
+</ul>
+</li>
+<li><a href="#3-benchmark-results">📊 3. Benchmark Results</a><ul>
+<li><a href="#31-inference-efficiency">⏱️ 3.1 Inference efficiency</a></li>
+</ul>
+</li>
 <li><a href="#4-examples-test-environments">🕹️ 4. Examples &amp; Test Environments</a><ul>
 <li><a href="#41-robot-peg-insertion">🤖 4.1 Robot peg insertion</a></li>
 <li><a href="#42-doom-corridor-3d">🔫 4.2 Doom corridor · 3D</a></li>
@@ -29,7 +35,10 @@
 </ul>
 </li>
 <li><a href="#5-supported-model-families">🧩 5. Supported Model Families</a></li>
-<li><a href="#6-documentation-and-contributing">📚 6. Documentation and Contributing</a></li>
+<li><a href="#6-documentation-and-contributing">📚 6. Documentation and Contributing</a><ul>
+<li><a href="#contributing">🤝 Contributing</a></li>
+</ul>
+</li>
 </ul>
 </div>
 </details></aside>
@@ -44,31 +53,73 @@ options, then directly returns a choice and its probabilities.</p>
 
 <h2 id="results-and-demos">🎮 Results and Demos <a name="results-and-demos"></a><a name="demos"></a></h2>
 <p><a href="../index.html#benchmarks">Explore interactive benchmark results</a></p>
-<p><a href="#evaluation">Full benchmark results and evaluation details</a>.</p>
+<p><a href="../index.html#benchmarks">Interactive benchmark results</a>.</p>
 <p>The following 30 examples are archived replays from an earlier compatible
 JevAny checkpoint. The current default release is
 <a href="https://huggingface.co/SimpleJev/JevAny-Qwen3.8-27B-LoRA">JevAny-Qwen3.8-27B</a>.
-<a href="CASES.html">Explore the cases</a>, or <a href="#run-locally">run a model locally</a> to
+<a href="../index.html#case-library">Explore the cases</a>, or <a href="#run-locally">run a model locally</a> to
 try your own inputs and see its choices and probabilities.</p>
 <p><a href="../index.html#case-library">Explore all 30 application replays →</a></p>
 <h3 id="jev-inside-llm-agent-loops">⚡ Jev inside LLM agent loops</h3>
-<p><strong>Key takeaways</strong></p>
+<p>Jev chooses among bounded candidate actions supplied by the environment or
+proposed by the LLM, which handles planning, recovery, and completion. The
+animations compare LLM only (left) with LLM + Jev (right) at equal reward.
+Steps are illustrated; accelerated playback preserves each pair's measured
+completion-time ratio. Click an animation to enlarge it.</p>
+<p><strong>Golden rules</strong></p>
+<p><strong>Delegate the selection bottleneck, not the task.</strong> Jev should either replace
+repeated LLM reasoning or correct a measured local ranking error; otherwise it
+is overhead.</p>
 <ul>
-<li><strong>Task level:</strong> T0 controlled → T4 open terminal. Task difficulty and delegation are separate.</li>
-<li><strong>Delegation level:</strong> D0 LLM-only → D4 bounded subgoal. Increase delegation only when local choices remain easy to verify.</li>
-<li><strong>Delegate when:</strong> the LLM can generate 2–4 valid, meaningfully different, reversible choices with immediate feedback.</li>
-<li><strong>Keep with the LLM:</strong> planning, open-ended search, exact edits, recovery, high-risk actions, and completion.</li>
-<li><strong>Success test:</strong> reward stays the same or improves while LLM calls, tokens, or time fall; otherwise return control to the LLM.</li>
+<li>Give Jev <strong>2–4 valid branches</strong> with distinct, observable outcomes and the
+  correct action included.</li>
+<li>Reuse one LLM plan across reversible choices; return control on novelty,
+  stale candidates, delayed feedback, recovery, or completion.</li>
+<li>Scale autonomy only with paired reward/cost evidence: D0 LLM-only → D1 shadow
+  → D2 one-step → D3 routine default → D4 bounded subgoal. Coverage is not
+  success.</li>
 </ul>
-<p><strong>1 · WebShop — choose the exact color and size from LLM-generated menus</strong></p>
-<p><video class="doc-video" controls playsinline preload="none" aria-label="The LLM generates three color and three size candidates, Jev selects the exact options, and the LLM completes the purchase" poster="../assets/media/docs/jev-decision-webshop-v2.webp"><source src="../assets/media/docs/jev-decision-webshop-v2.webm" type="video/webm"><source src="../assets/media/docs/jev-decision-webshop-v2.mp4" type="video/mp4">Your browser does not support video.</video></p>
-<p>Reward <code>1→1</code> · LLM calls <code>9→4</code> · tokens <code>38,852→14,256</code> · time <code>18.54s→7.83s</code></p>
-<p><strong>2 · FrozenLake — compare four directions at every state</strong></p>
-<p><video class="doc-video" controls playsinline preload="none" aria-label="Jev compares four directions, executes each selected move, reaches the goal, and reduces LLM calls" poster="../assets/media/docs/jev-decision-frozen-lake-v2.webp"><source src="../assets/media/docs/jev-decision-frozen-lake-v2.webm" type="video/webm"><source src="../assets/media/docs/jev-decision-frozen-lake-v2.mp4" type="video/mp4">Your browser does not support video.</video></p>
-<p>Reward <code>1→1</code> · LLM calls <code>4→1</code> · tokens <code>2,338→663</code></p>
-<p><strong>3 · Terminal-Bench · <code>sqlite-db-truncate</code> — select one of three commands</strong></p>
-<p><video class="doc-video" controls playsinline preload="none" aria-label="Jev compares three real Terminal-Bench commands, selects raw-page inspection, and the LLM recovers ten rows" poster="../assets/media/docs/jev-decision-terminal-v2.webp"><source src="../assets/media/docs/jev-decision-terminal-v2.webm" type="video/webm"><source src="../assets/media/docs/jev-decision-terminal-v2.mp4" type="video/mp4">Your browser does not support video.</video></p>
-<p>Reward <code>1→1</code> · LLM calls <code>15→8</code> · time <code>187.9s→144.7s</code></p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+  <tr>
+    <td width="64%" valign="middle">
+      <video class="doc-video" controls playsinline preload="none" aria-label="WebShop: LLM only and LLM + Jev run side by side; Jev-assisted purchase completes in 7.83 seconds versus 18.54 seconds" poster="../assets/media/docs/jev-decision-webshop-v2.webp"><source src="../assets/media/docs/jev-decision-webshop-v2.webm" type="video/webm"><source src="../assets/media/docs/jev-decision-webshop-v2.mp4" type="video/mp4">Your browser does not support video.</video>
+    </td>
+    <td width="36%" valign="middle">
+      <p><strong>1. <a href="../files/docs/demos/jev-agent-harness-traces.json">WebShop</a></strong><br>
+      Jev selects the requested color and size from LLM-generated menus before the
+      LLM buys the product. Actions fall from 9 to 5, LLM calls from 9 to 4,
+      tokens from 38,852 to 14,256, and time from 18.54 to 7.83 seconds.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="64%" valign="middle">
+      <video class="doc-video" controls playsinline preload="none" aria-label="FrozenLake: the LLM chooses every move on the left; one LLM plan and Jev decisions reach the same goal in 16.7 seconds versus 19.7 seconds on the right" poster="../assets/media/docs/jev-decision-frozen-lake-v2.webp"><source src="../assets/media/docs/jev-decision-frozen-lake-v2.webm" type="video/webm"><source src="../assets/media/docs/jev-decision-frozen-lake-v2.mp4" type="video/mp4">Your browser does not support video.</video>
+    </td>
+    <td width="36%" valign="middle">
+      <p><strong>2. <a href="../files/docs/demos/jev-agent-harness-traces.json">FrozenLake</a></strong><br>
+      After one LLM plan, Jev checks each new state and chooses among four directions.
+      Both runs reach the goal in 4 moves; LLM decision calls fall from 4 to 1,
+      tokens from 2,338 to 663, and time from 19.7 to 16.7 seconds.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="64%" valign="middle">
+      <video class="doc-video" controls playsinline preload="none" aria-label="SQLite recovery: LLM only and LLM + Jev run side by side; both recover ten rows, finishing in 187.9 and 144.7 seconds respectively" poster="../assets/media/docs/jev-decision-terminal-v2.webp"><source src="../assets/media/docs/jev-decision-terminal-v2.webm" type="video/webm"><source src="../assets/media/docs/jev-decision-terminal-v2.mp4" type="video/mp4">Your browser does not support video.</video>
+    </td>
+    <td width="36%" valign="middle">
+      <p><strong>3. <a href="reports-JevAny_Tech_Report_Agent_Harness_Appendix.html#h1-sqlite-recovery-a-meaningful-three-way-decision">Terminal-Bench</a></strong><br>
+      For <code>sqlite-db-truncate</code>, Jev selects raw-page inspection from three
+      commands, then the LLM recovers and verifies ten rows. Tool commands fall
+      from 13 to 7, LLM calls from 15 to 8, tokens from 202,050 to 121,293, and
+      time from 187.9 to 144.7 seconds.</p>
+    </td>
+  </tr>
+</table></div>
+
+<p>Broader paired evaluations show that gains vary by task. The <a href="reports-JevAny_Tech_Report_Agent_Harness_Appendix.html">full results</a>,
+<a href="experiments-AGENT_HARNESS_FRONTIER_PROTOCOL.html">delegation protocol</a>, and
+<a href="../files/reports/JevAny_Tech_Report.pdf">technical report</a> describe
+where Jev helps and when to return control to the LLM.</p>
 <div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
 <thead>
 <tr>
@@ -79,30 +130,27 @@ try your own inputs and see its choices and probabilities.</p>
 </thead>
 <tbody>
 <tr>
-<td>GPT-5.6-sol · FrozenLake · 10 pairs</td>
+<td>FrozenLake (GPT-5.6-sol, 10 pairs)</td>
 <td style="text-align: right;">100% → 100%</td>
-<td style="text-align: right;">LLM calls −64.4% · tokens −63.1% · time −37.6%</td>
+<td style="text-align: right;">LLM calls −64.4%, tokens −63.1%, time −37.6%</td>
 </tr>
 <tr>
-<td>WebShop · LLM-generated menus · 3 pairs</td>
+<td>WebShop (LLM-generated menus, 3 pairs)</td>
 <td style="text-align: right;">67% → 100%</td>
-<td style="text-align: right;">LLM calls −21.4% · tokens −14.3% · time −15.0%</td>
+<td style="text-align: right;">LLM calls −21.4%, tokens −14.3%, time −15.0%</td>
 </tr>
 <tr>
-<td>WebArena · 6 pairs</td>
+<td>WebArena (6 pairs)</td>
 <td style="text-align: right;">50% → 50%</td>
-<td style="text-align: right;">LLM calls +5.6% · tokens +28.2% · time −0.4%</td>
+<td style="text-align: right;">LLM calls +5.6%, tokens +28.2%, time −0.4%</td>
 </tr>
 <tr>
-<td>Terminal-Bench · 6 pairs</td>
+<td>Terminal-Bench (6 pairs)</td>
 <td style="text-align: right;">1/6 → 3/6</td>
 <td style="text-align: right;">LLM calls −9.0%</td>
 </tr>
 </tbody>
 </table></div>
-<p><a href="reports-JevAny_Tech_Report_Agent_Harness_Appendix.html">Full results</a> ·
-<a href="experiments-AGENT_HARNESS_FRONTIER_PROTOCOL.html">task/delegation levels</a> ·
-<a href="../files/reports/JevAny_Tech_Report_with_Agent_Harness.pdf">combined technical report</a></p>
 <h2 id="table-of-contents">📑 Table of Contents</h2>
 <ul>
 <li><a href="#results-and-demos">🎮 Results and Demos</a></li>
@@ -111,10 +159,13 @@ try your own inputs and see its choices and probabilities.</p>
 <li><a href="#training">🛠️ 1.2 JevAny Training</a></li>
 <li><a href="#deployment">🚀 1.3 JevAny Deployment</a></li>
 <li><a href="#pretrained-models">🤗 2. Pretrained Models</a></li>
+<li><a href="#choice-readout">Training-free choice-token readout</a></li>
 <li><a href="#evaluation">📊 3. Benchmark Results</a></li>
+<li><a href="#efficiency">⏱️ 3.1 Inference efficiency</a></li>
 <li><a href="#examples--test-environments">🕹️ 4. Examples &amp; Test Environments</a></li>
 <li><a href="#supported-model-families">🧩 5. Supported Model Families</a></li>
 <li><a href="#documentation-and-contributing">📚 6. Documentation and Contributing</a></li>
+<li><a href="#contributing">🤝 Contributing</a></li>
 </ul>
 <h2 id="1-quickstart">⚡ 1. Quickstart <a name="quickstart"></a></h2>
 <p>Use Python 3.12 or newer. Clone the repository and install the lightweight package:</p>
@@ -276,8 +327,39 @@ weights, plus runtime memory. See the
 4,096 options within the context limit; direct-token supports up to 255.
 See <a href="TRAINING.html#pointer-and-direct-token-readouts">readout choices</a> for
 training and accuracy tradeoffs.</p>
+<h3 id="training-free-choice-token-readout">Training-free choice-token readout <a name="choice-readout"></a><a name="letter-readout"></a></h3>
+<p>Choice-token is a training-free readout for up to 52 options: label them with
+the one-token IDs <code>A–Z, a–z</code>, score the answer-position logits, and renormalize.
+It works on a frozen base or with a Pointer/Direct-Token checkpoint; unlike
+temperature calibration, it can change the selected answer.</p>
+<pre tabindex="0" role="region" aria-label="Code example"><code class="language-bash">jevany eval --run SimpleJev/JevAny-Qwen3.5-4B-Direct-Token-LoRA \
+  --suite /path/to/suite --out runs/choice --device cuda --readout choice
+</code></pre>
+<p><a href="CHOICE_READOUT.html">Method, commands and full results</a> ·
+<a href="../files/results/choice-readout-v2.json">Machine-readable results</a></p>
+<p><a href="CHOICE_READOUT.html#results"><img loading="lazy" alt="Training-free choice-token, checkpoint-native, Transfer-dev-tuned blend, and external baseline accuracy on Typed Decisions and JevJudge text" src="../files/docs/choice-readout-results.svg" /></a></p>
+<ul>
+<li><strong>Best 4B blend:</strong> Direct-Token reaches <strong>79.83%</strong> Transfer, <strong>67.65%</strong> Typed,
+  and <strong>59.25%</strong> JevJudge text—+0.96, +0.45, and +0.83 points over native.</li>
+<li><strong>Best 27B blend:</strong> Pointer reaches <strong>89.10%</strong> Transfer and <strong>73.30%</strong> Typed,
+  but falls from <strong>66.44% to 64.36%</strong> on JevJudge text.</li>
+<li><strong>Training still matters:</strong> on Typed, the frozen 4B path scores <strong>52.75%</strong>;
+  Direct-Token raises it to <strong>64.80%</strong>.</li>
+</ul>
+<p>Tune one blend weight on development data, freeze it before evaluation, and
+blend only when native and choice errors are complementary. Temperature changes
+confidence, not argmax.</p>
+<blockquote>
+<p><strong>Metric note:</strong> Cygnet's <strong>73.70</strong> is a v1.5.4 composite over 1,624 open and
+sealed items—not accuracy. Its comparable public-development accuracy is
+<strong>203/231 (87.9%)</strong>.</p>
+</blockquote>
+<p><strong>Key takeaway:</strong> Choice-token helps when extracting the decision—not reasoning
+ability—is the bottleneck; keep a blend only when it improves target-like
+held-out data.</p>
 <h2 id="3-benchmark-results">📊 3. Benchmark Results <a name="evaluation"></a></h2>
-<p>JevAny-Qwen3.8-27B leads both benchmarks and has the lowest NLL and Brier.
+<p>The release table below uses each checkpoint's native readout.
+JevAny-Qwen3.8-27B leads both benchmarks and has the lowest NLL and Brier.
 Among 4B releases, direct-token leads on JevBench; pointer leads on Transfer.</p>
 <p><a href="../index.html#benchmarks">Explore interactive benchmark results</a></p>
 <div align="center">
@@ -300,8 +382,97 @@ NLL, Brier and ECE are measured on Transfer.
 </div>
 
 <p><a href="EVALUATION.html#model-family-v2">Full results and protocols</a> ·
-<a href="../files/results/model-family-v2.json">Machine-readable results</a> ·
+<a href="../assets/data/model-family-v2.json">Machine-readable results</a> ·
 <a href="../files/reports/JevAny_Tech_Report.pdf">Method and ablation report</a></p>
+<p>The same 13-model cohort is compared by accuracy on Typed Decisions, JevJudge
+full (3,220 multimodal records), and its 724-record text subset. <code>—</code> means
+unsupported input or no matching result.</p>
+<p><a href="EXTERNAL_EVALUATION.html"><img loading="lazy" alt="Accuracy on Typed Decisions, full JevJudge, and the JevJudge text-only subset for the same thirteen-model cohort" src="../files/docs/external-zero-shot.svg" /></a></p>
+<ul>
+<li><strong>JevAny-Qwen3.8-27B:</strong> 72.8% Typed, <strong>62.3%</strong> JevJudge full, and 66.4% text;
+  the best other model with a full result is Jeff-Qwen3.5-2B at 48.2%.</li>
+<li><strong>Other baselines:</strong> Jev 1.13 scores 72.7% Typed and 65.1% text; Kev-27B
+  scores 64.2% text. Published Decider 1 and Liquid d1 lead Typed at 76.8% and
+  74.2%, but have no comparable full-suite result.</li>
+</ul>
+<p><a href="EXTERNAL_EVALUATION.html">Full external tables and reproducibility notes</a> ·
+<a href="../files/results/external-zero-shot-v1.json">Machine-readable chart results</a></p>
+<h3 id="31-inference-efficiency">⏱️ 3.1 Inference efficiency <a name="efficiency"></a></h3>
+<p>On H200, CUDA acceleration cuts Qwen3.8-27B median latency from <strong>113.54 to
+30.53 ms (3.72×)</strong> and Muse-Glimmer-30B from <strong>100.71 to 43.25 ms (2.33×)</strong>,
+with identical decisions (207/231 and 38/44). Each speedup is a within-row
+comparison; H200 and A100 rows use different fixed panels, so absolute latency
+is not compared across hardware.</p>
+<p><a href="EFFICIENCY.html"><img loading="lazy" alt="Accuracy vs median latency before and after acceleration for JevAny and other decision models" src="../files/docs/efficiency-latency.png" /></a></p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Documentation table"><table>
+<thead>
+<tr>
+<th style="text-align: left;">Model</th>
+<th style="text-align: center;">Hardware</th>
+<th style="text-align: right;">Before</th>
+<th style="text-align: right;">After</th>
+<th style="text-align: right;">Speed-up</th>
+<th style="text-align: right;">Accuracy check</th>
+<th style="text-align: left;">Fixed panel</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">JevAny-Qwen3.5-4B</td>
+<td style="text-align: center;">A100</td>
+<td style="text-align: right;">104.6 ms</td>
+<td style="text-align: right;"><strong>25.3 ms</strong></td>
+<td style="text-align: right;"><strong>4.1×</strong></td>
+<td style="text-align: right;">78.68% → 78.87%</td>
+<td style="text-align: left;">Transfer, 1,046</td>
+</tr>
+<tr>
+<td style="text-align: left;">JevAny-Qwen3.5-4B-Direct-Token</td>
+<td style="text-align: center;">A100</td>
+<td style="text-align: right;">106.4 ms</td>
+<td style="text-align: right;"><strong>25.9 ms</strong></td>
+<td style="text-align: right;"><strong>4.1×</strong></td>
+<td style="text-align: right;">78.11% → 78.39%</td>
+<td style="text-align: left;">Transfer, 1,046</td>
+</tr>
+<tr>
+<td style="text-align: left;">JevAny-Gemma-4B</td>
+<td style="text-align: center;">A100</td>
+<td style="text-align: right;">106.3 ms</td>
+<td style="text-align: right;"><strong>31.9 ms</strong></td>
+<td style="text-align: right;"><strong>3.3×</strong></td>
+<td style="text-align: right;">70.84% → 70.84%</td>
+<td style="text-align: left;">Transfer, 1,046</td>
+</tr>
+<tr>
+<td style="text-align: left;">JevAny-Muse-Glimmer-30B</td>
+<td style="text-align: center;">H200</td>
+<td style="text-align: right;">100.71 ms</td>
+<td style="text-align: right;"><strong>43.25 ms</strong></td>
+<td style="text-align: right;"><strong>2.33×</strong></td>
+<td style="text-align: right;">86.36% → 86.36%</td>
+<td style="text-align: left;">Transfer sample, 44</td>
+</tr>
+<tr>
+<td style="text-align: left;">JevAny-Qwen3.8-27B</td>
+<td style="text-align: center;">H200</td>
+<td style="text-align: right;">113.54 ms</td>
+<td style="text-align: right;"><strong>30.53 ms</strong></td>
+<td style="text-align: right;"><strong>3.72×</strong></td>
+<td style="text-align: right;">89.61% → 89.61%</td>
+<td style="text-align: left;">JevBench public, 231</td>
+</tr>
+</tbody>
+</table></div>
+<p>Median model-call latency, serial batch size 1. See the full report for the
+apples-to-apples A100 comparison and panel limitations.</p>
+<p><a href="EFFICIENCY.html"><img loading="lazy" alt="Animation: normalized latency ladders for the 4B releases on A100 and the 27B and 30B releases on H200, with exact median latency and speed-up labels" src="../files/docs/efficiency-ablation.gif" /></a></p>
+<p align="center"><sub>4B on A100 and 27–30B on H200. Each row is normalized to its own baseline; compare stages only within that row.</sub></p>
+
+<p><a href="EFFICIENCY.html">Full tables, setup and other models</a> ·
+<a href="DEPLOYMENT.html#optional-cuda-acceleration">How to enable</a> ·
+<a href="../files/results/efficiency-h200-best-v1.json">H200 results</a> ·
+<a href="../files/results/efficiency-a100-v1.json">A100 results</a></p>
 <h2 id="4-examples-test-environments">🕹️ 4. Examples &amp; Test Environments <a name="examples--test-environments"></a></h2>
 <p>The playground includes the three environments below. These GIFs preserve
 historical model actions and option probabilities; run the current
@@ -337,15 +508,35 @@ requirements and environment APIs, or <a href="INTEGRATIONS.html">integrations</
 combine JevAny decisions with an LLM planner.</p>
 <h2 id="5-supported-model-families">🧩 5. Supported Model Families <a name="supported-model-families"></a></h2>
 <p><a href="TRAINING.html#backbone-support">Model IDs, supported inputs and setup requirements</a>.</p>
-<p><a href="TRAINING.html#backbone-support"><img loading="lazy" alt="26 supported models across Qwen, Gemma, Muse, Mistral, GLM, Nemotron and Llama" src="../files/docs/supported-model-families.svg" /></a></p>
+<p><a href="../index.html#supported-models"><img loading="lazy" alt="26 supported models across Qwen, Gemma, Muse, Mistral, GLM, Nemotron and Llama" src="../files/docs/supported-model-families.svg" /></a></p>
 <h2 id="6-documentation-and-contributing">📚 6. Documentation and Contributing <a name="documentation-and-contributing"></a></h2>
-<p><a href="TRAINING.html">Training</a> · <a href="DEPLOYMENT.html">Deployment</a> · <a href="API.html">API</a> · <a href="DATA.html">Data</a> · <a href="EVALUATION.html">Evaluation</a> · <a href="experiments-AGENT_HARNESS_FRONTIER_PROTOCOL.html">Agent harness protocol</a> · <a href="contributing.html">Contributing</a></p>
-<p>To contribute a model adapter, evaluation or application example, start with the
-<a href="contributing.html">contribution guide</a>. The
-<a href="../files/reports/JevAny_Tech_Report_with_Agent_Harness.pdf">combined technical report</a>
-describes model design, multimodal support, the agent-harness study, negative results,
-and open questions; the <a href="../files/reports/JevAny_Tech_Report.pdf">original release report</a> remains unchanged.</p>
+<p><a href="../index.html#documentation">Documentation hub</a> · <a href="TRAINING.html">Training</a> · <a href="DEPLOYMENT.html">Deployment</a> · <a href="API.html">API</a> · <a href="DATA.html">Data</a> · <a href="EVALUATION.html">Evaluation</a> · <a href="experiments-AGENT_HARNESS_FRONTIER_PROTOCOL.html">Agent harness protocol</a> · <a href="contributing.html">Contributing</a></p>
+<p>The <a href="../files/reports/JevAny_Tech_Report.pdf">technical report</a> describes model design,
+multimodal support, the agent-harness study and appendix, negative results, and
+open questions.</p>
 <p>Code and starter data are Apache-2.0. Some components are adapted from
 <a href="https://github.com/jaredpalmer/kev">Kev</a>; see <a href="../files/NOTICE">NOTICE</a> and
-<a href="ACKNOWLEDGEMENTS.html">ACKNOWLEDGEMENTS.md</a>. Base models and upstream datasets retain their own terms.</p></main></div>
+<a href="ACKNOWLEDGEMENTS.html">acknowledgements</a>. Base models and upstream datasets retain their own terms.</p>
+<h3 id="contributing">🤝 Contributing <a name="contributing"></a></h3>
+<p>We're building open infrastructure for System 1 decision models, and we'd
+love your help. Small improvements are welcome. Here are a few ways to get
+involved:</p>
+<ul>
+<li><strong>Docs and translations:</strong> clarify a setup step, add troubleshooting tips, or
+  translate a guide.</li>
+<li><strong>Bug fixes and tests:</strong> share a reproducible issue, fix a bug, or add a
+  regression test.</li>
+<li><strong>Applications and integrations:</strong> show JevAny choosing tools, routing tickets,
+  or taking actions in a game or robot environment.</li>
+<li><strong>Models, training and inference:</strong> add a model adapter, improve a training
+  recipe, or make inference faster with reproducible measurements.</li>
+<li><strong>Data and evaluation:</strong> contribute a public-data converter, add a benchmark
+  case, or document where a model makes the wrong decision.</li>
+</ul>
+<p>CI checks and automated AI code review provide feedback on PRs, with
+maintainers handling review and merging. Small fixes can go straight to a
+PR; for larger changes, open an issue to discuss the approach first.</p>
+<p>Read the <a href="contributing.html">contribution guide</a>
+for setup and development steps, or <a href="https://github.com/SimpleJev/JevAny/issues">browse the issues</a>
+to find a place to start.</p></main></div>
 <footer class="site-footer wrap"><a href="../index.html">← Back to JevAny</a><a href="license.html">Apache-2.0 code</a></footer></body></html>
