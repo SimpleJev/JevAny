@@ -19,7 +19,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from .api import SystemOneRequest, with_date_facts
 from .checkpoint import LoadOptions, add_placement_arguments, load_options_from_args
-from .inference import InferenceOptions, add_inference_arguments, inference_options_from_args
+from .inference import (InferenceOptions, add_inference_arguments, add_media_argument, apply_media_argument,
+                        inference_options_from_args)
 from .model import ContextLengthError
 from .readout import (
     ChoiceReadoutOptions,
@@ -246,10 +247,12 @@ def main(argv=None):
                     help="fused Qwen3.5 inference kernels (merged LoRA, one GPU, flash-linear-attention); "
                          "same as JEVANY_FUSED_KERNELS=1")
     add_inference_arguments(ap)
+    add_media_argument(ap)
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=8008)
     a = ap.parse_args(argv)
     try:
+        apply_media_argument(a)
         choice_options = choice_options_from_args(a)
     except ValueError as error:
         ap.error(str(error))

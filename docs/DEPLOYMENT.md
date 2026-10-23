@@ -266,6 +266,19 @@ environment when loading. Invalid values fail before weights load. Weight-loadin
 controls remain in `jevany.checkpoint.LoadOptions`, shared with training and
 evaluation.
 
+### Media encoding (Qwen vision backbones)
+
+`--media` on `jevany serve` and local `jevany decide`, or `JEVANY_MEDIA`, selects how images and videos are encoded:
+
+| Value | Images | Videos |
+|---|---|---|
+| `capped` (default) | the images of a request share a 512×512 pixel budget | 8 frames within 512×512 pixels |
+| `full` | processor-native resolution | every frame at native resolution |
+
+`full` is the protocol of the JevAny-Robotics evaluations; checkpoints evaluated that way should be served with
+`--media full` and context limits that fit the media (for example `--max-state-tokens 16384 --max-packed-tokens 32768`).
+It costs more visual tokens and latency. `describe()` and `GET /v1/models` report the effective `media_budget`.
+
 ### Optional CUDA acceleration
 
 The serving controls below are independent. Published benchmark scores use the

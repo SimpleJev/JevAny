@@ -61,3 +61,33 @@ def inference_options_from_args(args: argparse.Namespace) -> InferenceOptions:
     overrides = {_env_name(item.name): str(getattr(args, item.name)) for item in fields(InferenceOptions)
                  if getattr(args, item.name) is not None}
     return InferenceOptions.from_env({**os.environ, **overrides})
+
+
+MEDIA_BUDGETS = ("capped", "full")
+
+
+def media_budget() -> str:
+    """Media encoding for Qwen vision backbones, from JEVANY_MEDIA (``jevany serve/decide --media``).
+
+    ``capped`` (default) keeps the released encoding: the images of a request share a 512x512 pixel budget and a
+    video is 8 frames within 512x512 pixels. ``full`` gives images the processor's native resolution and keeps every
+    frame of a video at its native resolution, the protocol used for the JevAny-Robotics evaluations.
+    """
+    value = os.environ.get("JEVANY_MEDIA", "capped").strip().lower()
+    if value not in MEDIA_BUDGETS:
+        raise ValueError(f"JEVANY_MEDIA must be one of {', '.join(MEDIA_BUDGETS)}, got {value!r}")
+    return value
+
+
+def add_media_argument(parser: argparse.ArgumentParser) -> None:
+    """--media for serve and local decide; same as JEVANY_MEDIA (see jevany.backbones.media_budget)."""
+    parser.add_argument("--media", choices=["capped", "full"], default=None,
+                        help="Qwen vision media encoding: capped (default, 512x512 budget, 8 video frames) or full "
+                             "(native resolution, every video frame); same as JEVANY_MEDIA")
+
+
+def apply_media_argument(args: argparse.Namespace) -> str:
+    """Export --media before weights load and validate the effective setting."""
+    if getattr(args, "media", None) is not None:
+        os.environ["JEVANY_MEDIA"] = args.media
+    return media_budget()

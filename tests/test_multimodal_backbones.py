@@ -498,3 +498,49 @@ def test_native_training_without_cloud_sdks(tmp_path):
     result = subprocess.run([sys.executable, "-c", source], env=env, capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
     assert (tmp_path / "trained/head.pt").is_file()
+
+
+def test_video_inputs_keep_every_frame(tmp_path):
+    import av
+    import numpy as np
+    from types import SimpleNamespace
+
+    video = tmp_path / "all.mp4"
+    with av.open(str(video), "w") as output:
+        stream = output.add_stream("libx264", rate=2)
+        stream.width = stream.height = 28
+        stream.pix_fmt = "yuv420p"
+        for i in range(11):
+            for packet in stream.encode(av.VideoFrame.from_image(Image.new("RGB", (28, 28), (i * 20, 0, 0)))):
+                output.mux(packet)
+        for packet in stream.encode():
+            output.mux(packet)
+    processor = SimpleNamespace(video_processor=hf.Qwen3VLVideoProcessor())
+    inputs = _video_inputs(processor, [str(video)], num_frames=None)
+    assert len(inputs["videos"][0]) == 11
+    np.testing.assert_array_equal(inputs["video_metadata"][0].frames_indices, np.arange(11))
+
+
+def test_qwen_media_budget(monkeypatch):
+    from jevany.backbones import QwenVisionAdapter, media_budget
+
+    class Processor:
+        image_token, video_token = "<|image_pad|>", "<|video_pad|>"
+        vision_start_token, vision_end_token = "<|vision_start|>", "<|vision_end|>"
+
+        def __call__(self, **kwargs):
+            self.kwargs = kwargs
+            return kwargs
+
+    media = [{"type": "image", "uri": "a.png"}, {"type": "image", "uri": "b.png"}]
+    processor = Processor()
+    monkeypatch.delenv("JEVANY_MEDIA", raising=False)
+    assert media_budget() == "capped"
+    QwenVisionAdapter().process_media(processor, media, "x")
+    assert processor.kwargs["size"]["longest_edge"] == (512 * 512) // 2
+    monkeypatch.setenv("JEVANY_MEDIA", "full")
+    QwenVisionAdapter().process_media(processor, media, "x")
+    assert "size" not in processor.kwargs and processor.kwargs["images"] == ["a.png", "b.png"]
+    monkeypatch.setenv("JEVANY_MEDIA", "native")
+    with pytest.raises(ValueError):
+        media_budget()

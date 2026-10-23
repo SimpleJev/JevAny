@@ -43,7 +43,8 @@ def decide_main(argv: list[str]) -> None:
     # Only the --checkpoint branch loads the modelling stack: --help and
     # --base-url work in the base installation, which has no PyTorch.
     from dataclasses import fields
-    from .inference import InferenceOptions, add_inference_arguments, inference_options_from_args
+    from .inference import (InferenceOptions, add_inference_arguments, add_media_argument, apply_media_argument,
+                            inference_options_from_args)
     from .placement import add_placement_arguments
     from .readout import add_readout_arguments, choice_options_from_args
 
@@ -63,8 +64,13 @@ def decide_main(argv: list[str]) -> None:
     parser.add_argument("--fused-kernels", action="store_true",
                         help="fused Qwen3.5 inference kernels for the local checkpoint (JEVANY_FUSED_KERNELS=1)")
     add_inference_arguments(parser)
+    add_media_argument(parser)
     args = parser.parse_args(argv)
+    if args.media is not None and not args.checkpoint:
+        parser.error("--media applies to a local --checkpoint; a server uses its own --media")
     try:
+        if args.checkpoint:
+            apply_media_argument(args)
         choice_options = choice_options_from_args(args)
     except ValueError as error:
         parser.error(str(error))

@@ -16,7 +16,7 @@ from .backbones import linear_attention_kernels
 from .checkpoint import Checkpoint, LoadOptions
 from .client import DecisionClient
 from .device import default_device, sync
-from .inference import InferenceOptions
+from .inference import InferenceOptions, media_budget
 from .model import ContextLengthError, DecisionModel
 from .readout import resolve_readout_options
 
@@ -111,6 +111,7 @@ class DecisionRuntime:
                                                  if getattr(self.model, "hybrid", False) else None),
                 },
                 "capabilities": {**asdict(capabilities), "media_types": list(capabilities.media_types)},
+                "media_budget": media_budget() if capabilities.media_types else None,
                 "limits": self.limits,
                 "prefix_cache": {
                     "enabled": self.inference_options.prefix_cache_size > 0 and capabilities.prefix_cache,

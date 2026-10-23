@@ -16,6 +16,8 @@ from transformers import (
 )
 from transformers.pytorch_utils import Conv1D
 
+from .inference import MEDIA_BUDGETS, media_budget  # noqa: F401  (re-exported)
+
 
 LEGACY_TOKENS = ["<|fim_prefix|>", "<|fim_middle|>", "<|box_start|>", "<|box_end|>", "<|fim_suffix|>"]
 DECISION_TOKENS = ["<|jev_state|>", "<|jev_question|>", "<|jev_option|>", "<|jev_end_option|>", "<|jev_decide|>"]
@@ -333,8 +335,8 @@ class BackboneAdapter:
         return self.forward(model, **inputs).last_hidden_state
 
 
-def _video_inputs(processor, paths: list[str], *, num_frames: int) -> dict:
-    """Decode with the declared PyAV dependency and retain native frame sampling."""
+def _video_inputs(processor, paths: list[str], *, num_frames: int | None) -> dict:
+    """Decode with the declared PyAV dependency and retain native frame sampling (num_frames=None keeps every frame)."""
     if not paths:
         return {"videos": None}
     import numpy as np
@@ -347,10 +349,13 @@ def _video_inputs(processor, paths: list[str], *, num_frames: int) -> dict:
 
         def sample(metadata, **kwargs):
             nonlocal indices, inverse
-            indices = np.asarray(video_processor.sample_frames(
-                metadata=metadata, num_frames=num_frames, fps=None,
-                temporal_patch_size=getattr(video_processor, "temporal_patch_size", None),
-            ))
+            if num_frames is None:
+                indices = np.arange(metadata.total_num_frames)
+            else:
+                indices = np.asarray(video_processor.sample_frames(
+                    metadata=metadata, num_frames=num_frames, fps=None,
+                    temporal_patch_size=getattr(video_processor, "temporal_patch_size", None),
+                ))
             # PyAV decodes each selected frame once; restore repetitions for short clips.
             unique, inverse = np.unique(indices, return_inverse=True)
             return unique
@@ -432,6 +437,12 @@ class QwenVisionAdapter(VisionAdapter):
             prefix.append(processor.vision_start_token + token + processor.vision_end_token)
             (images if item["type"] == "image" else videos).append(item["uri"])
         kwargs = {"return_tensors": "pt"}
+        if media_budget() == "full":
+            # Processor defaults for images; every video frame at native resolution (no per-frame pixel cap).
+            if videos:
+                kwargs["cap_pixels_per_frame"] = False
+            return processor(text=["".join(prefix) + text], images=images or None,
+                             **_video_inputs(processor, videos, num_frames=None), **kwargs)
         if images:
             kwargs["size"] = {"shortest_edge": 32 * 32,
                               "longest_edge": max(128 * 128, (512 * 512) // len(images))}
