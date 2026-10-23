@@ -139,6 +139,7 @@ class LoadOptions:
                  parity with eager and is a few percent faster.
     lora_scale   WiSE-FT-style interpolation between base (0) and fine-tuned weights (1), at inference.
     temperature  None = the temperature the checkpoint carries (fitted by scripts/calibrate_checkpoint.py); 1.0 = raw logits.
+                 Explicit values must be finite and positive.
     base_load_path
                  optional node-local mirror for base-model I/O. Checkpoint metadata still names the canonical base.
     merge_bf16   allow the faster but slightly approximate merge of a LoRA adapter into BF16 base weights.
@@ -175,6 +176,8 @@ class LoadOptions:
     fused_kernels: bool = False
 
     def __post_init__(self):
+        if self.temperature is not None and not (math.isfinite(self.temperature) and self.temperature > 0):
+            raise ValueError("temperature must be finite and positive")
         if self.compile_mode not in (None, *COMPILE_MODES):
             raise ValueError(f"compile_mode must be one of {sorted(COMPILE_MODES)}")
         if self.device_map is not None and self.device_map not in DEVICE_MAPS:
@@ -243,6 +246,9 @@ class Checkpoint:
                 raise ValueError("torch.compile acceleration is supported only on CUDA")
             _check_compile_runtime()
         meta = self.meta
+        temperature = meta.temperature if opts.temperature is None else opts.temperature
+        if not (math.isfinite(temperature) and temperature > 0):
+            raise ValueError(f"{self.path}: temperature must be finite and positive")
         default_dtype = torch.bfloat16 if meta.weights_dtype == "bf16" else torch.float32
         dtype = opts.dtype if opts.dtype is not None else default_dtype
         merge = opts.merge
@@ -307,7 +313,7 @@ class Checkpoint:
         if m.head is not None:
             m.head.load_state_dict(meta.head)
         m.eval()
-        m.temperature = meta.temperature if opts.temperature is None else opts.temperature
+        m.temperature = temperature
         if m.head is not None:
             m.head.temperature = m.temperature
         m.inference_acceleration = {

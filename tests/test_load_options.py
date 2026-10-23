@@ -1,4 +1,4 @@
-"""Loading CLI precedence, including entrypoints without model loads or listeners."""
+"""Loading option validation and CLI precedence without model loads or listeners."""
 import argparse
 import io
 import os
@@ -9,6 +9,45 @@ import torch
 
 from jevany import Choice, JevModel, SystemOneRequest
 from jevany.checkpoint import LoadOptions, load_options_from_args
+
+
+@pytest.mark.parametrize("temperature", [0.0, -1.0, float("nan"), float("inf"), float("-inf")])
+@pytest.mark.parametrize("from_environment", [False, True])
+def test_load_options_reject_invalid_temperature(temperature, from_environment):
+    with pytest.raises(ValueError, match="temperature must be finite and positive"):
+        if from_environment:
+            LoadOptions.from_env({"JEVANY_TEMPERATURE": str(temperature)})
+        else:
+            LoadOptions(temperature=temperature)
+
+
+@pytest.mark.parametrize("temperature", [None, 0.5, 1.0, 2.0])
+def test_load_options_accept_valid_temperature(temperature):
+    assert LoadOptions(temperature=temperature).temperature == temperature
+    value = "" if temperature is None else str(temperature)
+    assert LoadOptions.from_env({"JEVANY_TEMPERATURE": value}).temperature == temperature
+
+
+@pytest.mark.parametrize("temperature", [0.0, -1.0, float("nan"), float("inf"), float("-inf")])
+@pytest.mark.parametrize("decision_mode", ["pointer", "lm_token"])
+def test_checkpoint_rejects_invalid_temperature_before_loading_assets(tmp_path, monkeypatch,
+                                                                    temperature, decision_mode):
+    from jevany import checkpoint
+
+    checkpoint.write_meta(tmp_path, checkpoint.Meta(
+        base="unused", temperature=temperature, decision_mode=decision_mode,
+    ))
+    saved = checkpoint.Checkpoint(tmp_path)
+
+    def unexpected_load(*args, **kwargs):
+        pytest.fail("invalid temperature reached model asset loading")
+
+    monkeypatch.setattr(checkpoint, "load_preprocessor", unexpected_load)
+    monkeypatch.setattr(checkpoint, "get_backbone_adapter", unexpected_load)
+    monkeypatch.setattr(checkpoint, "DecisionModel", unexpected_load)
+    monkeypatch.setattr(saved, "warm_start", unexpected_load)
+    with pytest.raises(ValueError, match="temperature must be finite and positive"):
+        saved.load("cpu")
 
 
 @pytest.mark.parametrize("value", ["bad", "0", "-1", "4096"])

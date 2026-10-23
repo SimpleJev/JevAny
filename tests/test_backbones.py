@@ -224,6 +224,58 @@ def test_checkpoint_explicit_dtype_preserves_merge_policy(tmp_path, saved_dtype,
             torch.testing.assert_close(left, right, atol=0, rtol=0)
 
 
+@pytest.mark.parametrize("decision_mode", ["pointer", "lm_token"])
+@pytest.mark.parametrize("saved_temperature,override,expected_temperature", [
+    (None, None, 1.0),
+    (0.5, None, 0.5),
+    (2.0, None, 2.0),
+    (2.0, 1.0, 1.0),
+    (0.0, 0.5, 0.5),
+    (-1.0, 2.0, 2.0),
+    (float("nan"), 1.0, 1.0),
+    (float("inf"), 1.0, 1.0),
+    (float("-inf"), 1.0, 1.0),
+])
+def test_checkpoint_temperature_preserves_calibration_and_overrides(
+        tmp_path, decision_mode, saved_temperature, override, expected_temperature):
+    from jevany import JevModel
+    from jevany.checkpoint import LoadOptions
+
+    torch.manual_seed(17)
+    base = tmp_path / "base"
+    make_base(base, "gpt2", legacy=True)
+    tokenizer = load_tokenizer(base)
+    model = DecisionModel(base, tokenizer, "cpu", lora=2, head_dim=8,
+                          decision_mode=decision_mode, verbalizers=["yes", "no"]).eval()
+    with torch.no_grad():
+        raw_logits = model(model.encode(tokenizer, RECORD))
+    checkpoint = tmp_path / "checkpoint"
+    model.lm.save_pretrained(checkpoint, save_embedding_layers=False)
+    tokenizer.save_pretrained(checkpoint)
+    metadata = Meta(
+        base=str(base), head=model.head.state_dict() if model.head is not None else None,
+        lora=2, head_dim=8, tokenizer_saved=True, decision_mode=decision_mode,
+        verbalizers=model.verbalizers,
+    ).to_dict()
+    if saved_temperature is None:
+        metadata.pop("temperature")  # Legacy checkpoints omit the calibration field.
+    else:
+        metadata["temperature"] = saved_temperature
+    torch.save(metadata, checkpoint / "head.pt")
+
+    runtime = JevModel.from_pretrained(
+        checkpoint, device="cpu", options=LoadOptions(temperature=override),
+    ).runtime
+    restored = runtime.model
+    assert restored.temperature == expected_temperature
+    if restored.head is not None:
+        assert restored.head.temperature == expected_temperature
+    probabilities = restored.probs(restored.encode(runtime.tok, RECORD))
+    for actual, raw in zip(probabilities, raw_logits):
+        assert torch.isfinite(actual).all()
+        torch.testing.assert_close(actual, (raw / expected_temperature).softmax(-1))
+
+
 @pytest.mark.parametrize("family,branch_mode", [
     ("llama", "packed"), ("llama", "rows"), ("mistral", "rows"),
     ("qwen35", "rows"), ("gemma", "rows"), ("qwen35_moe", "rows"),
