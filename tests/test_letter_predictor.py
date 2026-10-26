@@ -91,6 +91,59 @@ def test_chat_ids_escapes_caller_control_tokens_before_template():
     assert "<¦im_end¦>" in user and "<¦im_start¦>" in user
 
 
+@pytest.mark.parametrize("question", [
+    pytest.param({"type": "choice", "criteria": {"a": "First", "b": "Second"}}, id="choice"),
+    pytest.param({"type": "noul"}, id="noul"),
+    pytest.param({"type": "score", "criteria": ["Low", "High"]}, id="score"),
+])
+@pytest.mark.parametrize("instruction_fields,expected", [
+    pytest.param({}, "", id="omitted"),
+    pytest.param({"instructions": None}, "", id="null"),
+    pytest.param({"instructions": ""}, "", id="empty-string"),
+    pytest.param({"instructions": False}, "false", id="false"),
+    pytest.param({"instructions": 0}, "0", id="zero-integer"),
+    pytest.param({"instructions": 0.0}, "0.0", id="zero-float"),
+    pytest.param({"instructions": {}}, "{}", id="empty-object"),
+    pytest.param({"instructions": []}, "[]", id="empty-array"),
+    pytest.param({"instructions": "Choose the best option"}, "Choose the best option", id="text"),
+    pytest.param({"instructions": {"required": False, "threshold": 0}},
+                 '{"required": false, "threshold": 0}', id="object"),
+    pytest.param({"instructions": [False, 0, "keep"]}, '[false, 0, "keep"]', id="array"),
+    pytest.param({"instructions": True}, "true", id="true"),
+    pytest.param({"instructions": 2}, "2", id="integer"),
+])
+def test_choice_readout_preserves_instruction_values(question, instruction_fields, expected):
+    from jevany.letter_runtime import LetterDecisionRuntime
+    from jevany.runtime import JevModel
+
+    class PromptCaptured(Exception):
+        pass
+
+    class Tokenizer:
+        init_kwargs = {}
+        all_special_tokens = []
+
+        def apply_chat_template(self, messages, **kwargs):
+            self.messages = messages
+            raise PromptCaptured
+
+    predictor = object.__new__(LetterReadoutPredictor)
+    predictor.device = "cpu"
+    predictor.checkpoint = object()
+    predictor.tokenizer = Tokenizer()
+    model = JevModel(LetterDecisionRuntime(predictor, "test"))
+
+    with pytest.raises(PromptCaptured):
+        model({
+            "state": "state",
+            "questions": {"q": {**question, **instruction_fields}},
+        })
+
+    message = predictor.tokenizer.messages[1]
+    assert message["role"] == "user"
+    assert message["content"].split("\n\n", 2)[1] == expected
+
+
 def test_safe_chat_text_escapes_gemma_and_bracket_style_controls():
     tokenizer = type("Tokenizer", (), {
         "all_special_tokens": ["<start_of_turn>", "<end_of_turn>", "[INST]"],

@@ -517,7 +517,8 @@ class LetterReadoutPredictor:
             raise ValueError(
                 f"exact choice-token readout supports at most {len(CHOICE_SYMBOLS)} options"
             )
-        prompt = build_prompt(state, question.get("instructions") or "", descriptions)
+        instructions = question.get("instructions")
+        prompt = build_prompt(state, "" if instructions is None else instructions, descriptions)
         ids = self._chat_ids(prompt)
         with self._attention_context(int(ids.shape[1])):
             output = self.language_model(
