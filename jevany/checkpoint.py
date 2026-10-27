@@ -138,6 +138,7 @@ class LoadOptions:
     attn         attention backend; None = the model default (SDPA on CUDA, eager elsewhere). "sdpa" on MPS measured
                  parity with eager and is a few percent faster.
     lora_scale   WiSE-FT-style interpolation between base (0) and fine-tuned weights (1), at inference.
+                 Values must be finite; negative scales and extrapolation above 1 are allowed.
     temperature  None = the temperature the checkpoint carries (fitted by scripts/calibrate_checkpoint.py); 1.0 = raw logits.
                  Explicit values must be finite and positive.
     base_load_path
@@ -176,6 +177,8 @@ class LoadOptions:
     fused_kernels: bool = False
 
     def __post_init__(self):
+        if not math.isfinite(self.lora_scale):
+            raise ValueError("lora_scale must be finite")
         if self.temperature is not None and not (math.isfinite(self.temperature) and self.temperature > 0):
             raise ValueError("temperature must be finite and positive")
         if self.compile_mode not in (None, *COMPILE_MODES):

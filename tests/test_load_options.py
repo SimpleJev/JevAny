@@ -11,6 +11,34 @@ from jevany import Choice, JevModel, SystemOneRequest
 from jevany.checkpoint import LoadOptions, load_options_from_args
 
 
+@pytest.mark.parametrize("lora_scale", [float("nan"), float("inf"), float("-inf")])
+@pytest.mark.parametrize("from_environment", [False, True])
+def test_load_options_reject_nonfinite_lora_scale(lora_scale, from_environment):
+    with pytest.raises(ValueError, match="lora_scale must be finite"):
+        if from_environment:
+            LoadOptions.from_env({"JEVANY_LORA_SCALE": str(lora_scale)})
+        else:
+            LoadOptions(lora_scale=lora_scale)
+
+
+@pytest.mark.parametrize("lora_scale", [-1.0, 0.0, 0.5, 1.0, 2.0])
+def test_load_options_accept_finite_lora_scale(lora_scale):
+    assert LoadOptions(lora_scale=lora_scale).lora_scale == lora_scale
+    assert LoadOptions.from_env({"JEVANY_LORA_SCALE": str(lora_scale)}).lora_scale == lora_scale
+
+
+@pytest.mark.parametrize("lora_scale", ["nan", "inf", "-inf"])
+@pytest.mark.parametrize("readout", ["native", "choice"])
+def test_nonfinite_lora_scale_fails_before_checkpoint_resolution(monkeypatch, lora_scale, readout):
+    def unexpected_resolve(*args, **kwargs):
+        pytest.fail("invalid lora_scale reached checkpoint resolution")
+
+    monkeypatch.setattr("jevany.checkpoint.resolve_run", unexpected_resolve)
+    monkeypatch.setenv("JEVANY_LORA_SCALE", lora_scale)
+    with pytest.raises(ValueError, match="lora_scale must be finite"):
+        JevModel.from_pretrained("unused/checkpoint", device="cpu", readout=readout)
+
+
 @pytest.mark.parametrize("temperature", [0.0, -1.0, float("nan"), float("inf"), float("-inf")])
 @pytest.mark.parametrize("from_environment", [False, True])
 def test_load_options_reject_invalid_temperature(temperature, from_environment):
