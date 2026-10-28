@@ -21,6 +21,46 @@ def test_render_flattens_structured_content():
     assert render({"ticket": {"channel": "email", "body": "hi"}}) == "ticket:\n  channel: email\n  body: hi"
 
 
+@pytest.mark.parametrize(("content", "expected"), [
+    ({}, "{}"),
+    ([], "[]"),
+    ({"config": {}}, "config:\n  {}"),
+    ({"items": []}, "items:\n  []"),
+    ([{}, []], "- {}\n- []"),
+    ({"nested": {"items": []}}, "nested:\n  items:\n    []"),
+    ({"items": [{}, []]}, "items:\n  - {}\n  - []"),
+])
+def test_render_preserves_empty_json_containers(content, expected):
+    assert render(content) == expected
+
+
+@pytest.mark.parametrize(("content", "expected"), [({}, "{}"), ([], "[]")])
+def test_to_record_preserves_empty_json_content(content, expected):
+    from jevany.data import materialize
+
+    request = {
+        "state": content,
+        "questions": {
+            "n": {"type": "noul", "instructions": content,
+                  "criteria": {"false": content, "true": None}, "label": False},
+            "c": {"type": "choice", "instructions": content,
+                  "criteria": {"empty": content, "missing": None}, "label": "empty"},
+            "s": {"type": "score", "instructions": content,
+                  "criteria": [content, None], "label": 0},
+        },
+    }
+    inference, _ = to_record(SystemOneRequest.model_validate(api_request(request)))
+    training = materialize(request)
+    for record in (inference, training):
+        assert record["state"] == expected
+        assert [q["instr"] for q in record["questions"]] == [expected] * 3
+        assert [q["options"] for q in record["questions"]] == [
+            [f"no: {expected}", "yes"],
+            [f"empty: {expected}", "missing"],
+            [expected, ""],
+        ]
+
+
 def test_server_media_is_disabled_by_default(monkeypatch):
     from fastapi import HTTPException
     from jevany import serve
