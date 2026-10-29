@@ -1,6 +1,7 @@
 # Modified for JevAny by Tianxin Wei, 2026.
 # Derived from Kev by Jared Palmer under Apache-2.0. See NOTICE.
 """One inference runtime shared by Python applications and the HTTP server."""
+import os
 import threading
 import time
 from collections import deque
@@ -335,15 +336,16 @@ class JevModel(DecisionClient):
         device = default_device() if device is None else device
         if device not in ("cpu", "mps", "cuda"):
             raise ValueError("device must be cpu, mps or cuda")
-        options = options or LoadOptions.from_env()
+        dtypes = {"fp32": torch.float32, "fp16": torch.float16, "bf16": torch.bfloat16}
+        if dtype is not None and dtype not in dtypes:
+            raise ValueError("dtype must be fp32, fp16 or bf16")
+        env = os.environ if dtype is None else {**os.environ, "JEVANY_DTYPE": dtype}
+        options = options or LoadOptions.from_env(env)
         if readout == "native":
             inference_options = inference_options or InferenceOptions.from_env()
         if model_name is not None and (not isinstance(model_name, str) or not model_name.strip()):
             raise ValueError("model_name must be a nonempty string")
         if dtype is not None:
-            dtypes = {"fp32": torch.float32, "fp16": torch.float16, "bf16": torch.bfloat16}
-            if dtype not in dtypes:
-                raise ValueError("dtype must be fp32, fp16 or bf16")
             options = replace(options, dtype=dtypes[dtype])
         if device == "mps" and options.attn is None:
             options = replace(options, attn="sdpa")

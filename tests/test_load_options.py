@@ -11,6 +11,65 @@ from jevany import Choice, JevModel, SystemOneRequest
 from jevany.checkpoint import LoadOptions, load_options_from_args
 
 
+@pytest.mark.parametrize("value,expected", [
+    (None, None), ("", None), ("fp32", torch.float32),
+    ("fp16", torch.float16), ("bf16", torch.bfloat16),
+])
+def test_load_options_accept_supported_dtype_settings(value, expected):
+    env = {} if value is None else {"JEVANY_DTYPE": value}
+    assert LoadOptions.from_env(env).dtype == expected
+
+
+@pytest.mark.parametrize("value", ["bfloat16", "float16", "float32", "b16", "BF16", " bf16 "])
+def test_load_options_reject_invalid_dtype_settings(value):
+    with pytest.raises(ValueError, match="JEVANY_DTYPE must be fp32, fp16 or bf16"):
+        LoadOptions.from_env({"JEVANY_DTYPE": value})
+
+
+@pytest.mark.parametrize("readout", ["native", "choice"])
+def test_invalid_dtype_fails_before_checkpoint_resolution(monkeypatch, readout):
+    def unexpected_resolve(*args, **kwargs):
+        pytest.fail("invalid dtype reached checkpoint resolution")
+
+    monkeypatch.setattr("jevany.checkpoint.resolve_run", unexpected_resolve)
+    monkeypatch.setenv("JEVANY_DTYPE", "bfloat16")
+    with pytest.raises(ValueError, match="JEVANY_DTYPE must be fp32, fp16 or bf16"):
+        JevModel.from_pretrained("unused/checkpoint", device="cpu", readout=readout)
+
+
+@pytest.mark.parametrize("readout", ["native", "choice"])
+@pytest.mark.parametrize("options", [None, LoadOptions(dtype=torch.float16, merge=False)])
+@pytest.mark.parametrize("dtype,expected", [
+    ("fp32", torch.float32), ("fp16", torch.float16), ("bf16", torch.bfloat16),
+])
+def test_explicit_dtype_overrides_invalid_environment_and_options(monkeypatch, readout, options,
+                                                                 dtype, expected):
+    def load(*args, **kwargs):
+        actual = kwargs["options"] if readout == "choice" else args[1]
+        assert actual.dtype == expected
+        assert not actual.merge
+        raise LoaderReached
+
+    monkeypatch.setenv("JEVANY_DTYPE", "bfloat16")
+    monkeypatch.setenv("JEVANY_MERGE", "0")
+    monkeypatch.setattr("jevany.runtime.Checkpoint", lambda _: SimpleNamespace(
+        requested="unused/checkpoint", load=load,
+    ))
+    monkeypatch.setattr("jevany.letter_predictor.LetterReadoutPredictor", load)
+    with pytest.raises(LoaderReached):
+        JevModel.from_pretrained("unused/checkpoint", device="cpu", readout=readout,
+                                 dtype=dtype, options=options)
+    assert os.environ["JEVANY_DTYPE"] == "bfloat16"
+
+
+def test_dtype_flag_overrides_environment_without_mutating_it():
+    env = {"JEVANY_DTYPE": "bfloat16", "JEVANY_MERGE": "0"}
+    before = dict(env)
+    options = load_options_from_args(argparse.Namespace(dtype="bf16"), MappingProxyType(env))
+    assert options == LoadOptions(dtype=torch.bfloat16, merge=False)
+    assert env == before
+
+
 @pytest.mark.parametrize("lora_scale", [float("nan"), float("inf"), float("-inf")])
 @pytest.mark.parametrize("from_environment", [False, True])
 def test_load_options_reject_nonfinite_lora_scale(lora_scale, from_environment):
@@ -180,6 +239,22 @@ def loading_entrypoint(request, monkeypatch, tmp_path):
         else:
             monkeypatch.setattr("jevany.serve.create_app", load)
     return SimpleNamespace(command=command, seen=seen, run=lambda extra: run([*flags, *extra]))
+
+
+@pytest.mark.parametrize("loading_entrypoint", ["decide", "serve"], indirect=True)
+@pytest.mark.parametrize("acceleration", [False, True])
+def test_entrypoint_dtype_overrides_invalid_environment(loading_entrypoint, monkeypatch, acceleration):
+    monkeypatch.setenv("JEVANY_DTYPE", "bfloat16")
+    flags = ["--dtype", "bf16"]
+    if acceleration:
+        flags += ["--cuda-graph-max-tokens", "512"]
+    with pytest.raises(LoaderReached):
+        loading_entrypoint.run(flags)
+    assert loading_entrypoint.seen["options"] == LoadOptions(
+        dtype=torch.bfloat16, cuda_graphs=acceleration,
+        cuda_graph_max_tokens=512 if acceleration else 2048,
+    )
+    assert os.environ["JEVANY_DTYPE"] == "bfloat16"
 
 
 @pytest.mark.parametrize("value", ["bad", "0", "-1", "4096"])

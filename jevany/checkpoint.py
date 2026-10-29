@@ -204,7 +204,11 @@ class LoadOptions:
     @classmethod
     def from_env(cls, env=os.environ):
         """Read checkpoint loading, placement and optional inference acceleration settings."""
-        return cls(dtype={"fp32": torch.float32, "bf16": torch.bfloat16, "fp16": torch.float16}.get(env.get("JEVANY_DTYPE", "")),
+        dtypes = {"": None, "fp32": torch.float32, "bf16": torch.bfloat16, "fp16": torch.float16}
+        dtype = env.get("JEVANY_DTYPE", "")
+        if dtype not in dtypes:
+            raise ValueError("JEVANY_DTYPE must be fp32, fp16 or bf16")
+        return cls(dtype=dtypes[dtype],
                    merge=env.get("JEVANY_MERGE", "1") != "0", attn=env.get("JEVANY_ATTN") or None,
                    lora_scale=float(env.get("JEVANY_LORA_SCALE", "1")),
                    temperature=float(env["JEVANY_TEMPERATURE"]) if env.get("JEVANY_TEMPERATURE") else None,
@@ -219,9 +223,9 @@ class LoadOptions:
 
 
 def load_options_from_args(args: argparse.Namespace, env: Mapping[str, str] = os.environ) -> LoadOptions | None:
-    """Apply explicit placement and acceleration flags before parsing; None when no loading flags are set."""
+    """Apply explicit dtype, placement and acceleration flags before parsing; None when none are set."""
     overrides = {"JEVANY_" + name.upper(): str(getattr(args, name))
-                 for name in ("device_map", "max_memory_gib", "cuda_graph_max_tokens")
+                 for name in ("dtype", "device_map", "max_memory_gib", "cuda_graph_max_tokens")
                  if getattr(args, name, None) is not None}
     if getattr(args, "cuda_graphs", False) or getattr(args, "cuda_graph_max_tokens", None) is not None:
         overrides["JEVANY_CUDA_GRAPHS"] = "1"
