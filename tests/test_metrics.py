@@ -1,8 +1,73 @@
+import json
 import math
+import subprocess
+import sys
 
 import pytest
 
 from jevany.metrics import EPSILON, fit_temperature, metrics, nll_at_temperature, paired_bootstrap
+
+
+@pytest.mark.parametrize("probabilities,label,kind,brier,rps", [
+    ([1.0], 0, "choice", 0.0, None),
+    ([0.8, 0.2], 0, "choice", 0.08, None),
+    ([0.8, 0.2], 1, "choice", 1.28, None),
+    ([0.0, 0.0, 1.0], 1, "choice", 2.0, None),
+    ([0.25, 0.75], 1, "noul", 0.125, None),
+    ([0.2, 0.5, 0.3], 0, "score", 0.98, 0.365),
+    ([0.2, 0.5, 0.3], 1, "score", 0.38, 0.065),
+    ([0.2, 0.5, 0.3], 2, "score", 0.78, 0.265),
+])
+def test_brier_and_ranked_scores(probabilities, label, kind, brier, rps):
+    result = metrics([{"p": probabilities, "label": label, "type": kind}])
+    assert result["brier"] == pytest.approx(brier)
+    if rps is not None:
+        assert result["ranked_probability_score"] == pytest.approx(rps)
+    else:
+        assert "ranked_probability_score" not in result
+
+
+def test_brier_and_ranked_scores_after_temperature_scaling():
+    result = metrics([{"p": [0.8, 0.2], "label": 0, "type": "score"}], temperature=2.0)
+    assert result["brier"] == pytest.approx(2 / 9)
+    assert result["ranked_probability_score"] == pytest.approx(1 / 9)
+
+
+@pytest.mark.parametrize("operation", ["summary", "bootstrap"])
+def test_many_options_use_bounded_metric_memory(operation):
+    # Isolate allocation tracing from pytest and other tests. A 4096-by-4096
+    # float64 target matrix consumes 128 MiB; a single target vector is 32 KiB.
+    script = """
+import json
+import sys
+import tracemalloc
+from jevany.metrics import metrics, paired_bootstrap
+
+count = 4096
+row = {
+    "p": [1 / count] * count, "label": 0, "type": "choice",
+    "variant": "clean", "source": "example", "task": "routing",
+    "group": "example", "question": "q", "id": "row",
+    "keys": [str(index) for index in range(count)],
+}
+reference = {**row, "p": [1.0] + [0.0] * (count - 1)}
+tracemalloc.stop()
+tracemalloc.start()
+if sys.argv[1] == "summary":
+    brier = metrics([row])["brier"]
+else:
+    brier = paired_bootstrap(
+        [row], [reference], samples=5, metric="brier",
+    )["macro_brier_delta"]
+_, peak = tracemalloc.get_traced_memory()
+print(json.dumps({"brier": brier, "peak_bytes": peak}))
+"""
+    completed = subprocess.run(
+        [sys.executable, "-c", script, operation], capture_output=True, text=True, check=True,
+    )
+    result = json.loads(completed.stdout)
+    assert result["brier"] == pytest.approx(1 - 1 / 4096)
+    assert result["peak_bytes"] < 8 * 1024 * 1024
 
 
 def test_default_nll_scores_the_returned_probability_distribution():
