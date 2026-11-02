@@ -5,7 +5,7 @@ import sys
 
 import pytest
 
-from jevany.metrics import EPSILON, fit_temperature, metrics, nll_at_temperature, paired_bootstrap
+from jevany.metrics import EPSILON, fit_temperature, metrics, nll_at_temperature, paired_bootstrap, unknowable_report
 
 
 @pytest.mark.parametrize("probabilities,label,kind,brier,rps", [
@@ -164,3 +164,90 @@ def test_paired_bootstrap_nll_uses_returned_probabilities():
     result = paired_bootstrap(candidate, reference, samples=10, seed=0, metric="nll", aggregation="micro")
 
     assert result["micro_nll_delta"] == pytest.approx(-math.log(0.8) + math.log(0.5))
+
+
+@pytest.mark.parametrize("reverse", [False, True])
+def test_unknowable_report_pairs_each_question_with_its_control(reverse):
+    rows = [
+        {"id": "control", "question": "first", "source": "unknowable_control",
+         "p": [0.9, 0.1], "label": 0},
+        {"id": "control", "question": "second", "source": "unknowable_control",
+         "p": [0.55, 0.45], "label": 0},
+        {"id": "unknown", "question": "first", "source": "unknowable",
+         "control_id": "control", "p": [0.6, 0.4]},
+        {"id": "unknown", "question": "second", "source": "unknowable",
+         "control_id": "control", "p": [0.5, 0.5]},
+    ]
+
+    result = unknowable_report(list(reversed(rows)) if reverse else rows)
+
+    assert result == pytest.approx({
+        "n": 2, "mean_max_p": 0.55, "share_at_0_9": 0.0,
+        "control_mean_max_p": 0.725, "control_share_at_0_9": 0.5, "control_acc": 1.0,
+        "paired_confidence_drop": 0.175, "share_less_confident_than_control": 1.0,
+    })
+
+
+@pytest.mark.parametrize("unmatched_identity", [
+    {"control_id": "other", "question": "q"},
+    {"control_id": "control", "question": "other"},
+    {"control_id": "control"},
+    {"question": "q"},
+])
+def test_unknowable_report_excludes_unmatched_questions_from_pairs(unmatched_identity):
+    control = {"id": "control", "question": "q", "source": "unknowable_control",
+               "p": [0.9, 0.1], "label": 0}
+    matched = {"id": "matched", "question": "q", "source": "unknowable",
+               "control_id": "control", "p": [0.7, 0.3]}
+    unmatched = {"id": "unmatched", "source": "unknowable", "p": [0.95, 0.05],
+                 **unmatched_identity}
+
+    result = unknowable_report([control, matched, unmatched])
+
+    assert result["n"] == 2
+    assert result["mean_max_p"] == pytest.approx(0.825)
+    assert result["paired_confidence_drop"] == pytest.approx(0.2)
+    assert result["share_less_confident_than_control"] == 1.0
+    unpaired = unknowable_report([control, unmatched])
+    assert unpaired["paired_confidence_drop"] is None
+    assert unpaired["share_less_confident_than_control"] is None
+
+
+def test_unknowable_report_keeps_legacy_rows_without_question_ids():
+    rows = [
+        {"id": "first", "source": "unknowable_control", "p": [0.9, 0.1], "label": 0},
+        {"id": "second", "source": "unknowable_control", "p": [0.6, 0.4], "label": 0},
+        {"id": "unknown", "source": "unknowable", "control_id": "first", "p": [0.7, 0.3]},
+    ]
+
+    result = unknowable_report(rows)
+
+    assert result["paired_confidence_drop"] == pytest.approx(0.2)
+    assert result["share_less_confident_than_control"] == 1.0
+
+
+def test_unknowable_evaluation_persists_question_matched_metrics(tmp_path):
+    from jevany.benchmark import evaluate_records
+    from jevany.data import load_records
+
+    path = tmp_path / "records.jsonl"
+    path.write_text("".join(json.dumps({
+        "state": source,
+        "questions": {key: {"type": "noul", "label": True, "src": f"{source}_noul"}
+                      for key in ("first", "second")},
+        "_meta": {"id": identity, "source": source, "control_id": "control"},
+    }) + "\n" for identity, source in (("control", "unknowable_control"), ("unknown", "unknowable"))))
+
+    def predict(record):
+        confidences = (0.9, 0.55) if record["_meta"]["id"] == "control" else (0.6, 0.5)
+        return {"probabilities": {key: {"false": 1 - confidence, "true": confidence}
+                                 for key, confidence in zip(("first", "second"), confidences)},
+                "latency_ms": 1}
+
+    output = tmp_path / "evaluation"
+    report, rows = evaluate_records(load_records(path), predict, output)
+
+    assert len(rows) == 4
+    assert report["unknowable"]["paired_confidence_drop"] == pytest.approx(0.175)
+    assert report["unknowable"]["share_less_confident_than_control"] == 1.0
+    assert json.loads((output / "report.json").read_text()) == report

@@ -180,12 +180,16 @@ def evaluate_threshold(confidence, correct, threshold):
 def unknowable_report(rows):
     """Confidence on records whose deciding evidence was removed (source 'unknowable') against their intact controls.
     Accuracy on the unknowable records is meaningless by construction; what is scored is whether the model knows it
-    cannot know: mean max-probability and the share of records answered at >= 0.9."""
+    cannot know: mean max-probability and the share of records answered at >= 0.9. Pair controls by record and question."""
     unk = [r for r in rows if r["source"] == "unknowable"]; ctl = [r for r in rows if r["source"] == "unknowable_control"]
     if not unk: return None
     conf = lambda rs: [float(max(r["p"])) for r in rs]
-    by_id = {r["id"]: r for r in ctl}
-    paired = [(max(r["p"]), max(by_id[r["control_id"]]["p"])) for r in unk if r.get("control_id") in by_id]
+    by_question = {(r["id"], r.get("question")): r for r in ctl}
+    paired = []
+    for row in unk:
+        control = by_question.get((row.get("control_id"), row.get("question")))
+        if control is not None:
+            paired.append((max(row["p"]), max(control["p"])))
     return {"n": len(unk), "mean_max_p": float(np.mean(conf(unk))), "share_at_0_9": float(np.mean([c >= 0.9 for c in conf(unk)])),
             "control_mean_max_p": float(np.mean(conf(ctl))) if ctl else None, "control_share_at_0_9": float(np.mean([c >= 0.9 for c in conf(ctl)])) if ctl else None,
             "control_acc": float(np.mean([int(np.argmax(r["p"]) == r["label"]) for r in ctl])) if ctl else None,
