@@ -92,8 +92,8 @@ def prediction_rows(record, prediction):
 
 
 def summarize(rows, temperature=1.0, heldout_sources=()):
-    """Report over benchmark rows. heldout_sources: sources the scored model never trained on; their tasks are also
-    reported as a separate block."""
+    """Report over benchmark rows. The objective is negative mean task NLL over knowable clean rows.
+    heldout_sources: sources the scored model never trained on; their tasks are also reported as a separate block."""
     clean = [r for r in rows if r["variant"] == "clean"]
     tasks = grouped_metrics(clean, "task")
     variants = grouped_metrics(rows, "variant")
@@ -106,8 +106,7 @@ def summarize(rows, temperature=1.0, heldout_sources=()):
             diffs.append(float(np.max(np.abs(np.array(aligned) - original["p"]))))
             flips.append(int(np.argmax(aligned) != np.argmax(original["p"])))
     knowable = [r for r in clean if r["source"] != "unknowable"]     # unknowable records are scored on confidence, never on accuracy
-    losses = [v["nll"] for k, v in tasks.items()
-              if not k.startswith("unknowable_") or k.startswith("unknowable_control")]
+    losses = [v["nll"] for v in grouped_metrics(knowable, "task").values()]
     return {"objective": -float(np.mean(losses)) if losses else None,
             "paired_flip": paired_flip(clean), "unknowable": unknowable_report(clean),
             "clean": metrics(knowable) if knowable else {"n": 0}, "tasks": tasks, "variants": variants,
