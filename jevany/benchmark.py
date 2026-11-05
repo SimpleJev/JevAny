@@ -104,7 +104,10 @@ def summarize(rows, temperature=1.0, heldout_sources=()):
             original = lookup[(row["parent"], row["question"])]
             aligned = [row["p"][row["keys"].index(k)] for k in original["keys"]]
             diffs.append(float(np.max(np.abs(np.array(aligned) - original["p"]))))
-            flips.append(int(np.argmax(aligned) != np.argmax(original["p"])))
+            # Resolve ties in each request's option order before comparing keys.
+            original_key = original["keys"][np.argmax(original["p"])]
+            permuted_key = row["keys"][np.argmax(row["p"])]
+            flips.append(int(permuted_key != original_key))
     knowable = [r for r in clean if r["source"] != "unknowable"]     # unknowable records are scored on confidence, never on accuracy
     losses = [v["nll"] for v in grouped_metrics(knowable, "task").values()]
     return {"objective": -float(np.mean(losses)) if losses else None,
