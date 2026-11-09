@@ -3,7 +3,7 @@ import json
 
 import pytest
 
-from jevany.data import load_records, materialize, validate_dataset
+from jevany.data import api_request, load_records, materialize, validate_dataset
 
 
 @pytest.mark.parametrize("separator", ["\u0085", "\u2028", "\u2029"])
@@ -77,6 +77,7 @@ def test_records_without_media_remain_valid(tmp_path, include_media):
     record = load_records(path)[0]
 
     assert record.get("media", []) == []
+    assert api_request(record) == {"state": "evidence", "questions": {"q": {"type": "noul"}}}
     assert "media" not in materialize(record)
     assert validate_dataset(path)["records"] == 1
 

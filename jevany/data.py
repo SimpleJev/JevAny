@@ -146,7 +146,7 @@ def api_request(record):
             for question_id, question in record["questions"].items()
         },
     }
-    if "media" in record:
+    if record.get("media", []) != []:
         request["media"] = record["media"]
     return request
 
