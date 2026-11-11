@@ -7,7 +7,11 @@ import math
 from collections import Counter
 from pathlib import Path
 
-from .api import SystemOneRequest, to_record
+from pydantic import TypeAdapter
+
+from .api import MediaList, SystemOneRequest, to_record
+
+_MEDIA_LIST = TypeAdapter(MediaList)
 
 EVAL_ONLY = ("mmlu", "emotion", "tweet_offensive", "qnli", "paws", "sciq")
 NONE_OPTIONS = [
@@ -29,8 +33,12 @@ def source_seed(seed, source):
     return int.from_bytes(hashlib.sha256(f"{seed}:{source}".encode()).digest()[:8], "big")
 
 
-def resolve_media(record, directory):
-    """Resolve relative media URIs against the JSONL file that contains the record."""
+def resolve_media(record: dict, directory: str | Path) -> dict:
+    """Validate media and resolve relative URIs against the containing JSONL file."""
+    try:
+        _MEDIA_LIST.validate_python(record.get("media", []))
+    except ValueError as error:
+        raise ValueError(f"invalid media: {error}") from error
     for media in record.get("media", []):
         uri = Path(media["uri"])
         if not uri.is_absolute() and "://" not in media["uri"]:

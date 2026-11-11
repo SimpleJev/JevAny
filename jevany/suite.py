@@ -5,6 +5,7 @@ import hashlib
 import json
 from collections import Counter
 from pathlib import Path
+from typing import Any
 
 from .data import EVAL_ONLY, materialize, resolve_media
 
@@ -49,9 +50,24 @@ def write_json(path, value):
     Path(path).write_text(json.dumps(value, indent=2, ensure_ascii=False, allow_nan=False) + "\n", encoding=ENCODING)
 
 
-def read_jsonl(path):
-    with Path(path).open(encoding=ENCODING) as stream:
-        return [json.loads(line) for line in stream if line.strip()]
+def read_jsonl(path: str | Path, *, resolve_media_paths: bool = False) -> list[Any]:
+    """Read JSONL with file/line errors, optionally validating and resolving media."""
+    path = Path(path)
+    records = []
+    with path.open(encoding=ENCODING) as stream:
+        for index, line in enumerate(stream, start=1):
+            if not line.strip():
+                continue
+            try:
+                record = json.loads(line)
+                if resolve_media_paths:
+                    if not isinstance(record, dict):
+                        raise ValueError("a record must be an object")
+                    resolve_media(record, path.parent)
+            except (ValueError, TypeError, KeyError) as error:
+                raise ValueError(f"{path}:{index}: {error}") from error
+            records.append(record)
+    return records
 
 
 def write_jsonl(path, records):
@@ -76,7 +92,7 @@ def load_split(directory, split, allow_test=False):
     expected = manifest["files"][path.name]
     if digest(path) != expected["sha256"]:
         raise ValueError(f"suite checksum mismatch: {path}")
-    records = [resolve_media(record, path.parent) for record in read_jsonl(path)]
+    records = read_jsonl(path, resolve_media_paths=True)
     if len(records) != expected["records"]:
         raise ValueError(f"suite record count mismatch: {path}")
     return records

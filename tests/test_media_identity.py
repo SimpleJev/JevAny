@@ -5,11 +5,27 @@ from pathlib import Path
 
 import pytest
 
-from jevany.data import load_records
+from jevany.data import load_records, resolve_media
 from jevany.suite import digest, load_split, read_jsonl, read_manifest, semantic_hash, validate_suite, write_json, write_jsonl
 
 
 TEXT_HASH = "15504894a79f9615b2dfc9f0a2b0fb3db86d11f24ea0c9cae874bf781bb11abb"
+INVALID_MEDIA = [
+    pytest.param(None, id="null"),
+    pytest.param(False, id="false"),
+    pytest.param(0, id="zero"),
+    pytest.param("", id="empty-string"),
+    pytest.param({}, id="empty-object"),
+    pytest.param([None], id="null-item"),
+    pytest.param(["asset.png"], id="string-item"),
+    pytest.param([{}], id="empty-item"),
+    pytest.param([{"type": "audio", "uri": "asset"}], id="unsupported-type"),
+    pytest.param([{"type": "image"}], id="missing-uri"),
+    pytest.param([{"type": "image", "uri": None}], id="null-uri"),
+    pytest.param([{"type": "image", "uri": ""}], id="empty-uri"),
+    pytest.param([{"type": "image", "uri": 1}], id="numeric-uri"),
+    pytest.param([{"type": "image", "uri": "asset"}] * 33, id="too-many"),
+]
 
 
 def record(identifier, media=()):
@@ -33,6 +49,134 @@ def make_suite(tmp_path, partitions):
         files[path.name] = {"sha256": digest(path), "records": len(rows)}
     write_json(root / "manifest.json", {"files": files, "trainable_sources": ["custom"]})
     return root
+
+
+def write_invalid_media(path, media, *, labelled=True):
+    valid = record("valid")
+    valid["state"] = "first\u2028second"
+    invalid = record("invalid")
+    invalid["media"] = media
+    if not labelled:
+        for row in (valid, invalid):
+            del row["questions"]["q"]["label"]
+            del row["_meta"]
+    path.write_text(
+        "\n" + json.dumps(valid, ensure_ascii=False) + "\n\n" + json.dumps(invalid) + "\n",
+        encoding="utf-8",
+    )
+
+
+@pytest.mark.parametrize("media", INVALID_MEDIA)
+@pytest.mark.parametrize("reader", ["load_split", "validate_suite"])
+def test_suite_media_reports_physical_line(tmp_path, media, reader):
+    root = make_suite(tmp_path, {"train": [record("valid"), record("invalid")]})
+    path = root / "train.jsonl"
+    write_invalid_media(path, media)
+    manifest = read_manifest(root)
+    manifest["files"][path.name]["sha256"] = digest(path)
+    write_json(root / "manifest.json", manifest)
+
+    with pytest.raises(ValueError, match=r"train\.jsonl:4:") as error:
+        if reader == "load_split":
+            load_split(root, "train")
+        else:
+            validate_suite(root)
+
+    assert "media" in str(error.value)
+
+
+@pytest.mark.parametrize("resolve_media_paths", [False, True])
+def test_empty_jsonl_remains_supported(tmp_path, resolve_media_paths):
+    path = tmp_path / "empty.jsonl"
+    path.write_text("\n \n", encoding="utf-8")
+
+    assert read_jsonl(path, resolve_media_paths=resolve_media_paths) == []
+
+
+def test_plain_jsonl_reader_keeps_arbitrary_json_values(tmp_path):
+    rows = [None, False, 0, "", [], {}, {"media": None}, record("relative", [
+        {"type": "image", "uri": "asset.png"},
+    ])]
+    path = tmp_path / "raw.jsonl"
+    write_jsonl(path, rows)
+
+    assert read_jsonl(path) == rows
+
+
+@pytest.mark.parametrize("include_media", [False, True], ids=["omitted", "empty"])
+def test_suite_empty_media_preserves_request_identity(tmp_path, include_media):
+    from jevany.data import api_request
+    from jevany.suite import record_digest
+
+    row = record("train")
+    if not include_media:
+        del row["media"]
+    expected = copy.deepcopy(row)
+    root = make_suite(tmp_path, {"train": [row]})
+
+    loaded = load_split(root, "train")[0]
+
+    assert loaded == expected
+    assert api_request(loaded) == {"state": row["state"], "questions": {
+        "q": {"type": "choice", "instructions": "Which object?", "criteria": {"a": "A", "b": "B"}},
+    }}
+    assert record_digest(api_request(loaded)) == record_digest(api_request(expected))
+    assert semantic_hash(loaded) == TEXT_HASH
+
+
+def test_resolved_jsonl_preserves_unlabelled_media_and_metadata(tmp_path):
+    row = record("request", [
+        {"type": "image", "uri": "asset.png", "provenance": "keep"},
+        {"type": "video", "uri": "https://example.com/clip.mp4"},
+        {"type": "image", "uri": str(tmp_path / "absolute.png")},
+    ])
+    del row["questions"]["q"]["label"]
+    row["extra"] = {"preserve": True}
+    path = tmp_path / "requests.jsonl"
+    write_jsonl(path, [row])
+    before = path.read_bytes()
+    expected = copy.deepcopy(row)
+    expected["media"][0]["uri"] = str(tmp_path / "asset.png")
+
+    assert read_jsonl(path, resolve_media_paths=True) == [expected]
+    assert path.read_bytes() == before
+
+
+def test_media_resolution_accepts_the_api_limit_without_requiring_labels(tmp_path):
+    row = {"media": [{"type": "image", "uri": f"{index}.png"} for index in range(32)]}
+
+    assert resolve_media(row, tmp_path) is row
+    assert row["media"] == [{"type": "image", "uri": str(tmp_path / f"{index}.png")} for index in range(32)]
+
+
+def test_media_validation_happens_before_resolving_any_paths(tmp_path):
+    row = {"media": [{"type": "image", "uri": "asset.png"}, {"type": "video", "uri": ""}]}
+    before = copy.deepcopy(row)
+
+    with pytest.raises(ValueError, match="media"):
+        resolve_media(row, tmp_path)
+
+    assert row == before
+
+
+@pytest.mark.parametrize("row", [None, [], "record"])
+def test_resolved_jsonl_rejects_non_objects_with_location(tmp_path, row):
+    path = tmp_path / "records.jsonl"
+    path.write_text("\n" + json.dumps(row) + "\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match=r"records\.jsonl:2:.*object"):
+        read_jsonl(path, resolve_media_paths=True)
+
+
+@pytest.mark.parametrize("resolve_media_paths", [False, True])
+def test_invalid_json_reports_physical_line(tmp_path, resolve_media_paths):
+    row = record("valid")
+    row["state"] = "first\u2028second"
+    path = tmp_path / "records.jsonl"
+    path.write_text("\n" + json.dumps(row, ensure_ascii=False) + '\n\n{"state":', encoding="utf-8")
+
+    with pytest.raises(ValueError, match=r"records\.jsonl:4:"):
+        read_jsonl(path, resolve_media_paths=resolve_media_paths)
 
 
 def test_text_hash_preserves_legacy_digest_and_normalization():
@@ -161,6 +305,45 @@ def test_rlcr_can_exclude_its_own_parent_partition(tmp_path, media_type):
     assert not output.exists()
 
 
+@pytest.mark.parametrize("media", INVALID_MEDIA)
+def test_rlcr_exclusion_media_reports_physical_line(tmp_path, media):
+    from jevany.datasets import build_rlcr
+
+    root = make_suite(tmp_path, {"train": [record("train")]})
+    excluded = tmp_path / "exclude.jsonl"
+    write_invalid_media(excluded, media, labelled=False)
+    output = tmp_path / "rlcr"
+    quotas = dict.fromkeys(build_rlcr.QUOTAS, 0)
+
+    with pytest.raises(ValueError, match=r"exclude\.jsonl:4:") as error:
+        build_rlcr.main(["--suite", str(root), "--out", str(output),
+                         "--exclude", str(excluded), "--quotas", json.dumps(quotas)])
+
+    assert "media" in str(error.value)
+    assert not output.exists()
+
+
+def test_rlcr_accepts_unlabelled_exclusions(tmp_path):
+    from jevany.datasets import build_rlcr
+
+    train = record("train", [{"type": "image", "uri": "asset.png"}])
+    root = make_suite(tmp_path, {"train": [train]})
+    exclusion = copy.deepcopy(train)
+    del exclusion["questions"]["q"]["label"]
+    del exclusion["_meta"]
+    exclusion["media"][0]["uri"] = "suite/asset.png"
+    excluded = tmp_path / "exclude.jsonl"
+    write_jsonl(excluded, [exclusion])
+    output = tmp_path / "rlcr"
+    quotas = {**dict.fromkeys(build_rlcr.QUOTAS, 0), "core": 1}
+
+    with pytest.raises(ValueError, match="core: requested 1 records but only 0 are available"):
+        build_rlcr.main(["--suite", str(root), "--out", str(output),
+                         "--exclude", str(excluded), "--quotas", json.dumps(quotas)])
+
+    assert not output.exists()
+
+
 @pytest.fixture
 def offline_sft(monkeypatch):
     from jevany.datasets import build_sft
@@ -177,6 +360,20 @@ def sft_args(output):
         arg for flag in ("helpsteer", "agent", "hard-text", "scienceqa", "aokvqa", "video", "eval-per-source")
         for arg in (f"--{flag}", "0")
     ]
+
+
+@pytest.mark.parametrize("media", INVALID_MEDIA)
+@pytest.mark.parametrize("flag", ["--include-train", "--exclude"])
+def test_sft_input_media_reports_physical_line(tmp_path, offline_sft, media, flag):
+    path = tmp_path / "input.jsonl"
+    write_invalid_media(path, media, labelled=flag == "--include-train")
+    output = tmp_path / "output"
+
+    with pytest.raises(ValueError, match=r"input\.jsonl:4:") as error:
+        offline_sft.main(sft_args(output) + [flag, str(path)])
+
+    assert "media" in str(error.value)
+    assert not (output / "manifest.json").exists()
 
 
 def test_sft_included_files_keep_their_own_relative_media(tmp_path, offline_sft):

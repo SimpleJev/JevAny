@@ -72,10 +72,13 @@ class Media(BaseModel):
     uri: str = Field(min_length=1)
 
 
+MediaList = Annotated[list[Media], Field(max_length=32)]
+
+
 class SystemOneRequest(BaseModel):
     state: JSONContent
     model: str = Field(default="jevany-latest", min_length=1)
-    media: list[Media] = Field(default_factory=list, max_length=32)
+    media: MediaList = Field(default_factory=list)
     questions: dict[str, Question] = Field(min_length=1, max_length=MAX_QUESTIONS)
 
 

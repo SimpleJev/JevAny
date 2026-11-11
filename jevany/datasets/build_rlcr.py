@@ -6,7 +6,6 @@ import random
 from collections import Counter
 from pathlib import Path
 
-from jevany.data import resolve_media
 from jevany.suite import (
     digest, load_split, read_jsonl, read_manifest, semantic_hash, validate_training,
     write_json, write_jsonl,
@@ -140,8 +139,7 @@ def main(argv=None):
         raise FileExistsError(f"refusing to overwrite {root}")
 
     pools = {name: [] for name in QUOTAS}
-    excluded = {semantic_hash(resolve_media(row, Path(path).parent))
-                for path in args.exclude for row in read_jsonl(path)}
+    excluded = {semantic_hash(row) for path in args.exclude for row in read_jsonl(path, resolve_media_paths=True)}
     parent_manifest = read_manifest(args.suite)
     parent_records = load_split(args.suite, "train")
     validate_training(parent_records, parent_manifest)

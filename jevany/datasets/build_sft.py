@@ -310,9 +310,8 @@ def main(argv=None):
         import datasets
         datasets.config.HF_DATASETS_CACHE = args.cache
 
-    excluded = {content_hash(resolve_media(row, Path(path).parent))
-                for path in args.exclude for row in read_jsonl(path)}
-    train = [resolve_media(row, Path(path).parent) for path in args.include_train for row in read_jsonl(path)]
+    excluded = {content_hash(row) for path in args.exclude for row in read_jsonl(path, resolve_media_paths=True)}
+    train = [row for path in args.include_train for row in read_jsonl(path, resolve_media_paths=True)]
     evaluation = []
 
     if args.helpsteer or args.eval_per_source:
