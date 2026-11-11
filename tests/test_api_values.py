@@ -8,6 +8,21 @@ from jevany.api import SystemOneRequest, to_record
 from jevany.client import JevClient
 
 
+@pytest.mark.parametrize("count", [32, 33])
+@pytest.mark.parametrize("as_json", [False, True], ids=["python", "json"])
+def test_request_media_count_limit(count, as_json):
+    request = {"state": "evidence", "questions": {"q": {"type": "noul"}},
+               "media": [{"type": "image", "uri": f"{index}.png"} for index in range(count)]}
+    validate = SystemOneRequest.model_validate_json if as_json else SystemOneRequest.model_validate
+    payload = json.dumps(request) if as_json else request
+
+    if count == 32:
+        assert len(validate(payload).media) == 32
+    else:
+        with pytest.raises(ValueError, match="media"):
+            validate(payload)
+
+
 @pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
 @pytest.mark.parametrize("field", ["state", "instructions", "choice", "noul", "score"])
 def test_nonfinite_evidence_is_rejected_by_python_and_json_validation(field, value):
