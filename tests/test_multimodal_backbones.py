@@ -219,12 +219,9 @@ def test_current_vision_base_text_training(tmp_path, family, attn):
     *(pytest.param(family, (8, 12), id=f"{family}-two-videos-image") for family in [
         "gemma4", "gemma4_per_layer", "gemma4_unified"]),
 ])
-def test_native_video(tmp_path, monkeypatch, family, frame_counts):
+def test_native_video(tmp_path, family, frame_counts):
     import av
-    import transformers.video_processing_utils as video_utils
 
-    monkeypatch.setattr(video_utils, "is_torchcodec_available", lambda: False)
-    monkeypatch.setattr(video_utils, "is_torchvision_video_decoding_available", lambda: False)
     base = tmp_path / "base"
     make_vision_base(base, family)
     media = []
