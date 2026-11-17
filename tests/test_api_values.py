@@ -1,11 +1,65 @@
 """JSON evidence has the same meaning in local and HTTP requests."""
+import io
 import json
 from types import SimpleNamespace
 
 import pytest
 
-from jevany.api import SystemOneRequest, to_record
+from jevany.api import Media, SystemOneRequest, to_record
 from jevany.client import JevClient
+
+
+@pytest.fixture(params=["http", "local"])
+def media_client(request, monkeypatch):
+    received = []
+    response = {"answers": {"q": {"type": "noul", "noul": 0.5}}}
+    if request.param == "http":
+        def urlopen(request, timeout):
+            received.append(json.loads(request.data))
+            return io.BytesIO(json.dumps(response).encode())
+
+        monkeypatch.setattr("jevany.client._urlopen", urlopen)
+        client = JevClient()
+    else:
+        from jevany import JevModel
+
+        def answer(request):
+            received.append(request.model_dump(mode="json"))
+            return response
+
+        client = JevModel(SimpleNamespace(model_id="jevany-latest", answer=answer))
+    return client, received
+
+
+@pytest.mark.parametrize("media", [
+    False, 0, 0.0, "", {},
+    [{"type": "image", "uri": ""}],
+    [{"type": "audio", "uri": "audio.wav"}],
+    [{"type": "image", "uri": f"{index}.png"} for index in range(33)],
+], ids=["false", "zero", "zero-float", "empty-string", "empty-object",
+        "empty-uri", "unsupported-type", "too-many"])
+def test_clients_reject_invalid_media_before_dispatch(media_client, media):
+    client, received = media_client
+    with pytest.raises(ValueError, match="media"):
+        client.system_one("evidence", {"q": {"type": "noul"}}, media=media)
+    assert received == []
+
+
+@pytest.mark.parametrize("kwargs,expected", [
+    ({}, []),
+    ({"media": None}, []),
+    ({"media": []}, []),
+    ({"media": [{"type": "image", "uri": "frame.png"}, Media(type="video", uri="clip.mp4")]},
+     [{"type": "image", "uri": "frame.png"}, {"type": "video", "uri": "clip.mp4"}]),
+    ({"media": [{"type": "image", "uri": f"{index}.png"} for index in range(32)]},
+     [{"type": "image", "uri": f"{index}.png"} for index in range(32)]),
+], ids=["omitted", "none", "empty-list", "image-and-video", "max-count"])
+def test_clients_preserve_valid_media(media_client, kwargs, expected):
+    client, received = media_client
+    result = client.system_one("evidence", {"q": {"type": "noul"}}, **kwargs)
+    assert result["answers"]["q"]["noul"] == 0.5
+    assert len(received) == 1
+    assert received[0]["media"] == expected
 
 
 @pytest.mark.parametrize("count", [32, 33])

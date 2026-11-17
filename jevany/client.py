@@ -152,7 +152,7 @@ class DecisionClient:
         """Evaluate typed questions; return the JSON-compatible response body."""
         request = SystemOneRequest(
             state=state, questions=questions, model=self.model_id if model is None else model,
-            media=media or [],
+            media=[] if media is None else media,
         )
         return self(request)
 
