@@ -209,6 +209,9 @@ def main(argv=None, prog=None):
     if a.remote and choice_options is not None:
         ap.error("--readout choice is a local model setting; configure it on the remote server")
     if bool(a.suite) == bool(a.data): ap.error("give exactly one of --suite or --data")
+    output = Path(a.out)
+    if output.exists() or output.is_symlink():
+        ap.error(f"--out already exists: {output}; choose a new output directory")
     if a.data:
         records, heldout, split, source_hash = load_records(a.data), [], "custom", digest(Path(a.data))
     else:
