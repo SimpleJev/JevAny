@@ -29,8 +29,9 @@ def patch_predictors(monkeypatch, factory):
 
 
 @pytest.mark.parametrize("kind", ["directory", "file", "broken-symlink"])
-def test_cli_rejects_existing_output_before_loading_predictor(
-    tmp_path, labelled_data, predictor_args, kind, monkeypatch, capsys,
+@pytest.mark.parametrize("source", ["--data", "--suite"])
+def test_cli_rejects_existing_output_before_reading_data_or_loading_predictor(
+    tmp_path, labelled_data, predictor_args, kind, source, monkeypatch, capsys,
 ):
     output = tmp_path / "evaluation"
     if kind == "directory":
@@ -45,12 +46,14 @@ def test_cli_rejects_existing_output_before_loading_predictor(
         retained.write_text("existing result", encoding="utf-8")
 
     def forbidden(*_args, **_kwargs):
-        pytest.fail("predictor was initialized for an occupied output path")
+        pytest.fail("data or predictor was loaded for an occupied output path")
 
+    monkeypatch.setattr(benchmark, "load_records", forbidden)
+    monkeypatch.setattr(benchmark, "load_split", forbidden)
     patch_predictors(monkeypatch, forbidden)
     with pytest.raises(SystemExit) as stopped:
         benchmark.main([
-            *predictor_args, "--data", str(labelled_data),
+            *predictor_args, source, str(labelled_data),
             "--out", str(output), "--device", "cpu",
         ])
     assert stopped.value.code == 2
