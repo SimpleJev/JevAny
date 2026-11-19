@@ -97,6 +97,8 @@ def none_pair(request, rng):
         return []
     question_id, question = rng.choice(eligible)
     key, description = rng.choice([item for item in NONE_OPTIONS if item[0] not in question["criteria"]] or [("none_of_these", None)])
+    if key in question["criteria"]:
+        return []
     keys = list(question["criteria"]) + [key]
     rng.shuffle(keys)
     present = {**question, "criteria": {item: description if item == key else question["criteria"][item] for item in keys}}

@@ -103,6 +103,32 @@ def test_saved_training_counts_include_rejected_input(tiny_run, tmp_path, epochs
     assert admission["rejected"][0]["reason"] == "state exceeds 16 tokens: 41"
 
 
+def test_training_keeps_original_record_when_none_pair_keys_are_occupied(tiny_run, tmp_path):
+    from jevany.data import NONE_OPTIONS
+
+    root, _, _ = tiny_run
+    criteria = {key: None for key, _ in NONE_OPTIONS}
+    criteria["none_of_these"] = "yes"
+    data = tmp_path / "train.jsonl"
+    data.write_text(json.dumps({
+        "state": "state",
+        "questions": {"q": {"type": "choice", "criteria": criteria, "label": "none_of_these"}},
+    }) + "\n", encoding="utf-8")
+
+    out = main([
+        "--base", str(root / "base"), "--data", str(data), "--out", str(tmp_path / "run"),
+        "--device", "cpu", "--lora", "2", "--head-dim", "8", "--lora-targets", "qv",
+        "--max-steps", "1", "--accum", "1",
+        "--p-none", "0", "--p-none-distract", "0", "--p-distract", "0", "--p-none-pair", "1",
+    ])
+
+    metrics = json.loads((out / "training_metrics.json").read_text())
+    assert metrics["records_seen"] == 1
+    assert metrics["admitted_records"] == 1
+    assert metrics["optimizer_steps"] == 1
+    assert (out / "head.pt").is_file()
+
+
 @pytest.mark.parametrize("evaluate", [False, True])
 def test_checkpoint_saving_is_independent_of_evaluation(tiny_run, tmp_path, evaluate):
     root, _, _ = tiny_run
