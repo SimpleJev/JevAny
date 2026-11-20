@@ -383,6 +383,8 @@ def test_training_batch_uses_configured_context_limits():
 
     calls = []
     class Model:
+        decision_mode = "pointer"
+
         def encode(self, tokenizer, record, **kwargs):
             calls.append(kwargs)
             return {"ids": [1], "labels": [0]}

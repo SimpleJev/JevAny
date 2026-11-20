@@ -1,10 +1,57 @@
-"""None-pair augmentation preserves user option keys and descriptions."""
+"""None-pair augmentation preserves options and produces valid requests."""
 from copy import deepcopy
 import random
 
 import pytest
 
+from jevany.api import MAX_OPTIONS
 from jevany.data import NONE_OPTIONS, materialize, none_pair
+
+
+@pytest.mark.parametrize("options", [MAX_OPTIONS - 1, MAX_OPTIONS])
+def test_none_pair_respects_request_option_limit(options):
+    request = {
+        "state": "evidence",
+        "questions": {"q": {
+            "type": "choice", "criteria": {f"o{i}": None for i in range(options)}, "label": "o0",
+        }},
+    }
+    original = deepcopy(request)
+    materialize(request)
+
+    variants = none_pair(request, random.Random(0))
+
+    if options == MAX_OPTIONS:
+        assert variants == []
+    else:
+        assert [len(variant["questions"]["q"]["criteria"]) for variant in variants] == [
+            MAX_OPTIONS, MAX_OPTIONS - 1,
+        ]
+        for variant in variants:
+            materialize(variant)
+    assert request == original
+
+
+def test_none_pair_selects_a_question_with_room_for_another_option():
+    request = {
+        "state": "evidence",
+        "questions": {
+            "full": {
+                "type": "choice", "criteria": {f"o{i}": None for i in range(MAX_OPTIONS)}, "label": "o0",
+            },
+            "small": {"type": "choice", "criteria": {"a": None, "b": None, "c": None}, "label": "a"},
+        },
+    }
+    original = deepcopy(request)
+    materialize(request)
+
+    variants = none_pair(request, random.Random(1))
+
+    assert len(variants) == 2
+    for variant in variants:
+        assert set(variant["questions"]) == {"small"}
+        materialize(variant)
+    assert request == original
 
 
 @pytest.mark.parametrize("label", ["none_of_these", "other"])

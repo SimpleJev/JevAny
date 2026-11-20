@@ -15,6 +15,7 @@ import torch
 import torch.distributed as dist
 import torch.nn.functional as F
 from torch.nn.parallel import DistributedDataParallel
+from .api import MAX_OPTIONS
 from .checkpoint import Checkpoint, Meta, write_meta
 from .device import allocated_bytes, default_device, empty_cache
 from .data import EVAL_ONLY, augment, load_records, materialize, none_pair, source_seed
@@ -232,11 +233,13 @@ class Variant:
 def encode_batch(model, tok, a, chunk, epoch):
     """Apply the release recipe's augmentations and encode each request."""
     out = []
+    max_options = len(model.verbalizers) if model.decision_mode == "lm_token" else MAX_OPTIONS
     for req in chunk:
         item_rng = random.Random(source_seed(a.seed, f"{epoch}:{req['_meta']['id']}"))
-        variants = [augment(req, item_rng, p_none=a.p_none, p_none_distract=a.p_none_distract, p_distract=a.p_distract)]
+        variants = [augment(req, item_rng, p_none=a.p_none, p_none_distract=a.p_none_distract,
+                            p_distract=a.p_distract, max_options=max_options)]
         if a.p_none_pair > 0 and item_rng.random() < a.p_none_pair:
-            variants += none_pair(req, item_rng)
+            variants += none_pair(req, item_rng, max_options=max_options)
         for v in variants:
             rec = materialize(v)
             enc = model.encode(tok, rec, max_state=a.max_state, max_branch=a.max_branch, strict=True)

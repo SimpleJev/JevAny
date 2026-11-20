@@ -4,10 +4,11 @@ from types import SimpleNamespace
 import pytest
 import torch
 
-from jevany.api import SystemOneRequest
+from jevany.api import MAX_OPTIONS, SystemOneRequest
 from jevany.checkpoint import Meta
-from jevany.model import DecisionModel, PointerHead
-from jevany.train import lm_token_loss
+from jevany.data import materialize
+from jevany.model import SPECIAL, DecisionModel, PointerHead
+from jevany.train import encode_batch, lm_token_loss
 
 
 def direct_model(vocabulary_size=8):
@@ -84,6 +85,58 @@ def test_lm_token_rejects_more_than_frozen_verbalizer_table(monkeypatch):
                                               "label": 0}]}
     with pytest.raises(ValueError, match="at most 3 options"):
         model.encode(tokenizer, record)
+
+
+@pytest.fixture
+def training_tokenizer():
+    from tokenizers import Tokenizer
+    from tokenizers.models import WordLevel
+    from tokenizers.pre_tokenizers import Whitespace
+    from transformers import PreTrainedTokenizerFast
+
+    tokens = ["[UNK]", "state", ":"] + SPECIAL + [
+        token for i in range(256) for token in (f"o{i}", f"V{i}")
+    ]
+    tokenizer = Tokenizer(WordLevel({token: i for i, token in enumerate(tokens)}, unk_token="[UNK]"))
+    tokenizer.pre_tokenizer = Whitespace()
+    return PreTrainedTokenizerFast(
+        tokenizer_object=tokenizer, unk_token="[UNK]", additional_special_tokens=SPECIAL,
+    )
+
+
+@pytest.mark.parametrize(("mode", "limit", "options"), [
+    ("lm_token", 255, 255),
+    ("lm_token", 255, 254),
+    ("lm_token", 3, 3),
+    ("lm_token", 4, 3),
+    ("pointer", MAX_OPTIONS, 255),
+])
+@pytest.mark.parametrize("augmentation", ["p_none_pair", "p_none_distract", "p_distract"])
+def test_training_augmentations_respect_model_option_limit(training_tokenizer, mode, limit, options, augmentation):
+    model = direct_model()
+    model.decision_mode = mode
+    model.verbalizers = [f"V{i}" for i in range(limit)] if mode == "lm_token" else []
+    request = {
+        "state": "state",
+        "questions": {"q": {
+            "type": "choice", "criteria": {f"o{i}": None for i in range(options)}, "label": "o0",
+        }},
+        "_meta": {"id": "training/0"},
+    }
+    args = SimpleNamespace(
+        seed=0, p_none=0, p_none_pair=0, p_none_distract=0, p_distract=0,
+        max_state=16, max_branch=2048, max_packed=2048,
+    )
+    setattr(args, augmentation, 1)
+    model.encode(training_tokenizer, materialize(request), max_state=16, max_branch=2048, strict=True)
+
+    variants = encode_batch(model, training_tokenizer, args, [request], epoch=0)
+
+    expected = (
+        [options, options + 1, options] if options < limit else [options]
+    ) if augmentation == "p_none_pair" else [min(options + 1, limit)]
+    assert [len(variant.rec["questions"][0]["options"]) for variant in variants] == expected
+    assert [len(variant.enc["opt_idx"][0]) for variant in variants] == expected
 
 
 def test_pointer_api_accepts_more_than_255_choices():

@@ -9,7 +9,7 @@ from pathlib import Path
 
 from pydantic import TypeAdapter
 
-from .api import MediaList, SystemOneRequest, to_record
+from .api import MAX_OPTIONS, MediaList, SystemOneRequest, to_record
 
 _MEDIA_LIST = TypeAdapter(MediaList)
 
@@ -46,7 +46,7 @@ def resolve_media(record: dict, directory: str | Path) -> dict:
     return record
 
 
-def augment(request, rng, p_none=0.1, p_none_distract=0.12, p_distract=0.15):
+def augment(request, rng, p_none=0.1, p_none_distract=0.12, p_distract=0.15, *, max_options: int = MAX_OPTIONS):
     """Permute choice options and optionally add a none option or distractor."""
     if min(p_none, p_none_distract, p_distract) < 0 or p_none + p_none_distract + p_distract > 1:
         raise ValueError("augmentation probabilities must be nonnegative and sum to at most one")
@@ -70,10 +70,10 @@ def augment(request, rng, p_none=0.1, p_none_distract=0.12, p_distract=0.15):
             key, description = rng.choice(none_options)
             criteria.pop(label)
             criteria[key], label = description, key
-        elif draw < p_none + p_none_distract and len(criteria) < 255 and none_options:
+        elif draw < p_none + p_none_distract and len(criteria) < max_options and none_options:
             key, description = rng.choice(none_options)
             criteria[key] = description
-        elif draw < p_none + p_none_distract + p_distract and len(criteria) < 255 and distractors:
+        elif draw < p_none + p_none_distract + p_distract and len(criteria) < max_options and distractors:
             key = rng.choice(distractors)
             criteria[key] = DISTRACTORS[key]
         keys = list(criteria)
@@ -86,12 +86,13 @@ def augment(request, rng, p_none=0.1, p_none_distract=0.12, p_distract=0.15):
     return result
 
 
-def none_pair(request, rng):
+def none_pair(request, rng, *, max_options: int = MAX_OPTIONS):
     """Return a minimal pair with the correct option present and removed."""
     eligible = [
         (question_id, question)
         for question_id, question in request["questions"].items()
-        if question["type"] == "choice" and len(question["criteria"]) >= 3 and question.get("target") is None
+        if question["type"] == "choice" and 3 <= len(question["criteria"]) < max_options
+        and question.get("target") is None
     ]
     if not eligible:
         return []
