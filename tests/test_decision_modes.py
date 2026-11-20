@@ -1,4 +1,5 @@
 """Fast coverage for pointer and direct-token readouts without model weights."""
+from copy import deepcopy
 from types import SimpleNamespace
 
 import pytest
@@ -7,7 +8,7 @@ import torch
 from jevany.api import MAX_OPTIONS, SystemOneRequest
 from jevany.checkpoint import Meta
 from jevany.data import materialize
-from jevany.model import SPECIAL, DecisionModel, PointerHead
+from jevany.model import SPECIAL, ContextLengthError, DecisionModel, PointerHead
 from jevany.train import encode_batch, lm_token_loss
 
 
@@ -137,6 +138,42 @@ def test_training_augmentations_respect_model_option_limit(training_tokenizer, m
     ) if augmentation == "p_none_pair" else [min(options + 1, limit)]
     assert [len(variant.rec["questions"][0]["options"]) for variant in variants] == expected
     assert [len(variant.enc["opt_idx"][0]) for variant in variants] == expected
+
+
+@pytest.mark.parametrize("budget", ["max_branch", "max_packed"])
+@pytest.mark.parametrize("augmentation", ["p_none", "p_none_distract", "p_distract"])
+def test_training_keeps_admitted_sample_when_augmentation_exceeds_context(training_tokenizer, budget, augmentation):
+    model = direct_model()
+    model.decision_mode = "pointer"
+    model.verbalizers = []
+    request = {
+        "state": "state",
+        "questions": {f"q{i}": {
+            "type": "choice", "criteria": {f"o{j}": None for j in range(300)}, "label": "o0",
+        } for i in range(1 if budget == "max_branch" else 2)},
+        "_meta": {"id": "training/0"},
+    }
+    original = deepcopy(request)
+    record = materialize(request)
+    clean = model.encode(training_tokenizer, record, max_state=16, max_branch=2048, strict=True)
+    args = SimpleNamespace(
+        seed=0, p_none=0, p_none_pair=0, p_none_distract=0, p_distract=0,
+        max_state=16, max_branch=len(clean["ids"]), max_packed=2048,
+    )
+    setattr(args, budget, len(clean["ids"]))
+    setattr(args, augmentation, 1)
+
+    variants = encode_batch(model, training_tokenizer, args, [request], epoch=0)
+
+    assert len(variants) == 1
+    assert variants[0].rec == record
+    assert variants[0].enc == clean
+    assert request == original
+
+    setattr(args, budget, len(clean["ids"]) - 1)
+    args.max_branch = min(args.max_branch, args.max_packed)
+    with pytest.raises(ContextLengthError):
+        encode_batch(model, training_tokenizer, args, [request], epoch=0)
 
 
 def test_pointer_api_accepts_more_than_255_choices():

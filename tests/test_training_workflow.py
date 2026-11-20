@@ -129,6 +129,36 @@ def test_training_keeps_original_record_when_none_pair_keys_are_occupied(tiny_ru
     assert (out / "head.pt").is_file()
 
 
+def test_training_keeps_original_record_when_augmentations_exceed_context(tiny_run, tmp_path):
+    from transformers import AutoTokenizer
+    from jevany.data import materialize
+    from jevany.model import encode
+
+    root, _, _ = tiny_run
+    request = {
+        "state": "state",
+        "questions": {"q": {"type": "choice", "criteria": {"a": None, "b": None, "c": None}, "label": "a"}},
+    }
+    tokenizer = AutoTokenizer.from_pretrained(root / "base")
+    tokens = len(encode(tokenizer, materialize(request), max_state=4, strict=True)["ids"])
+    data = tmp_path / "train.jsonl"
+    data.write_text(json.dumps(request) + "\n", encoding="utf-8")
+
+    out = main([
+        "--base", str(root / "base"), "--data", str(data), "--out", str(tmp_path / "run"),
+        "--device", "cpu", "--lora", "2", "--head-dim", "8", "--lora-targets", "qv",
+        "--max-steps", "1", "--accum", "1",
+        "--max-state", "4", "--max-branch", str(tokens), "--max-packed", str(tokens),
+        "--p-none", "0", "--p-none-distract", "0", "--p-distract", "1", "--p-none-pair", "1",
+    ])
+
+    metrics = json.loads((out / "training_metrics.json").read_text())
+    assert metrics["records_seen"] == 1
+    assert metrics["admitted_records"] == 1
+    assert metrics["optimizer_steps"] == 1
+    assert (out / "head.pt").is_file()
+
+
 @pytest.mark.parametrize("evaluate", [False, True])
 def test_checkpoint_saving_is_independent_of_evaluation(tiny_run, tmp_path, evaluate):
     root, _, _ = tiny_run
