@@ -172,6 +172,16 @@ def reduce_max(value, device):
 
 # --- data -------------------------------------------------------------------------------------------------------------
 
+def _validate_training_sources(records: list[dict], manifest: dict | None) -> None:
+    """Check forbidden sources; custom data need not appear in a suite's allowlist."""
+    eval_only = set(EVAL_ONLY)
+    if manifest:
+        eval_only |= set(manifest.get("eval_only_sources", [])) | set(manifest.get("holdout_sources", []))
+    forbidden = {record["_meta"]["source"] for record in records} & eval_only
+    if forbidden:
+        raise ValueError(f"training data contains eval-only sources: {sorted(forbidden)}")
+
+
 def training_requests(a, tok, manifest, model, inputs=None):
     """Return admitted records and a record-level admission report."""
     # the suite's rules (declared trainable sources, no held-out structures) apply to every record taken from it
@@ -209,12 +219,7 @@ def training_requests(a, tok, manifest, model, inputs=None):
         reqs = kept
     if not reqs:
         raise ValueError("empty training set")
-    eval_only = set(EVAL_ONLY)
-    if manifest:
-        eval_only |= set(manifest.get("eval_only_sources", [])) | set(manifest.get("holdout_sources", []))
-    forbidden = {r["_meta"]["source"] for r in reqs} & eval_only
-    if forbidden:
-        raise ValueError(f"training data contains eval-only sources: {sorted(forbidden)}")
+    _validate_training_sources(reqs, manifest)
     return reqs, {"requested_records": requested, "admitted_records": len(reqs),
                   "rejected_records": len(rejected), "rejected": rejected}
 
@@ -638,6 +643,7 @@ def preflight(a):
     if a.data:
         from .data import _dataset_summary
         inputs["data"] = load_records(a.data)
+        _validate_training_sources(inputs["data"], manifest)
         data_summary = _dataset_summary(inputs["data"], a.data)
     else:
         data_summary = None

@@ -53,6 +53,69 @@ def test_custom_training_data_respects_suite_source_restrictions(tmp_path, restr
         training_requests(args, None, {restriction: [source]}, encoder, inputs={"data": records})
 
 
+@pytest.fixture
+def training_source_inputs(tmp_path):
+    from jevany.suite import digest, write_json
+
+    data = init_starter(tmp_path / "data") / "train.jsonl"
+    suite = tmp_path / "suite"
+    suite.mkdir()
+    suite_data = suite / "train.jsonl"
+    suite_data.write_text(data.read_text(), encoding="utf-8")
+    manifest = {
+        "base_revisions": {"Qwen/Qwen3.8-27B": "test-revision"},
+        "trainable_sources": ["jevany_starter"],
+        "files": {"train.jsonl": {"sha256": digest(suite_data), "records": 24}},
+    }
+    write_json(suite / "manifest.json", manifest)
+    return data, suite, manifest
+
+
+@pytest.mark.parametrize("dry_run", [False, True])
+@pytest.mark.parametrize("restriction", [None, "eval_only_sources", "holdout_sources"])
+def test_preflight_rejects_restricted_custom_sources(
+    training_source_inputs, tmp_path, monkeypatch, dry_run, restriction,
+):
+    from jevany.suite import write_json
+
+    data, suite, manifest = training_source_inputs
+    source = "mmlu" if restriction is None else "reserved"
+    row = json.loads(data.read_text().splitlines()[0])
+    row["_meta"]["source"] = source
+    data.write_text(json.dumps(row) + "\n", encoding="utf-8")
+    out = tmp_path / "run"
+    args = ["--data", str(data), "--out", str(out)]
+    if restriction is not None:
+        manifest[restriction] = [source]
+        write_json(suite / "manifest.json", manifest)
+        args += ["--suite", str(suite), "--replay", "1"]
+    if dry_run:
+        args.append("--dry-run")
+    monkeypatch.setattr("jevany.train.load_preprocessor",
+                        lambda *args, **kwargs: pytest.fail("restricted sources must fail before model loading"))
+
+    with pytest.raises(ValueError, match=f"eval-only sources.*{source}"):
+        main(args)
+    assert not out.exists()
+
+
+@pytest.mark.parametrize("replay", [0, 1])
+def test_preflight_allows_custom_sources_outside_suite_allowlist(training_source_inputs, tmp_path, replay):
+    from jevany.suite import write_json
+
+    data, suite, manifest = training_source_inputs
+    row = json.loads(data.read_text().splitlines()[0])
+    row["_meta"]["source"] = "custom"
+    data.write_text(json.dumps(row) + "\n", encoding="utf-8")
+    manifest.update(eval_only_sources=["reserved"], holdout_sources=["held_out"])
+    write_json(suite / "manifest.json", manifest)
+    out = tmp_path / "run"
+
+    assert main(["--data", str(data), "--suite", str(suite), "--replay", str(replay),
+                 "--out", str(out), "--dry-run"]) == out
+    assert not out.exists()
+
+
 @pytest.mark.parametrize("dry_run", [False, True])
 @pytest.mark.parametrize("bad_input", ["base", "evaluation"])
 def test_preflight_rejects_bad_local_inputs_without_creating_run(tmp_path, monkeypatch, dry_run, bad_input):
