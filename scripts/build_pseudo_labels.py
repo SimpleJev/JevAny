@@ -203,6 +203,7 @@ def main():
         "limit_groups": args.limit_groups,
         "samples": args.samples,
         "temperature": args.temperature,
+        "sampling_algorithm": "log-centered-temperature-v1",
         "min_agreement": args.min_agreement,
         "seed": args.seed,
         "selected_ids_sha256": sequence_digest(selected_ids),

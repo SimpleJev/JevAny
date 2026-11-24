@@ -300,17 +300,8 @@ def test_group_limit_keeps_siblings_together():
     assert [row["_meta"]["id"] for row in select_groups(rows, 2)] == ["a", "b", "a-permuted"]
 
 
-@pytest.mark.parametrize(("temperature", "probabilities"), [
-    (0.8, {"a": 1.0, "b": 0.0}),
-    (1e-4, {"a": 0.75, "b": 0.25}),
-    (1000.0, {"a": 1.0, "b": 0.0}),
-])
-def test_pseudo_builder_is_reproducible_and_records_provenance(
-    tmp_path, monkeypatch, temperature, probabilities,
-):
-    import json
-    import sys
-    from scripts import build_pseudo_labels as builder
+@pytest.fixture
+def pseudo_suite(tmp_path):
     from jevany.suite import digest, write_json, write_jsonl
 
     source = tmp_path / "source"
@@ -328,6 +319,19 @@ def test_pseudo_builder_is_reproducible_and_records_provenance(
     write_jsonl(development, rows)
     write_json(source / "manifest.json", {"files": {"development.jsonl": {
         "records": 2, "questions": 2, "sha256": digest(development)}}, "base_revisions": {"test": "v1"}})
+    return source
+
+
+@pytest.mark.parametrize(("temperature", "probabilities"), [
+    (0.8, {"a": 1.0, "b": 0.0}),
+    (1e-4, {"a": 0.75, "b": 0.25}),
+    (1000.0, {"a": 1.0, "b": 0.0}),
+])
+def test_pseudo_builder_is_reproducible_and_records_provenance(
+    tmp_path, monkeypatch, pseudo_suite, temperature, probabilities,
+):
+    import sys
+    from scripts import build_pseudo_labels as builder
 
     class Predictor:
         def __init__(self, run, device, options):
@@ -341,7 +345,7 @@ def test_pseudo_builder_is_reproducible_and_records_provenance(
     for name in ("first", "second"):
         output = tmp_path / name
         for shard in range(2):
-            monkeypatch.setattr(sys, "argv", ["build_pseudo_labels.py", "--run", "checkpoint", "--suite", str(source),
+            monkeypatch.setattr(sys, "argv", ["build_pseudo_labels.py", "--run", "checkpoint", "--suite", str(pseudo_suite),
                                               "--out", str(output), "--device", "cpu", "--samples", "3",
                                               "--temperature", str(temperature),
                                               "--num-shards", "2", "--shard-index", str(shard)])
@@ -356,8 +360,51 @@ def test_pseudo_builder_is_reproducible_and_records_provenance(
         assert [row["_meta"]["pseudo_parent_id"] for row in generated] == ["test/0", "test/1"]
         assert manifest["pseudo_labeling"]["source_split"] == "development"
         assert manifest["pseudo_labeling"]["seed"] == 17
+        assert manifest["pseudo_labeling"]["sampling_algorithm"] == "log-centered-temperature-v1"
         outputs.append((generated, manifest["pseudo_labeling"]["selected_ids_sha256"]))
     assert outputs[0] == outputs[1]
+
+
+@pytest.mark.parametrize("operation", ["resume", "merge"])
+@pytest.mark.parametrize("legacy_shard", [False, True])
+def test_pseudo_builder_checks_sampling_algorithm(
+    tmp_path, monkeypatch, pseudo_suite, operation, legacy_shard,
+):
+    import sys
+    from scripts import build_pseudo_labels as builder
+
+    monkeypatch.setattr(builder, "LocalPredictor", lambda *args: lambda record: {
+        "probabilities": {"q": {"a": 1.0, "b": 0.0}},
+    })
+    output = tmp_path / "pseudo"
+    argv = ["build_pseudo_labels.py", "--run", "checkpoint", "--suite", str(pseudo_suite),
+            "--out", str(output), "--device", "cpu", "--num-shards", "2", "--samples", "3"]
+    for shard in range(2):
+        monkeypatch.setattr(sys, "argv", [*argv, "--shard-index", str(shard)])
+        builder.main()
+    metadata_path = output / ".parts" / "part-00000.json"
+    if legacy_shard:
+        metadata = builder.read_json(metadata_path)
+        metadata["config"].pop("sampling_algorithm", None)
+        metadata["manifest"]["pseudo_labeling"].pop("sampling_algorithm", None)
+        builder.write_json(metadata_path, metadata)
+    original_parts = {path: path.read_bytes() for path in (output / ".parts").iterdir()}
+
+    def unexpected(*args, **kwargs):
+        pytest.fail("completed shards must not load a model")
+
+    monkeypatch.setattr(builder, "LocalPredictor", unexpected)
+    monkeypatch.setattr(sys, "argv", [*argv, "--shard-index", "0", f"--{operation}"])
+    if legacy_shard:
+        message = "does not match this request" if operation == "resume" else "configurations do not match"
+        with pytest.raises(ValueError, match=message):
+            builder.main()
+        assert not (output / "train.jsonl").exists()
+        assert not (output / "manifest.json").exists()
+    else:
+        builder.main()
+        assert (output / "manifest.json").exists() == (operation == "merge")
+    assert {path: path.read_bytes() for path in (output / ".parts").iterdir()} == original_parts
 
 
 @pytest.mark.parametrize("temperature", ["0", "-1", "nan", "inf"])
