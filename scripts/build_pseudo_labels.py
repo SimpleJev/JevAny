@@ -3,6 +3,7 @@
 import argparse
 import hashlib
 import json
+import math
 import random
 from collections import Counter
 from pathlib import Path
@@ -170,6 +171,8 @@ def main():
         parser.error("--run and --suite are required unless --merge is used")
     if args.samples < 1 or not 0.5 <= args.min_agreement <= 1:
         parser.error("--samples must be positive and --min-agreement must be in [0.5, 1]")
+    if not math.isfinite(args.temperature) or args.temperature <= 0:
+        parser.error("--temperature must be finite and positive")
     if not 0 <= args.shard_index < args.num_shards:
         parser.error("--shard-index must be in [0, --num-shards)")
 

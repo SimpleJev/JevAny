@@ -29,7 +29,10 @@ def permute_choices(record, rng):
     return permuted
 
 
-def sample_answer(probabilities, rng, temperature=1.0):
+def sample_answer(
+    probabilities: dict[str, float], rng: random.Random, temperature: float = 1.0,
+) -> str:
+    """Sample temperature-scaled probabilities without adding mass to zero entries."""
     if not math.isfinite(temperature) or temperature <= 0:
         raise ValueError("temperature must be finite and positive")
     keys = list(probabilities)
@@ -38,7 +41,12 @@ def sample_answer(probabilities, rng, temperature=1.0):
     values = [float(probabilities[key]) for key in keys]
     if any(not math.isfinite(value) or value < 0 for value in values) or sum(values) <= 0:
         raise ValueError("probabilities must be finite, nonnegative, and have positive mass")
-    weights = [max(value, 1e-12) ** (1 / temperature) for value in values]
+    # Center before scaling so the largest weight stays one even at low temperatures.
+    log_max = math.log(max(values))
+    weights = [
+        math.exp((math.log(value) - log_max) / temperature) if value > 0 else 0.0
+        for value in values
+    ]
     return rng.choices(keys, weights=weights, k=1)[0]
 
 

@@ -8,7 +8,7 @@ from jevany.agent import action_request, run_episode
 from jevany.api import validate_response
 from jevany.bedrock import BedrockGenerator
 from jevany.harness import HTTPDecisionClient, JevHarness, json_object, normalize_questions
-from jevany.self_train import blind_record, permute_choices, pseudo_label, sample_answer
+from jevany.self_train import blind_record, permute_choices, pseudo_label
 from jevany.symbolic import JevTree
 
 
@@ -247,15 +247,13 @@ def test_pseudo_label_rejects_ties_low_agreement_and_unknown_answers():
         pseudo_label(record, [{"choice": "missing", "noul": "true", "score": "1"}], samples=1)
 
 
-def test_choice_permutation_keeps_keys_and_sampling_validates_temperature():
+def test_choice_permutation_keeps_keys():
     import random
 
     original = blind_record(pseudo_record())
     permuted = permute_choices(original, random.Random(3))
     assert set(permuted["questions"]["choice"]["criteria"]) == {"a", "b"}
     assert permuted["questions"]["choice"]["label"] in {"a", "b"}
-    with pytest.raises(ValueError, match="temperature"):
-        sample_answer({"a": 0.5, "b": 0.5}, random.Random(0), 0)
 
 
 def test_harness_rejects_planner_state_override():
@@ -302,7 +300,14 @@ def test_group_limit_keeps_siblings_together():
     assert [row["_meta"]["id"] for row in select_groups(rows, 2)] == ["a", "b", "a-permuted"]
 
 
-def test_pseudo_builder_is_reproducible_and_records_provenance(tmp_path, monkeypatch):
+@pytest.mark.parametrize(("temperature", "probabilities"), [
+    (0.8, {"a": 1.0, "b": 0.0}),
+    (1e-4, {"a": 0.75, "b": 0.25}),
+    (1000.0, {"a": 1.0, "b": 0.0}),
+])
+def test_pseudo_builder_is_reproducible_and_records_provenance(
+    tmp_path, monkeypatch, temperature, probabilities,
+):
     import json
     import sys
     from scripts import build_pseudo_labels as builder
@@ -329,7 +334,7 @@ def test_pseudo_builder_is_reproducible_and_records_provenance(tmp_path, monkeyp
             self.run = "resolved/checkpoint"
 
         def __call__(self, record):
-            return {"probabilities": {"q": {"a": 1.0, "b": 0.0}}}
+            return {"probabilities": {"q": probabilities}}
 
     monkeypatch.setattr(builder, "LocalPredictor", Predictor)
     outputs = []
@@ -338,6 +343,7 @@ def test_pseudo_builder_is_reproducible_and_records_provenance(tmp_path, monkeyp
         for shard in range(2):
             monkeypatch.setattr(sys, "argv", ["build_pseudo_labels.py", "--run", "checkpoint", "--suite", str(source),
                                               "--out", str(output), "--device", "cpu", "--samples", "3",
+                                              "--temperature", str(temperature),
                                               "--num-shards", "2", "--shard-index", str(shard)])
             builder.main()
         monkeypatch.setattr(sys, "argv", ["build_pseudo_labels.py", "--out", str(output),
@@ -346,11 +352,34 @@ def test_pseudo_builder_is_reproducible_and_records_provenance(tmp_path, monkeyp
         generated = builder.read_jsonl(output / "train.jsonl")
         manifest = builder.read_json(output / "manifest.json")
         assert all(row["_meta"]["split"] == "train" for row in generated)
+        assert all(row["questions"]["q"]["label"] == "a" for row in generated)
         assert [row["_meta"]["pseudo_parent_id"] for row in generated] == ["test/0", "test/1"]
         assert manifest["pseudo_labeling"]["source_split"] == "development"
         assert manifest["pseudo_labeling"]["seed"] == 17
         outputs.append((generated, manifest["pseudo_labeling"]["selected_ids_sha256"]))
     assert outputs[0] == outputs[1]
+
+
+@pytest.mark.parametrize("temperature", ["0", "-1", "nan", "inf"])
+def test_pseudo_builder_rejects_temperature_before_io(tmp_path, monkeypatch, capsys, temperature):
+    import sys
+    from scripts import build_pseudo_labels as builder
+
+    def unexpected(*args, **kwargs):
+        pytest.fail("invalid temperature must be rejected before loading data or a model")
+
+    monkeypatch.setattr(builder, "load_split", unexpected)
+    monkeypatch.setattr(builder, "LocalPredictor", unexpected)
+    output = tmp_path / "pseudo"
+    monkeypatch.setattr(sys, "argv", [
+        "build_pseudo_labels.py", "--run", "checkpoint", "--suite", "suite",
+        "--out", str(output), f"--temperature={temperature}",
+    ])
+    with pytest.raises(SystemExit) as error:
+        builder.main()
+    assert error.value.code == 2
+    assert "--temperature must be finite and positive" in capsys.readouterr().err
+    assert not output.exists()
 
 
 def test_pseudo_sampling_only_inherits_base_override(tmp_path, monkeypatch):
