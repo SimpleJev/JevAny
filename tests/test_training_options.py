@@ -42,6 +42,80 @@ def test_valid_training_limit_boundaries(tmp_path, setting, value):
     assert getattr(parsed, setting) == value
 
 
+@pytest.mark.parametrize("entrypoint", ["cli", "python"])
+@pytest.mark.parametrize("kind", ["directory", "file", "symlink", "broken-symlink"])
+def test_occupied_training_outputs_fail_before_inputs(tmp_path, monkeypatch, capsys, entrypoint, kind):
+    from jevany.train import main
+    from jevany.training import train
+
+    output = tmp_path / "run"
+    retained = tmp_path / "retained"
+    if kind == "directory":
+        output.mkdir()
+        retained = output / "keep.txt"
+        retained.write_text("keep")
+    elif kind == "file":
+        output.write_text("keep")
+        retained = output
+    else:
+        if kind == "symlink":
+            retained.mkdir()
+            (retained / "keep.txt").write_text("keep")
+        output.symlink_to(retained, target_is_directory=True)
+
+    monkeypatch.setenv("RANK", "0")
+    monkeypatch.setattr("jevany.train.preflight",
+                        lambda *args: pytest.fail("occupied outputs must fail before reading data or loading weights"))
+    if entrypoint == "cli":
+        with pytest.raises(SystemExit) as error:
+            main(["--data", "records.jsonl", "--out", str(output)])
+        assert error.value.code == 2
+        message = capsys.readouterr().err
+    else:
+        recipe = tmp_path / "recipe.toml"
+        recipe.write_text('data = "records.jsonl"\n')
+        with pytest.raises(ValueError) as error:
+            train(recipe, output_dir=output)
+        message = str(error.value)
+    assert "refusing to overwrite an existing run" in message
+    assert str(output) in message
+    if kind in ("directory", "file"):
+        assert retained.read_text() == "keep"
+    else:
+        assert output.is_symlink() and output.readlink() == retained
+        if kind == "symlink":
+            assert (retained / "keep.txt").read_text() == "keep"
+        else:
+            assert not retained.exists()
+
+
+def test_dry_run_rejects_a_broken_output_symlink(tmp_path, monkeypatch):
+    output = tmp_path / "run"
+    output.symlink_to(tmp_path / "missing", target_is_directory=True)
+    monkeypatch.setenv("RANK", "0")
+    with pytest.raises(ValueError, match="refusing to overwrite an existing run"):
+        parse_args(["--data", "records.jsonl", "--out", str(output), "--dry-run"],
+                   parser_class=TrainingArgumentParser)
+
+
+def test_training_accepts_a_new_output_under_a_directory_symlink(tmp_path, monkeypatch):
+    directory = tmp_path / "runs"
+    directory.mkdir()
+    link = tmp_path / "link"
+    link.symlink_to(directory, target_is_directory=True)
+    output = link / "new-run"
+    monkeypatch.setenv("RANK", "0")
+    assert parse_args(["--data", "records.jsonl", "--out", str(output)]).out == str(output)
+    assert not (directory / "new-run").exists()
+
+
+def test_nonzero_rank_accepts_output_already_created_by_rank_zero(tmp_path, monkeypatch):
+    output = tmp_path / "run"
+    output.mkdir()
+    monkeypatch.setenv("RANK", "1")
+    assert parse_args(["--data", "records.jsonl", "--out", str(output)]).out == str(output)
+
+
 def test_lm_token_mode_does_not_require_a_pointer_head_dimension(tmp_path):
     parsed = parse_args([
         "--data", "records.jsonl", "--out", str(tmp_path / "run"),

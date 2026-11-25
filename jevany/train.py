@@ -468,8 +468,9 @@ def parse_args(argv=None, *, parser_class=argparse.ArgumentParser):
         ap.error("augmentation probabilities must be in [0, 1]; none/distractor probabilities must sum to at most 1")
     if not a.data and not a.suite:
         ap.error("pass --data or --suite, directly or in --config")
-    if Path(a.out).exists() and int(os.environ.get("RANK", "0")) == 0:
-        ap.error("refusing to overwrite an existing run")
+    output = Path(a.out)
+    if (output.exists() or output.is_symlink()) and int(os.environ.get("RANK", "0")) == 0:
+        ap.error(f"refusing to overwrite an existing run: {output}; choose a new output directory")
     return a
 
 
