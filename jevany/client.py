@@ -1,4 +1,5 @@
 """Python clients using the same System One request and response as HTTP."""
+import http.client
 import io
 import json
 import math
@@ -70,6 +71,8 @@ def _response_body(error: urllib.error.HTTPError, limit: int = ERROR_BODY_LIMIT)
     """
     try:
         return error.read(limit)
+    except http.client.IncompleteRead as incomplete:
+        return incomplete.partial[:limit]
     except OSError:
         return b""
     finally:

@@ -4,6 +4,7 @@
 
 LocalPredictor scores a checkpoint in-process. RemotePredictor scores any compatible `/v1/systemone` endpoint.
 """
+import http.client
 import math
 import time
 import urllib.error
@@ -93,7 +94,7 @@ class RemotePredictor:
         self, base_url: str, model: str = "jevany-latest", api_key: str | None = "local",
         timeout: float = 120, retries: int = 3,
     ) -> None:
-        """Use at most `retries` attempts, retrying only connection errors, timeouts, 429 and 5xx."""
+        """Use at most `retries` attempts for connection errors, timeouts, interrupted responses, 429 and 5xx."""
         if isinstance(retries, bool) or not isinstance(retries, int) or retries < 1:
             raise ValueError("retries must be a positive integer")
         self.client = JevClient(base_url, model=model, api_key=api_key, timeout=timeout)
@@ -109,7 +110,7 @@ class RemotePredictor:
                 body = self.client(request)
                 latency = 1000 * (time.perf_counter() - start)
                 break
-            except (urllib.error.URLError, TimeoutError, ConnectionError) as error:
+            except (urllib.error.URLError, TimeoutError, ConnectionError, http.client.IncompleteRead) as error:
                 if (isinstance(error, DecisionHTTPError) and error.code == 422
                         and (error.headers or {}).get("X-JevAny-Error-Code") == "context_length_exceeded"):
                     raise ContextLengthError(error.detail or str(error)) from error

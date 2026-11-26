@@ -1,4 +1,5 @@
 """Remote evaluation uses the public client contract and retries transient failures."""
+import http.client
 import io
 import json
 import urllib.error
@@ -104,6 +105,75 @@ def test_transient_failures_retry_without_sleeping_after_the_last_attempt(monkey
         with pytest.raises((urllib.error.URLError, TimeoutError)):
             predictor(RECORD)
     assert len(attempts) == 3 and sleeps == [1, 2]
+
+
+def interrupted_response(status, transfer):
+    body = b'{"detail":"response interrupted"}'
+    if transfer == "chunked":
+        headers = b"Transfer-Encoding: chunked\r\n"
+        wire_body = f"{len(body):x}\r\n".encode() + body + b"\r\n10\r\npartial"
+    else:
+        headers = f"Content-Length: {len(body) + 10}\r\n".encode()
+        wire_body = body
+
+    class Socket:
+        def makefile(self, *_args):
+            return io.BytesIO(f"HTTP/1.1 {status} Test\r\n".encode() + headers + b"\r\n" + wire_body)
+
+    response = http.client.HTTPResponse(Socket())
+    response.begin()
+    return response
+
+
+@pytest.mark.parametrize("transfer", ["length", "chunked"])
+@pytest.mark.parametrize("retries", [1, 3])
+@pytest.mark.parametrize("recover", [False, True])
+def test_interrupted_success_responses_obey_retry_budget(monkeypatch, transfer, retries, recover):
+    responses, sleeps = [], []
+    attempts = []
+
+    def urlopen(request, timeout):
+        attempts.append(request)
+        if recover and len(attempts) == retries:
+            return io.BytesIO(json.dumps(RESPONSE).encode())
+        response = interrupted_response(200, transfer)
+        responses.append(response)
+        return response
+
+    monkeypatch.setattr("jevany.client._urlopen", urlopen)
+    monkeypatch.setattr("jevany.predictors.time.sleep", sleeps.append)
+    predictor = RemotePredictor("http://localhost:8008", retries=retries)
+    if recover:
+        assert predictor(RECORD)["input_tokens"] == 11
+        assert predictor.served_model == "served"
+    else:
+        with pytest.raises(http.client.IncompleteRead):
+            predictor(RECORD)
+        assert predictor.served_model is None
+    assert len(attempts) == retries
+    assert sleeps == [2 ** attempt for attempt in range(retries - 1)]
+    assert all(response.isclosed() for response in responses)
+
+
+@pytest.mark.parametrize("status,expected_attempts", [(401, 1), (403, 1), (422, 1), (429, 3), (503, 3)])
+def test_interrupted_error_bodies_preserve_http_status_and_retry_policy(monkeypatch, status, expected_attempts):
+    responses, sleeps = [], []
+
+    def urlopen(request, timeout):
+        response = interrupted_response(status, "chunked")
+        responses.append(response)
+        raise urllib.error.HTTPError(request.full_url, status, "Rejected", response.headers, response)
+
+    monkeypatch.setattr("jevany.client._urlopen", urlopen)
+    monkeypatch.setattr("jevany.predictors.time.sleep", sleeps.append)
+    with pytest.raises(DecisionHTTPError, match="response interrupted") as caught:
+        RemotePredictor("http://localhost:8008")(RECORD)
+    assert caught.value.code == status
+    assert caught.value.body == b'{"detail":"response interrupted"}'
+    assert caught.value.read() == caught.value.body
+    assert len(responses) == expected_attempts
+    assert sleeps == [2 ** attempt for attempt in range(expected_attempts - 1)]
+    assert all(response.isclosed() for response in responses)
 
 
 @pytest.mark.parametrize("body", [b"not json", b'{"answers":{}}'])
