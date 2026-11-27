@@ -88,6 +88,7 @@ class RemotePredictor:
     Requests include the client's optional fields, and responses are validated
     before scoring. Probabilities are renormalised by the benchmark like every
     other predictor. The server-reported model id records what was scored.
+    Latency includes all request attempts and retry backoff for each prediction.
     """
 
     def __init__(
@@ -104,9 +105,9 @@ class RemotePredictor:
 
     def __call__(self, record: dict) -> dict:
         request = {**api_request(record), "model": self.model}
+        start = time.perf_counter()
         for attempt in range(self.retries):
             try:
-                start = time.perf_counter()
                 body = self.client(request)
                 latency = 1000 * (time.perf_counter() - start)
                 break

@@ -2,6 +2,7 @@
 import http.client
 import io
 import json
+from types import SimpleNamespace
 import urllib.error
 
 import pytest
@@ -174,6 +175,61 @@ def test_interrupted_error_bodies_preserve_http_status_and_retry_policy(monkeypa
     assert len(responses) == expected_attempts
     assert sleeps == [2 ** attempt for attempt in range(expected_attempts - 1)]
     assert all(response.isclosed() for response in responses)
+
+
+@pytest.mark.parametrize("failure", [None, 429, 503, "connection", "timeout", "interrupted"])
+def test_remote_evaluation_latency_includes_attempts_and_backoff(monkeypatch, tmp_path, failure):
+    from jevany.benchmark import evaluate_records
+
+    elapsed, attempts, sleeps = 0.0, [], []
+
+    def sleep(seconds):
+        nonlocal elapsed
+        elapsed += seconds
+        sleeps.append(seconds)
+
+    def urlopen(request, timeout):
+        nonlocal elapsed
+        elapsed += 0.25
+        attempts.append(request)
+        if failure is not None and len(attempts) < 3:
+            if failure == "connection":
+                raise urllib.error.URLError("connection refused")
+            if failure == "timeout":
+                raise TimeoutError("timed out")
+            if failure == "interrupted":
+                return interrupted_response(200, "chunked")
+            raise urllib.error.HTTPError(
+                request.full_url, failure, "Unavailable", {},
+                io.BytesIO(b'{"detail":"try later"}'),
+            )
+        return io.BytesIO(json.dumps(RESPONSE).encode())
+
+    monkeypatch.setattr("jevany.client._urlopen", urlopen)
+    monkeypatch.setattr("jevany.predictors.time", SimpleNamespace(
+        perf_counter=lambda: elapsed, sleep=sleep,
+    ))
+    predictor = RemotePredictor("http://localhost:8008")
+    record = {
+        **RECORD,
+        "questions": {qid: {**question, "src": f"fixture_{question['type']}"}
+                      for qid, question in RECORD["questions"].items()},
+        "_meta": {"id": "fixture/0", "group_id": "0", "source": "fixture", "variant": "clean"},
+    }
+    output = tmp_path / "evaluation"
+    report, _ = evaluate_records([record], predictor, output)
+    expected_ms = 250.0 if failure is None else 3750.0
+    prediction = json.loads((output / "predictions.jsonl").read_text())["prediction"]
+    saved_report = json.loads((output / "report.json").read_text())
+    assert prediction["latency_ms"] == pytest.approx(expected_ms)
+    assert report["latency_ms"] == saved_report["latency_ms"] == {
+        "median": expected_ms, "p95": expected_ms,
+    }
+    assert len(attempts) == (1 if failure is None else 3)
+    assert sleeps == ([] if failure is None else [1, 2])
+
+    # The next prediction starts a fresh interval, even after earlier retries.
+    assert predictor(RECORD)["latency_ms"] == pytest.approx(250.0)
 
 
 @pytest.mark.parametrize("body", [b"not json", b'{"answers":{}}'])
