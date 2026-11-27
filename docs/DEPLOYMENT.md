@@ -191,6 +191,10 @@ jevany eval --remote http://127.0.0.1:8008 --remote-model jevany-qwen3.5-4b \
   --data data/starter/development.jsonl --out /tmp/eval-remote
 ```
 
+In that report, `latency_ms` covers every HTTP attempt and retry wait for one
+prediction. The `latency_ms` a server returns in its own response measures that
+one response instead.
+
 Finally, drive it from the browser:
 
 ```bash
@@ -471,7 +475,9 @@ print(result["answers"]["done"]["noul"])
 
 `JevClient` requires HTTPS for non-loopback endpoints. Pass `api_key` for your
 gateway or the official hosted API. Invalid requests and responses raise
-`ValueError`; connection failures propagate from `urllib`.
+`ValueError`; connection failures propagate from `urllib`. On a successful
+response, a body the HTTP parser finds incomplete propagates as
+`http.client.IncompleteRead`.
 Calls have a configurable 120-second default timeout and no automatic retries.
 
 `client.models()` performs one `GET /v1/models`, so it both reports what the

@@ -172,7 +172,9 @@ class JevClient(DecisionClient):
 
     Invalid requests raise ValueError before sending. Connection errors propagate
     from urllib; HTTP failures raise DecisionHTTPError, which is an HTTPError
-    carrying the server's explanation. Malformed responses raise ValueError.
+    carrying the server's explanation. Malformed responses raise ValueError; on a
+    successful response, a body the HTTP parser finds incomplete propagates as
+    http.client.IncompleteRead.
     """
 
     def __init__(
